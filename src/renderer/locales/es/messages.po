@@ -649,6 +649,10 @@ msgstr "hace {days}d"
 #~ msgid "{envOrAgentLabel} needs authentication."
 #~ msgstr "{envOrAgentLabel} necesita autenticación."
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{errors, plural, one {# agent stopped with an error} other {# agents stopped with an error}}"
+msgstr "{errors, plural, one {# agente se detuvo con un error} other {# agentes se detuvieron con un error}}"
+
 #: src/mobile/views/pr/PrOverviewPage.tsx
 #~ msgid "{filesCount, plural, one {# file changed} other {# files changed}}"
 #~ msgstr "{filesCount, plural, one {# archivo cambiado} other {# archivos cambiados}}"
@@ -714,6 +718,10 @@ msgstr "{issues, plural, one {Hay # good first issue abierta} other {Hay # good 
 #: src/renderer/i18n/sharedMessages.ts
 #~ msgid "{label} · Previous sessions; sign in again for new threads."
 #~ msgstr "{label} · Sesiones anteriores; vuelve a iniciar sesión para los nuevos hilos."
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "{label} ({badge})"
+msgstr "{label} ({badge})"
 
 #: src/renderer/components/thread/ThreadDetailsDocks.tsx
 #~ msgid "{label} account usage"
@@ -988,9 +996,17 @@ msgstr "{visibleCount} de {totalCount} visibles"
 #~ msgid "{visibleSidebarShortcutCount}/{0} selected"
 #~ msgstr "{visibleSidebarShortcutCount}/{0} seleccionados"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{waiting, plural, one {# agent waiting for you} other {# agents waiting for you}}"
+msgstr "{waiting, plural, one {# agente esperándote} other {# agentes esperándote}}"
+
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
 msgid "{weekdayPct}% Mon–Fri"
 msgstr "{weekdayPct}% lun–vie"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{working, plural, one {# agent working} other {# agents working}}"
+msgstr "{working, plural, one {# agente trabajando} other {# agentes trabajando}}"
 
 #: src/renderer/views/SettingsOverlay/parts/CursorSdkRuntimeSetup.tsx
 msgid "@cursor/sdk is not installed."
@@ -1021,8 +1037,8 @@ msgid "/skill-creator-poracode Create a new managed skill for {destinationLabel}
 msgstr "/skill-creator-poracode Crea un nuevo skill gestionado para {destinationLabel}."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
-msgstr "© {currentYear} Serhii Vecherenko. Todos los derechos reservados."
+#~ msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
+#~ msgstr "© {currentYear} Serhii Vecherenko. Todos los derechos reservados."
 
 #. placeholder {0}: props.crewRoleCount ?? 0
 #. placeholder {0}: props.model.binding.roles.length
@@ -1325,6 +1341,10 @@ msgstr "Cancelar fusión"
 msgid "About"
 msgstr "Acerca de"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "About this version"
+msgstr "Acerca de esta versión"
+
 #: src/renderer/components/providers/HostUsageInfo.tsx
 msgid "About usage"
 msgstr "Acerca del uso"
@@ -1428,6 +1448,10 @@ msgstr "ACP no instalado"
 #~ msgid "ACP uses the installed Cursor Agent. SDK loads an external @cursor/sdk package."
 #~ msgstr "ACP usa Cursor Agent instalado. El SDK carga un paquete @cursor/sdk externo."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Acrylic"
+msgstr "Acrílico"
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/ActionsSection.tsx
 msgid "Action command"
 msgstr "Comando de acción"
@@ -1497,6 +1521,10 @@ msgstr "Activo ayer"
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 msgid "Activity"
 msgstr "Actividad"
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "Activity bar"
+msgstr "Barra de actividad"
 
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -1577,6 +1605,10 @@ msgstr "Añade un proyecto en este entorno antes de iniciar sesión."
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Add a project on this environment to start"
 msgstr "Añade un proyecto en este entorno para empezar"
+
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "Add a project to browse its files"
+msgstr "Añade un proyecto para explorar sus archivos"
 
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Add a project to see pull requests."
@@ -1952,6 +1984,8 @@ msgstr "Vista del agente"
 #: src/renderer/views/SettingsOverlay/parts/SettingsSidebar.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/ActivitySidebarViews.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Agents"
 msgstr "Agentes"
 
@@ -2671,6 +2705,7 @@ msgstr "Authorization: Bearer token"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "Auto"
 msgstr "Automático"
 
@@ -2963,6 +2998,11 @@ msgstr "Tamaño de fuente base para el panel del terminal. Se reduce automática
 msgid "Base URL"
 msgstr "URL base"
 
+#. About page attribution: the upstream project this app is based on and its license
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Based on {UPSTREAM_BRAND_NAME} (Apache-2.0)"
+msgstr "Basado en {UPSTREAM_BRAND_NAME} (Apache-2.0)"
+
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Bash output"
 msgstr "Salida de Bash"
@@ -3083,6 +3123,14 @@ msgstr "Rama"
 msgid "Branch '{branch}' has uncommitted changes in '{path}' — commit or stash them before merging"
 msgstr "La rama '{branch}' tiene cambios sin confirmar en '{path}' — confírmalos o guárdalos en stash antes de fusionar"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch}"
+msgstr "Rama {branch}"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch} (worktree {worktreePath})"
+msgstr "Rama {branch} (worktree {worktreePath})"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "branch {branch}: {detail}"
 msgstr "rama {branch}: {detail}"
@@ -3201,6 +3249,7 @@ msgstr "Navega, inspecciona y prueba sitios web en el navegador aislado integrad
 #: src/renderer/views/MainView/parts/SidebarHeaderControls.tsx
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Browser"
 msgstr "Navegador"
 
@@ -4254,6 +4303,11 @@ msgstr "Clonando…"
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Close"
 msgstr "Cerrar"
+
+#. placeholder {0}: thread.title
+#: src/renderer/viscosity/layout/tabs/ThreadTab.tsx
+msgid "Close {0}"
+msgstr "Cerrar {0}"
 
 #: src/mobile/views/BrowserView.tsx
 #~ msgid "Close {closeTarget}"
@@ -5938,8 +5992,8 @@ msgid "Creating worktree…"
 msgstr "Creando worktree…"
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Creator on X"
-msgstr "Creador en X"
+#~ msgid "Creator on X"
+#~ msgstr "Creador en X"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Credential missing"
@@ -7620,6 +7674,7 @@ msgstr "Editar título"
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/views/FileEditorOverlay/FileEditorOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
 msgid "Editor"
 msgstr "Editor"
 
@@ -8282,6 +8337,10 @@ msgstr "Explorar y planificar"
 #~ msgid "Explore, build and review a feature."
 #~ msgstr "Explorar, construir y revisar una función."
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Explorer"
+msgstr "Explorador"
+
 #: src/renderer/components/crew/crewRoleTemplates.ts
 #~ msgid "Explores code and docs"
 #~ msgstr "Explora código y documentación"
@@ -8293,6 +8352,10 @@ msgstr "Explora el código, hace la tarea del principal de principio a fin, ejec
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Exponential backoff"
 msgstr "Espera exponencial"
+
+#: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
+msgid "Export as JSON"
+msgstr "Exportar como JSON"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Export MCP servers"
@@ -9094,6 +9157,10 @@ msgstr "fx"
 msgid "Games & fun"
 msgstr "Juegos y diversión"
 
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+msgid "Geist"
+msgstr "Geist"
+
 #: src/renderer/components/providers/gemini/manifest.ts
 msgid "Gemini"
 msgstr "Gemini"
@@ -9633,6 +9700,10 @@ msgstr "Ocultar detalles de uso de contexto"
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 msgid "Hide drafts"
 msgstr "Ocultar borradores"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Hide editor"
+msgstr "Ocultar editor"
 
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesToolbar.tsx
 msgid "Hide file tree"
@@ -12174,6 +12245,10 @@ msgstr "No se pudieron cargar los mensajes."
 msgid "Messages sent"
 msgstr "Mensajes enviados"
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Mica"
+msgstr "Mica"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -12951,6 +13026,7 @@ msgstr "Nueva pestaña en el grupo"
 #: src/renderer/views/MainView/parts/Sidebar/parts/NewThreadButton.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/QuickComposerOverlay/QuickComposerOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
 msgid "New thread"
 msgstr "Nuevo hilo"
 
@@ -13758,6 +13834,7 @@ msgstr "ninguno"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/components/providers/settings/ClaudeProfileSettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "None"
 msgstr "Ninguno"
 
@@ -14460,6 +14537,10 @@ msgstr "Abrir el selector de modelo"
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Open thread in summary"
 msgstr "Abrir hilo en el resumen"
+
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
+msgid "Open threads"
+msgstr "Hilos abiertos"
 
 #. placeholder {0}: index + 1
 #. placeholder {1}: videos.length
@@ -15411,8 +15492,8 @@ msgstr "Es posible que Poracode esté esperando datos guardados o un servicio en
 #~ msgstr "Poracode nunca ejecuta la sugerencia: insertarla solo llena el compositor para que la edites y la envíes."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Poracode on X"
-msgstr "Poracode en X"
+#~ msgid "Poracode on X"
+#~ msgstr "Poracode en X"
 
 #: src/renderer/components/skills/SkillImportModal.tsx
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
@@ -15720,8 +15801,8 @@ msgid "Print"
 msgstr "Imprimir"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
-msgid "Privacy Policy"
-msgstr "Política de privacidad"
+#~ msgid "Privacy Policy"
+#~ msgstr "Política de privacidad"
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Privacy, licenses and engine management"
@@ -18431,6 +18512,7 @@ msgstr "SDK no instalado"
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Search"
 msgstr "Búsqueda"
 
@@ -19004,6 +19086,7 @@ msgstr "Se fijó al iniciar esta sesión — inicia un hilo nuevo para cambiar l
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarFooterNav.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Settings"
 msgstr "Ajustes"
 
@@ -19185,6 +19268,10 @@ msgstr "Mostrar paneles encima del compositor"
 #: src/renderer/components/thread/ThreadDocksPlacementToggle.tsx
 msgid "Show docks in the right panel"
 msgstr "Mostrar paneles en el panel derecho"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Show editor"
+msgstr "Mostrar editor"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/UsageDisplaySettings.tsx
@@ -19769,6 +19856,10 @@ msgstr "Código fuente"
 msgid "Source branch {branch} moved before the worktree was created"
 msgstr "La rama de origen {branch} se movió antes de que se creara el worktree"
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Source Control"
+msgstr "Control de código fuente"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Source control command {command} failed. Check its installation and host login."
 msgstr "Falló el comando de control de código {command}. Comprueba su instalación y el inicio de sesión del servidor."
@@ -20088,6 +20179,10 @@ msgstr "Estado"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Status"
 msgstr "Estado"
+
+#: src/renderer/viscosity/layout/statusBar/ViscosityStatusBar.tsx
+msgid "Status bar"
+msgstr "Barra de estado"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Status is inferred from terminal output (L2). Install the hook plugin in settings for structured updates."
@@ -20427,6 +20522,14 @@ msgstr "Cambiar este chat al modo agente"
 msgid "Switch this chat to plan mode"
 msgstr "Cambiar este chat al modo de plan"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to dark theme"
+msgstr "Cambiar al tema oscuro"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to light theme"
+msgstr "Cambiar al tema claro"
+
 #: src/renderer/commands/registry.ts
 msgid "Switch to the next chat"
 msgstr "Cambiar al chat siguiente"
@@ -20512,6 +20615,7 @@ msgstr "Sincronizando…"
 
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/i18n/locales.ts
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "System"
 msgstr "Sistema"
@@ -21053,6 +21157,10 @@ msgstr "El estado del experimento es demasiado grande para cargarlo o modificarl
 msgid "The file path is outside the project."
 msgstr "La ruta del archivo está fuera del proyecto."
 
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "The file tree is open in the full-screen editor"
+msgstr "El árbol de archivos está abierto en el editor a pantalla completa"
+
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 msgid "The finding is no longer available."
 msgstr "El hallazgo ya no está disponible."
@@ -21576,6 +21684,10 @@ msgstr "La solicitud de voz no es válida o ha caducado. Vuelve a intentarlo."
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The watched pull request changed. Review the watch before continuing."
 msgstr "La solicitud de incorporación supervisada cambió. Revisa la supervisión antes de continuar."
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "The Windows 11 backdrop behind the translucent sidebar. Auto uses Mica; None keeps the in-app tint."
+msgstr "El material de fondo de Windows 11 detrás del panel lateral translúcido. «Automático» usa Mica; «Ninguno» mantiene el tinte propio de la aplicación."
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the Windows user"
@@ -22652,6 +22764,10 @@ msgstr "Activa el acceso remoto para mostrar un código de emparejamiento."
 msgid "Turn on tracking to monitor quotas and cost."
 msgstr "Activa el seguimiento para supervisar cuotas y costos."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Turn on Translucent sidebar to use a Windows 11 backdrop."
+msgstr "Activa «Panel lateral translúcido» para usar un material de fondo de Windows 11."
+
 #: src/renderer/views/SettingsOverlay/parts/GitSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #~ msgid "Turn on Watch PR automatically for pull requests you create in Poracode."
@@ -22705,6 +22821,16 @@ msgstr "Escribe para buscar archivos"
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/userInputForm.tsx
 msgid "Type your answer…"
 msgstr "Escribe tu respuesta…"
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
+msgstr "Tipografía de la interfaz de la aplicación; el código conserva su fuente monoespaciada. Se guarda en este dispositivo."
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "UI font"
+msgstr "Fuente de la interfaz"
 
 #. placeholder {0}: agent.label
 #. placeholder {0}: agentStatus.label
@@ -23940,6 +24066,10 @@ msgstr "Usando su instalación Hex existente. Poracode no lo modificará."
 msgid "v{0} available"
 msgstr "v{0} disponible"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "v{version}"
+msgstr "v{version}"
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 msgid "Valid feedback is posted publicly on GitHub with your app version and platform."
 msgstr "Los comentarios válidos se publican en GitHub con la versión de tu app y tu plataforma."
@@ -23983,6 +24113,10 @@ msgstr "Verificar"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Version"
 msgstr "Versión"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Version {version}"
+msgstr "Versión {version}"
 
 #: src/renderer/components/common/FeedbackDialog.tsx
 #~ msgid "Version and platform only. No chat history, code, or project paths."
@@ -24333,9 +24467,7 @@ msgstr "Búsqueda web"
 msgid "Web server"
 msgstr "Servidor web"
 
-#. External link to the product website
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordsPage.tsx
-#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/AcpRegistrySettings.tsx
 msgid "Website"
 msgstr "Sitio web"
@@ -24481,6 +24613,10 @@ msgstr "Whisper con amplio soporte multilingüe."
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 msgid "Will run in this environment:"
 msgstr "Se ejecutará en este entorno:"
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Window material"
+msgstr "Material de la ventana"
 
 #: src/renderer/components/mcp/McpProjectDestinationDropdown.tsx
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx

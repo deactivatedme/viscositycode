@@ -649,6 +649,10 @@ msgstr "{days} gün önce"
 #~ msgid "{envOrAgentLabel} needs authentication."
 #~ msgstr "{envOrAgentLabel} kimlik doğrulaması gerektiriyor."
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{errors, plural, one {# agent stopped with an error} other {# agents stopped with an error}}"
+msgstr "{errors, plural, one {# aracı hatayla durdu} other {# aracı hatayla durdu}}"
+
 #: src/mobile/views/pr/PrOverviewPage.tsx
 #~ msgid "{filesCount, plural, one {# file changed} other {# files changed}}"
 #~ msgstr "{filesCount, plural, one {# dosya değişti} other {# dosya değişti}}"
@@ -714,6 +718,10 @@ msgstr "{issues, plural, one {# yeni başlayan dostu sorun açık} other {# yeni
 #: src/renderer/i18n/sharedMessages.ts
 #~ msgid "{label} · Previous sessions; sign in again for new threads."
 #~ msgstr "{label} · Önceki oturumlar; yeni konular için yeniden giriş yapın."
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "{label} ({badge})"
+msgstr "{label} ({badge})"
 
 #: src/renderer/components/thread/ThreadDetailsDocks.tsx
 #~ msgid "{label} account usage"
@@ -988,9 +996,17 @@ msgstr "{totalCount} öğeden {visibleCount} tanesi görünür"
 #~ msgid "{visibleSidebarShortcutCount}/{0} selected"
 #~ msgstr "{visibleSidebarShortcutCount}/{0} seçildi"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{waiting, plural, one {# agent waiting for you} other {# agents waiting for you}}"
+msgstr "{waiting, plural, one {# aracı sizi bekliyor} other {# aracı sizi bekliyor}}"
+
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
 msgid "{weekdayPct}% Mon–Fri"
 msgstr "%{weekdayPct} Pzt–Cum"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{working, plural, one {# agent working} other {# agents working}}"
+msgstr "{working, plural, one {# aracı çalışıyor} other {# aracı çalışıyor}}"
 
 #: src/renderer/views/SettingsOverlay/parts/CursorSdkRuntimeSetup.tsx
 msgid "@cursor/sdk is not installed."
@@ -1021,8 +1037,8 @@ msgid "/skill-creator-poracode Create a new managed skill for {destinationLabel}
 msgstr "/skill-creator-poracode {destinationLabel} için yeni bir yönetilen beceri oluştur."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
-msgstr "© {currentYear} Serhii Vecherenko. Tüm hakları saklıdır."
+#~ msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
+#~ msgstr "© {currentYear} Serhii Vecherenko. Tüm hakları saklıdır."
 
 #. placeholder {0}: props.crewRoleCount ?? 0
 #. placeholder {0}: props.model.binding.roles.length
@@ -1325,6 +1341,10 @@ msgstr "Birleştirmeyi İptal Et"
 msgid "About"
 msgstr "Hakkında"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "About this version"
+msgstr "Bu sürüm hakkında"
+
 #: src/renderer/components/providers/HostUsageInfo.tsx
 msgid "About usage"
 msgstr "Kullanım hakkında"
@@ -1428,6 +1448,10 @@ msgstr "ACP yüklü değil"
 #~ msgid "ACP uses the installed Cursor Agent. SDK loads an external @cursor/sdk package."
 #~ msgstr "ACP, yüklü Cursor Agent'ı kullanır. SDK, harici bir @cursor/sdk paketi yükler."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Acrylic"
+msgstr "Akrilik"
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/ActionsSection.tsx
 msgid "Action command"
 msgstr "Eylem komutu"
@@ -1497,6 +1521,10 @@ msgstr "Dün aktifti"
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 msgid "Activity"
 msgstr "Etkinlik"
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "Activity bar"
+msgstr "Etkinlik çubuğu"
 
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -1577,6 +1605,10 @@ msgstr "Oturum açmadan önce bu ortamda bir proje ekleyin."
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Add a project on this environment to start"
 msgstr "Başlamak için bu ortama bir proje ekleyin"
+
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "Add a project to browse its files"
+msgstr "Dosyalarına göz atmak için bir proje ekleyin"
 
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Add a project to see pull requests."
@@ -1952,6 +1984,8 @@ msgstr "Ajanın ekranı"
 #: src/renderer/views/SettingsOverlay/parts/SettingsSidebar.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/ActivitySidebarViews.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Agents"
 msgstr "Temsilciler"
 
@@ -2671,6 +2705,7 @@ msgstr "Authorization: Bearer token"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "Auto"
 msgstr "Otomatik"
 
@@ -2963,6 +2998,11 @@ msgstr "Terminal paneli için temel yazı tipi boyutu. Dar veya kısa bölmelerd
 msgid "Base URL"
 msgstr "Temel URL"
 
+#. About page attribution: the upstream project this app is based on and its license
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Based on {UPSTREAM_BRAND_NAME} (Apache-2.0)"
+msgstr "{UPSTREAM_BRAND_NAME} tabanlı (Apache-2.0)"
+
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Bash output"
 msgstr "Bash çıkışı"
@@ -3083,6 +3123,14 @@ msgstr "Şube"
 msgid "Branch '{branch}' has uncommitted changes in '{path}' — commit or stash them before merging"
 msgstr "'{branch}' şubesinde '{path}'de kaydedilmemiş değişiklikler var — birleştirmeden önce bunları kaydedin veya saklayın"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch}"
+msgstr "{branch} dalı"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch} (worktree {worktreePath})"
+msgstr "{branch} dalı (çalışma ağacı {worktreePath})"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "branch {branch}: {detail}"
 msgstr "şube {branch}: {detail}"
@@ -3201,6 +3249,7 @@ msgstr "Poracode'un yalıtılmış uygulama içi tarayıcısında siteleri gezin
 #: src/renderer/views/MainView/parts/SidebarHeaderControls.tsx
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Browser"
 msgstr "Tarayıcı"
 
@@ -4254,6 +4303,11 @@ msgstr "Klonlanıyor…"
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Close"
 msgstr "Kapat"
+
+#. placeholder {0}: thread.title
+#: src/renderer/viscosity/layout/tabs/ThreadTab.tsx
+msgid "Close {0}"
+msgstr "{0} öğesini kapat"
 
 #: src/mobile/views/BrowserView.tsx
 #~ msgid "Close {closeTarget}"
@@ -5938,8 +5992,8 @@ msgid "Creating worktree…"
 msgstr "Çalışma ağacı oluşturuluyor…"
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Creator on X"
-msgstr "X'te geliştirici"
+#~ msgid "Creator on X"
+#~ msgstr "X'te geliştirici"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Credential missing"
@@ -7620,6 +7674,7 @@ msgstr "Başlığı düzenle"
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/views/FileEditorOverlay/FileEditorOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
 msgid "Editor"
 msgstr "Editör"
 
@@ -8282,6 +8337,10 @@ msgstr "Keşfet ve planla"
 #~ msgid "Explore, build and review a feature."
 #~ msgstr "Bir özelliği keşfet, uygula ve incele."
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Explorer"
+msgstr "Gezgin"
+
 #: src/renderer/components/crew/crewRoleTemplates.ts
 #~ msgid "Explores code and docs"
 #~ msgstr "Kodu ve belgeleri keşfeder"
@@ -8293,6 +8352,10 @@ msgstr "Kod tabanını inceler, ana modelin görevini baştan sona yapar, en dar
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Exponential backoff"
 msgstr "Üstel gecikme"
+
+#: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
+msgid "Export as JSON"
+msgstr "JSON olarak dışa aktar"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Export MCP servers"
@@ -9094,6 +9157,10 @@ msgstr "fx"
 msgid "Games & fun"
 msgstr "Oyunlar ve eğlence"
 
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+msgid "Geist"
+msgstr "Geist"
+
 #: src/renderer/components/providers/gemini/manifest.ts
 msgid "Gemini"
 msgstr "Gemini"
@@ -9633,6 +9700,10 @@ msgstr "Bağlam kullanım ayrıntılarını gizle"
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 msgid "Hide drafts"
 msgstr "Taslakları gizle"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Hide editor"
+msgstr "Editörü gizle"
 
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesToolbar.tsx
 msgid "Hide file tree"
@@ -12174,6 +12245,10 @@ msgstr "Mesajlar yüklenemedi."
 msgid "Messages sent"
 msgstr "Gönderilen mesajlar"
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Mica"
+msgstr "Mica"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -12951,6 +13026,7 @@ msgstr "Grupta yeni sekme"
 #: src/renderer/views/MainView/parts/Sidebar/parts/NewThreadButton.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/QuickComposerOverlay/QuickComposerOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
 msgid "New thread"
 msgstr "Yeni konu"
 
@@ -13758,6 +13834,7 @@ msgstr "yok"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/components/providers/settings/ClaudeProfileSettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "None"
 msgstr "Yok"
 
@@ -14460,6 +14537,10 @@ msgstr "Model seçiciyi açın"
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Open thread in summary"
 msgstr "Konuyu özette aç"
+
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
+msgid "Open threads"
+msgstr "Açık konular"
 
 #. placeholder {0}: index + 1
 #. placeholder {1}: videos.length
@@ -15411,8 +15492,8 @@ msgstr "Poracode kayıtlı verileri veya bir arka plan hizmetini bekliyor olabil
 #~ msgstr "Poracode öneriyi asla çalıştırmaz — eklemek yalnızca besteciyi doldurur; düzenleyip göndermek size kalır."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Poracode on X"
-msgstr "X'te Poracode"
+#~ msgid "Poracode on X"
+#~ msgstr "X'te Poracode"
 
 #: src/renderer/components/skills/SkillImportModal.tsx
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
@@ -15720,8 +15801,8 @@ msgid "Print"
 msgstr "Yazdır"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
-msgid "Privacy Policy"
-msgstr "Gizlilik Politikası"
+#~ msgid "Privacy Policy"
+#~ msgstr "Gizlilik Politikası"
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Privacy, licenses and engine management"
@@ -18431,6 +18512,7 @@ msgstr "SDK yüklü değil"
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Search"
 msgstr "Ara"
 
@@ -19004,6 +19086,7 @@ msgstr "Bu oturum başlatıldığında sabitlendi — eklentileri değiştirmek 
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarFooterNav.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Settings"
 msgstr "Ayarlar"
 
@@ -19185,6 +19268,10 @@ msgstr "Panoları oluşturucunun üstünde göster"
 #: src/renderer/components/thread/ThreadDocksPlacementToggle.tsx
 msgid "Show docks in the right panel"
 msgstr "Panoları sağ panelde göster"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Show editor"
+msgstr "Editörü göster"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/UsageDisplaySettings.tsx
@@ -19769,6 +19856,10 @@ msgstr "Kaynak"
 msgid "Source branch {branch} moved before the worktree was created"
 msgstr "Kaynak şube {branch}, çalışma ağacı oluşturulmadan önce taşındı"
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Source Control"
+msgstr "Kaynak Denetimi"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Source control command {command} failed. Check its installation and host login."
 msgstr "Kaynak denetimi komutu {command} başarısız oldu. Kurulumunu ve sunucu oturumunu kontrol edin."
@@ -20088,6 +20179,10 @@ msgstr "Durum"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Status"
 msgstr "Durum"
+
+#: src/renderer/viscosity/layout/statusBar/ViscosityStatusBar.tsx
+msgid "Status bar"
+msgstr "Durum çubuğu"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Status is inferred from terminal output (L2). Install the hook plugin in settings for structured updates."
@@ -20427,6 +20522,14 @@ msgstr "Bu sohbeti temsilci moduna geçir"
 msgid "Switch this chat to plan mode"
 msgstr "Bu sohbeti plan moduna geçir"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to dark theme"
+msgstr "Karanlık temaya geç"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to light theme"
+msgstr "Açık temaya geç"
+
 #: src/renderer/commands/registry.ts
 msgid "Switch to the next chat"
 msgstr "Sonraki sohbete geç"
@@ -20512,6 +20615,7 @@ msgstr "Senkronizasyon…"
 
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/i18n/locales.ts
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "System"
 msgstr "Sistem"
@@ -21053,6 +21157,10 @@ msgstr "Deneyin durumu güvenli bir şekilde yüklenemeyecek veya değiştirilem
 msgid "The file path is outside the project."
 msgstr "Dosya yolu projenin dışında."
 
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "The file tree is open in the full-screen editor"
+msgstr "Dosya ağacı tam ekran editörde açık"
+
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 msgid "The finding is no longer available."
 msgstr "Bulgu artık kullanılamıyor."
@@ -21576,6 +21684,10 @@ msgstr "Ses isteği geçersiz veya süresi dolmuş. Lütfen tekrar deneyin."
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The watched pull request changed. Review the watch before continuing."
 msgstr "İzlenen çekme isteği değişti. Devam etmeden önce izlemeyi kontrol edin."
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "The Windows 11 backdrop behind the translucent sidebar. Auto uses Mica; None keeps the in-app tint."
+msgstr "Yarı saydam kenar çubuğunun arkasındaki Windows 11 arka plan materyali. “Otomatik” Mica'yı kullanır; “Yok” uygulama içi tonu korur."
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the Windows user"
@@ -22652,6 +22764,10 @@ msgstr "Eşleştirme kodunu göstermek için uzaktan erişimi açın."
 msgid "Turn on tracking to monitor quotas and cost."
 msgstr "Kotaları ve maliyeti izlemek için izlemeyi açın."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Turn on Translucent sidebar to use a Windows 11 backdrop."
+msgstr "Windows 11 arka plan materyalini kullanmak için “Yarı saydam kenar çubuğu” seçeneğini açın."
+
 #: src/renderer/views/SettingsOverlay/parts/GitSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #~ msgid "Turn on Watch PR automatically for pull requests you create in Poracode."
@@ -22705,6 +22821,16 @@ msgstr "Dosya aramak için yazın"
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/userInputForm.tsx
 msgid "Type your answer…"
 msgstr "Yanıtınızı yazın…"
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
+msgstr "Uygulama arayüzünün yazı tipi; kod, sabit genişlikli yazı tipini korur. Bu cihazda kaydedilir."
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "UI font"
+msgstr "Arayüz yazı tipi"
 
 #. placeholder {0}: agent.label
 #. placeholder {0}: agentStatus.label
@@ -23940,6 +24066,10 @@ msgstr "Mevcut Hex kurulumunuzu kullanma. Poracode bunu değiştirmeyecektir."
 msgid "v{0} available"
 msgstr "v{0} mevcut"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "v{version}"
+msgstr "v{version}"
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 msgid "Valid feedback is posted publicly on GitHub with your app version and platform."
 msgstr "Geçerli geri bildirimler, uygulama sürümünüz ve platformunuzla birlikte GitHub'da herkese açık olarak yayınlanır."
@@ -23983,6 +24113,10 @@ msgstr "Doğrula"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Version"
 msgstr "Sürüm"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Version {version}"
+msgstr "Sürüm {version}"
 
 #: src/renderer/components/common/FeedbackDialog.tsx
 #~ msgid "Version and platform only. No chat history, code, or project paths."
@@ -24333,9 +24467,7 @@ msgstr "Web araması"
 msgid "Web server"
 msgstr "Web sunucusu"
 
-#. External link to the product website
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordsPage.tsx
-#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/AcpRegistrySettings.tsx
 msgid "Website"
 msgstr "Web sitesi"
@@ -24481,6 +24613,10 @@ msgstr "Geniş çoklu dil desteğine sahip Whisper."
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 msgid "Will run in this environment:"
 msgstr "Bu ortam içinde çalışacak:"
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Window material"
+msgstr "Pencere materyali"
 
 #: src/renderer/components/mcp/McpProjectDestinationDropdown.tsx
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx

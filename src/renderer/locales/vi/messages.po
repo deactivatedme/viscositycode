@@ -649,6 +649,10 @@ msgstr "{days} ngày trước"
 #~ msgid "{envOrAgentLabel} needs authentication."
 #~ msgstr "{envOrAgentLabel} cần xác thực."
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{errors, plural, one {# agent stopped with an error} other {# agents stopped with an error}}"
+msgstr "{errors, plural, one {# tác nhân đã dừng do lỗi} other {# tác nhân đã dừng do lỗi}}"
+
 #: src/mobile/views/pr/PrOverviewPage.tsx
 #~ msgid "{filesCount, plural, one {# file changed} other {# files changed}}"
 #~ msgstr "{filesCount, plural, one {# tệp đã đổi} other {# tệp đã đổi}}"
@@ -714,6 +718,10 @@ msgstr "{issues, plural, other {Đang có # issue dành cho người mới}}. B�
 #: src/renderer/i18n/sharedMessages.ts
 #~ msgid "{label} · Previous sessions; sign in again for new threads."
 #~ msgstr "{label} · Phiên trước; đăng nhập lại cho các luồng mới."
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "{label} ({badge})"
+msgstr "{label} ({badge})"
 
 #: src/renderer/components/thread/ThreadDetailsDocks.tsx
 #~ msgid "{label} account usage"
@@ -988,9 +996,17 @@ msgstr "{visibleCount} trong số {totalCount} hiển thị"
 #~ msgid "{visibleSidebarShortcutCount}/{0} selected"
 #~ msgstr "Đã chọn {visibleSidebarShortcutCount}/{0}"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{waiting, plural, one {# agent waiting for you} other {# agents waiting for you}}"
+msgstr "{waiting, plural, one {# tác nhân đang chờ bạn} other {# tác nhân đang chờ bạn}}"
+
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
 msgid "{weekdayPct}% Mon–Fri"
 msgstr "{weekdayPct}% T2–T6"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "{working, plural, one {# agent working} other {# agents working}}"
+msgstr "{working, plural, one {# tác nhân đang làm việc} other {# tác nhân đang làm việc}}"
 
 #: src/renderer/views/SettingsOverlay/parts/CursorSdkRuntimeSetup.tsx
 msgid "@cursor/sdk is not installed."
@@ -1021,8 +1037,8 @@ msgid "/skill-creator-poracode Create a new managed skill for {destinationLabel}
 msgstr "/skill-creator-poracode Tạo một skill được quản lý mới cho {destinationLabel}."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
-msgstr "© {currentYear} Serhii Vecherenko. Mọi quyền được bảo lưu."
+#~ msgid "© {currentYear} Serhii Vecherenko. All rights reserved."
+#~ msgstr "© {currentYear} Serhii Vecherenko. Mọi quyền được bảo lưu."
 
 #. placeholder {0}: props.crewRoleCount ?? 0
 #. placeholder {0}: props.model.binding.roles.length
@@ -1325,6 +1341,10 @@ msgstr "Hủy bỏ hợp nhất"
 msgid "About"
 msgstr "Giới thiệu"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "About this version"
+msgstr "Giới thiệu phiên bản này"
+
 #: src/renderer/components/providers/HostUsageInfo.tsx
 msgid "About usage"
 msgstr "Thông tin sử dụng"
@@ -1428,6 +1448,10 @@ msgstr "Chưa cài ACP"
 #~ msgid "ACP uses the installed Cursor Agent. SDK loads an external @cursor/sdk package."
 #~ msgstr "ACP sử dụng Cursor Agent đã cài đặt. SDK tải một gói @cursor/sdk bên ngoài."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Acrylic"
+msgstr "Acrylic"
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/ActionsSection.tsx
 msgid "Action command"
 msgstr "Lệnh hành động"
@@ -1497,6 +1521,10 @@ msgstr "Hoạt động hôm qua"
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 msgid "Activity"
 msgstr "Hoạt động"
+
+#: src/renderer/viscosity/layout/activityBar/ActivityBar.tsx
+msgid "Activity bar"
+msgstr "Thanh hoạt động"
 
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -1577,6 +1605,10 @@ msgstr "Thêm dự án trong môi trường này trước khi đăng nhập."
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Add a project on this environment to start"
 msgstr "Thêm một dự án trong môi trường này để bắt đầu"
+
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "Add a project to browse its files"
+msgstr "Thêm một dự án để duyệt các tệp của nó"
 
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Add a project to see pull requests."
@@ -1952,6 +1984,8 @@ msgstr "Màn hình của tác tử"
 #: src/renderer/views/SettingsOverlay/parts/SettingsSidebar.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/ActivitySidebarViews.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Agents"
 msgstr "Tác nhân"
 
@@ -2671,6 +2705,7 @@ msgstr "Authorization: Bearer token"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "Auto"
 msgstr "Tự động"
 
@@ -2963,6 +2998,11 @@ msgstr "Kích thước phông chữ cơ bản cho bảng điều khiển thiết
 msgid "Base URL"
 msgstr "URL cơ sở"
 
+#. About page attribution: the upstream project this app is based on and its license
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Based on {UPSTREAM_BRAND_NAME} (Apache-2.0)"
+msgstr "Dựa trên {UPSTREAM_BRAND_NAME} (Apache-2.0)"
+
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Bash output"
 msgstr "Đầu ra Bash"
@@ -3083,6 +3123,14 @@ msgstr "Nhánh"
 msgid "Branch '{branch}' has uncommitted changes in '{path}' — commit or stash them before merging"
 msgstr "Nhánh '{branch}' có những thay đổi chưa được cam kết trong '{path}' — cam kết hoặc lưu trữ chúng trước khi hợp nhất"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch}"
+msgstr "Nhánh {branch}"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Branch {branch} (worktree {worktreePath})"
+msgstr "Nhánh {branch} (cây làm việc {worktreePath})"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "branch {branch}: {detail}"
 msgstr "nhánh {branch}: {detail}"
@@ -3201,6 +3249,7 @@ msgstr "Duyệt, kiểm tra và thử nghiệm trang web trong trình duyệt t�
 #: src/renderer/views/MainView/parts/SidebarHeaderControls.tsx
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Browser"
 msgstr "Trình duyệt"
 
@@ -4254,6 +4303,11 @@ msgstr "Nhân bản…"
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Close"
 msgstr "Đóng"
+
+#. placeholder {0}: thread.title
+#: src/renderer/viscosity/layout/tabs/ThreadTab.tsx
+msgid "Close {0}"
+msgstr "Đóng {0}"
 
 #: src/mobile/views/BrowserView.tsx
 #~ msgid "Close {closeTarget}"
@@ -5938,8 +5992,8 @@ msgid "Creating worktree…"
 msgstr "Đang tạo cây làm việc…"
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Creator on X"
-msgstr "Nhà phát triển trên X"
+#~ msgid "Creator on X"
+#~ msgstr "Nhà phát triển trên X"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Credential missing"
@@ -7620,6 +7674,7 @@ msgstr "Chỉnh sửa tiêu đề"
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/views/FileEditorOverlay/FileEditorOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
 msgid "Editor"
 msgstr "Trình chỉnh sửa"
 
@@ -8282,6 +8337,10 @@ msgstr "Khám phá và lập kế hoạch"
 #~ msgid "Explore, build and review a feature."
 #~ msgstr "Khám phá, xây dựng và đánh giá một tính năng."
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Explorer"
+msgstr "Trình khám phá"
+
 #: src/renderer/components/crew/crewRoleTemplates.ts
 #~ msgid "Explores code and docs"
 #~ msgstr "Khám phá mã và tài liệu"
@@ -8293,6 +8352,10 @@ msgstr "Khám phá mã nguồn, làm trọn tác vụ của mô hình chính, ch
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Exponential backoff"
 msgstr "Thời gian chờ lũy thừa"
+
+#: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
+msgid "Export as JSON"
+msgstr "Xuất dưới dạng JSON"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Export MCP servers"
@@ -9094,6 +9157,10 @@ msgstr "fx"
 msgid "Games & fun"
 msgstr "Trò chơi và giải trí"
 
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+msgid "Geist"
+msgstr "Geist"
+
 #: src/renderer/components/providers/gemini/manifest.ts
 msgid "Gemini"
 msgstr "Gemini"
@@ -9633,6 +9700,10 @@ msgstr "Ẩn chi tiết sử dụng ngữ cảnh"
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 msgid "Hide drafts"
 msgstr "Ẩn bản nháp"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Hide editor"
+msgstr "Ẩn trình chỉnh sửa"
 
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesToolbar.tsx
 msgid "Hide file tree"
@@ -12174,6 +12245,10 @@ msgstr "Không thể tải các tin nhắn."
 msgid "Messages sent"
 msgstr "Tin nhắn đã gửi"
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Mica"
+msgstr "Mica"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -12951,6 +13026,7 @@ msgstr "Tab mới trong nhóm"
 #: src/renderer/views/MainView/parts/Sidebar/parts/NewThreadButton.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/QuickComposerOverlay/QuickComposerOverlay.tsx
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
 msgid "New thread"
 msgstr "Luồng mới"
 
@@ -13758,6 +13834,7 @@ msgstr "không có"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/components/providers/settings/ClaudeProfileSettings.tsx
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "None"
 msgstr "Không có"
 
@@ -14460,6 +14537,10 @@ msgstr "Mở bộ chọn mô hình"
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Open thread in summary"
 msgstr "Mở luồng trong phần tóm tắt"
+
+#: src/renderer/viscosity/layout/tabs/ViscosityTabStrip.tsx
+msgid "Open threads"
+msgstr "Các luồng đang mở"
 
 #. placeholder {0}: index + 1
 #. placeholder {1}: videos.length
@@ -15411,8 +15492,8 @@ msgstr "Poracode có thể đang chờ dữ liệu đã lưu hoặc một dịch
 #~ msgstr "Poracode không bao giờ chạy gợi ý — chèn chỉ điền vào bộ soạn để bạn chỉnh sửa và gửi."
 
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
-msgid "Poracode on X"
-msgstr "Poracode trên X"
+#~ msgid "Poracode on X"
+#~ msgstr "Poracode trên X"
 
 #: src/renderer/components/skills/SkillImportModal.tsx
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
@@ -15720,8 +15801,8 @@ msgid "Print"
 msgstr "In"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
-msgid "Privacy Policy"
-msgstr "Chính sách quyền riêng tư"
+#~ msgid "Privacy Policy"
+#~ msgstr "Chính sách quyền riêng tư"
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Privacy, licenses and engine management"
@@ -18431,6 +18512,7 @@ msgstr "Chưa cài SDK"
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Search"
 msgstr "Tìm kiếm"
 
@@ -19004,6 +19086,7 @@ msgstr "Được cố định khi phiên này bắt đầu — hãy tạo luồn
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarFooterNav.tsx
 #: src/renderer/views/MainView/parts/Sidebar/Sidebar.tsx
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
 msgid "Settings"
 msgstr "Cài đặt"
 
@@ -19185,6 +19268,10 @@ msgstr "Hiện dock phía trên trình soạn"
 #: src/renderer/components/thread/ThreadDocksPlacementToggle.tsx
 msgid "Show docks in the right panel"
 msgstr "Hiện dock trong bảng bên phải"
+
+#: src/renderer/viscosity/layout/tabs/EditorTab.tsx
+msgid "Show editor"
+msgstr "Hiện trình chỉnh sửa"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/UsageDisplaySettings.tsx
@@ -19769,6 +19856,10 @@ msgstr "Mã nguồn"
 msgid "Source branch {branch} moved before the worktree was created"
 msgstr "Nhánh nguồn {branch} đã di chuyển trước khi cây làm việc được tạo"
 
+#: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+msgid "Source Control"
+msgstr "Quản lý mã nguồn"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Source control command {command} failed. Check its installation and host login."
 msgstr "Lệnh quản lý mã nguồn {command} thất bại. Kiểm tra cài đặt và đăng nhập máy chủ."
@@ -20088,6 +20179,10 @@ msgstr "Trạng thái"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Status"
 msgstr "Trạng thái"
+
+#: src/renderer/viscosity/layout/statusBar/ViscosityStatusBar.tsx
+msgid "Status bar"
+msgstr "Thanh trạng thái"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Status is inferred from terminal output (L2). Install the hook plugin in settings for structured updates."
@@ -20427,6 +20522,14 @@ msgstr "Chuyển cuộc trò chuyện này sang chế độ tác nhân"
 msgid "Switch this chat to plan mode"
 msgstr "Chuyển cuộc trò chuyện này sang chế độ lập kế hoạch"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to dark theme"
+msgstr "Chuyển sang chủ đề tối"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Switch to light theme"
+msgstr "Chuyển sang chủ đề sáng"
+
 #: src/renderer/commands/registry.ts
 msgid "Switch to the next chat"
 msgstr "Chuyển đến cuộc trò chuyện tiếp theo"
@@ -20512,6 +20615,7 @@ msgstr "Đang đồng bộ…"
 
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/i18n/locales.ts
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "System"
 msgstr "Hệ thống"
@@ -21053,6 +21157,10 @@ msgstr "Trạng thái thử nghiệm quá lớn để tải hoặc thay đổi m
 msgid "The file path is outside the project."
 msgstr "Đường dẫn tệp nằm ngoài dự án."
 
+#: src/renderer/viscosity/layout/activityBar/ExplorerSidebarView.tsx
+msgid "The file tree is open in the full-screen editor"
+msgstr "Cây tệp đang mở trong trình chỉnh sửa toàn màn hình"
+
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 msgid "The finding is no longer available."
 msgstr "Kết quả không còn khả dụng."
@@ -21576,6 +21684,10 @@ msgstr "Yêu cầu giọng nói không hợp lệ hoặc đã hết hạn. Vui l
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The watched pull request changed. Review the watch before continuing."
 msgstr "Yêu cầu hợp nhất đang theo dõi đã thay đổi. Kiểm tra cấu hình theo dõi trước khi tiếp tục."
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "The Windows 11 backdrop behind the translucent sidebar. Auto uses Mica; None keeps the in-app tint."
+msgstr "Hiệu ứng nền Windows 11 phía sau thanh bên trong suốt. “Tự động” dùng Mica; “Không có” giữ nguyên lớp màu trong ứng dụng."
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the Windows user"
@@ -22652,6 +22764,10 @@ msgstr "Bật quyền truy cập từ xa để hiển thị mã ghép nối."
 msgid "Turn on tracking to monitor quotas and cost."
 msgstr "Bật theo dõi để giám sát hạn mức và chi phí."
 
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Turn on Translucent sidebar to use a Windows 11 backdrop."
+msgstr "Bật “Thanh bên trong suốt” để dùng hiệu ứng nền của Windows 11."
+
 #: src/renderer/views/SettingsOverlay/parts/GitSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #~ msgid "Turn on Watch PR automatically for pull requests you create in Poracode."
@@ -22705,6 +22821,16 @@ msgstr "Nhập để tìm kiếm tệp"
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/userInputForm.tsx
 msgid "Type your answer…"
 msgstr "Nhập câu trả lời…"
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
+msgstr "Kiểu chữ cho giao diện ứng dụng; mã vẫn dùng phông chữ đơn cách. Được lưu trên thiết bị này."
+
+#: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+msgid "UI font"
+msgstr "Phông chữ giao diện"
 
 #. placeholder {0}: agent.label
 #. placeholder {0}: agentStatus.label
@@ -23940,6 +24066,10 @@ msgstr "Sử dụng cài đặt Hex hiện có của bạn. Poracode sẽ không
 msgid "v{0} available"
 msgstr "v{0} có sẵn"
 
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "v{version}"
+msgstr "v{version}"
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 msgid "Valid feedback is posted publicly on GitHub with your app version and platform."
 msgstr "Phản hồi hợp lệ sẽ được đăng công khai trên GitHub kèm phiên bản ứng dụng và nền tảng của bạn."
@@ -23983,6 +24113,10 @@ msgstr "Xác minh"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Version"
 msgstr "Phiên bản"
+
+#: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
+msgid "Version {version}"
+msgstr "Phiên bản {version}"
 
 #: src/renderer/components/common/FeedbackDialog.tsx
 #~ msgid "Version and platform only. No chat history, code, or project paths."
@@ -24333,9 +24467,7 @@ msgstr "Tìm kiếm trên web"
 msgid "Web server"
 msgstr "Máy chủ web"
 
-#. External link to the product website
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordsPage.tsx
-#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/AcpRegistrySettings.tsx
 msgid "Website"
 msgstr "Trang web"
@@ -24481,6 +24613,10 @@ msgstr "Whisper với sự hỗ trợ đa ngôn ngữ rộng rãi."
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 msgid "Will run in this environment:"
 msgstr "Sẽ chạy trong môi trường này:"
+
+#: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
+msgid "Window material"
+msgstr "Chất liệu cửa sổ"
 
 #: src/renderer/components/mcp/McpProjectDestinationDropdown.tsx
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
