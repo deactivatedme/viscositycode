@@ -1,4 +1,13 @@
-import { CREATOR_X_URL, PORACODE_REPO_URL, PORACODE_X_URL } from "@/shared/communityLinks";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+// ViscosityCode: fork links (hidden until the fork has a repository) + upstream attribution.
+import {
+  communityIssuesUrl,
+  communityLicenseUrl,
+  communityReleasesUrl,
+  communityRepositoryUrl,
+} from "@/shared/communityLinks";
+import { brandText, UPSTREAM_BRAND_NAME } from "@/shared/brand";
+import { UPSTREAM_REPOSITORY_URL } from "@/shared/viscosityRelease";
 import { Button } from "@heroui/react";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -11,9 +20,6 @@ import { productNameFor } from "@/shared/channel";
 import { SettingsPage } from "./SettingsForm";
 import appIconStableUrl from "../../../../../build/icon.png";
 import appIconNightlyUrl from "../../../../../build/icon-nightly.png";
-
-const WEBSITE_URL = "https://poracode.com/";
-const currentYear = new Date().getFullYear();
 
 function AboutLink(props: { href: string; children: React.ReactNode }) {
   return (
@@ -116,7 +122,11 @@ function UpdateButton() {
 export function AboutSettings() {
   const { t } = useLingui();
   const bridge = readBridge();
-  const productName = productNameFor(bridge.channel);
+  const productName = brandText(productNameFor(bridge.channel)); // ViscosityCode
+  const repositoryUrl = communityRepositoryUrl();
+  const releasesUrl = communityReleasesUrl();
+  const issuesUrl = communityIssuesUrl();
+  const licenseUrl = communityLicenseUrl();
   const appIconUrl = bridge.channel === "nightly" ? appIconNightlyUrl : appIconStableUrl;
 
   return (
@@ -168,39 +178,36 @@ export function AboutSettings() {
         </div>
       </div>
 
-      <div className="mt-8 space-y-3 border-t border-[var(--hairline)] pt-6">
-        <AboutLink href={WEBSITE_URL}>
-          <Trans comment="External link to the product website">Website</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={PORACODE_REPO_URL}>
-          <Trans>GitHub Repository</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={PORACODE_X_URL}>
-          <Trans>Poracode on X</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={CREATOR_X_URL}>
-          <Trans>Creator on X</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={`${PORACODE_REPO_URL}/releases`}>
-          <Trans comment="Link to the list of release notes">Changelog</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={`${PORACODE_REPO_URL}/issues`}>
-          <Trans>Report an Issue</Trans>
-        </AboutLink>
-        <br />
-        <AboutLink href={`${PORACODE_REPO_URL}/blob/master/LICENSE`}>
-          <Trans comment="Link to the license file">License</Trans>
+      {repositoryUrl ? (
+        <div className="mt-8 flex flex-col items-start gap-3 border-t border-[var(--hairline)] pt-6">
+          <AboutLink href={repositoryUrl}>
+            <Trans>GitHub Repository</Trans>
+          </AboutLink>
+          {releasesUrl ? (
+            <AboutLink href={releasesUrl}>
+              <Trans comment="Link to the list of release notes">Changelog</Trans>
+            </AboutLink>
+          ) : null}
+          {issuesUrl ? (
+            <AboutLink href={issuesUrl}>
+              <Trans>Report an Issue</Trans>
+            </AboutLink>
+          ) : null}
+          {licenseUrl ? (
+            <AboutLink href={licenseUrl}>
+              <Trans comment="Link to the license file">License</Trans>
+            </AboutLink>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-8">
+        <AboutLink href={UPSTREAM_REPOSITORY_URL}>
+          <Trans comment="About page attribution: the upstream project this app is based on and its license">
+            Based on {UPSTREAM_BRAND_NAME} (Apache-2.0)
+          </Trans>
         </AboutLink>
       </div>
-
-      <p className="mt-8 text-xs text-muted">
-        <Trans>&copy; {currentYear} Serhii Vecherenko. All rights reserved.</Trans>
-      </p>
     </SettingsPage>
   );
 }

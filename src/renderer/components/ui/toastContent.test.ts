@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import { normalizeToastContent } from "./toastContent";
 
 describe("normalizeToastContent", () => {
@@ -39,6 +42,35 @@ describe("normalizeToastContent", () => {
     expect(normalizeToastContent("danger", message, "Existing details")).toEqual({
       title: "Update error",
       description: `Existing details\n\n${"detail ".repeat(40).trimEnd()}`,
+    });
+  });
+
+  // ViscosityCode: toasts show raw engine text; it names the fork, paths stay verbatim.
+  it("brands upstream product names in toast text without touching paths", () => {
+    expect(
+      normalizeToastContent(
+        "danger",
+        "Poracode could not open /Users/me/Poracode/notes.md",
+        "Restart Poracode and try again.",
+      ),
+    ).toEqual({
+      title: `${BRAND_NAME} could not open /Users/me/Poracode/notes.md`,
+      description: `Restart ${BRAND_NAME} and try again.`,
+    });
+    expect(normalizeToastContent("default", "Poracode updated", undefined)).toEqual({
+      title: `${BRAND_NAME} updated`,
+      description: undefined,
+    });
+    const node: ReactNode = ["Poracode"];
+    expect(normalizeToastContent("success", node, node)).toEqual({
+      title: node,
+      description: node,
+    });
+
+    const long = `Update error: Poracode ${"detail ".repeat(40)}`;
+    expect(normalizeToastContent("danger", long, undefined)).toEqual({
+      title: "Update error",
+      description: `${BRAND_NAME} ${"detail ".repeat(40).trimEnd()}`,
     });
   });
 

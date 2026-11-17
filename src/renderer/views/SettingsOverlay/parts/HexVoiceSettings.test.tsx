@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -183,7 +184,9 @@ it("shows external engines without a version", async () => {
   fireEvent.click(await screen.findByRole("button", { name: "Manage…" }));
   const dialog = await screen.findByRole("dialog", { name: "Hex setup" });
   expect(
-    within(dialog).getByText("Using your existing Hex installation. Poracode will not modify it."),
+    within(dialog).getByText(
+      "Using your existing Hex installation. ViscosityCode will not modify it.",
+    ),
   ).toBeVisible();
   expect(within(dialog).queryByText(/null/)).not.toBeInTheDocument();
 });

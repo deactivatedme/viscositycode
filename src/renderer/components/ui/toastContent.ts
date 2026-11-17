@@ -1,6 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { msg } from "@lingui/core/macro";
 import { i18n } from "@/renderer/i18n/i18n";
+// ViscosityCode: toast text is often raw engine text; brand it for display only.
+import { brandDisplayText } from "@/renderer/i18n/brandDisplay";
 
 const LONG_ERROR_TITLE_CHARS = 160;
 const LONG_ERROR_TITLE_LINES = 4;
@@ -65,11 +68,19 @@ function mergeLongErrorDescription(current: ReactNode | undefined, fallback: str
   return `${current}\n\n${fallback}`;
 }
 
+function brandDisplayNode<T extends ReactNode>(node: T): T {
+  return typeof node === "string" ? (brandDisplayText(node) as T) : node;
+}
+
 export function normalizeToastContent(
   variant: ReactNode,
-  title: ReactNode,
-  description: ReactNode | undefined,
+  rawTitle: ReactNode,
+  rawDescription: ReactNode | undefined,
 ): ToastContentParts {
+  // ViscosityCode: only the rendered text changes; the queued toast content and
+  // its actions (for example Copy) keep the raw text.
+  const title = brandDisplayNode(rawTitle);
+  const description = brandDisplayNode(rawDescription);
   if (variant !== "danger" || typeof title !== "string") {
     return { title, description };
   }

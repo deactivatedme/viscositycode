@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import type { ComponentProps, Context } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -345,7 +346,9 @@ describe("block-only projection through the real chat Markdown configuration", (
     const text = "**Theme**\n\n```typescript\nconst themed = true;\n```\n";
     const pair = renderPair(text);
     await waitFor(() =>
-      expect(pair.candidate.container.querySelector(".lc-shiki pre")).toHaveClass("github-dark"),
+      expect(pair.candidate.container.querySelector(".lc-shiki pre")).toHaveClass(
+        "github-dark-default",
+      ),
     );
     await pair.expectEqual();
     const darkMarkup = pair.candidate.container.querySelector(".lc-shiki")?.innerHTML;
@@ -355,7 +358,9 @@ describe("block-only projection through the real chat Markdown configuration", (
     });
     await waitFor(() => expect(i18n.locale).toBe("es"));
     await waitFor(() =>
-      expect(pair.candidate.container.querySelector(".lc-shiki pre")).toHaveClass("github-light"),
+      expect(pair.candidate.container.querySelector(".lc-shiki pre")).toHaveClass(
+        "github-light-default",
+      ),
     );
     await pair.expectEqual();
     expect(pair.candidate.container.querySelector(".lc-shiki")?.innerHTML).not.toBe(darkMarkup);

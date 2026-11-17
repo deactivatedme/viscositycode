@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -499,7 +500,7 @@ describe("DevinProfileProviderSettings", () => {
     renderExpandedSettings(
       <DevinAgentSettingsPanel agentKind="devin:work" statuses={[]} wslDistros={[]} />,
     );
-    expect(screen.getByText("Configuration from a newer Poracode")).toBeInTheDocument();
+    expect(screen.getByText("Configuration from a newer ViscosityCode")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save Devin profile" })).not.toBeInTheDocument();
     expect(instance.config).toBe(stored);
   });
@@ -755,7 +756,7 @@ describe("DevinProfileRowSubtitle via the profile list", () => {
     expect(screen.getByText("Same login as Devin")).toBeInTheDocument();
     expect(screen.getByText("Own isolated login")).toBeInTheDocument();
     expect(screen.getByText(/Shares Owner/)).toBeInTheDocument();
-    expect(screen.getByText(/newer Poracode format/i)).toBeInTheDocument();
+    expect(screen.getByText(/newer ViscosityCode format/i)).toBeInTheDocument();
   });
 });
 

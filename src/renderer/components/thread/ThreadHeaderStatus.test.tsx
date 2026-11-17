@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Thread } from "@/shared/contracts";
+import { BRAND_NAME } from "@/shared/brand";
 import { useAppStore } from "@/renderer/state/appStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { ThreadHeaderStatusButton } from "./ThreadHeaderStatus";
@@ -121,5 +123,26 @@ describe("ThreadHeaderStatusButton", () => {
       getByRole("button", { name: "Claude: Resuming session…. Hover for status details." }),
     ).toBeInTheDocument();
     expect(getByText("Resuming session…")).toBeInTheDocument();
+  });
+
+  // ViscosityCode: engine text names the fork on screen; the thread keeps the raw text.
+  it("shows a status error with the fork's name and its paths verbatim", () => {
+    useThreadHasBackgroundActivityMock.mockReturnValue(false);
+    const raw = "Poracode could not resume the session in /Users/me/Poracode-master.";
+    const thread: Thread = { ...makeThread("idle"), status: "error", errorMessage: raw };
+
+    const { getByText } = render(
+      <ThreadHeaderStatusButton
+        threadId={thread.id}
+        fallbackThread={thread}
+        fallbackAgentKind="claude"
+        agentLabel="Claude"
+      />,
+    );
+
+    expect(
+      getByText(`${BRAND_NAME} could not resume the session in /Users/me/Poracode-master.`),
+    ).toBeInTheDocument();
+    expect(thread.errorMessage).toBe(raw);
   });
 });

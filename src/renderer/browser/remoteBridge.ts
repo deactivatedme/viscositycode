@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import type {
   CloseThreadPayload,
   RefreshAgentScope,
@@ -396,7 +398,9 @@ const remoteBridgeOverrides = {
   // SSH-hosted remote environments are driven by the Electron desktop host, which
   // owns the SSH client. Browsers have none, so these stay inert.
   sshDiscoverHosts: () => Promise.resolve([]),
-  sshConnect: () => Promise.reject(new Error("SSH connections require the Poracode desktop app.")),
+  sshConnect: () =>
+    // ViscosityCode: product name
+    Promise.reject(new Error(`SSH connections require the ${BRAND_NAME} desktop app.`)),
   sshDisconnect: () => Promise.resolve(),
   saveClipboardImage: (payload: { threadId: string; data: Uint8Array; extension: string }) =>
     withClient((client) =>

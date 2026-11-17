@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import {
   PORACODE_CLIENT_RUNTIME_VERSION,
   type ClientCapabilities,
@@ -361,7 +363,7 @@ function inferClientRuntime(bridge: PoracodeBridge): ClientRuntime {
 export function readClientRuntime(): ClientRuntime {
   const bridge = window.poracode;
   if (installedRuntime) return installedRuntime;
-  if (!bridge) throw new Error("Poracode client runtime is not installed.");
+  if (!bridge) throw new Error(`${BRAND_NAME} client runtime is not installed.`); // ViscosityCode
   return inferClientRuntime(bridge);
 }
 

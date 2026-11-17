@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Button } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AlertTriangle, Download, RefreshCw, RotateCcw } from "lucide-react";
@@ -5,6 +6,7 @@ import { readBridge } from "@/renderer/bridge";
 import { PixelLoader } from "@/renderer/components/common/PixelLoader";
 import { updateDownloadDisplay } from "@/renderer/state/updateDownloadDisplay";
 import { useUpdateStore } from "@/renderer/state/updateStore";
+import { brandDisplayText } from "@/renderer/i18n/brandDisplay"; // ViscosityCode
 
 interface StartupRecoveryScreenProps {
   onKeepWaiting: () => void;
@@ -87,7 +89,7 @@ export function StartupRecoveryScreen(props: StartupRecoveryScreenProps) {
 
         {phase === "error" && errorMessage ? (
           <p className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-            {errorMessage}
+            {brandDisplayText(errorMessage) /* ViscosityCode: display only */}
           </p>
         ) : null}
 

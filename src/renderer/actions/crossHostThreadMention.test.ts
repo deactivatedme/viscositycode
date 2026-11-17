@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project, PromptSegment, Thread } from "@/shared/contracts";
 import { HOME_PROJECT_ID, HOME_PROJECT_NAME } from "@/shared/homeScope";
@@ -241,7 +243,7 @@ describe("crossHostThreadMention", () => {
       "referenced-thread-pr-5001-prepare-macos-lume-certification-lume5001.md",
     );
     expect(uploaded[0]?.content).toContain(
-      "# Referenced Poracode thread: PR #5001: Prepare macOS Lume certification",
+      `# Referenced ${BRAND_NAME} thread: PR #5001: Prepare macOS Lume certification`,
     );
     expect(uploaded[0]?.content).toContain("Environment: MacBook");
     expect(uploaded[0]?.content).toContain("Branch: cert/lume");

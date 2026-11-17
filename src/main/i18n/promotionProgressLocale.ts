@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { open } from "node:fs/promises";
 import {
   LOCALE_SETTING_VALUES,
@@ -6,6 +7,7 @@ import {
   type SupportedLocale,
 } from "@/shared/locale";
 import { resolvePoracodePaths } from "@/shared/poracodePaths";
+import { brandText } from "@/shared/brand";
 import { PROMOTION_PROGRESS_MESSAGES } from "./promotionMessages.generated";
 
 /** The two strings the pre-renderer promotion window renders. */
@@ -35,9 +37,10 @@ export const PROMOTION_SETTINGS_READ_MAX_BYTES = 1024 * 1024;
 export function promotionProgressStringsFor(
   locale: SupportedLocale,
 ): DesktopPromotionProgressStrings {
+  // ViscosityCode: the generated subset mirrors the upstream catalogs; brand it here.
   return {
-    title: PROMOTION_PROGRESS_MESSAGES["desktop.promotion.progress.title"][locale],
-    body: PROMOTION_PROGRESS_MESSAGES["desktop.promotion.progress.body"][locale],
+    title: brandText(PROMOTION_PROGRESS_MESSAGES["desktop.promotion.progress.title"][locale]),
+    body: brandText(PROMOTION_PROGRESS_MESSAGES["desktop.promotion.progress.body"][locale]),
   };
 }
 

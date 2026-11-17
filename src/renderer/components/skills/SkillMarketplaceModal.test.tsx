@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -101,7 +102,7 @@ describe("SkillMarketplaceModal", () => {
     });
     expect(screen.queryByText("review-code")).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText("Skill availability"));
-    fireEvent.click(await screen.findByRole("option", { name: "Poracode only" }));
+    fireEvent.click(await screen.findByRole("option", { name: "ViscosityCode only" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Install" }));
     await waitFor(() =>

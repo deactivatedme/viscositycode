@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -37,7 +38,7 @@ describe("StartupRecoveryScreen", () => {
     render(<StartupRecoveryScreen onKeepWaiting={onKeepWaiting} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Check for updates" }));
-    fireEvent.click(screen.getByRole("button", { name: "Restart Poracode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Restart ViscosityCode" }));
     fireEvent.click(screen.getByRole("button", { name: "Keep waiting" }));
 
     expect(bridge.checkForUpdate).toHaveBeenCalledOnce();
@@ -80,5 +81,17 @@ describe("StartupRecoveryScreen", () => {
       "aria-valuenow",
     );
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
+  });
+
+  // ViscosityCode: raw error text names the fork on screen; the store keeps it raw.
+  it("shows an update error with the fork's name", () => {
+    const raw = "Poracode could not verify the update in /Applications/Poracode.app.";
+    useUpdateStore.setState({ phase: "error", errorMessage: raw });
+    render(<StartupRecoveryScreen onKeepWaiting={() => undefined} />);
+
+    expect(
+      screen.getByText("ViscosityCode could not verify the update in /Applications/Poracode.app."),
+    ).toBeInTheDocument();
+    expect(useUpdateStore.getState().errorMessage).toBe(raw);
   });
 });

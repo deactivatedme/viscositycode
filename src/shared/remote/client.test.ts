@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 import {
@@ -8,6 +9,7 @@ import {
   remoteMutationMayHaveCommitted,
   type RemoteFetch,
 } from "./client";
+import { BRAND_NAME } from "../brand";
 import { defaultSharedSettings } from "../settings";
 import { AGENT_UPDATE_REQUEST_TIMEOUT_MS } from "../agents/updatePolicy";
 import type { RemoteThreadCommand } from "../contracts/thread";
@@ -94,7 +96,7 @@ describe("RemoteDesktopClient", () => {
     ).resolves.toMatchObject({ accessToken: "lc_access_test" });
     expect(body).toMatchObject({
       client: {
-        label: "Poracode web app",
+        label: `${BRAND_NAME} web app`,
         deviceType: "browser",
       },
     });

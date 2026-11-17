@@ -1,7 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import { SUPPORTED_LOCALES } from "@/shared/locale";
 import {
   PROMOTION_SETTINGS_READ_MAX_BYTES,
@@ -25,6 +27,14 @@ function writeSettings(root: string, content: string): void {
 
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
+
+describe("promotion progress branding", () => {
+  it.each(SUPPORTED_LOCALES)("shows the fork's product name in %s", (locale) => {
+    const strings = promotionProgressStringsFor(locale);
+    expect(strings.title).toBe(BRAND_NAME);
+    expect(`${strings.title} ${strings.body}`).not.toMatch(/\bPoracode\b/u);
+  });
 });
 
 describe("promotion progress locale resolution", () => {

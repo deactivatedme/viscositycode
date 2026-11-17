@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Tooltip } from "@heroui/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -11,6 +12,7 @@ import {
 import { useAppStore } from "@/renderer/state/appStore";
 import { useThread } from "@/renderer/state/useThread";
 import type { TranslateFn } from "@/renderer/i18n/i18n";
+import { brandDisplayText } from "@/renderer/i18n/brandDisplay"; // ViscosityCode
 import { ThreadActionIconButton } from "./ThreadActionIconButton";
 
 export function threadRuntimeStatusLabel(
@@ -97,7 +99,9 @@ function ThreadHeaderStatusTooltipBody(props: {
   });
   const source = thread.threadStatusSource;
   const isServer = source === "server";
-  const errorMessage = thread.status === "error" ? thread.errorMessage?.trim() : undefined;
+  const rawErrorMessage = thread.status === "error" ? thread.errorMessage?.trim() : undefined;
+  // ViscosityCode: engine text can name the upstream product; brand it for display.
+  const errorMessage = rawErrorMessage ? brandDisplayText(rawErrorMessage) : undefined;
 
   return (
     <div className="w-[min(22rem,calc(100vw-2rem))] space-y-3 py-3 pl-2 pr-5 [overflow-wrap:break-word] [word-break:normal] hyphens-none">

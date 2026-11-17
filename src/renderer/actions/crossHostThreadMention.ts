@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { msg } from "@lingui/core/macro";
 import { stripAnsiPreservingLayout } from "@/shared/ansi";
 import type { Project, PromptSegment, Thread } from "@/shared/contracts";
@@ -160,12 +162,12 @@ async function readCrossHostThreadMarkdown(
     : undefined;
   const environmentLabel = project ? readProjectEnvironmentLabel(project) : projected?.desktopId;
   const headerLines = [
-    `# Referenced Poracode thread: ${label}`,
+    `# Referenced ${BRAND_NAME} thread: ${label}`, // ViscosityCode: product name
     ...(environmentLabel ? [`Environment: ${environmentLabel}`] : []),
     ...(snapshotThread?.agentKind ? [`Provider: ${snapshotThread.agentKind}`] : []),
     ...(snapshotThread?.worktreeBranch ? [`Branch: ${snapshotThread.worktreeBranch}`] : []),
     "",
-    "This thread lives on another Poracode environment, so its recorded conversation is attached in this file rather than readable through `read_thread`.",
+    `This thread lives on another ${BRAND_NAME} environment, so its recorded conversation is attached in this file rather than readable through \`read_thread\`.`,
     ...(usedCachedCopy
       ? [
           "Note: The thread's host was unreachable when this message was sent; this file contains the transcript cached on this device.",

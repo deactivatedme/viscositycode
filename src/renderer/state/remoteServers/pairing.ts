@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import {
   PORACODE_REMOTE_PROTOCOL_VERSION,
   REMOTE_BROWSER_FORWARD_VERSION,
@@ -207,7 +209,7 @@ export function createPairingActions(deps: PairingActionDeps) {
       // ceiling — the exchange rejects requests beyond it). A read-only
       // device UI would request REMOTE_VIEWER_SCOPES instead.
       scopes: REMOTE_OPERATOR_SCOPES,
-      client: { label: "Poracode Desktop", deviceType: "desktop" },
+      client: { label: `${BRAND_NAME} Desktop`, deviceType: "desktop" }, // ViscosityCode
       ...(input.certFingerprint ? { certFingerprint: input.certFingerprint } : {}),
     });
     const client = factory(normalized, tokenResult.accessToken);

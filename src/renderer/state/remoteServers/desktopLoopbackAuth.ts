@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { REMOTE_OPERATOR_SCOPES } from "@/shared/remote";
 
 /**
@@ -110,7 +112,7 @@ export async function exchangePairingCredential(
       // (session:operate, projects:manage, …) — not the viewer set an
       // external phone pairs down to.
       scopes: [...REMOTE_OPERATOR_SCOPES],
-      client: { label: "Poracode desktop", deviceType: "desktop" },
+      client: { label: `${BRAND_NAME} desktop`, deviceType: "desktop" }, // ViscosityCode
     }),
   });
   if (response.status === 401 || response.status === 403) {

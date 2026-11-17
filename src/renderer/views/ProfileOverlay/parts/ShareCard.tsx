@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { forwardRef } from "react";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -82,7 +84,7 @@ export const ShareCard = forwardRef<
       </div>
 
       <div className="flex items-center justify-center pt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted/60">
-        Poracode
+        {BRAND_NAME /* ViscosityCode */}
       </div>
     </div>
   );

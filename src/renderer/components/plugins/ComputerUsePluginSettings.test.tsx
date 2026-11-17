@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -79,7 +80,7 @@ describe("ComputerUsePluginSettings", () => {
     capabilityState.localBackend = false;
     render(<ComputerUsePluginSettings />);
     expect(
-      screen.getByText("Locked Computer Use is set up in Poracode on the Mac it runs on."),
+      screen.getByText("Locked Computer Use is set up in ViscosityCode on the Mac it runs on."),
     ).toBeTruthy();
     expect(screen.queryByRole("switch")).toBeNull();
     expect(bridgeMock.installLockedComputerUse).not.toHaveBeenCalled();

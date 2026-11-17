@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -204,7 +205,7 @@ describe("SkillsManager", () => {
 
     expect(screen.getByRole("button", { name: "Marketplace" })).toHaveClass("button--tertiary");
     expect(screen.getByRole("button", { name: "Add skill" })).toHaveClass("button--tertiary");
-    expect(screen.getByText("Poracode only")).toBeInTheDocument();
+    expect(screen.getByText("ViscosityCode only")).toBeInTheDocument();
     expect(screen.queryByText("Global")).not.toBeInTheDocument();
     expect(screen.queryByText("Managed")).not.toBeInTheDocument();
     expect(screen.getByText("Claude Code")).toBeInTheDocument();

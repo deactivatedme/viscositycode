@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { withThreadConfigSubmission } from "@/renderer/actions/threadConfigSubmission";
 import { toast } from "@heroui/react";
 import { msg } from "@lingui/core/macro";
@@ -51,6 +52,9 @@ import { toggleSidebar } from "@/renderer/state/sidebarOverlayStore";
 import { useSidebarUiStore } from "@/renderer/state/sidebarUiStore";
 import { startShellWithToast, writeScriptToShell } from "@/renderer/utils/shellUtils";
 import { openFindForActiveSurface } from "@/renderer/components/find/findController";
+// ViscosityCode: the general command group shows the product name.
+import { BRAND_NAME } from "@/shared/brand";
+import { hasChangelogSource } from "@/shared/changelog";
 import {
   isEditorFocusElement,
   isTerminalFocusElement,
@@ -155,29 +159,31 @@ function baseCommands(): AppCommand[] {
     {
       id: "palette.open",
       title: msg`Search`,
-      group: "Poracode",
+      group: BRAND_NAME,
       showInPalette: false,
       run: () => useCommandPaletteStore.getState().open(),
     },
     {
       id: "settings.open",
       title: msg`Open Settings`,
-      group: "Poracode",
+      group: BRAND_NAME,
       run: openSettings,
     },
     {
       id: "changelog.open",
       title: msg`What's New`,
       subtitle: msg`View the changelog`,
-      group: "Poracode",
+      group: BRAND_NAME,
       keywords: ["changelog", "release notes", "what's new", "updates"],
+      // ViscosityCode: offered only when there is a changelog source.
+      ...(hasChangelogSource() ? {} : { showInPalette: false, showInShortcuts: false }),
       run: openChangelogSettings,
     },
     {
       id: "find.open",
       title: msg`Find`,
       subtitle: msg`Search the current view`,
-      group: "Poracode",
+      group: BRAND_NAME,
       keywords: ["find", "search", "filter"],
       run: (_args, context) => openFindForActiveSurface(context?.target),
     },
@@ -185,7 +191,7 @@ function baseCommands(): AppCommand[] {
       id: "sidebar.toggle",
       title: msg`Toggle sidebar`,
       subtitle: msg`Show or hide the sidebar`,
-      group: "Poracode",
+      group: BRAND_NAME,
       run: toggleSidebar,
     },
     {
@@ -228,7 +234,7 @@ function baseCommands(): AppCommand[] {
     {
       id: "thread.search.open",
       title: msg`Search`,
-      group: "Poracode",
+      group: BRAND_NAME,
       showInPalette: false,
       showInShortcuts: false,
       run: () => useCommandPaletteStore.getState().open(),
@@ -433,7 +439,7 @@ function baseCommands(): AppCommand[] {
       id: "tab.next",
       title: msg`Next tab`,
       subtitle: msg`Switch to the next tab`,
-      group: "Poracode",
+      group: BRAND_NAME,
       // Context-aware tab switching: cycles whichever surface holds focus — the
       // editor tab strip or the terminal tab strip. thread.next/previous own the
       // same chords elsewhere but stand down inside the editor/terminal (see
@@ -445,7 +451,7 @@ function baseCommands(): AppCommand[] {
       id: "tab.previous",
       title: msg`Previous tab`,
       subtitle: msg`Switch to the previous tab`,
-      group: "Poracode",
+      group: BRAND_NAME,
       when: "editorFocus || terminalFocus",
       run: (_args, context) => switchFocusedSurfaceTab("previous", context?.target),
     },

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // @vitest-environment node
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -108,6 +109,16 @@ describe("searchSettings", () => {
     const anchors = searchSettings("appearance mode", t).map((result) => result.anchor);
     expect(anchors).toContain("appearance.mode");
     expect(searchSettings("appearance missing", t)).toEqual([]);
+  });
+
+  // ViscosityCode: the per-device UI font row is searchable in every client.
+  it("finds the UI font row", () => {
+    expect(searchSettings("typeface", t).map((result) => result.anchor)).toContain(
+      "appearance.uiFont",
+    );
+    expect(
+      searchSettings("ui font", t, { remoteSession: true }).map((result) => result.anchor),
+    ).toContain("appearance.uiFont");
   });
 
   it("finds Computer Use options through plugin settings", () => {

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createRoot, type Root } from "react-dom/client";
 import "./tailwind.css";
 import "./uiAnimationActivity";
@@ -6,6 +7,7 @@ import { hasElectronHostBridge } from "./clientRuntime";
 import { captureRendererException, initializeRendererSentry } from "./diagnostics/sentry";
 import { installReactDevelopmentTimingRetention } from "./diagnostics/reactDevelopmentTimingRetention";
 import { getAppName } from "@/shared/appName";
+import { brandText } from "@/shared/brand"; // ViscosityCode
 import {
   createRendererCrashReport,
   RendererCrashScreen,
@@ -50,7 +52,7 @@ if (import.meta.env.DEV) {
   };
 }
 
-document.title = getAppName(readBridge().channel, import.meta.env.DEV);
+document.title = brandText(getAppName(readBridge().channel, import.meta.env.DEV)); // ViscosityCode
 initializeRendererSentry();
 
 document.documentElement.dataset.platform =

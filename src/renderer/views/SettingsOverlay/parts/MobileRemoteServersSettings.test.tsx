@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -177,7 +178,7 @@ describe("MobileRemoteServersSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Pair a connection" }));
 
     expect(screen.getByRole("dialog", { name: "Connections" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Pair with Poracode" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pair with ViscosityCode" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Connect over SSH" }));
 
     expect(await screen.findByRole("dialog", { name: "Connect over SSH" })).toBeInTheDocument();
@@ -370,7 +371,7 @@ describe("RemoteServersSettings desktop pairing", () => {
 
   it("pairs from one link while the compact sheet keeps its manual fields", async () => {
     render(<RemoteServersSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Pair with Poracode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pair with ViscosityCode" }));
 
     const pairingUrl = screen.getByRole("textbox", { name: "Pairing URL" });
     expect(screen.queryByRole("textbox", { name: "Endpoint" })).not.toBeInTheDocument();
@@ -395,7 +396,7 @@ describe("RemoteServersSettings desktop pairing", () => {
 
   it("announces an invalid desktop pairing URL", () => {
     render(<RemoteServersSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Pair with Poracode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pair with ViscosityCode" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Pairing URL" }), {
       target: { value: "not a pairing URL" },
     });

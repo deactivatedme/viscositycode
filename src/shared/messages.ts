@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Centralized user-facing message catalog.
  *
@@ -6,6 +7,10 @@
  *
  * Templates use `{param}` placeholders, resolved at call time by `msg()`.
  */
+
+// ViscosityCode: templates keep upstream wording (it is the Lingui source text
+// and the key for cross-process matching); `msg()` brands them on the way out.
+import { BRAND_NAME, brandText, UPSTREAM_BRAND_NAME } from "./brand";
 
 const messages = {
   "thread.permission.persistentUnavailable":
@@ -454,7 +459,8 @@ function interpolate(text: string, params?: Record<string, string | number>): st
 export function msg(key: MessageKey, params?: Record<string, string | number>): string {
   const resolved = messageResolver?.(key, params);
   if (resolved != null) return resolved;
-  return interpolate(messages[key], params);
+  // ViscosityCode: brand the template, never the interpolated values (paths, names).
+  return interpolate(brandText(messages[key]), params);
 }
 
 /** Translate an exact static catalog source received from another process. */
@@ -463,9 +469,21 @@ export function localizeMessageSource(
   resolve: MessageResolver = msg,
 ): string | undefined {
   for (const key of Object.keys(messages) as MessageKey[]) {
-    if (source === messages[key]) return resolve(key);
+    // ViscosityCode: another process may send the branded English source.
+    if (source === messages[key] || source === brandText(messages[key])) return resolve(key);
   }
   return undefined;
+}
+
+const FORK_BRAND_PATTERN = new RegExp(`\\b${BRAND_NAME}\\b`, "g");
+
+/**
+ * ViscosityCode: error patterns below are written against upstream wording,
+ * while other processes may already emit the fork's name. Pattern tests run on
+ * this de-branded copy; parameters are still extracted from the raw text.
+ */
+function unbrandForMatching(text: string): string {
+  return text.includes(BRAND_NAME) ? text.replace(FORK_BRAND_PATTERN, UPSTREAM_BRAND_NAME) : text;
 }
 
 /**
@@ -580,7 +598,8 @@ const errorPatterns: Array<{
     test: /^Poracode SSH runtime manifest is missing or invalid: .+$/i,
     key: "ssh.runtimeManifest.invalid",
     params: (raw) => ({
-      path: raw.match(/^Poracode SSH runtime manifest is missing or invalid: (.+)$/i)?.[1] ?? "?",
+      // ViscosityCode: brand-agnostic, since the raw text may carry either name.
+      path: raw.match(/ SSH runtime manifest is missing or invalid: (.+)$/i)?.[1] ?? "?",
     }),
   },
   {
@@ -787,8 +806,9 @@ export function friendlyErrorWithDetail(err: unknown): { summary: string; detail
     return { summary, details: details || rawSummary };
   }
 
+  const matchable = unbrandForMatching(rawSummary); // ViscosityCode
   for (const pattern of errorPatterns) {
-    if (pattern.test.test(rawSummary)) {
+    if (pattern.test.test(matchable)) {
       return { summary: msg(pattern.key, pattern.params?.(rawSummary)), details };
     }
   }

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // @vitest-environment jsdom
 import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,7 +110,7 @@ describe("PluginsSection", () => {
     seed({ remoteServerId: "desktop-2", remoteId: "remote-project" });
     render(<PluginsSection projectId={project.id} />);
 
-    expect(screen.getByText(/from a Poracode client on its host/)).toBeInTheDocument();
+    expect(screen.getByText(/from a ViscosityCode client on its host/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /in this project/ })).toBeNull();
   });
 });

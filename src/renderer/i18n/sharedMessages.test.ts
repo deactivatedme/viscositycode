@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import { friendlyError, msg } from "@/shared/messages";
 // Importing the i18n runtime installs the shared-message resolver as a side
 // effect (via `./sharedMessages`), so `msg()` becomes locale-aware here.
@@ -77,9 +79,18 @@ describe("shared message i18n integration", () => {
       ),
     );
 
+    // ViscosityCode: the catalog is branded as it loads.
     expect(summary).toBe(
-      "My ACP informó que la autenticación se realizó correctamente, pero Poracode no pudo verificarla. Configura My ACP directamente y vuelve a intentarlo.",
+      `My ACP informó que la autenticación se realizó correctamente, pero ${BRAND_NAME} no pudo verificarla. Configura My ACP directamente y vuelve a intentarlo.`,
     );
+    // A supervisor that already brands its English fallback is recognized too.
+    expect(
+      friendlyError(
+        new Error(
+          `My ACP reported authentication success, but ${BRAND_NAME} could not verify it. Configure My ACP directly, then try again.`,
+        ),
+      ),
+    ).toBe(summary);
   });
 
   it("translates main-process SSH manifest errors and preserves their path", async () => {
@@ -91,6 +102,26 @@ describe("shared message i18n integration", () => {
 
     expect(summary).not.toBe(`Poracode SSH runtime manifest is missing or invalid: ${path}`);
     expect(summary).toContain(path);
+
+    // ViscosityCode: the branded main-process wording maps to the same message,
+    // and a path that contains either product name is kept verbatim.
+    const forkPath = `C:\\${BRAND_NAME}\\server.ssh-runtime-manifest.json`;
+    const branded = friendlyError(
+      new Error(`${BRAND_NAME} SSH runtime manifest is missing or invalid: ${forkPath}`),
+    );
+    expect(branded).not.toContain("SSH runtime manifest is missing");
+    expect(branded).toContain(forkPath);
+    expect(branded.replace(forkPath, "")).toContain(BRAND_NAME);
+  });
+
+  it("brands translated shared messages without touching their values", async () => {
+    await dynamicActivate("de");
+    expect(msg("startup.failure.title")).toContain(BRAND_NAME);
+    expect(msg("startup.failure.title")).not.toMatch(/\bPoracode/);
+    expect(msg("ssh.runtimeManifest.invalid", { path: "/opt/Poracode/m.json" })).toContain(
+      "/opt/Poracode/m.json",
+    );
+    expect(msg("desktop.promotion.progress.title")).toBe(BRAND_NAME);
   });
 });
 // @vitest-environment node

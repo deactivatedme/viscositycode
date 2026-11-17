@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { toast } from "@heroui/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -258,7 +259,7 @@ describe("PortsPanel", () => {
 
     await waitFor(() =>
       expect(warning).toHaveBeenCalledWith(
-        "This desktop's Poracode version doesn't support browser forwarding. Update Poracode on your desktop.",
+        "This desktop's ViscosityCode version doesn't support browser forwarding. Update ViscosityCode on your desktop.",
       ),
     );
     expect(window.poracode.openExternal).not.toHaveBeenCalled();

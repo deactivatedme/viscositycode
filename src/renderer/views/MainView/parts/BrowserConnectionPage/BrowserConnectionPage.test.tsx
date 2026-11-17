@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -163,7 +164,7 @@ describe("BrowserConnectionPage", () => {
 
     expect(install.promptInstall).toHaveBeenCalled();
     expect(
-      screen.getByText("Install Poracode for faster access and offline launch."),
+      screen.getByText("Install ViscosityCode for faster access and offline launch."),
     ).toBeInTheDocument();
   });
 
@@ -178,8 +179,8 @@ describe("BrowserConnectionPage", () => {
   it("leads with scanning and keeps the paste route collapsed", () => {
     render(<BrowserConnectionPage />);
 
-    // The heading is the Pora·code wordmark, which reads as "Poracode" to AT.
-    expect(screen.getByRole("heading")).toHaveAccessibleName("Poracode");
+    // The heading is the brand wordmark, which reads as the product name to AT.
+    expect(screen.getByRole("heading")).toHaveAccessibleName("ViscosityCode");
     expect(screen.getByRole("button", { name: SCAN_CARD })).toBeInTheDocument();
     // Almost everyone scans, so pasting a link is one tap away rather than on screen.
     const disclosure = screen.getByRole("button", { name: /Other ways to connect/ });
@@ -338,7 +339,7 @@ describe("BrowserConnectionPage", () => {
       openScanner();
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "That isn't a Poracode pairing code.",
+        "That isn't a ViscosityCode pairing code.",
       );
       // Still open: a stray code must not dump the user back to the start.
       expect(screen.getByRole("dialog", { name: "Scan pairing QR code" })).toBeInTheDocument();

@@ -1,4 +1,5 @@
-import { screen } from "@testing-library/react";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 
@@ -20,6 +21,8 @@ vi.mock("@/renderer/bridge", () => ({
 }));
 
 import { useUpdateStore } from "@/renderer/state/updateStore";
+import { BRAND_NAME } from "@/shared/brand";
+import { UPSTREAM_REPOSITORY_URL } from "@/shared/viscosityRelease";
 import { AboutSettings } from "./AboutSettings";
 
 describe("AboutSettings update download", () => {
@@ -64,14 +67,35 @@ describe("AboutSettings update download", () => {
 });
 
 describe("AboutSettings", () => {
+  beforeEach(() => {
+    bridgeMock.openExternal.mockClear();
+  });
+
   it("shows app details and links without the retired data import action", () => {
     useUpdateStore.setState({ phase: "idle" });
     render(<AboutSettings />);
 
     expect(screen.getByText("1.0.0")).toBeVisible();
     expect(screen.getByRole("button", { name: "Check for updates" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Website" })).toBeVisible();
     expect(screen.queryByText(/Lightcode/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Import/ })).not.toBeInTheDocument();
+  });
+
+  // ViscosityCode: the fork's name, the version, and one upstream attribution line.
+  it("names the fork and attributes Poracode without linking its community", () => {
+    useUpdateStore.setState({ phase: "idle" });
+    render(<AboutSettings />);
+
+    expect(screen.getByLabelText(BRAND_NAME)).toBeVisible();
+    const attribution = screen.getByRole("button", { name: "Based on Poracode (Apache-2.0)" });
+    fireEvent.click(attribution);
+    expect(bridgeMock.openExternal).toHaveBeenCalledWith(UPSTREAM_REPOSITORY_URL);
+
+    for (const name of [/Website/, /on X/, /GitHub Repository/, /Report an Issue/]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByText(/All rights reserved/)).not.toBeInTheDocument();
+    const visibleText = document.body.textContent ?? "";
+    expect(visibleText.replace("Based on Poracode (Apache-2.0)", "")).not.toMatch(/\bPoracode/);
   });
 });

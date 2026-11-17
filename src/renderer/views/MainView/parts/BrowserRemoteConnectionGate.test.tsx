@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen } from "@testing-library/react";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -59,7 +60,7 @@ describe("BrowserRemoteConnectionGate", () => {
     expect(screen.queryByText("Remote feature")).not.toBeInTheDocument();
     expect(screen.getByText("No remote environments connected yet.")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Pair with Poracode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pair with ViscosityCode" }));
     expect(usePanelStore.getState()).toMatchObject({
       settingsOpen: true,
       settingsSection: "remoteServers",

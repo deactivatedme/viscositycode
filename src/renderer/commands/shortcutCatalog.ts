@@ -1,7 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { KeybindingEntry } from "@/shared/keybindings";
 import { DEFAULT_KEYBINDINGS, QUICK_COMPOSER_COMMAND_ID } from "@/shared/keybindings";
+import { BRAND_NAME, UPSTREAM_BRAND_NAME } from "@/shared/brand"; // ViscosityCode
 import { COMPOSER_CONTROL_COMMANDS } from "./composerCommands";
 import { bindingForPlatform, formatKeybinding, type PlatformName } from "./keybindingMatcher";
 import type { AppCommand } from "./registry";
@@ -38,7 +40,8 @@ export const SHORTCUT_SECTIONS = [
   { id: "project", label: msg`Project`, groups: ["Project"] },
   { id: "thread", label: msg`Thread`, groups: ["Thread"] },
   { id: "scripts", label: msg`Scripts`, groups: ["Scripts"] },
-  { id: "general", label: msg`General`, groups: ["Poracode"] },
+  // ViscosityCode: general commands group under the product name; the upstream token still maps here.
+  { id: "general", label: msg`General`, groups: [BRAND_NAME, UPSTREAM_BRAND_NAME] },
   { id: "custom", label: msg`Custom`, groups: ["Custom"] },
 ] as const;
 
@@ -172,7 +175,7 @@ export const LOCAL_SHORTCUTS: readonly LocalShortcut[] = [
     id: "overlay.close",
     title: msg`Close overlay`,
     description: msg`Panels and overlays`,
-    group: "Poracode",
+    group: BRAND_NAME,
     when: "panelFocus",
     keys: ["Escape"],
   },
@@ -324,7 +327,7 @@ export function buildShortcutRows(
 
   const systemRows = SYSTEM_SHORTCUTS.map((command) =>
     buildRebindableRow(command, () => ({
-      group: "Poracode",
+      group: BRAND_NAME,
       section: "general",
       contexts: ["global"],
       whenTemplate: null,

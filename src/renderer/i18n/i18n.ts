@@ -1,7 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { i18n } from "@lingui/core";
 import type { useLingui } from "@lingui/react/macro";
 import { SOURCE_LOCALE, type LocaleSetting, type SupportedLocale } from "@/shared/locale";
 import { messages as sourceMessages } from "../locales/en/messages.po";
+// ViscosityCode: catalogs load through the brand mapper (product name substitution).
+import { loadBrandedCatalog } from "./brandCatalog";
 import { detectOSLocale, resolveLocale } from "./locales";
 // Side-effect import: installs the locale-aware resolver for the shared
 // `@/shared/messages` catalog (which stays macro-free for the supervisor).
@@ -10,7 +13,7 @@ import "./sharedMessages";
 // Load + activate the source locale synchronously at module load so macros
 // resolve on the very first render — no flash of empty UI before a catalog
 // loads. Other locales are imported on demand by `dynamicActivate`.
-i18n.load(SOURCE_LOCALE, sourceMessages);
+loadBrandedCatalog(SOURCE_LOCALE, sourceMessages, i18n); // ViscosityCode: branded load
 i18n.activate(SOURCE_LOCALE);
 
 const loaded = new Set<SupportedLocale>([SOURCE_LOCALE]);
@@ -23,7 +26,7 @@ const loaded = new Set<SupportedLocale>([SOURCE_LOCALE]);
 export async function dynamicActivate(locale: SupportedLocale): Promise<void> {
   if (!loaded.has(locale)) {
     const { messages } = await import(`../locales/${locale}/messages.po`);
-    i18n.load(locale, messages);
+    loadBrandedCatalog(locale, messages, i18n); // ViscosityCode: branded load
     loaded.add(locale);
   }
   i18n.activate(locale);

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SkillEntry, SkillScanResult } from "@/shared/contracts";
@@ -112,7 +113,7 @@ describe("SkillImportModal", () => {
   it("imports a skill into the Poracode-only root", async () => {
     renderModal([skill()]);
     fireEvent.click(screen.getByLabelText("Skill availability"));
-    fireEvent.click(await screen.findByRole("option", { name: "Poracode only" }));
+    fireEvent.click(await screen.findByRole("option", { name: "ViscosityCode only" }));
     fireEvent.click(screen.getByRole("button", { name: "Show skills from Claude Code" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Select review from Claude Code" }));
     fireEvent.click(screen.getByRole("button", { name: "Import selected" }));

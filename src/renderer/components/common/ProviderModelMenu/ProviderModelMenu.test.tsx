@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1430,7 +1431,7 @@ it("places saved crews in Poracode and sends a crew choice", async () => {
   );
   fireEvent.click(screen.getByRole("button", { name: "Select model" }));
   const listbox = await screen.findByRole("listbox");
-  expect(within(listbox).getByText("Poracode")).toBeInTheDocument();
+  expect(within(listbox).getByText("ViscosityCode")).toBeInTheDocument();
   expect(within(listbox).getByText("Review board")).toBeInTheDocument();
   expect(within(listbox).getByText("New crew")).toBeInTheDocument();
   expect(within(listbox).getByRole("option", { name: /Review board/ })).toHaveAttribute(
@@ -1547,7 +1548,7 @@ it("hides New crew when the lead cannot create one", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Select model" }));
   const listbox = await screen.findByRole("listbox");
   expect(within(listbox).queryByText("New crew")).not.toBeInTheDocument();
-  expect(within(listbox).queryByText("Poracode")).not.toBeInTheDocument();
+  expect(within(listbox).queryByText("ViscosityCode")).not.toBeInTheDocument();
 });
 
 it("stars a crew without selecting it, restores its favorite shortcut, and removes its recent shortcut", async () => {

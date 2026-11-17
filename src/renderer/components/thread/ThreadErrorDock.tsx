@@ -1,7 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
 import { friendlyErrorWithDetail } from "@/shared/messages";
+// ViscosityCode: engine text can name the upstream product; brand it for display.
+import { brandDisplayText } from "@/renderer/i18n/brandDisplay";
 import type { ThreadErrorDockState } from "./threadErrorState";
 import {
   ThreadDockCollapseButton,
@@ -25,7 +28,10 @@ export function ThreadErrorDock(props: ThreadErrorDockProps) {
   // renders localized and the sentinel never reaches the DOM; upstream auth
   // classification keeps operating on the raw payload. Attached details
   // surface through the expand affordance below.
-  const { summary, details } = friendlyErrorWithDetail(state.message);
+  const friendly = friendlyErrorWithDetail(state.message);
+  // ViscosityCode: display only; `state.message` stays raw for auth detection.
+  const summary = brandDisplayText(friendly.summary);
+  const details = brandDisplayText(friendly.details);
   const expandedMessage = details ? `${summary}\n${details}` : summary;
   const isMultiline = expandedMessage.includes("\n") || expandedMessage.length > 120;
   const canExpand = isMultiline;

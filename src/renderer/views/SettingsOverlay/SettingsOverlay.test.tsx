@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import type { ReactNode } from "react";
@@ -598,7 +599,9 @@ describe("SettingsOverlay", () => {
     expect(labels.indexOf("Notifications")).toBeLessThan(labels.indexOf("Terminal"));
     expect(labels.indexOf("Archived Threads")).toBeLessThan(labels.indexOf("Agents"));
     expect(labels.indexOf("Provider Usage")).toBeGreaterThan(labels.indexOf("MCP Servers"));
-    expect(labels.indexOf("Changelog")).toBeGreaterThan(labels.indexOf("Remote Environments"));
+    // ViscosityCode: no changelog source, so no Changelog section; About stays last.
+    expect(labels).not.toContain("Changelog");
+    expect(labels.indexOf("About")).toBeGreaterThan(labels.indexOf("Remote Environments"));
   });
 
   it("hides groups whose sections are all desktop-only on remote sessions", () => {
@@ -606,7 +609,8 @@ describe("SettingsOverlay", () => {
     const { container } = render(<SettingsOverlay onClose={() => undefined} />);
 
     const headers = [...container.querySelectorAll("aside p")].map((el) => el.textContent);
-    expect(headers).toEqual(["Personal", "Workspace", "Agents", "About"]);
+    // ViscosityCode: About held only Changelog on remote, which needs a changelog source.
+    expect(headers).toEqual(["Personal", "Workspace", "Agents"]);
     expect(screen.getByRole("button", { name: "Models" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audio" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remote Access" })).not.toBeInTheDocument();

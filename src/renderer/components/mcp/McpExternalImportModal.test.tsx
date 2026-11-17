@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -377,7 +378,7 @@ describe("McpExternalImportModal", () => {
     ).toBeDisabled();
     expect(
       screen.getByRole("checkbox", {
-        name: "browser from Codex CLI: Managed by Poracode",
+        name: "browser from Codex CLI: Managed by ViscosityCode",
       }),
     ).toBeDisabled();
     expect(
@@ -386,7 +387,7 @@ describe("McpExternalImportModal", () => {
       }),
     ).toBeDisabled();
     expect(screen.getByText("Already configured")).toBeInTheDocument();
-    expect(screen.getByText("Managed by Poracode")).toBeInTheDocument();
+    expect(screen.getByText("Managed by ViscosityCode")).toBeInTheDocument();
     expect(screen.getByText("Duplicate server name in scan")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Select all MCP servers" }));

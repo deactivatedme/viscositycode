@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { msg } from "@lingui/core/macro";
 import { create } from "zustand";
 import { purgeRecentHistoryForConnection } from "@/renderer/browser/recentHistoryCache";
@@ -409,7 +411,7 @@ export const useEnvironmentManagementStore = create<EnvironmentManagementState>(
             const tokens = await created.client.exchangePairingCredential({
               credential: pairing.pairingCredential,
               scopes: REMOTE_OPERATOR_SCOPES,
-              client: { label: "Poracode Desktop", deviceType: "desktop" },
+              client: { label: `${BRAND_NAME} Desktop`, deviceType: "desktop" }, // ViscosityCode
             });
             if (tokens.refreshToken) {
               rememberRefreshTokenForSubject(created.childGrantSubject, tokens.refreshToken);

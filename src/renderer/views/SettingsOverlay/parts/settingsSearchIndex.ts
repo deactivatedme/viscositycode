@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { SettingsSection } from "./types";
@@ -230,6 +231,14 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Theme`,
     description: msg`Popular editor themes adapted to Poracode. Each follows the light or dark mode above.`,
     keywords: "color preset editor theme gallery swatch palette",
+  },
+  // ViscosityCode: the fork's per-device UI font row.
+  {
+    section: "appearance",
+    anchor: "appearance.uiFont",
+    title: msg`UI font`,
+    description: msg`Typeface for the app interface; code keeps its monospace font. Saved on this device.`,
+    keywords: "typeface font family interface text geist system sans",
   },
   {
     section: "appearance",

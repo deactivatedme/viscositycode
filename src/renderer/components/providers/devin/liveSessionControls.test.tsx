@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -507,7 +508,9 @@ describe("DevinSessionControls rules listings", () => {
     bridgeMock.invokeThreadSessionAction.mockResolvedValue({});
     render(<DevinSessionControls thread={thread()} presentationMode="gui" isDisabled={false} />);
     fireEvent.click(await screen.findByRole("button", { name: "Rules" }));
-    expect(await screen.findByText(/rules listing Poracode could not interpret/i)).toBeDefined();
+    expect(
+      await screen.findByText(/rules listing ViscosityCode could not interpret/i),
+    ).toBeDefined();
     expect(screen.queryByText("No rules were listed for this session.")).toBeNull();
   });
 
@@ -518,7 +521,9 @@ describe("DevinSessionControls rules listings", () => {
     });
     render(<DevinSessionControls thread={thread()} presentationMode="gui" isDisabled={false} />);
     fireEvent.click(await screen.findByRole("button", { name: "Rules" }));
-    expect(await screen.findByText(/rules listing Poracode could not interpret/i)).toBeDefined();
+    expect(
+      await screen.findByText(/rules listing ViscosityCode could not interpret/i),
+    ).toBeDefined();
     expect(screen.queryByText("kept-rule")).toBeNull();
   });
 });

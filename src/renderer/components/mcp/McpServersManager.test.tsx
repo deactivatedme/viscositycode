@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -237,7 +238,7 @@ describe("McpServersManager", () => {
       }),
     );
 
-    const dialog = screen.getByRole("dialog", { name: "Poracode" });
+    const dialog = screen.getByRole("dialog", { name: "ViscosityCode" });
     expect(within(dialog).getByText("list_schedules")).toBeInTheDocument();
     expect(within(dialog).getByText("delete_schedule")).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("switch", { name: "Enable delete_schedule" }));
@@ -348,7 +349,7 @@ describe("McpServersManager", () => {
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent("Authentication required");
       expect(screen.getByRole("status")).toHaveTextContent(
-        "This server requires authentication before Poracode can check it.",
+        "This server requires authentication before ViscosityCode can check it.",
       );
     });
     expect(screen.queryByText("0 tools")).not.toBeInTheDocument();

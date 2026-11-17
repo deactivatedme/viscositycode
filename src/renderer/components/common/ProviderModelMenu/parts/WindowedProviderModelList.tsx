@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import {
   forwardRef,
   useEffect,
@@ -764,7 +766,7 @@ function HeaderCrews(props: { className?: string }) {
       className={`${props.className ?? ""} poracode-model-menu-header poracode-model-menu-header--provider flex h-7 items-center gap-1.5 border-b border-border/40 bg-overlay px-2 text-[10px] font-semibold uppercase tracking-wider text-muted/80`}
     >
       <PoracodeGlyph className="size-3 shrink-0" />
-      <span>Poracode</span>
+      <span>{BRAND_NAME /* ViscosityCode */}</span>
     </div>
   );
 }

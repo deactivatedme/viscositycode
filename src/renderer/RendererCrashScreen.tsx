@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { Component, useState, type ErrorInfo, type ReactNode } from "react";
 import { Copy, RefreshCw } from "lucide-react";
 import { msg } from "@lingui/core/macro";
@@ -104,7 +106,7 @@ export function createRendererCrashReport(input: RendererCrashInput): RendererCr
 
 export function formatRendererCrashReport(report: RendererCrashReport): string {
   const lines = [
-    "Poracode renderer crash",
+    `${BRAND_NAME} renderer crash`, // ViscosityCode
     `Kind: ${report.kind}`,
     `Time: ${report.timestamp}`,
     `URL: ${report.url}`,

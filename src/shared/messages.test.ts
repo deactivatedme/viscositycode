@@ -1,9 +1,12 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
+import { BRAND_NAME } from "./brand";
 import {
   attachErrorDetails,
   friendlyError,
   friendlyErrorWithDetail,
   isPullDirtyWorktreeError,
+  localizeMessageSource,
   msg,
   setMessageResolver,
 } from "./messages";
@@ -213,14 +216,18 @@ describe("friendlyErrorWithDetail", () => {
     expect(friendlyError(error)).toBe("The moved thread could not be read. Start the move again.");
   });
 
+  // ViscosityCode: the English fallback names the fork; upstream wording still matches.
   it("maps helper bootstrap failures to shared messages", () => {
     expect(friendlyError(new Error("Poracode Helper probe returned HTTP 503."))).toBe(
-      "Poracode Helper is not ready yet (HTTP 503).",
+      `${BRAND_NAME} Helper is not ready yet (HTTP 503).`,
+    );
+    expect(friendlyError(new Error(`${BRAND_NAME} Helper probe returned HTTP 503.`))).toBe(
+      `${BRAND_NAME} Helper is not ready yet (HTTP 503).`,
     );
     expect(
       friendlyError(new Error("Poracode SSH requires Node 24.10 or newer on the remote host.")),
     ).toBe(
-      "Poracode Helper failed to start. Check that Node 24.10 or newer and npm are installed on the remote machine.",
+      `${BRAND_NAME} Helper failed to start. Check that Node 24.10 or newer and npm are installed on the remote machine.`,
     );
   });
 
@@ -232,8 +239,39 @@ describe("friendlyErrorWithDetail", () => {
         ),
       ),
     ).toBe(
-      "Poracode SSH runtime manifest is missing or invalid: C:\\Poracode\\server.ssh-runtime-manifest.json",
+      `${BRAND_NAME} SSH runtime manifest is missing or invalid: C:\\Poracode\\server.ssh-runtime-manifest.json`,
     );
+    expect(
+      friendlyError(
+        new Error(
+          `${BRAND_NAME} SSH runtime manifest is missing or invalid: C:\\${BRAND_NAME}\\server.ssh-runtime-manifest.json`,
+        ),
+      ),
+    ).toBe(
+      `${BRAND_NAME} SSH runtime manifest is missing or invalid: C:\\${BRAND_NAME}\\server.ssh-runtime-manifest.json`,
+    );
+  });
+
+  it("brands the English fallback template but never interpolated values", () => {
+    expect(msg("startup.failure.title")).toBe(`${BRAND_NAME} could not start`);
+    expect(msg("desktop.promotion.progress.title")).toBe(BRAND_NAME);
+    expect(msg("ssh.runtimeManifest.invalid", { path: "/home/me/Poracode/m.json" })).toBe(
+      `${BRAND_NAME} SSH runtime manifest is missing or invalid: /home/me/Poracode/m.json`,
+    );
+    expect(msg("acp.authenticationUnverified", { agent: "Poracode Agent" })).toBe(
+      `Poracode Agent reported authentication success, but ${BRAND_NAME} could not verify it. Configure Poracode Agent directly, then try again.`,
+    );
+  });
+
+  it("recognizes both the upstream and the branded English source from another process", () => {
+    const resolve = (key: string) => `resolved:${key}`;
+    expect(localizeMessageSource("Poracode could not start", resolve)).toBe(
+      "resolved:startup.failure.title",
+    );
+    expect(localizeMessageSource(`${BRAND_NAME} could not start`, resolve)).toBe(
+      "resolved:startup.failure.title",
+    );
+    expect(localizeMessageSource("Not a catalog message", resolve)).toBeUndefined();
   });
 
   it("maps dirty remote pulls to the pull-specific stash message", () => {

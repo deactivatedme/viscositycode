@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type {
   ProjectLocation,
   PromptSegment,
@@ -7,6 +8,7 @@ import type {
   ThreadPresentationMode,
 } from "@/shared/contracts";
 import type { RemoteClientMetadata } from "@/shared/remote";
+import { BRAND_NAME } from "@/shared/brand"; // ViscosityCode: client labels show the product name
 
 export interface ThreadHistoryOptions {
   readonly targetTimelineEntryCount?: number;
@@ -238,7 +240,7 @@ export function defaultClientMetadata(): RemoteClientMetadata {
   const userAgent = globalThis.navigator?.userAgent;
   const isMobile = userAgent ? /\bMobile\b/i.test(userAgent) : false;
   return {
-    label: isMobile ? "Poracode mobile web" : "Poracode web app",
+    label: isMobile ? `${BRAND_NAME} mobile web` : `${BRAND_NAME} web app`,
     deviceType: isMobile ? "mobile" : "browser",
     ...(userAgent ? { os: userAgent } : {}),
   };

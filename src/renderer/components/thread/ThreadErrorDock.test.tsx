@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { attachErrorDetails, msg } from "@/shared/messages";
+import { BRAND_NAME } from "@/shared/brand";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { resolveThreadAuthState } from "./threadErrorState";
 import { ThreadErrorDock } from "./ThreadErrorDock";
@@ -103,5 +105,33 @@ describe("ThreadErrorDock attached details", () => {
     expect(document.body.textContent).not.toContain("Error invoking remote method");
     expect(document.body.textContent).not.toContain(DETAILS_SENTINEL);
     expect(screen.queryByText(/profile login expired/)).not.toBeInTheDocument();
+  });
+});
+
+// ViscosityCode: raw engine text names the fork on screen; the dock state keeps it raw.
+describe("ThreadErrorDock branding", () => {
+  it("brands the summary and the expanded details, not the stored message", () => {
+    const message = attachErrorDetails(
+      "Agent launch refused: this is a mock QA session, so Poracode will not start provider sessions.",
+      "Poracode Helper log: /Users/me/Poracode/helper.log",
+    );
+    const state = { sourceItemId: "e1", message };
+    render(<ThreadErrorDock state={state} />);
+
+    expect(screen.getByText("Agent launch refused")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `this is a mock QA session, so ${BRAND_NAME} will not start provider sessions.`,
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expand error" }));
+    expect(
+      screen.getByText(/Helper log: \/Users\/me\/Poracode\/helper\.log/u).textContent,
+    ).toContain(`${BRAND_NAME} Helper log: /Users/me/Poracode/helper.log`);
+    expect(document.body.textContent).not.toMatch(/\bPoracode (?:will|Helper)/u);
+    expect(state.message).toBe(message);
+    expect(
+      resolveThreadAuthState({ authState: undefined, errorDockStates: [state] }).authRequired,
+    ).toBe(false);
   });
 });
