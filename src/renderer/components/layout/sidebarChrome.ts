@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { CSSProperties } from "react";
 import { isWindows } from "@/renderer/bridge";
 import { hasMacWindowChrome, hasNativeWindowChrome } from "./windowChrome";
@@ -11,7 +12,9 @@ import { hasMacWindowChrome, hasNativeWindowChrome } from "./windowChrome";
  * macOS (hiddenInset) window controls sit in the top-left. Reserve enough width + gap so the
  * sidebar wordmark and actions are not tight against the traffic lights.
  */
-export const macosTrafficLightGutterClass = "w-[68px] shrink-0" as const;
+// ViscosityCode: `vc-traffic-light-gutter` lets the activity bar shell shrink the gutter
+// in the main sidebar header, since the bar already covers part of the traffic lights.
+export const macosTrafficLightGutterClass = "vc-traffic-light-gutter w-[68px] shrink-0" as const;
 
 /**
  * Opt-in class for content elements that sit at the top-left of the main area when the sidebar

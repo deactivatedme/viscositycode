@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { type RefObject, useEffect } from "react";
 import { useTwoRafReady } from "@/renderer/hooks/useTwoRafReady";
 import { selectShouldOverlay, useSidebarOverlayStore } from "@/renderer/state/sidebarOverlayStore";
@@ -25,8 +26,10 @@ export function useSidebarOverlayEffects(opts: {
   sidebarWidth: number;
   shellRef: RefObject<HTMLDivElement | null>;
   disabled?: boolean;
+  /** ViscosityCode: shell-row width taken by other chrome (the activity bar). */
+  reservedWidth?: number;
 }) {
-  const { sidebarWidth, shellRef, disabled = false } = opts;
+  const { sidebarWidth, shellRef, disabled = false, reservedWidth = 0 } = opts;
 
   // Shell width → isNarrow + shellWidth. On the narrow transition we collapse
   // the sidebar to the icon rail rather than overlaying it; overlay only
@@ -43,7 +46,8 @@ export function useSidebarOverlayEffects(opts: {
       if (!entry) return;
       const width = readStableObservedWidth(entry);
       if (width === null) return;
-      const next = width < CONTENT_MIN_WIDTH + sidebarWidth;
+      // ViscosityCode: `reservedWidth` (activity bar) is 0 upstream.
+      const next = width - reservedWidth < CONTENT_MIN_WIDTH + sidebarWidth;
       const store = useSidebarOverlayStore.getState();
       if (next && !store.isNarrow) {
         if (!store.isCollapsed) {
@@ -57,7 +61,7 @@ export function useSidebarOverlayEffects(opts: {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [disabled, sidebarWidth, shellRef]);
+  }, [disabled, sidebarWidth, reservedWidth, shellRef]);
 
   // shouldOverlay → overlayReady, via the shared two-RAF gate so the browser
   // commits the off-screen `translateX(-full)` state before the slide-in

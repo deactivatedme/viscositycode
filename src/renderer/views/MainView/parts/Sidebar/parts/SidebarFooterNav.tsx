@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Dropdown, Label } from "@heroui/react";
 import { Bug, ChevronsDown, ChevronsUp, Ellipsis, PanelLeftClose, Settings2 } from "lucide-react";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -5,6 +6,9 @@ import { useLingui } from "@lingui/react/macro";
 import { SidebarButton, sidebarIconButtonClass } from "@/renderer/components/common/SidebarButton";
 import { sidebarFooterNavClass } from "@/renderer/components/layout/sidebarChrome";
 import { DeferredFeedbackDialog, DeferredSettingsOverlay } from "@/renderer/deferredFeatures";
+// ViscosityCode: feedback goes to the fork's own service or issue tracker, or is hidden.
+import { feedbackDestination } from "@/renderer/components/common/feedbackService";
+import { readBridge } from "@/renderer/bridge";
 import { openRemoteAccessSettings, openSettings } from "@/renderer/actions/panelActions";
 import { usePanelStore } from "@/renderer/state/panelStore";
 import { isPanelResizing } from "@/renderer/state/panelResizeSignal";
@@ -65,13 +69,20 @@ export function SidebarFooterNav(props: {
   const { remoteAccessStatus, showRemoteAccess = true } = props;
   const { t } = useLingui();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const feedback = (
+  const feedbackTarget = feedbackDestination();
+  const feedback = feedbackTarget ? (
     <>
       <SidebarButton
         iconOnly
         icon={<Bug className="size-4" />}
         label={t`Send feedback`}
-        onPress={() => setFeedbackOpen(true)}
+        onPress={() => {
+          if (feedbackTarget.kind === "external") {
+            void readBridge().openExternal(feedbackTarget.url);
+          } else {
+            setFeedbackOpen(true);
+          }
+        }}
       />
       {feedbackOpen && (
         <Suspense fallback={null}>
@@ -79,7 +90,7 @@ export function SidebarFooterNav(props: {
         </Suspense>
       )}
     </>
-  );
+  ) : null;
   const settingsOpen = usePanelStore((s) => s.settingsOpen);
   const settingsSection = usePanelStore((s) => s.settingsSection ?? s.activeSettingsSection);
   // Surfaced Settings destinations own their active state instead of the generic entry.

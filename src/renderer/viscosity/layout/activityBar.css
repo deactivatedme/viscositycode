@@ -1,1 +1,355 @@
 /* ViscosityCode: activity bar + sidebar views. Scoped to html[data-vc-shell]. */
+
+html[data-vc-shell] {
+  /* The left sidebar's one header row (view title + actions). It replaces
+     upstream's titlebar header row, so it matches the bar's title-bar zone. */
+  --vc-sidebar-view-header-height: max(var(--vc-titlebar-height), env(titlebar-area-height, 0px));
+  /* Compact icon buttons on the right of that row. */
+  --vc-sidebar-action-size: 22px;
+  /* Activity bar metrics beyond the shared token contract. */
+  --vc-activity-indicator-width: 2px;
+  --vc-activity-indicator-height: 20px;
+  --vc-activity-badge-size: 14px;
+  --vc-activity-badge-inset: 3px;
+  --vc-activity-dot-size: 7px;
+  --vc-activity-dot-inset: 6px;
+}
+
+/* === Activity bar ========================================================
+   Lives inside .poracode-shell as its first flex child. Stacking (root
+   context): narrow-window backdrop z-30 < floating sidebar z-39 < bar z-40 <
+   right-panel overlays z-45/z-50 and full-window overlays (OverlayShell z-50). */
+html[data-vc-shell] .vc-activitybar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: var(--vc-activitybar-width);
+  min-width: var(--vc-activitybar-width);
+  height: 100%;
+  min-height: 0;
+  border-right: 1px solid var(--vc-border-subtle);
+  background: color-mix(
+    in oklab,
+    var(--vc-chrome-bg) calc(var(--vc-chrome-alpha) * 100%),
+    transparent
+  );
+  color: var(--vc-text-muted);
+  font-family: var(--vc-font-ui);
+  user-select: none;
+}
+
+/* Native window material (macOS vibrancy / Windows acrylic): the sidebar is
+   glass, so the bar shows the same material instead of an opaque strip. */
+html[data-vc-shell][data-native-material="on"] .vc-activitybar {
+  background: transparent;
+}
+
+/* The floating (narrow-window) sidebar slides in and out underneath the bar.
+   While it is mounted the bar must not let it show through: a translucent
+   chrome (--vc-chrome-alpha below 1) turns opaque… */
+html[data-vc-shell]
+  .poracode-shell[data-vc-activitybar][data-vc-sidebar-overlay]
+  > .vc-activitybar {
+  background: var(--vc-chrome-bg);
+}
+
+/* …and on native material, where the bar is clear glass, it takes the
+   material tint upstream gives that floating sidebar (the glass tint at full
+   strength), so bar and overlay read as one opaque panel. */
+html[data-vc-shell][data-native-material="on"]
+  .poracode-shell[data-vc-activitybar][data-vc-sidebar-overlay]
+  > .vc-activitybar {
+  background: var(--vc-panel-bg);
+}
+
+/* Title-bar zone: macOS traffic lights sit over it; elsewhere it stays a
+   window drag strip. Icons always start below it. */
+html[data-vc-shell] .vc-activitybar__titlebar {
+  flex: none;
+  height: max(var(--vc-titlebar-height), env(titlebar-area-height, 0px));
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+html[data-vc-shell] .vc-activitybar__group {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--vc-space-0);
+  padding: var(--vc-space-1) 0;
+}
+
+html[data-vc-shell] .vc-activitybar__group--bottom {
+  padding-bottom: var(--vc-space-3);
+}
+
+html[data-vc-shell] .vc-activitybar__spacer {
+  flex: 1 1 auto;
+  min-height: var(--vc-space-3);
+}
+
+html[data-vc-shell] .vc-activitybar__slot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Active indicator: accent bar flush with the window's left edge. */
+html[data-vc-shell] .vc-activitybar__slot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--vc-activity-indicator-width);
+  height: var(--vc-activity-indicator-height);
+  margin-top: calc(var(--vc-activity-indicator-height) / -2);
+  border-radius: 0 var(--vc-radius-pill) var(--vc-radius-pill) 0;
+  background: var(--vc-accent);
+  opacity: 0;
+  transform: scaleY(0.2);
+  transition:
+    opacity var(--vc-motion-fast) var(--vc-ease-standard),
+    transform var(--vc-motion-base) var(--vc-ease-emphasized);
+  pointer-events: none;
+}
+
+html[data-vc-shell] .vc-activitybar__slot[data-active]::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+html[data-vc-shell] .vc-activitybar__trigger {
+  display: flex;
+}
+
+html[data-vc-shell] .vc-activitybar__item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--vc-activitybar-width) - var(--vc-space-4));
+  height: calc(var(--vc-activitybar-width) - var(--vc-space-4));
+  padding: 0;
+  border: 0;
+  border-radius: var(--vc-radius-md);
+  background: transparent;
+  color: var(--vc-text-muted);
+  cursor: default;
+  outline: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transition:
+    color var(--vc-motion-fast) var(--vc-ease-standard),
+    background-color var(--vc-motion-fast) var(--vc-ease-standard),
+    box-shadow var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-activitybar__item:hover {
+  background: var(--vc-hover);
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-activitybar__item:active {
+  background: var(--vc-active);
+}
+
+html[data-vc-shell] .vc-activitybar__item[data-active] {
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-activitybar__item:focus-visible {
+  box-shadow: 0 0 0 2px var(--vc-focus-ring);
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-activitybar__badge {
+  position: absolute;
+  right: 1px;
+  bottom: var(--vc-activity-badge-inset);
+  box-sizing: border-box;
+  min-width: var(--vc-activity-badge-size);
+  height: var(--vc-activity-badge-size);
+  padding: 0 var(--vc-activity-badge-inset);
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-accent);
+  box-shadow: 0 0 0 var(--vc-space-0) var(--vc-chrome-bg);
+  color: var(--vc-accent-foreground);
+  font-size: var(--vc-font-size-2xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: var(--vc-activity-badge-size);
+  text-align: center;
+  pointer-events: none;
+}
+
+html[data-vc-shell] .vc-activitybar__badge--dot {
+  position: absolute;
+  top: var(--vc-activity-dot-inset);
+  right: var(--vc-activity-dot-inset);
+  width: var(--vc-activity-dot-size);
+  height: var(--vc-activity-dot-size);
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-accent);
+  box-shadow: 0 0 0 var(--vc-space-0) var(--vc-chrome-bg);
+  pointer-events: none;
+}
+
+/* === Sidebar beside the bar ============================================== */
+
+/* Narrow window: the floating sidebar opens beside the bar (and slides out
+   underneath it) instead of covering it. */
+html[data-vc-shell] .poracode-shell[data-vc-activitybar] > .poracode-sidebar-aside--overlay {
+  left: var(--vc-activitybar-width);
+  z-index: 39;
+}
+
+/* Collapsed: the aside is 0 wide. Drop its divider so it does not double the
+   bar's own edge. */
+html[data-vc-shell]
+  .poracode-shell[data-vc-activitybar][data-vc-sidebar-collapsed]
+  > .poracode-sidebar-aside:not(.poracode-sidebar-aside--overlay),
+html[data-vc-shell]
+  .poracode-shell[data-vc-activitybar][data-vc-sidebar-collapsed]
+  > .poracode-sidebar-aside:not(.poracode-sidebar-aside--overlay)
+  > .poracode-sidebar-body {
+  border-right-width: 0;
+}
+
+/* macOS: the traffic lights straddle the bar and the sidebar header. Upstream
+   reserves a 68px gutter (--vc-traffic-light-reach, shell.css) after the
+   header's own 12px inset; the bar already covers part of it. */
+html[data-vc-shell]
+  .poracode-shell[data-vc-activitybar]
+  > .poracode-sidebar-aside
+  .vc-traffic-light-gutter {
+  width: max(0px, calc(var(--vc-traffic-light-reach) - var(--vc-activitybar-width)));
+}
+
+/* === Sidebar views ======================================================= */
+
+/* Upstream's sidebar column (the Agents view) leaves room for the header row. */
+html[data-vc-shell] .vc-sidebar-host-column {
+  padding-top: var(--vc-sidebar-view-header-height);
+}
+
+/* Title row (and, for registry views, the body) drawn over the column. The
+   host column underneath is made invisible while a registry view shows. */
+html[data-vc-shell] .vc-sidebar-views {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  pointer-events: none;
+}
+
+html[data-vc-shell] .vc-sidebar-views[data-vc-registry-view] {
+  bottom: 0;
+}
+
+html[data-vc-shell] .vc-sidebar-views > * {
+  pointer-events: auto;
+}
+
+/* One row: title (+ view accessory) on the left, actions on the right. It sits
+   at the window's top edge, so it drags the window like upstream's header row;
+   the actions opt out through upstream's .poracode-overlay-header__controls. */
+html[data-vc-shell] .vc-sidebar-view-header {
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-width: 0;
+  height: var(--vc-sidebar-view-header-height);
+  padding: 0 var(--vc-space-2) 0 var(--vc-space-4);
+  user-select: none;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* macOS: line the row up with the traffic lights. Upstream's header row moves
+   its content 3px down (2px top padding, then a 2px nudge on its controls);
+   6px of top padding moves this row's centre line by the same 3px. */
+html[data-vc-shell][data-platform="darwin"][data-client-host="electron"] .vc-sidebar-view-header {
+  padding-top: var(--vc-space-2);
+}
+
+/* The floating sidebar sits over content; like upstream's overlay header, it
+   is not a window drag handle. */
+html[data-vc-shell] .poracode-sidebar-aside--overlay .vc-sidebar-view-header {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Cursor-style section title: small, tracked caps. */
+html[data-vc-shell] .vc-sidebar-view-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  color: var(--vc-text-muted);
+  font-family: var(--vc-font-ui);
+  font-size: var(--vc-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* A view's accessory (e.g. Explorer's root) gives way before the title. */
+html[data-vc-shell] .vc-sidebar-view-subtitle {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-xs);
+  opacity: 0.75;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-vc-shell] .vc-sidebar-view-actions,
+html[data-vc-shell] .vc-sidebar-view-actions > .poracode-overlay-header__controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-0);
+}
+
+html[data-vc-shell] .vc-sidebar-view-actions {
+  margin-left: auto;
+}
+
+html[data-vc-shell] .vc-sidebar-view-actions button {
+  width: var(--vc-sidebar-action-size);
+  height: var(--vc-sidebar-action-size);
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--vc-radius-sm);
+}
+
+/* The activity bar already provides Search and Browser: drop upstream's header
+   copies (their tooltip triggers, which wrap the buttons). Keyed on the icon,
+   which does not change with the UI language. */
+html[data-vc-shell]
+  .vc-sidebar-view-actions
+  > .poracode-overlay-header__controls
+  > :has(svg.lucide-search, svg.lucide-globe) {
+  display: none;
+}
+
+html[data-vc-shell] .vc-sidebar-view-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}

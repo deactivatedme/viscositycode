@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   createContext,
   memo,
@@ -38,6 +39,17 @@ import {
 import { SIDEBAR_COLLAPSED_WIDTH, useSidebarOverlayEffects } from "./parts/useSidebarOverlay";
 import { AsideSlot } from "./parts/AsideSlot";
 import { usePanelVisibility } from "./parts/usePanelVisibility";
+// ViscosityCode: fork shell flag + Cursor-style activity bar.
+import { useViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
+import {
+  ActivityBar,
+  ActivitySidebarStateTracker,
+} from "@/renderer/viscosity/layout/activityBar/ActivityBar";
+import {
+  ActivityBarActiveProvider,
+  isMainSidebarElement,
+} from "@/renderer/viscosity/layout/activityBar/activityBarHost";
+import { useActivityBarWidth } from "@/renderer/viscosity/layout/activityBar/useActivityBarWidth";
 
 const RIGHT_OVERLAY_MIN_GUTTER = 80;
 const RIGHT_OVERLAY_EXIT_MS = 300;
@@ -402,7 +414,13 @@ export function AppShell(props: {
   const { sidebar, content, sidebarHeader, contentHeader, rightPanel, gitPanel } = props;
   const forceSidebarExpanded = props.forceSidebarExpanded === true;
   const compactLayout = useCompactLayout();
-  const collapsedSidebarWidth = compactLayout ? 0 : SIDEBAR_COLLAPSED_WIDTH;
+  // ViscosityCode: only the shell hosting the main Sidebar gets the activity
+  // bar; it replaces the 48px collapsed rail, so the sidebar collapses to 0.
+  const vcShell = useViscosityShellFlag();
+  const activityBarActive = vcShell && !forceSidebarExpanded && isMainSidebarElement(sidebar);
+  const activityBarRef = useRef<HTMLElement>(null);
+  const activityBarWidth = useActivityBarWidth(activityBarRef, activityBarActive);
+  const collapsedSidebarWidth = compactLayout || activityBarActive ? 0 : SIDEBAR_COLLAPSED_WIDTH;
   const terminalPosition = useSharedSettings((s) => s.terminalPosition);
 
   const mainRef = useRef<HTMLElement>(null);
@@ -451,6 +469,8 @@ export function AppShell(props: {
     sidebarWidth,
     shellRef,
     disabled: forceSidebarExpanded,
+    // ViscosityCode: the activity bar shares the shell row with the sidebar.
+    reservedWidth: activityBarWidth,
   });
 
   // `shellWidth` is observed and published by `useSidebarOverlayEffects` so the
@@ -495,6 +515,7 @@ export function AppShell(props: {
   // the transition between modes is driven by a stable signal.
   const wouldBeMainWidth = layoutMetricsReady
     ? shellWidth -
+      activityBarWidth - // ViscosityCode: activity bar is part of the shell row.
       observedSidebarWidth -
       (dockedRightPanelOpen ? panelWidth : 0) -
       (gitPanelOpen ? gitPanelWidth : 0)
@@ -620,7 +641,9 @@ export function AppShell(props: {
   // dock again. Re-docking mid-drag would swap the docked/overlay <aside> under
   // the cursor and drop the drag, so a resize must never flip the mode. The
   // floor ignores a second open panel's width, which only makes it stricter.
-  const overlayDockFloor = shellWidth - observedSidebarWidth - CONTENT_MIN_WIDTH + 1;
+  // ViscosityCode: subtract the activity bar, which shares the shell row.
+  const overlayDockFloor =
+    shellWidth - activityBarWidth - observedSidebarWidth - CONTENT_MIN_WIDTH + 1;
   function getResizeLimits(target: ResizeTarget): ResizeLimits | null {
     if (!rightOverlayActive || overlayMaxWidth === undefined) return null;
     const isOverlaySlot =
@@ -635,10 +658,14 @@ export function AppShell(props: {
       data-compact-layout={compactLayout || undefined}
       data-mobile-home={(compactLayout && props.compactHome) || undefined}
       data-mobile-navigation={(compactLayout && props.mobileNavigation) || undefined}
+      data-vc-activitybar={activityBarActive || undefined}
       className="poracode-shell flex h-full min-h-0 overflow-hidden bg-background text-foreground"
       style={hasHeaders ? { paddingTop: 0 } : undefined}
     >
       <MacCollapsedTracker shellRef={shellRef} forceSidebarExpanded={forceSidebarExpanded} />
+      {/* ViscosityCode: Cursor-style activity bar at the far left of the main window. */}
+      {activityBarActive ? <ActivityBar ref={activityBarRef} /> : null}
+      {activityBarActive ? <ActivitySidebarStateTracker shellRef={shellRef} /> : null}
 
       {!hasHeaders && <div aria-hidden="true" className="poracode-drag-region" />}
 
@@ -651,8 +678,13 @@ export function AppShell(props: {
 
       <ShellSidebarAside
         sidebarRef={sidebarRef}
-        sidebarHeader={sidebarHeader}
-        sidebar={sidebar}
+        // ViscosityCode: with the activity bar, the Sidebar draws one merged
+        // view title + actions row itself, so the titlebar header row is dropped.
+        sidebarHeader={activityBarActive ? undefined : sidebarHeader}
+        // ViscosityCode: tells the main Sidebar whether the activity bar replaces its rail.
+        sidebar={
+          <ActivityBarActiveProvider value={activityBarActive}>{sidebar}</ActivityBarActiveProvider>
+        }
         hasHeaders={hasHeaders}
         isSidebarHandleHovered={isSidebarHandleHovered}
         forceSidebarExpanded={forceSidebarExpanded}

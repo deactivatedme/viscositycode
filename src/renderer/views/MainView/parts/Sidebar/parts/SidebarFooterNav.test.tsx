@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -9,6 +10,19 @@ import { SidebarFooterNav } from "./SidebarFooterNav";
 
 const originalResizeObserver = globalThis.ResizeObserver;
 const openExternal = vi.hoisted(() => vi.fn<() => Promise<void>>(async () => undefined));
+// ViscosityCode: where "Send feedback" leads (none by default; see feedbackService).
+const feedback = vi.hoisted(() => ({
+  destination: null as { kind: "dialog" } | { kind: "external"; url: string } | null,
+  issuesUrl: undefined as string | undefined,
+}));
+vi.mock("@/renderer/components/common/feedbackService", () => ({
+  FEEDBACK_SERVICE_URL: "https://feedback.example.test",
+  feedbackDestination: () => feedback.destination,
+}));
+vi.mock("@/shared/communityLinks", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/communityLinks")>()),
+  communityIssuesUrl: () => feedback.issuesUrl,
+}));
 
 /** The component under test re-measures via getBoundingClientRect, so firing
  * the captured callbacks is enough to simulate a resize. */
@@ -44,6 +58,8 @@ vi.mock("@/renderer/bridge", async (importOriginal) => ({
 describe("SidebarFooterNav", () => {
   beforeEach(() => {
     openExternal.mockClear();
+    feedback.destination = null;
+    feedback.issuesUrl = undefined;
     vi.stubGlobal(
       "fetch",
       vi.fn<typeof fetch>().mockResolvedValue(Response.json({ enabled: false })),
@@ -71,8 +87,31 @@ describe("SidebarFooterNav", () => {
   });
 
   it.each([false, true])(
+    "hides feedback without a feedback destination when footerCollapsed is %s",
+    (collapsed) => {
+      useSidebarUiStore.setState({ footerCollapsed: collapsed });
+      render(<SidebarFooterNav remoteAccessStatus="off" />);
+      expect(screen.queryByRole("button", { name: "Send feedback" })).not.toBeInTheDocument();
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([false, true])(
+    "opens the fork's issue tracker when footerCollapsed is %s",
+    (collapsed) => {
+      feedback.destination = { kind: "external", url: "https://github.com/owner/repo/issues" };
+      useSidebarUiStore.setState({ footerCollapsed: collapsed });
+      render(<SidebarFooterNav remoteAccessStatus="off" />);
+      fireEvent.click(screen.getByRole("button", { name: "Send feedback" }));
+      expect(openExternal).toHaveBeenCalledWith("https://github.com/owner/repo/issues");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([false, true])(
     "opens the feedback form when footerCollapsed is %s",
     async (collapsed) => {
+      feedback.destination = { kind: "dialog" };
       useSidebarUiStore.setState({ footerCollapsed: collapsed });
       render(<SidebarFooterNav remoteAccessStatus="off" />);
       fireEvent.click(screen.getByRole("button", { name: "Send feedback" }));
@@ -83,10 +122,12 @@ describe("SidebarFooterNav", () => {
   );
 
   it("opens existing issues from the native dialog", async () => {
+    feedback.destination = { kind: "dialog" };
+    feedback.issuesUrl = "https://github.com/owner/repo/issues";
     render(<SidebarFooterNav remoteAccessStatus="off" />);
     fireEvent.click(screen.getByRole("button", { name: "Send feedback" }));
     fireEvent.click(await screen.findByRole("button", { name: "Existing issues" }));
-    expect(openExternal).toHaveBeenCalledWith("https://github.com/Porabuild/Poracode/issues");
+    expect(openExternal).toHaveBeenCalledWith("https://github.com/owner/repo/issues");
   });
 
   it("hides Remote Access when the current host cannot serve incoming connections", () => {

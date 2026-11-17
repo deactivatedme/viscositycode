@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useCommandPaletteStore } from "@/renderer/commands/commandPaletteStore";
 import { Globe, House, PanelLeft, Plus, Search, Settings2, TerminalSquare } from "lucide-react";
 import { startTransition, useContext, useEffect, useState } from "react";
@@ -58,6 +59,15 @@ import {
 import { DeferredSettingsOverlay } from "@/renderer/deferredFeatures";
 import { ManagedRootCatalogStatusNotice } from "@/renderer/state/managedRootCatalog/ManagedRootCatalogStatusNotice";
 import { MobileHomeActions } from "./parts/MobileHomeActions";
+// ViscosityCode: activity bar views replace the collapsed rail on the desktop shell.
+import {
+  markMainSidebarComponent,
+  useActivityBarActive,
+} from "@/renderer/viscosity/layout/activityBar/activityBarHost";
+import {
+  ActivitySidebarViews,
+  useActivityHostViewHidden,
+} from "@/renderer/viscosity/layout/activityBar/ActivitySidebarViews";
 
 function prewarmSettings(): void {
   void DeferredSettingsOverlay.preload();
@@ -97,6 +107,9 @@ export function Sidebar() {
   const setWorktreeCollapsed = useSidebarUiStore((s) => s.setWorktreeCollapsed);
   const { isCollapsed, expand } = useSidebar();
   const visible = useContext(PaneVisibility);
+  // ViscosityCode: activity bar state; another view can cover this host list.
+  const activityBarActive = useActivityBarActive();
+  const vcHostViewHidden = useActivityHostViewHidden(activityBarActive);
   const openHome = useAppStore((s) => s.openHome);
   const appView = useAppStore((s) => s.view);
   const appNameForHome = getAppName(readBridge().channel, import.meta.env.DEV);
@@ -176,7 +189,8 @@ export function Sidebar() {
 
   return (
     <div className="poracode-main-sidebar relative h-full">
-      {isCollapsed && (
+      {/* ViscosityCode: the activity bar replaces this collapsed rail. */}
+      {isCollapsed && !activityBarActive && (
         <div
           className={`absolute inset-y-0 left-0 z-10 flex h-full min-h-0 w-12 flex-col items-start gap-3 pl-2 pb-0 ${
             // macOS keeps the rail below the hidden-inset titlebar (traffic
@@ -273,9 +287,9 @@ export function Sidebar() {
         </div>
       )}
 
-      <PaneVisibility value={visible && !isCollapsed}>
+      <PaneVisibility value={visible && !isCollapsed && !vcHostViewHidden}>
         <div
-          className={`${sidebarColumnLayoutClass} ${isCollapsed ? "invisible" : ""}`}
+          className={`${sidebarColumnLayoutClass} ${isCollapsed || vcHostViewHidden ? "invisible" : ""} ${activityBarActive ? "vc-sidebar-host-column" : ""}`}
           style={{ minWidth: SIDEBAR_MIN_WIDTH }}
         >
           {projectIds.length === 0 && !(homeScopeEnabled && homeProjects.length > 0) ? (
@@ -341,6 +355,13 @@ export function Sidebar() {
           )}
         </div>
       </PaneVisibility>
+      {/* ViscosityCode: active view title row + registry sidebar views. */}
+      {activityBarActive ? (
+        <ActivitySidebarViews visible={visible && !isCollapsed} collapsed={isCollapsed} />
+      ) : null}
     </div>
   );
 }
+
+// ViscosityCode: lets AppShell recognise the main window's shell on first render.
+markMainSidebarComponent(Sidebar);
