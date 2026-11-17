@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
@@ -12,6 +13,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { BRAND_NAME } from "@/shared/brand";
 import {
   hostRuntimeTarget,
   installServerRelease,
@@ -31,8 +33,8 @@ import { resolveTar, tarCommand } from "../../scripts/server-host-tools.mjs";
 import {
   defaultProbeOwner,
   type InstallerPrefix,
-  RELEASE_REPOSITORY,
   removeTuiCachesForVersions,
+  requireReleaseRepository,
   resolveInstallerPrefix,
   SelfUpdateError,
   VERSION_PATTERN,
@@ -63,7 +65,9 @@ export function standaloneArchiveFileName(version: string, target: string): stri
 
 export function releaseDownloadBase(env: NodeJS.ProcessEnv = process.env): string {
   const override = env.PORACODE_RELEASE_BASE_URL?.trim();
-  return (override || `https://github.com/${RELEASE_REPOSITORY}/releases/download`).replace(
+  // ViscosityCode: without an explicit mirror, refuse before any request when
+  // this build has no fork release repository (never fall back to upstream).
+  return (override || `https://github.com/${requireReleaseRepository()}/releases/download`).replace(
     /\/+$/u,
     "",
   );
@@ -112,6 +116,8 @@ export async function resolveReleaseVersion(input: {
   readonly version?: string;
   readonly channel: "stable" | "nightly";
   readonly fetchImpl?: FetchLike;
+  /** GitHub "owner/repo" to query; defaults to the fork's release repository. */
+  readonly repository?: string;
 }): Promise<string> {
   if (input.version !== undefined) {
     const version = input.version.replace(/^v/u, "");
@@ -119,11 +125,14 @@ export async function resolveReleaseVersion(input: {
       throw new SelfUpdateError(`Invalid version "${input.version}".`);
     return version;
   }
+  // ViscosityCode: fail fast, before any GitHub request, when this build has no
+  // fork release repository configured.
+  const repository = requireReleaseRepository(input.repository);
   const fetchImpl = input.fetchImpl ?? (fetch as FetchLike);
   const headers = { Accept: "application/json", "User-Agent": "poracode-update" };
   if (input.channel === "stable") {
     // Only plain releases are marked latest; this page is not rate-limited like the API.
-    const url = `https://github.com/${RELEASE_REPOSITORY}/releases/latest`;
+    const url = `https://github.com/${repository}/releases/latest`;
     const response = await fetchRelease(fetchImpl, url, { headers });
     if (!response.ok)
       throw new SelfUpdateError(`Could not find the latest release (HTTP ${response.status}).`);
@@ -132,7 +141,7 @@ export async function resolveReleaseVersion(input: {
     if (!match) throw new SelfUpdateError("The latest release has no plain version tag.");
     return match[1]!;
   }
-  const url = `https://api.github.com/repos/${RELEASE_REPOSITORY}/releases?per_page=100`;
+  const url = `https://api.github.com/repos/${repository}/releases?per_page=100`;
   const response = await fetchRelease(fetchImpl, url, { headers });
   if (!response.ok) {
     throw new SelfUpdateError(
@@ -262,7 +271,7 @@ export async function runSelfUpdate(
         ...base,
         ok: true,
         outcome: "current",
-        detail: `The installed Poracode ${install.currentVersion} is at least as new as ${version}.`,
+        detail: `The installed ${BRAND_NAME} ${install.currentVersion} is at least as new as ${version}.`,
       };
     }
   }
@@ -271,7 +280,7 @@ export async function runSelfUpdate(
       ...base,
       ok: true,
       outcome: "current",
-      detail: `Poracode ${version} is already current.`,
+      detail: `${BRAND_NAME} ${version} is already current.`,
     };
   }
   const target = deps.hostTarget ?? hostRuntimeTarget();
@@ -372,7 +381,7 @@ export async function runSelfUpdate(
       ok: true,
       outcome: "installed",
       detail:
-        `Updated Poracode ${install.currentVersion} → ${version}; ${install.currentVersion} is kept ` +
+        `Updated ${BRAND_NAME} ${install.currentVersion} → ${version}; ${install.currentVersion} is kept ` +
         `in ${join(install.prefix, "releases")}` +
         (pruned.length > 0 ? ` and ${pruned.length} older release(s) were removed.` : "."),
     };

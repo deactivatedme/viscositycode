@@ -1,10 +1,15 @@
 export const DESKTOP_CLI_RESOURCE_DIRECTORIES: Readonly<Record<string, string>>;
+export const DESKTOP_CLI_COMMAND_NAMES: Readonly<{
+  stable: "viscositycode";
+  nightly: "viscositycode-next";
+}>;
+export const DESKTOP_CLI_DATA_DIR_NAMES: Readonly<{ stable: string; nightly: string }>;
 
 export interface DesktopCliBundle {
   readonly formatVersion: 1;
   readonly runtime: "electron-run-as-node";
   readonly channel: "stable" | "nightly";
-  readonly commandName: "poracode" | "poracode-next";
+  readonly commandName: "viscositycode" | "viscositycode-next";
   readonly appVersion: string;
   readonly electronVersion: string;
   readonly platform: NodeJS.Platform;

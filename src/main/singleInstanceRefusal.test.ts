@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,7 +90,7 @@ describe("describeSingleInstanceRefusal", () => {
       readTarget: () => "H1FCM6T4GX-714",
       isAlive: (pid) => pid === 714,
     });
-    expect(line).toMatch(/^\[poracode\] Another Poracode instance is already running/);
+    expect(line).toMatch(/^\[poracode\] Another ViscosityCode instance is already running/);
     expect(line).toContain("PID 714 on H1FCM6T4GX");
     expect(line).toContain("quitting");
     expect(line).toContain("/profiles/poracode");

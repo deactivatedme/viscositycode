@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Mirror of src/shared/channel.ts for use by scripts/build-desktop-artifact.mjs.
 // Keep field names identical to the TS module; src/shared/channel.config-parity.test.ts
 // asserts they don't drift.
@@ -18,16 +19,19 @@ function normalizeChannel(value) {
   return value === "nightly" ? "nightly" : "stable";
 }
 
+// ViscosityCode: fork install identity (mirrors src/shared/channel.ts and
+// src/shared/brand.ts). It never shares an app id, data folder, or artifact
+// name with a real Poracode install.
 function productNameFor(channel) {
-  return channel === "nightly" ? "Poracode Nightly" : "Poracode";
+  return channel === "nightly" ? "ViscosityCode Nightly" : "ViscosityCode";
 }
 
 function appIdFor(channel) {
-  return channel === "nightly" ? "com.lightcode.app.nightly" : "com.lightcode.app";
+  return channel === "nightly" ? "com.viscositycode.app.nightly" : "com.viscositycode.app";
 }
 
 function userDataDirNameFor(channel) {
-  return channel === "nightly" ? ".poracode-nightly" : ".poracode";
+  return channel === "nightly" ? ".viscositycode-nightly" : ".viscositycode";
 }
 
 function updaterChannelFor(channel) {
@@ -35,20 +39,17 @@ function updaterChannelFor(channel) {
 }
 
 function artifactPrefixFor(channel) {
-  return channel === "nightly" ? "Poracode-Nightly" : "Poracode";
+  return channel === "nightly" ? "ViscosityCode-Nightly" : "ViscosityCode";
 }
 
 /**
  * Squirrel.Mac cannot relaunch when an update changes the outer bundle and
- * executable name: it moves the old bundle away, then tries to spawn its
- * relaunch helper from the path it just removed. Keep updater ZIPs on the
- * pre-rebrand executable name so both Lightcode and already-migrated Poracode
- * installs update in place. DMGs remain fully Poracode-branded.
+ * executable name. Upstream kept updater ZIPs on a pre-rebrand executable name
+ * to bridge old installs; ViscosityCode has no older installs to bridge, so
+ * both the updater ZIP and the DMG use the product name. The artifact kind
+ * parameter stays so the packaging flow is unchanged.
  */
-function macExecutableNameFor(channel, artifactKind) {
-  if (artifactKind === "updater") {
-    return channel === "nightly" ? "Lightcode Nightly" : "Lightcode";
-  }
+function macExecutableNameFor(channel, _artifactKind) {
   return productNameFor(channel);
 }
 

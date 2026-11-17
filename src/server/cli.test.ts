@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
@@ -85,8 +86,8 @@ describe("desktop packaged CLI entry", () => {
   });
 
   it.each([
-    ["2.0.0-nightly.202611100001", ".poracode"],
-    ["2.0.0", ".poracode-nightly"],
+    ["2.0.0-nightly.202611100001", ".viscositycode"],
+    ["2.0.0", ".viscositycode-nightly"],
   ])(
     "refuses the other channel's default profile for desktop build %s",
     (version, otherProfile) => {

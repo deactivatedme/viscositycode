@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -169,7 +170,13 @@ describe("createSleepInhibitor", () => {
     expect(blocker.start).not.toHaveBeenCalled();
     expect(spawnFn).toHaveBeenCalledExactlyOnceWith(
       "systemd-inhibit",
-      ["--what=sleep", "--who=Poracode", "--why=Poracode is active", "--mode=block", "cat"],
+      [
+        "--what=sleep",
+        "--who=ViscosityCode",
+        "--why=ViscosityCode is active",
+        "--mode=block",
+        "cat",
+      ],
       { stdio: ["pipe", "ignore", "ignore"], detached: false },
     );
 
@@ -198,7 +205,7 @@ describe("createSleepInhibitor", () => {
 
     expect(spawnFn).toHaveBeenLastCalledWith(
       "gnome-session-inhibit",
-      ["--inhibit", "suspend", "--reason", "Poracode is active", "cat"],
+      ["--inhibit", "suspend", "--reason", "ViscosityCode is active", "cat"],
       { stdio: ["pipe", "ignore", "ignore"], detached: false },
     );
     expect(logs.some((line) => line.includes("systemd-inhibit unavailable"))).toBe(true);
@@ -227,7 +234,7 @@ describe("createSleepInhibitor", () => {
     expect(spawnFn).toHaveBeenCalledTimes(2);
     expect(spawnFn.mock.calls[1]).toEqual([
       "gnome-session-inhibit",
-      ["--inhibit", "suspend", "--reason", "Poracode is active", "cat"],
+      ["--inhibit", "suspend", "--reason", "ViscosityCode is active", "cat"],
       { stdio: ["pipe", "ignore", "ignore"], detached: false },
     ]);
     inhibitor.dispose();
@@ -335,7 +342,7 @@ describe("createScreenLockInhibitor", () => {
     expect(blocker.start).not.toHaveBeenCalled();
     expect(spawnFn).toHaveBeenCalledExactlyOnceWith(
       "gnome-session-inhibit",
-      ["--inhibit", "idle", "--reason", "Poracode is keeping the screen awake", "cat"],
+      ["--inhibit", "idle", "--reason", "ViscosityCode is keeping the screen awake", "cat"],
       { stdio: ["pipe", "ignore", "ignore"], detached: false },
     );
     inhibitor.setActive(false);
@@ -362,8 +369,8 @@ describe("createScreenLockInhibitor", () => {
       "systemd-inhibit",
       [
         "--what=idle",
-        "--who=Poracode",
-        "--why=Poracode is keeping the screen awake",
+        "--who=ViscosityCode",
+        "--why=ViscosityCode is keeping the screen awake",
         "--mode=block",
         "cat",
       ],

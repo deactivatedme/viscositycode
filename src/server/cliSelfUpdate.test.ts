@@ -1,9 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
   realpathSync,
@@ -16,14 +18,17 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { hostRuntimeTarget } from "../../scripts/server-release-install.mjs";
 import { standaloneArchiveName } from "../../scripts/standalone-runtime.mjs";
+import { FORK_GITHUB_REPOSITORY } from "@/shared/viscosityRelease";
 import {
   downloadVerifiedArchive,
   parseSha256Sums,
+  releaseDownloadBase,
   resolveReleaseVersion,
   runSelfUpdate,
   standaloneArchiveFileName,
 } from "./cliSelfUpdate";
 import { resolveInstallerPrefix, SelfUpdateError } from "./installerPrefix";
+import { installServiceRelease } from "./cliServiceInstall";
 import { parseSelfUpdateCliOptions, parseUninstallCliOptions } from "./cliParse";
 
 const roots: string[] = [];
@@ -75,8 +80,23 @@ function fixture() {
     if (url.endsWith(`/v2.0.0/${name}`)) return new Response(bytes);
     return new Response("missing", { status: 404 });
   };
-  return { root, prefix, fetchImpl, requests };
+  // ViscosityCode: releases come from an explicit mirror in these fixtures;
+  // the fork ships with no default release repository.
+  const env = { PORACODE_RELEASE_BASE_URL: "https://mirror.invalid/download" };
+  return { root, prefix, fetchImpl, requests, env };
 }
+
+/** A fixture `fetch` that records each URL and fails the test if it is ever called. */
+function forbiddenFetch() {
+  const requests: string[] = [];
+  const fetchImpl = async (url: string): Promise<Response> => {
+    requests.push(url);
+    throw new Error("network must not be used");
+  };
+  return { requests, fetchImpl };
+}
+
+const STUB_REPOSITORY = "acme/viscosity-code";
 
 describe("self-update helpers", () => {
   it("names archives exactly like the release builder", () => {
@@ -98,30 +118,69 @@ describe("self-update helpers", () => {
     await expect(resolveReleaseVersion({ version: "latest!", channel: "stable" })).rejects.toThrow(
       SelfUpdateError,
     );
-    const stable = async () => Response.json({ tag_name: "v2.1.0" });
-    expect(await resolveReleaseVersion({ channel: "stable", fetchImpl: stable })).toBe("2.1.0");
-    const nightly = async () =>
-      Response.json([{ tag_name: "v2.1.0" }, { tag_name: "v2.2.0-nightly.202611080110" }]);
-    expect(await resolveReleaseVersion({ channel: "nightly", fetchImpl: nightly })).toBe(
-      "2.2.0-nightly.202611080110",
-    );
+    const requests: string[] = [];
+    const stable = async (url: string) => {
+      requests.push(url);
+      return Response.json({ tag_name: "v2.1.0" });
+    };
+    expect(
+      await resolveReleaseVersion({
+        channel: "stable",
+        fetchImpl: stable,
+        repository: STUB_REPOSITORY,
+      }),
+    ).toBe("2.1.0");
+    const nightly = async (url: string) => {
+      requests.push(url);
+      return Response.json([{ tag_name: "v2.1.0" }, { tag_name: "v2.2.0-nightly.202611080110" }]);
+    };
+    expect(
+      await resolveReleaseVersion({
+        channel: "nightly",
+        fetchImpl: nightly,
+        repository: STUB_REPOSITORY,
+      }),
+    ).toBe("2.2.0-nightly.202611080110");
+    expect(requests).toEqual([
+      `https://github.com/${STUB_REPOSITORY}/releases/latest`,
+      `https://api.github.com/repos/${STUB_REPOSITORY}/releases?per_page=100`,
+    ]);
   });
+
+  // ViscosityCode: the fork never falls back to the upstream repository.
+  it.skipIf(FORK_GITHUB_REPOSITORY.trim() !== "")(
+    "refuses release lookups and downloads before any request without a fork repository",
+    async () => {
+      const network = forbiddenFetch();
+      for (const channel of ["stable", "nightly"] as const) {
+        await expect(
+          resolveReleaseVersion({ channel, fetchImpl: network.fetchImpl }),
+        ).rejects.toThrow(/has no release repository configured/u);
+      }
+      expect(() => releaseDownloadBase({})).toThrow(SelfUpdateError);
+      expect(releaseDownloadBase({ PORACODE_RELEASE_BASE_URL: "https://mirror.invalid/d/" })).toBe(
+        "https://mirror.invalid/d",
+      );
+      expect(network.requests).toEqual([]);
+    },
+  );
 
   it("wraps network and parse failures in SelfUpdateError", async () => {
     const offline = async () => {
       throw new TypeError("fetch failed");
     };
-    await expect(resolveReleaseVersion({ channel: "stable", fetchImpl: offline })).rejects.toThrow(
-      /Could not reach/u,
-    );
-    await expect(resolveReleaseVersion({ channel: "nightly", fetchImpl: offline })).rejects.toThrow(
-      SelfUpdateError,
-    );
+    const repository = STUB_REPOSITORY;
+    await expect(
+      resolveReleaseVersion({ channel: "stable", fetchImpl: offline, repository }),
+    ).rejects.toThrow(/Could not reach/u);
+    await expect(
+      resolveReleaseVersion({ channel: "nightly", fetchImpl: offline, repository }),
+    ).rejects.toThrow(SelfUpdateError);
     const html = async () =>
       new Response("<html>", { status: 200, headers: { "content-type": "text/html" } });
-    await expect(resolveReleaseVersion({ channel: "stable", fetchImpl: html })).rejects.toThrow(
-      /unexpected response/u,
-    );
+    await expect(
+      resolveReleaseVersion({ channel: "stable", fetchImpl: html, repository }),
+    ).rejects.toThrow(/unexpected response/u);
     await expect(
       downloadVerifiedArchive({
         base: "https://example.test",
@@ -259,6 +318,7 @@ describe.runIf(posix)("runSelfUpdate", () => {
         { version: "2.0.0", json: false },
         {
           releaseRoot: join(context.prefix, "releases", "1.0.0"),
+          env: context.env,
           fetchImpl,
           probeOwner: async () => null,
         },
@@ -306,7 +366,7 @@ describe.runIf(posix)("runSelfUpdate", () => {
       { version: "2.0.0", json: false },
       {
         releaseRoot: join(context.prefix, "releases", "1.0.0"),
-        env: { ...process.env, PORACODE_TUI_CACHE_DIR: cacheRoot },
+        env: { ...process.env, ...context.env, PORACODE_TUI_CACHE_DIR: cacheRoot },
         fetchImpl: context.fetchImpl,
         probeOwner: async () => null,
       },
@@ -329,6 +389,7 @@ describe.runIf(posix)("runSelfUpdate", () => {
       { version: "2.0.0", json: true },
       {
         releaseRoot: join(context.prefix, "releases", "1.0.0"),
+        env: context.env,
         fetchImpl: context.fetchImpl,
         upgrade: async (options) => {
           calls.push({ from: options.from, prefix: options.prefix });
@@ -350,6 +411,7 @@ describe.runIf(posix)("runSelfUpdate", () => {
       { version: "2.0.0", json: false },
       {
         releaseRoot: join(context.prefix, "releases", "1.0.0"),
+        env: context.env,
         fetchImpl: context.fetchImpl,
         upgrade: async () => {
           // The real upgrade stages and swaps current; emulate a newer Node.
@@ -380,6 +442,7 @@ describe.runIf(posix)("runSelfUpdate", () => {
         { version: "2.0.0", json: false },
         {
           releaseRoot: join(context.prefix, "releases", "1.0.0"),
+          env: context.env,
           fetchImpl: tampered,
           probeOwner: async () => null,
         },
@@ -390,4 +453,41 @@ describe.runIf(posix)("runSelfUpdate", () => {
     mkdirSync(join(checkout, "lib"));
     expect(() => resolveInstallerPrefix({ releaseRoot: checkout })).toThrow(/one-line installer/u);
   });
+
+  // ViscosityCode: with no fork release repository and no explicit mirror, the
+  // update and the service install refuse without any network request.
+  it.skipIf(FORK_GITHUB_REPOSITORY.trim() !== "")(
+    "refuses update and service install without a release repository before any request",
+    async () => {
+      const context = fixture();
+      const network = forbiddenFetch();
+      for (const options of [
+        { json: false },
+        { channel: "nightly" as const, json: false },
+        { version: "2.0.0", json: false },
+      ]) {
+        await expect(
+          runSelfUpdate(options, {
+            releaseRoot: join(context.prefix, "releases", "1.0.0"),
+            env: {},
+            fetchImpl: network.fetchImpl,
+            probeOwner: async () => null,
+          }),
+        ).rejects.toThrow(/has no release repository configured/u);
+      }
+      const servicePrefix = join(context.root, "service");
+      await expect(
+        installServiceRelease({
+          prefix: servicePrefix,
+          version: "2.0.0",
+          env: {},
+          fetchImpl: network.fetchImpl,
+        }),
+      ).rejects.toThrow(/has no release repository configured/u);
+      expect(network.requests).toEqual([]);
+      expect(readlinkSync(join(context.prefix, "current"))).toBe("releases/1.0.0");
+      expect(readdirSync(context.prefix).filter((name) => name.startsWith(".update-"))).toEqual([]);
+      expect(existsSync(join(servicePrefix, "current"))).toBe(false);
+    },
+  );
 });

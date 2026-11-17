@@ -1,3 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { autoUpdater } from "electron-updater";
 import type { PoracodeChannel } from "@/shared/channel";
 import type { UpdateStatus } from "@/shared/ipc";
@@ -26,6 +29,32 @@ const PERIODIC_CHECK_INTERVAL_MS = 60 * 60 * 1_000;
 const TRANSIENT_RETRY_DELAYS_MS = [500, 1_000] as const;
 const TRANSIENT_REPORT_COOLDOWN_MS = 6 * 60 * 60 * 1_000;
 
+/**
+ * ViscosityCode: whether this app has an update feed to check. A packaged
+ * build ships `app-update.yml` only when it was packaged with
+ * VISCOSITYCODE_UPDATE_REPO (see scripts/build-desktop-artifact.mjs); a local
+ * UPDATE_SERVER_URL also counts. Without either the updater stays quiet
+ * instead of contacting any server or reporting errors.
+ */
+export function hasConfiguredUpdateFeed(
+  input: {
+    readonly env?: NodeJS.ProcessEnv;
+    readonly resourcesPath?: string;
+    readonly exists?: (path: string) => boolean;
+  } = {},
+): boolean {
+  const env = input.env ?? process.env;
+  if (env.UPDATE_SERVER_URL?.trim()) return true;
+  const resourcesPath = input.resourcesPath ?? process.resourcesPath;
+  if (!resourcesPath) return false;
+  return (input.exists ?? existsSync)(join(resourcesPath, "app-update.yml"));
+}
+
+export interface AutoUpdaterOptions {
+  /** Overrides update-feed detection; defaults to {@link hasConfiguredUpdateFeed}. */
+  readonly hasUpdateFeed?: () => boolean;
+}
+
 export interface AutoUpdaterController {
   initialize(): void;
   getStatus(): UpdateStatus | null;
@@ -40,9 +69,14 @@ export function createAutoUpdaterController(
   isDev: boolean,
   reportError: (error: unknown, tags?: PoracodeDiagnosticTags) => void = () => {},
   beforeInstall: () => void = () => {},
+  options: AutoUpdaterOptions = {},
 ): AutoUpdaterController {
   let lastStatus: UpdateStatus | null = null;
   let initialized = false;
+  // ViscosityCode: resolved once; a build without a feed never checks.
+  let updateFeed: boolean | null = null;
+  const hasUpdateFeed = (): boolean =>
+    (updateFeed ??= (options.hasUpdateFeed ?? hasConfiguredUpdateFeed)());
   // True while a check or download is in flight; gates the periodic timer so a
   // scheduled tick never stacks a redundant check on top of an active one.
   let checkInFlight = false;
@@ -220,6 +254,13 @@ export function createAutoUpdaterController(
     }
     initialized = true;
 
+    if (!hasUpdateFeed()) {
+      // ViscosityCode: no feed, so no scheduled checks and no error states.
+      // Record a quiet "not available" status for clients that ask.
+      lastStatus = { type: "update-not-available" };
+      return;
+    }
+
     // Keep downloads automatic from the user's perspective, while invoking
     // downloadUpdate ourselves so transient retries and final reporting belong
     // to one typed operation instead of the updater's global error event.
@@ -320,6 +361,10 @@ export function createAutoUpdaterController(
       sendStatus({ type: "error", messageKey: "update.devUnavailable" });
       return;
     }
+    if (!hasUpdateFeed()) {
+      sendStatus({ type: "update-not-available" });
+      return;
+    }
     try {
       await beginCheck();
     } catch {
@@ -329,10 +374,16 @@ export function createAutoUpdaterController(
   }
 
   async function startUpdateDownload(): Promise<void> {
+    if (!hasUpdateFeed()) {
+      sendStatus({ type: "update-not-available" });
+      return;
+    }
     await beginDownload();
   }
 
   function installUpdate(): void {
+    // ViscosityCode: nothing can be staged without a feed; never quit for it.
+    if (!hasUpdateFeed()) return;
     // Stop the recurring check so it can't race quitAndInstall.
     if (periodicTimer) {
       clearInterval(periodicTimer);

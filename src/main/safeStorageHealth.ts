@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { safeStorage } from "electron";
+import { BRAND_NAME } from "@/shared/brand";
 
 /**
  * Once-per-launch safeStorage probe (P3). Every secret-storage surface used to
@@ -21,7 +23,7 @@ export type SafeStorageHealthState =
 
 export const SAFE_STORAGE_LATCH_WARNING =
   "[credential-storage] OS-backed secret storage is unavailable (latched for this launch): " +
-  "credentials are session-only until Poracode is relaunched.";
+  `credentials are session-only until ${BRAND_NAME} is relaunched.`;
 
 let latched: SafeStorageHealthState | null = null;
 

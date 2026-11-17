@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import {
@@ -1882,7 +1883,7 @@ describe("RemoteAccessServer", () => {
     const pairingPageResponse = await fetch(info.pairingUrl);
     expect(pairingPageResponse.status).toBe(200);
     const pairingHtml = await pairingPageResponse.text();
-    expect(pairingHtml).toContain("Poracode");
+    expect(pairingHtml).toContain("ViscosityCode");
     expect(pairingHtml).toContain('rel="manifest"');
 
     for (const path of [
@@ -1903,7 +1904,7 @@ describe("RemoteAccessServer", () => {
     const manifestResponse = await fetch(new URL("/manifest.webmanifest", info.httpBaseUrl));
     expect(manifestResponse.status).toBe(200);
     await expect(manifestResponse.json()).resolves.toMatchObject({
-      name: "Poracode",
+      name: "ViscosityCode",
       start_url: "/",
       display: "standalone",
     });

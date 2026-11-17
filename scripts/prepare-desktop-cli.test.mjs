@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -20,7 +21,6 @@ import { prepareDesktopCli } from "./prepare-desktop-cli.mjs";
 import { transformRuntimeClosure } from "./runtime-closure.mjs";
 import { buildElectronBuilderConfig, verifyDesktopPtyTargets } from "./build-desktop-artifact.mjs";
 import { parse as parseYaml } from "yaml";
-import { PLATFORM_PATTERNS } from "../website/src/lib/releases.ts";
 import {
   DESKTOP_CLI_BOOTSTRAP_VERSION,
   DESKTOP_CLI_PREFIX,
@@ -145,15 +145,15 @@ function fixture(platform = "win32", channel = "stable") {
   const executableName =
     platform === "darwin"
       ? channel === "nightly"
-        ? "Poracode Nightly"
-        : "Poracode"
+        ? "ViscosityCode Nightly"
+        : "ViscosityCode"
       : platform === "linux"
         ? channel === "nightly"
-          ? "poracode-nightly-desktop"
-          : "poracode-desktop"
+          ? "viscositycode-nightly-desktop"
+          : "viscositycode-desktop"
         : channel === "nightly"
-          ? "Poracode Nightly.exe"
-          : "Poracode.exe";
+          ? "ViscosityCode Nightly.exe"
+          : "ViscosityCode.exe";
   const manifest = prepared.writeManifest({
     platform,
     channel,
@@ -189,11 +189,13 @@ function fixture(platform = "win32", channel = "stable") {
 
 void test("Linux packages include both the verified CLI and a separate GUI executable", () => {
   const config = parseYaml(buildElectronBuilderConfig("branded", "linux", false));
-  assert.equal(config.linux.executableName, "poracode-desktop");
-  assert.equal(config.appImage.artifactName, "Poracode-Linux-${arch}.${ext}");
+  assert.equal(config.linux.executableName, "viscositycode-desktop");
+  assert.equal(config.appImage.artifactName, "ViscosityCode-Linux-${arch}.${ext}");
+  // ViscosityCode: fork artifacts are not listed on the upstream website, so
+  // assert the release-asset shape directly instead of its download patterns.
   assert.match(
     config.appImage.artifactName.replace("${arch}", "x86_64").replace("${ext}", "AppImage"),
-    PLATFORM_PATTERNS["linux-x64"],
+    /^ViscosityCode-.*-x86_64\.AppImage$/u,
   );
   assert(config.files.includes("dist/cli-runtime/**/*"));
   assert(config.extraResources.some((entry) => entry.from === "resources/desktop-cli"));
@@ -201,7 +203,10 @@ void test("Linux packages include both the verified CLI and a separate GUI execu
     const input = fixture("linux", channel);
     const bundle = readDesktopBundle(input.resources);
     assert.equal(bundle.platform, "linux");
-    assert.equal(bundle.commandName, channel === "nightly" ? "poracode-next" : "poracode");
+    assert.equal(
+      bundle.commandName,
+      channel === "nightly" ? "viscositycode-next" : "viscositycode",
+    );
     const launcher = readFileSync(join(input.prepared.helperDir, bundle.commandName), "utf8");
     assert.match(launcher, /app="\$dir\/\.\.\/\.\.\/"/u);
     assert.doesNotMatch(launcher, /MacOS/u);
@@ -273,7 +278,7 @@ await test("stages one supported prefix from the declared code closure and the e
   const bundle = readDesktopBundle(input.resources);
   assert.equal(bundle.formatVersion, DESKTOP_CLI_BOOTSTRAP_VERSION);
   assert.equal(bundle.entry, input.entry);
-  assert.equal(bundle.commandName, "poracode");
+  assert.equal(bundle.commandName, "viscositycode");
   assert.equal(bundle.appVersion, "2.0.0");
   assert.equal(
     readFileSync(join(input.prepared.prefix, "renderer", "index.html"), "utf8"),
@@ -283,7 +288,7 @@ await test("stages one supported prefix from the declared code closure and the e
     !existsSync(join(input.prepared.prefix, "node_modules")),
     "Native dependencies remain with the same packaged Electron app.",
   );
-  const launcher = readFileSync(join(input.prepared.helperDir, "poracode.cmd"), "utf8");
+  const launcher = readFileSync(join(input.prepared.helperDir, "viscositycode.cmd"), "utf8");
   assert.match(launcher, /DisableDelayedExpansion/u);
   assert.match(launcher, /set "NODE_OPTIONS="/u);
   assert.match(launcher, /set "ELECTRON_RUN_AS_NODE=1"/u);
@@ -291,7 +296,7 @@ await test("stages one supported prefix from the declared code closure and the e
   assert.doesNotMatch(launcher, /\bcall\b|\bchcp\b|npm|npx/u);
   const nsis = readFileSync(join(input.stageRoot, "build", "desktop-cli-config.nsh"), "utf8");
   assert.match(nsis, /PORACODE_CLI_CHANNEL "stable"/u);
-  assert.match(nsis, /PORACODE_CLI_COMMAND "poracode"/u);
+  assert.match(nsis, /PORACODE_CLI_COMMAND "viscositycode"/u);
   assert.match(
     nsis,
     new RegExp(
@@ -306,36 +311,39 @@ await test("rerenders the two macOS executable-name variants without duplicate o
   input.prepared.writeManifest({
     platform: "darwin",
     channel: "nightly",
-    executableName: "Lightcode Nightly",
+    executableName: "Stale Nightly",
     electronVersion: "44.4.4",
   });
   const last = input.prepared.writeManifest({
     platform: "darwin",
     channel: "nightly",
-    executableName: "Poracode Nightly",
+    executableName: "ViscosityCode Nightly",
     electronVersion: "44.4.4",
   });
   assert.equal(new Set(last.files.map((file) => file.path)).size, last.files.length);
   cpSync(input.prepared.helperDir, join(input.resources, "desktop-cli"), { recursive: true });
-  assert.equal(readDesktopBundle(input.resources).executableName, "Poracode Nightly");
-  const launcher = readFileSync(join(input.prepared.helperDir, "poracode-next"), "utf8");
+  assert.equal(readDesktopBundle(input.resources).executableName, "ViscosityCode Nightly");
+  const launcher = readFileSync(join(input.prepared.helperDir, "viscositycode-next"), "utf8");
   assert.match(launcher, /hops.*-lt 16/u);
   assert.match(launcher, /"\$@"/u);
-  assert.match(launcher, /Poracode Nightly/u);
-  assert.doesNotMatch(launcher, /Lightcode Nightly|npm|npx/u);
+  assert.match(launcher, /ViscosityCode Nightly/u);
+  assert.doesNotMatch(launcher, /Stale Nightly|Poracode|npm|npx/u);
   if (process.platform !== "win32")
-    assert.equal(statSync(join(input.prepared.helperDir, "poracode-next")).mode & 0o777, 0o755);
+    assert.equal(
+      statSync(join(input.prepared.helperDir, "viscositycode-next")).mode & 0o777,
+      0o755,
+    );
 });
 
 await test("pins the Nightly Windows registration to its own command and exact staged bytes", () => {
   const input = fixture("win32", "nightly");
-  const launcher = readFileSync(join(input.prepared.helperDir, "poracode-next.cmd"));
+  const launcher = readFileSync(join(input.prepared.helperDir, "viscositycode-next.cmd"));
   const configuration = readFileSync(
     join(input.stageRoot, "build", "desktop-cli-config.nsh"),
     "utf8",
   );
   assert.match(configuration, /PORACODE_CLI_CHANNEL "nightly"/u);
-  assert.match(configuration, /PORACODE_CLI_COMMAND "poracode-next"/u);
+  assert.match(configuration, /PORACODE_CLI_COMMAND "viscositycode-next"/u);
   assert.match(
     configuration,
     new RegExp(
@@ -343,7 +351,7 @@ await test("pins the Nightly Windows registration to its own command and exact s
       "u",
     ),
   );
-  assert.equal(readDesktopBundle(input.resources).commandName, "poracode-next");
+  assert.equal(readDesktopBundle(input.resources).commandName, "viscositycode-next");
 });
 
 await test("refuses old/future/unknown bootstrap metadata without loading code, changing environment, or replacing bytes", () => {
@@ -354,8 +362,10 @@ await test("refuses old/future/unknown bootstrap metadata without loading code, 
     { ...input.manifest, formatVersion: 2 },
     { ...input.manifest, unknown: true },
     { ...input.manifest, serverPrefixRelative: "../other-install" },
-    { ...input.manifest, commandName: "poracode-next" },
-    { ...input.manifest, channel: "nightly", commandName: "poracode-nightly" },
+    { ...input.manifest, commandName: "viscositycode-next" },
+    { ...input.manifest, channel: "nightly", commandName: "viscositycode-nightly" },
+    // ViscosityCode: an upstream Poracode command name is never accepted.
+    { ...input.manifest, commandName: "poracode" },
   ]) {
     const bytes = JSON.stringify(replacement);
     writeFileSync(path, bytes);
@@ -472,14 +482,14 @@ await test("pins selected Electron identity, channel namespace and explicit reso
     () => runDesktopBundle({ ...options, electronVersion: "99.0.0" }),
     /matching Electron/u,
   );
-  const foreign = join(input.root, "other", "Poracode Nightly");
+  const foreign = join(input.root, "other", "ViscosityCode Nightly");
   mkdirSync(dirname(foreign));
   writeFileSync(foreign, "other executable");
   assert.throws(() => runDesktopBundle({ ...options, execPath: foreign }), /matching Electron/u);
   assert.equal(calls, 1);
   const defaultEnv = {};
   hooks.push(runDesktopBundle({ ...options, env: defaultEnv, home: input.root }));
-  assert.equal(defaultEnv.PORACODE_BASE_DIR, join(input.root, ".poracode-nightly"));
+  assert.equal(defaultEnv.PORACODE_BASE_DIR, join(input.root, ".viscositycode-nightly"));
 });
 
 await test("preserves exact CLI arguments and process stdio while delegating to the same server entry", () => {

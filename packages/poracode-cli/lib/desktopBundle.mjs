@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire, registerHooks } from "node:module";
@@ -28,6 +29,17 @@ const MANIFEST_KEYS = [
   "entryRelative",
   "files",
 ];
+// ViscosityCode: fork-owned desktop command names and host data folders. These
+// mirror scripts/prepare-desktop-cli.mjs and src/shared/channel.ts
+// userDataDirNameFor; an upstream Poracode command name is never accepted.
+export const DESKTOP_CLI_COMMAND_NAMES = Object.freeze({
+  stable: "viscositycode",
+  nightly: "viscositycode-next",
+});
+export const DESKTOP_CLI_DATA_DIR_NAMES = Object.freeze({
+  stable: ".viscositycode",
+  nightly: ".viscositycode-nightly",
+});
 const MAX_MANIFEST_BYTES = 256 * 1024;
 const MAX_FILES = 1024;
 const MAX_FILE_BYTES = 32 * 1024 * 1024;
@@ -96,7 +108,7 @@ export function validateDesktopManifest(manifest) {
     manifest.formatVersion !== DESKTOP_CLI_BOOTSTRAP_VERSION ||
     manifest.runtime !== "electron-run-as-node" ||
     !["stable", "nightly"].includes(manifest.channel) ||
-    manifest.commandName !== (manifest.channel === "nightly" ? "poracode-next" : "poracode") ||
+    manifest.commandName !== DESKTOP_CLI_COMMAND_NAMES[manifest.channel] ||
     !["win32", "darwin", "linux"].includes(manifest.platform) ||
     typeof manifest.appVersion !== "string" ||
     !VERSION.test(manifest.appVersion) ||
@@ -274,7 +286,7 @@ export function runDesktopBundle(options) {
   if (!env.PORACODE_BASE_DIR?.trim())
     env.PORACODE_BASE_DIR = join(
       options.home ?? homedir(),
-      bundle.channel === "nightly" ? ".poracode-nightly" : ".poracode",
+      DESKTOP_CLI_DATA_DIR_NAMES[bundle.channel],
     );
   for (const [key, directory] of Object.entries(DESKTOP_CLI_RESOURCE_DIRECTORIES))
     if (!env[key]?.trim()) env[key] = join(bundle.resourcesDir, directory);

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
@@ -47,10 +48,13 @@ afterEach(() => {
 function fixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "poracode-legacy-migrate-")));
   roots.push(root);
+  // ViscosityCode: the legacy CLI prefix stays where the migration code looks
+  // for it, while the stable default profile is the fork's `.viscositycode`.
   const oldPrefix = join(root, ".poracode", "server");
   const newPrefix = join(root, ".local", "share", "poracode", "server");
-  const profile = join(root, ".poracode");
-  const nightly = join(root, ".poracode-nightly");
+  const profile = join(root, ".viscositycode");
+  mkdirSync(profile, { recursive: true });
+  const nightly = join(root, ".viscositycode-nightly");
   const version = "2.0.0-nightly.202611091529";
   for (const prefix of [oldPrefix, newPrefix]) {
     const release = join(prefix, "releases", version);
@@ -138,7 +142,7 @@ function fixture() {
 describe.runIf(process.platform !== "win32")("legacy installation migration", () => {
   it("moves a running service to the nightly profile while preserving old profile files", async () => {
     const f = fixture();
-    const nightly = join(f.root, ".poracode-nightly");
+    const nightly = join(f.root, ".viscositycode-nightly");
     writeFileSync(join(f.profile, "stable-data"), "keep stable");
     expect(defaultCliProfileNamespace("2.0.0-nightly.202611091529", {}, f.root)).toBe(nightly);
     const result = await migrateLegacyService({
@@ -167,7 +171,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
     const alias = join(f.root, "home-alias");
     symlinkSync(f.root, alias);
     expect(defaultCliProfileNamespace("2.0.0-nightly.202611091529", {}, alias)).toBe(
-      join(alias, ".poracode-nightly"),
+      join(alias, ".viscositycode-nightly"),
     );
   });
 
@@ -193,7 +197,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
 
   it("re-registers a legacy service in the same prefix for the nightly profile", async () => {
     const f = fixture();
-    const nightly = join(f.root, ".poracode-nightly");
+    const nightly = join(f.root, ".viscositycode-nightly");
     const result = await migrateLegacyService({
       ...f,
       newPrefix: f.oldPrefix,
@@ -206,7 +210,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
 
   it("starts a new same-prefix move after a completed service is reinstalled", async () => {
     const f = fixture();
-    const nightly = join(f.root, ".poracode-nightly");
+    const nightly = join(f.root, ".viscositycode-nightly");
     await migrateLegacyService({
       ...f,
       newPrefix: f.oldPrefix,
@@ -231,7 +235,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
     await expect(
       migrateLegacyService({
         ...f,
-        targetProfile: join(f.root, ".poracode-nightly"),
+        targetProfile: join(f.root, ".viscositycode-nightly"),
         assertTargetAvailable: async () => {
           throw new Error("destination in use");
         },
@@ -276,7 +280,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
     await migrateLegacyService({
       ...f,
       service,
-      targetProfile: join(f.root, ".poracode-nightly"),
+      targetProfile: join(f.root, ".viscositycode-nightly"),
       assertTargetAvailable: reserve,
     });
     expect(observed).toEqual([
@@ -335,7 +339,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
       migrateLegacyService({
         ...f,
         allowRunning: false,
-        targetProfile: join(f.root, ".poracode-nightly"),
+        targetProfile: join(f.root, ".viscositycode-nightly"),
         assertTargetAvailable: reserveFixture,
       }),
     ).rejects.toThrow(/stops its agent turns/u);
@@ -380,7 +384,7 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
 
   it("moves to a newer nightly build without starting that build on stable data", async () => {
     const f = fixture();
-    const nightly = join(f.root, ".poracode-nightly");
+    const nightly = join(f.root, ".viscositycode-nightly");
     const next = "2.0.0-nightly.202611100001";
     const marker = JSON.parse(readFileSync(join(f.releaseRoot, "standalone.json"), "utf8"));
     marker.version = next;
@@ -400,8 +404,17 @@ describe.runIf(process.platform !== "win32")("legacy installation migration", ()
     const f = fixture();
     const config = join(f.oldPrefix, "custom-config.json");
     writeFileSync(config, "stable config");
-    writeServiceRegistration({ ...readServiceRegistration(f.oldPrefix)!, configPath: config });
-    const nightly = join(f.root, ".poracode-nightly");
+    // ViscosityCode: a legacy-layout service registered on the profile that
+    // holds its server prefix (and therefore this config).
+    const legacyProfile = join(f.root, ".poracode");
+    const old = readServiceRegistration(f.oldPrefix)!;
+    writeServiceRegistration({
+      ...old,
+      profileNamespace: legacyProfile,
+      registrationId: serviceRegistrationId(legacyProfile, old.account),
+      configPath: config,
+    });
+    const nightly = join(f.root, ".viscositycode-nightly");
     await migrateLegacyService({
       ...f,
       targetProfile: nightly,

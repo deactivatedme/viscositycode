@@ -1,3 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
+
+// ViscosityCode: kept on purpose. This is a technical window title, not
+// branding: the window is skip-taskbar, and the native computer-use helper
+// (native/computer-use-helper/src/backend/mod.rs) excludes the overlay from
+// window lists and targeting by this exact title.
 export const COMPUTER_USE_OVERLAY_TITLE = "Poracode Computer Use Overlay";
 export const COMPUTER_USE_BADGE_BACKGROUND = "#10131a";
 
@@ -76,12 +83,12 @@ function createOverlayChipUrl(label: string): string {
 }
 
 export const TAKEOVER_OVERLAY_URL = createOverlayChipUrl(
-  "Poracode using your computer | Esc to Exit",
+  `${BRAND_NAME} using your computer | Esc to Exit`,
 );
 
 export function createBadgeOverlayUrl(target?: string): string {
   const label = target
-    ? `Poracode is controlling ${target} in the background`
-    : "Poracode is controlling an app in the background";
+    ? `${BRAND_NAME} is controlling ${target} in the background`
+    : `${BRAND_NAME} is controlling an app in the background`;
   return createOverlayChipUrl(label);
 }

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   mkdirSync,
   mkdtempSync,
@@ -25,8 +26,8 @@ describe.runIf(process.platform === "win32")("Windows in-place service profile m
     const home = realpathSync.native(mkdtempSync(join(tmpdir(), "poracode-win-profile-")));
     try {
       const prefix = join(home, "server");
-      const stable = join(home, ".poracode");
-      const nightly = join(home, ".poracode-nightly");
+      const stable = join(home, ".viscositycode");
+      const nightly = join(home, ".viscositycode-nightly");
       const release = join(prefix, "releases", "old");
       mkdirSync(join(release, "lib"), { recursive: true });
       mkdirSync(join(release, "resources"));
@@ -107,7 +108,7 @@ describe.runIf(process.platform === "win32")("Windows in-place service profile m
         oldPrefix: join(alias, "server"),
         newPrefix: join(alias, "server"),
         releaseRoot: join(alias, "server", "releases", "old"),
-        targetProfile: join(alias, ".poracode-nightly"),
+        targetProfile: join(alias, ".viscositycode-nightly"),
         home,
         allowRunning: true,
         service,

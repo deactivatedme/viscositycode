@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { spawn as nodeSpawn, type ChildProcess } from "node:child_process";
 import { powerSaveBlocker } from "electron";
+import { BRAND_NAME } from "@/shared/brand";
 
 const LOG_PREFIX = "[poracode] sleepInhibitor:";
 
@@ -35,15 +37,19 @@ interface LinuxInhibitorCommand {
   args: readonly string[];
 }
 
+// ViscosityCode: inhibitor owner and reasons shown by the desktop session.
+const ACTIVE_REASON = `${BRAND_NAME} is active`;
+const SCREEN_AWAKE_REASON = `${BRAND_NAME} is keeping the screen awake`;
+
 // System sleep: suspend-only inhibitors, so the display can still turn off.
 const LINUX_SLEEP_COMMANDS: readonly LinuxInhibitorCommand[] = [
   {
     command: "systemd-inhibit",
-    args: ["--what=sleep", "--who=Poracode", "--why=Poracode is active", "--mode=block", "cat"],
+    args: ["--what=sleep", `--who=${BRAND_NAME}`, `--why=${ACTIVE_REASON}`, "--mode=block", "cat"],
   },
   {
     command: "gnome-session-inhibit",
-    args: ["--inhibit", "suspend", "--reason", "Poracode is active", "cat"],
+    args: ["--inhibit", "suspend", "--reason", ACTIVE_REASON, "cat"],
   },
 ];
 
@@ -53,14 +59,14 @@ const LINUX_SLEEP_COMMANDS: readonly LinuxInhibitorCommand[] = [
 const LINUX_SCREEN_LOCK_COMMANDS: readonly LinuxInhibitorCommand[] = [
   {
     command: "gnome-session-inhibit",
-    args: ["--inhibit", "idle", "--reason", "Poracode is keeping the screen awake", "cat"],
+    args: ["--inhibit", "idle", "--reason", SCREEN_AWAKE_REASON, "cat"],
   },
   {
     command: "systemd-inhibit",
     args: [
       "--what=idle",
-      "--who=Poracode",
-      "--why=Poracode is keeping the screen awake",
+      `--who=${BRAND_NAME}`,
+      `--why=${SCREEN_AWAKE_REASON}`,
       "--mode=block",
       "cat",
     ],

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
@@ -28,7 +29,7 @@ describe.skipIf(process.platform === "win32")("desktop CLI shell setup", () => {
     root = mkdtempSync(resolve("tmp/desktop-cli-shell-"));
     input = {
       resourcesDir: join(root, "Resources"),
-      executablePath: join(root, "Poracode"),
+      executablePath: join(root, "ViscosityCode"),
       appVersion: "2.0.0",
       electronVersion: "44.4.4",
       channel: "stable",
@@ -40,8 +41,8 @@ describe.skipIf(process.platform === "win32")("desktop CLI shell setup", () => {
     probe.mockResolvedValue({ stdout: "\n__PORACODE_CLI_PATH__\n/usr/bin:/bin\n" });
     vi.mocked(registerPosixDesktopCli).mockReturnValue({
       state: "unavailable",
-      commandName: "poracode",
-      launcherPath: join(root, "poracode"),
+      commandName: "viscositycode",
+      launcherPath: join(root, "viscositycode"),
       detail: "unavailable",
     });
   });
@@ -52,9 +53,9 @@ describe.skipIf(process.platform === "win32")("desktop CLI shell setup", () => {
     mkdirSync(bin, { recursive: true });
     vi.mocked(registerPosixDesktopCli).mockReturnValue({
       state: "registered",
-      commandName: "poracode",
-      launcherPath: join(root, "poracode"),
-      linkPath: join(bin, "poracode"),
+      commandName: "viscositycode",
+      launcherPath: join(root, "viscositycode"),
+      linkPath: join(bin, "viscositycode"),
       detail: "registered",
     });
     return bin;
@@ -103,7 +104,9 @@ describe.skipIf(process.platform === "win32")("desktop CLI shell setup", () => {
       stdout: `\n__PORACODE_CLI_PATH__\n/usr/bin:/bin\n__PORACODE_CLI_CONFIG__${config}\n`,
     });
     await registerPosixDesktopCliForShell(input);
-    expect(readFileSync(join(config, ".zshrc"), "utf8")).toContain("Poracode desktop CLI PATH");
+    expect(readFileSync(join(config, ".zshrc"), "utf8")).toContain(
+      "ViscosityCode desktop CLI PATH",
+    );
     expect(existsSync(join(root, ".zshrc"))).toBe(false);
   });
 
@@ -125,15 +128,15 @@ describe.skipIf(process.platform === "win32")("desktop CLI shell setup", () => {
     writeFileSync(join(root, ".profile"), "# existing login settings\n");
     await registerPosixDesktopCliForShell({ ...input, env: { ...input.env, SHELL: "/bin/bash" } });
     for (const name of [".profile", ".bashrc"])
-      expect(readFileSync(join(root, name), "utf8")).toContain("Poracode desktop CLI PATH");
+      expect(readFileSync(join(root, name), "utf8")).toContain("ViscosityCode desktop CLI PATH");
     expect(existsSync(join(root, ".bash_profile"))).toBe(false);
   });
 
   it("does not change shell files when a collision prevents registration", async () => {
     vi.mocked(registerPosixDesktopCli).mockReturnValue({
       state: "collision",
-      commandName: "poracode",
-      launcherPath: join(root, "poracode"),
+      commandName: "viscositycode",
+      launcherPath: join(root, "viscositycode"),
       detail: "preserved existing command",
     });
     await registerPosixDesktopCliForShell(input);

@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md. -->
 <html lang="en" class="dark" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
@@ -6,13 +7,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual"
     />
-    <meta name="theme-color" content="#070709" />
+    <!-- ViscosityCode: brand chrome colours (light by preference, dark otherwise). -->
+    <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0b" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="poracode-build-version" content="__PORACODE_BUILD_VERSION__" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Poracode" />
+    <meta name="apple-mobile-web-app-title" content="ViscosityCode" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Poracode</title>
+    <title>ViscosityCode</title>
     <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
     <link rel="icon" href="%BASE_URL%app-icon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="%BASE_URL%icons/icon-192.png" />
@@ -102,7 +105,9 @@
           root.classList.remove("light", "dark");
           root.classList.add(appearance);
           root.dataset.theme = appearance;
-          if (boot && boot.bg) root.style.backgroundColor = boot.bg;
+          // ViscosityCode: first launch (no cached theme) pre-paints the brand base.
+          root.style.backgroundColor =
+            boot && boot.bg ? boot.bg : appearance === "light" ? "#f4f4f5" : "#0a0a0b";
         } catch (e) {
           // Ignore; the renderer applies real settings shortly after mount.
         }
@@ -147,7 +152,8 @@
         align-items: center;
         justify-content: center;
         gap: 16px;
-        background: var(--background, #070709);
+        /* ViscosityCode: brand boot colours. */
+        background: var(--background, #0a0a0b);
         color: var(--foreground, #eeeeef);
         font:
           14px -apple-system,
@@ -156,7 +162,7 @@
           sans-serif;
       }
       html.light #poracode-boot {
-        background: var(--background, #fafafa);
+        background: var(--background, #f4f4f5);
         color: var(--foreground, #18181b);
       }
       #poracode-boot-spinner {
@@ -192,7 +198,7 @@
       }
     </style>
     <div id="poracode-boot" hidden>
-      <span>Poracode</span>
+      <span>ViscosityCode</span>
       <span id="poracode-boot-spinner" aria-hidden="true"></span>
       <span id="poracode-boot-status" role="status" aria-live="polite"></span>
       <button id="poracode-boot-retry" type="button" hidden>Reload</button>

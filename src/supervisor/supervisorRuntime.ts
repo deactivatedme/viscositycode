@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { joinRuntimeShutdown } from "@/shared/joinRuntimeShutdown";
 import { McpAuthenticationService } from "./mcp/McpAuthenticationService";
 import { HexVoiceService } from "./speech/HexVoiceService";
@@ -35,6 +36,7 @@ import type { CrossagentRoutingState } from "@/shared/crossagentRanking";
 import type { ConfirmCrossagentRoutingOverridePayload } from "@/shared/ipc/procedures/mcp";
 import type { ConfirmSupervisorSettingsEditsPayload } from "@/shared/ipc/procedures/settings";
 import { msg } from "@/shared/messages";
+import { resolvePoracodeChannel, userDataDirNameFor } from "@/shared/channel";
 import { poracodeBaseDirFromEnv, resolvePoracodePaths } from "@/shared/poracodePaths";
 import { getProjectFsPath, getWslLocationHostFsPath, joinProjectPosixPath } from "@/shared/wsl";
 import { prefetchNativeNodeRuntime } from "./runtime/prefetchNativeNode";
@@ -269,7 +271,9 @@ export class SupervisorRuntime {
     // by that path creating `./undefined/settings.json` in cwd, and the
     // supervisor must always operate out of an absolute baseDir so writes
     // land somewhere predictable regardless of cwd at spawn time.
-    const baseDir = poracodeBaseDirFromEnv() ?? join(homedir(), ".poracode");
+    // ViscosityCode: the fallback is the fork's channel data folder (~/.viscositycode).
+    const baseDir =
+      poracodeBaseDirFromEnv() ?? join(homedir(), userDataDirNameFor(resolvePoracodeChannel()));
     this.baseDir = baseDir;
     this.mcpOAuthService = new McpOAuthService({ baseDir });
     this.mcpOAuthRelay = new McpOAuthRelay(this.mcpOAuthService, {

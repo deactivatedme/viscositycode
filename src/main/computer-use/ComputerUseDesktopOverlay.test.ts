@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const electronMock = vi.hoisted(() => {
@@ -156,7 +157,7 @@ describe("ComputerUseDesktopOverlay", () => {
       expect(window.showInactive).toHaveBeenCalled();
       expect(window.setBounds).toHaveBeenLastCalledWith(expectedBounds[index]);
       const overlayHtml = decodeURIComponent(window.loadURL.mock.calls[0]![0].split(",", 2)[1]!);
-      expect(overlayHtml).toContain("Poracode using your computer | Esc to Exit");
+      expect(overlayHtml).toContain("ViscosityCode using your computer | Esc to Exit");
       expect(overlayHtml).toContain("<title>Poracode Computer Use Overlay</title>");
       expect(overlayHtml).toContain("Exit computer use");
       expect(overlayHtml).toContain("border: 1px solid rgba(211, 215, 222, 0.12)");
@@ -223,7 +224,7 @@ describe("ComputerUseDesktopOverlay", () => {
     const overlayHtml = decodeURIComponent(
       targetOverlay!.loadURL.mock.calls.at(-1)![0].split(",", 2)[1]!,
     );
-    expect(overlayHtml).toContain("Poracode is controlling Notepad in the background");
+    expect(overlayHtml).toContain("ViscosityCode is controlling Notepad in the background");
     expect(overlayHtml).toContain("<title>Poracode Computer Use Overlay</title>");
     expect(overlayHtml).toContain("Exit computer use");
     expect(overlayHtml).not.toContain("bottom: 16px");
@@ -261,7 +262,7 @@ describe("ComputerUseDesktopOverlay", () => {
       expect(window.setIgnoreMouseEvents).toHaveBeenLastCalledWith(false);
     }
     const takeoverHtml = decodeURIComponent(badge.loadURL.mock.calls.at(-1)![0].split(",", 2)[1]!);
-    expect(takeoverHtml).toContain("Poracode using your computer | Esc to Exit");
+    expect(takeoverHtml).toContain("ViscosityCode using your computer | Esc to Exit");
 
     overlay.setActivity({
       kind: "action",
@@ -277,7 +278,7 @@ describe("ComputerUseDesktopOverlay", () => {
     expect(electronMock.BrowserWindow.instances[1]?.visible).toBe(false);
     expect(badge.setIgnoreMouseEvents).toHaveBeenLastCalledWith(false);
     const restoredHtml = decodeURIComponent(badge.loadURL.mock.calls.at(-1)![0].split(",", 2)[1]!);
-    expect(restoredHtml).toContain("Poracode is controlling an app in the background");
+    expect(restoredHtml).toContain("ViscosityCode is controlling an app in the background");
 
     overlay.dispose();
     expect(electronMock.BrowserWindow.instances.every((window) => window.destroyed)).toBe(true);

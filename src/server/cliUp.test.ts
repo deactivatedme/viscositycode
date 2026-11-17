@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
@@ -764,8 +765,8 @@ describe("runUp", () => {
 
   it("moves an existing nightly service from the stable default to the nightly profile", async () => {
     const context = installedPrefix();
-    const stable = join(context.root, ".poracode");
-    const nightly = join(context.root, ".poracode-nightly");
+    const stable = join(context.root, ".viscositycode");
+    const nightly = join(context.root, ".viscositycode-nightly");
     const markerPath = join(context.release, "standalone.json");
     const marker = JSON.parse(readFileSync(markerPath, "utf8"));
     marker.version = "2.0.0-nightly.202611091529";

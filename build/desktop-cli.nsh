@@ -1,3 +1,4 @@
+; Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 ; Desktop-only command binding. No child process, server or service operation.
 !include LogicLib.nsh
 !include StrFunc.nsh
@@ -8,11 +9,13 @@
 !ifndef PORACODE_CLI_ENV_KEY
   !define PORACODE_CLI_ENV_KEY "Environment"
 !endif
+; ViscosityCode: fork-owned registry key and mutex, so a real Poracode install's
+; registration is never read, adopted, or blocked by this installer.
 !ifndef PORACODE_CLI_REG_KEY
-  !define PORACODE_CLI_REG_KEY "Software\Poracode\DesktopCli\${PORACODE_CLI_CHANNEL}"
+  !define PORACODE_CLI_REG_KEY "Software\ViscosityCode\DesktopCli\${PORACODE_CLI_CHANNEL}"
 !endif
 !ifndef PORACODE_CLI_MUTEX_PREFIX
-  !define PORACODE_CLI_MUTEX_PREFIX "PoracodeDesktopCli"
+  !define PORACODE_CLI_MUTEX_PREFIX "ViscosityCodeDesktopCli"
 !endif
 !ifdef BUILD_UNINSTALLER
   !define PORACODE_CLI_PREFIX "un."

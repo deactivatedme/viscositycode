@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "Poracode",
-  "short_name": "Poracode",
-  "description": "Run, follow, and steer Poracode AI agents from any device.",
+  "name": "ViscosityCode",
+  "short_name": "ViscosityCode",
+  "description": "Run, follow, and steer your ViscosityCode AI coding agents from any device.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#070709",
-  "theme_color": "#070709",
+  "background_color": "#0a0a0b",
+  "theme_color": "#0a0a0b",
   "categories": ["developer", "productivity", "utilities"],
   "icons": [
     {

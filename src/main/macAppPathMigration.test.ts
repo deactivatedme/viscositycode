@@ -1,14 +1,17 @@
-import { lstatSync, mkdirSync, mkdtempSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { repairLegacyMacAppPath } from "./macAppPathMigration";
 
+// ViscosityCode: the fork has no pre-rebrand macOS bundle to bridge, so the
+// upstream Dock-tile symlink repair is a no-op on every platform.
 describe("repairLegacyMacAppPath", () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "poracode-mac-app-path-"));
+    root = mkdtempSync(join(tmpdir(), "viscositycode-mac-app-path-"));
   });
 
   afterEach(() => {
@@ -22,74 +25,31 @@ describe("repairLegacyMacAppPath", () => {
     return executablePath;
   }
 
-  it("restores the legacy Nightly path as a relative symlink", () => {
-    const executablePath = packagedExecutable("Poracode Nightly.app");
-
-    expect(
-      repairLegacyMacAppPath("nightly", {
-        platform: "darwin",
-        isPackaged: true,
-        executablePath,
-      }),
-    ).toBe("created");
-
-    const legacyPath = join(root, "Lightcode Nightly.app");
-    expect(lstatSync(legacyPath).isSymbolicLink()).toBe(true);
-    expect(readlinkSync(legacyPath)).toBe("Poracode Nightly.app");
+  it("never creates a legacy app path next to a packaged macOS bundle", () => {
+    for (const [channel, appName] of [
+      ["stable", "ViscosityCode.app"],
+      ["nightly", "ViscosityCode Nightly.app"],
+    ] as const) {
+      const executablePath = packagedExecutable(appName);
+      expect(
+        repairLegacyMacAppPath(channel, { platform: "darwin", isPackaged: true, executablePath }),
+      ).toBe("skipped");
+    }
+    expect(readdirSync(root).toSorted()).toEqual([
+      "ViscosityCode Nightly.app",
+      "ViscosityCode.app",
+    ]);
   });
 
-  it("restores the legacy Stable path", () => {
-    const executablePath = packagedExecutable("Poracode.app");
-
+  it("skips unpackaged and non-macOS launches", () => {
+    const executablePath = packagedExecutable("ViscosityCode.app");
     expect(
-      repairLegacyMacAppPath("stable", {
-        platform: "darwin",
-        isPackaged: true,
-        executablePath,
-      }),
-    ).toBe("created");
-    expect(readlinkSync(join(root, "Lightcode.app"))).toBe("Poracode.app");
-  });
-
-  it("never replaces an existing legacy app", () => {
-    const executablePath = packagedExecutable("Poracode Nightly.app");
-    const legacyPath = join(root, "Lightcode Nightly.app");
-    mkdirSync(legacyPath);
-
-    expect(
-      repairLegacyMacAppPath("nightly", {
-        platform: "darwin",
-        isPackaged: true,
-        executablePath,
-      }),
-    ).toBe("skipped");
-    expect(lstatSync(legacyPath).isDirectory()).toBe(true);
-  });
-
-  it("skips unpackaged, non-macOS, and unexpectedly named bundles", () => {
-    const executablePath = packagedExecutable("Poracode Nightly.app");
-    const otherExecutablePath = packagedExecutable("Renamed.app");
-
-    expect(
-      repairLegacyMacAppPath("nightly", {
-        platform: "linux",
-        isPackaged: true,
-        executablePath,
-      }),
+      repairLegacyMacAppPath("stable", { platform: "linux", isPackaged: true, executablePath }),
     ).toBe("skipped");
     expect(
-      repairLegacyMacAppPath("nightly", {
-        platform: "darwin",
-        isPackaged: false,
-        executablePath,
-      }),
+      repairLegacyMacAppPath("stable", { platform: "darwin", isPackaged: false, executablePath }),
     ).toBe("skipped");
-    expect(
-      repairLegacyMacAppPath("nightly", {
-        platform: "darwin",
-        isPackaged: true,
-        executablePath: otherExecutablePath,
-      }),
-    ).toBe("skipped");
+    expect(repairLegacyMacAppPath("stable")).toBe("skipped");
+    expect(readdirSync(root)).toEqual(["ViscosityCode.app"]);
   });
 });

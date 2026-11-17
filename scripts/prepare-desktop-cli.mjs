@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createHash } from "node:crypto";
 import {
   chmodSync,
@@ -103,7 +104,9 @@ export function prepareDesktopCli(options) {
         throw new Error(
           "Desktop CLI staging requires a supported platform, channel and executable basename.",
         );
-      const commandName = channel === "nightly" ? "poracode-next" : "poracode";
+      // ViscosityCode: fork-owned command names; the launcher still starts the
+      // same bundled server through bootstrap.mjs.
+      const commandName = channel === "nightly" ? "viscositycode-next" : "viscositycode";
       const shellWord = (value) => `'${value.replaceAll("'", `'"'"'`)}'`;
       const launcher =
         platform === "win32"
@@ -118,7 +121,7 @@ export function prepareDesktopCli(options) {
               `"%~dp0..\\..\\${executableName}" "%~dp0bootstrap.mjs" %*`,
               "exit /b %ERRORLEVEL%",
               ":missing",
-              "echo Poracode desktop has moved or been removed. Open or reinstall the selected desktop release to repair its command. 1>&2",
+              "echo ViscosityCode desktop has moved or been removed. Open or reinstall the selected desktop release to repair its command. 1>&2",
               "exit /b 127",
               "",
             ].join("\r\n")
@@ -128,7 +131,7 @@ export function prepareDesktopCli(options) {
               "self=$0",
               "hops=0",
               'while [ -L "$self" ]; do',
-              '  [ "$hops" -lt 16 ] || { echo "Poracode command link loop." >&2; exit 1; }',
+              '  [ "$hops" -lt 16 ] || { echo "ViscosityCode command link loop." >&2; exit 1; }',
               '  target=$(readlink "$self") || exit 1',
               '  case "$target" in /*) self=$target ;; *) self=$(dirname "$self")/$target ;; esac',
               "  hops=$((hops + 1))",
@@ -136,7 +139,7 @@ export function prepareDesktopCli(options) {
               'dir=$(CDPATH= cd -P "$(dirname "$self")" && pwd) || exit 1',
               `app="$dir/${platform === "darwin" ? "../../MacOS/" : "../../"}"${shellWord(executableName)}`,
               'if [ ! -x "$app" ]; then',
-              '  echo "Poracode desktop has moved or been removed. Open or reinstall the selected desktop release to repair its command." >&2',
+              '  echo "ViscosityCode desktop has moved or been removed. Open or reinstall the selected desktop release to repair its command." >&2',
               "  exit 127",
               "fi",
               'exec env NODE_OPTIONS= NODE_PATH= ELECTRON_RUN_AS_NODE=1 "$app" "$dir/bootstrap.mjs" "$@"',

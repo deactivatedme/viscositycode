@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
@@ -92,7 +93,7 @@ describe("server upgrade recovery under the prefix lock (V3)", () => {
       const { prefix, releaseDir, journalPath } = sandbox();
       const home = canonicalHostPath(join(prefix, ".."));
       vi.stubEnv("HOME", home);
-      vi.stubEnv("PORACODE_BASE_DIR", join(home, ".poracode"));
+      vi.stubEnv("PORACODE_BASE_DIR", join(home, ".viscositycode"));
       writeFileSync(
         join(releaseDir, "package.json"),
         JSON.stringify({ version: "2.0.0-nightly.202611091529" }),

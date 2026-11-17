@@ -1,8 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { threadGroupColor } from "@/shared/browserMcpThread";
 import { browserTabGroupSchema, type BrowserTabGroupInfo } from "@/shared/ipc";
 
 const AGENT_GROUP_ID = "group-agent";
-const AGENT_GROUP_TITLE = "Poracode";
+// ViscosityCode: the shared agent tab group is titled with the product name.
+const AGENT_GROUP_TITLE = BRAND_NAME;
 const AGENT_GROUP_COLOR = "purple" as const;
 
 interface GroupableTab {

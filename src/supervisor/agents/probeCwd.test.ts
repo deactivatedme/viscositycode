@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -16,7 +17,7 @@ vi.mock("node:fs", async () => {
 
 import { getAgentProbeCwd, resolveProbeSpawnCwd } from "./probeCwd";
 
-const probeDir = join(homedir(), ".poracode", "agent-probe");
+const probeDir = join(homedir(), ".viscositycode", "agent-probe");
 
 beforeEach(() => {
   mkdirSyncMock.mockReset();

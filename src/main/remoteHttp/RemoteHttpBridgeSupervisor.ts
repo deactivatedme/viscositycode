@@ -1,9 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   MessageChannelMain,
   utilityProcess,
   type ForkOptions,
   type MessagePortMain,
 } from "electron";
+import { BRAND_NAME } from "@/shared/brand";
 import {
   REMOTE_HTTP_BRIDGE_PORT_CHANNEL,
   REMOTE_HTTP_BRIDGE_VERSION,
@@ -432,7 +434,8 @@ export class RemoteHttpBridgeSupervisor {
     const forkOptions: ForkOptions = {
       env,
       stdio: ["ignore", "inherit", "inherit"],
-      serviceName: "Poracode Remote HTTP Bridge",
+      // ViscosityCode: shown by OS process monitors.
+      serviceName: `${BRAND_NAME} Remote HTTP Bridge`,
       ...(execArgv ? { execArgv } : {}),
     };
     const child = this.forkUtility(this.options.utilityPath, forkOptions);

@@ -1,4 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UpdateStatus } from "@/shared/ipc";
 
 const autoUpdaterMock = vi.hoisted(() => {
@@ -32,10 +36,130 @@ vi.mock("electron-updater", async () => {
   return { autoUpdater: autoUpdaterMock, CancellationToken };
 });
 
-import { createAutoUpdaterController } from "./autoUpdater";
+import { createAutoUpdaterController, hasConfiguredUpdateFeed } from "./autoUpdater";
 
 const INITIAL_CHECK_DELAY_MS = 30_000;
 const PERIODIC_CHECK_INTERVAL_MS = 60 * 60 * 1_000;
+
+// ViscosityCode: the updater only runs for a build with an update feed. Model a
+// packaged build that shipped app-update.yml for the upstream behavior tests.
+const packagedResources = mkdtempSync(join(tmpdir(), "viscositycode-updater-resources-"));
+const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
+beforeAll(() => {
+  writeFileSync(join(packagedResources, "app-update.yml"), "provider: github\n");
+  Object.defineProperty(process, "resourcesPath", {
+    value: packagedResources,
+    configurable: true,
+    writable: true,
+  });
+});
+afterAll(() => {
+  if (originalResourcesPath) Object.defineProperty(process, "resourcesPath", originalResourcesPath);
+  else Reflect.deleteProperty(process, "resourcesPath");
+  rmSync(packagedResources, { recursive: true, force: true });
+});
+
+describe("hasConfiguredUpdateFeed", () => {
+  it("requires a packaged app-update.yml or a local update server", () => {
+    const seen: string[] = [];
+    const exists = (path: string) => {
+      seen.push(path);
+      return path === join("/app/resources", "app-update.yml");
+    };
+    expect(hasConfiguredUpdateFeed({ env: {}, resourcesPath: "/app/resources", exists })).toBe(
+      true,
+    );
+    expect(hasConfiguredUpdateFeed({ env: {}, resourcesPath: "/other/resources", exists })).toBe(
+      false,
+    );
+    expect(seen).toEqual([
+      join("/app/resources", "app-update.yml"),
+      join("/other/resources", "app-update.yml"),
+    ]);
+    expect(
+      hasConfiguredUpdateFeed({
+        env: { UPDATE_SERVER_URL: "http://127.0.0.1:8080" },
+        resourcesPath: "/other/resources",
+        exists,
+      }),
+    ).toBe(true);
+    expect(
+      hasConfiguredUpdateFeed({
+        env: { UPDATE_SERVER_URL: "  " },
+        resourcesPath: "/other/resources",
+        exists,
+      }),
+    ).toBe(false);
+  });
+
+  it("detects the shipped app-update.yml next to the app resources", () => {
+    expect(hasConfiguredUpdateFeed({ env: {} })).toBe(true);
+    expect(hasConfiguredUpdateFeed({ env: {}, resourcesPath: join(packagedResources, "x") })).toBe(
+      false,
+    );
+  });
+});
+
+describe("createAutoUpdaterController without an update feed", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("never schedules checks and reports a quiet not-available status", async () => {
+    const sendStatus = vi.fn<(status: UpdateStatus) => void>();
+    const reportError = vi.fn<(error: unknown) => void>();
+    const beforeInstall = vi.fn<() => void>();
+    const controller = createAutoUpdaterController(
+      sendStatus,
+      "stable",
+      false,
+      reportError,
+      beforeInstall,
+      { hasUpdateFeed: () => false },
+    );
+
+    controller.initialize();
+    await vi.advanceTimersByTimeAsync(INITIAL_CHECK_DELAY_MS + PERIODIC_CHECK_INTERVAL_MS * 2);
+
+    expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.on).not.toHaveBeenCalled();
+    expect(sendStatus).not.toHaveBeenCalled();
+    expect(controller.getStatus()).toEqual({ type: "update-not-available" });
+
+    await controller.checkForUpdate();
+    await controller.startUpdateDownload();
+    controller.installUpdate();
+
+    expect(sendStatus).toHaveBeenCalledTimes(2);
+    expect(sendStatus).toHaveBeenLastCalledWith({ type: "update-not-available" });
+    expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
+    expect(beforeInstall).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it("keeps the development-mode message ahead of feed detection", async () => {
+    const sendStatus = vi.fn<(status: UpdateStatus) => void>();
+    const hasUpdateFeed = vi.fn<() => boolean>(() => false);
+    const controller = createAutoUpdaterController(sendStatus, "stable", true, vi.fn(), vi.fn(), {
+      hasUpdateFeed,
+    });
+
+    await controller.checkForUpdate();
+
+    expect(sendStatus).toHaveBeenCalledExactlyOnceWith({
+      type: "error",
+      messageKey: "update.devUnavailable",
+    });
+    expect(hasUpdateFeed).not.toHaveBeenCalled();
+  });
+});
 
 describe("createAutoUpdaterController", () => {
   it("retains safe cause fields for an unexpected emitted failure without its payload", () => {

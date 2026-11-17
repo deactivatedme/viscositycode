@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { utilityProcess, type ForkOptions } from "electron";
+import { BRAND_NAME } from "@/shared/brand";
 import type { SshConnectPayload, SshConnectResult, SshDiscoveredHost } from "@/shared/ssh";
 import {
   deserializeSshEnvironmentError,
@@ -392,7 +394,8 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
         [SSH_ENVIRONMENT_WORKER_CONFIG_ENV]: JSON.stringify(this.options.config),
       },
       stdio: ["ignore", "inherit", "inherit"],
-      serviceName: "Poracode SSH Environment",
+      // ViscosityCode: shown by OS process monitors.
+      serviceName: `${BRAND_NAME} SSH Environment`,
       ...(execArgv ? { execArgv } : {}),
     };
     const child = this.forkUtility(this.options.utilityPath, forkOptions);

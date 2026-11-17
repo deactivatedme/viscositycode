@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -145,7 +146,7 @@ describe("readOrCreateSafeStorageSecretKey", () => {
     });
 
     expect(() => readOrCreateSafeStorageSecretKey(dir, "linux")).toThrow(
-      "Unable to encrypt the Poracode secret storage key.",
+      "Unable to encrypt the ViscosityCode secret storage key.",
     );
     expect(() => readFileSync(join(dir, "secret-key.safe"))).toThrow(/ENOENT|no such file/i);
   });

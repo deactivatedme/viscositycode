@@ -1,0 +1,28 @@
+ViscosityCode
+Modifications Copyright 2026 ViscosityCode contributors
+
+This product is a modified version of Poracode
+(https://github.com/Porabuild/Poracode).
+Poracode is Copyright Porabuild and the Poracode contributors, and is
+licensed under the Apache License, Version 2.0.
+
+ViscosityCode is distributed under the same license. A copy of the
+Apache License, Version 2.0 is included in the LICENSE file and is also
+available at http://www.apache.org/licenses/LICENSE-2.0.
+
+Summary of modifications made by the ViscosityCode contributors:
+  - Renamed the product to ViscosityCode with its own install identity
+    (app ID, data folders, desktop command line, installer registry keys).
+  - Replaced the user interface theme and layout with a Cursor-inspired
+    design; the agent engine (supervisor, runtimes, persistence) is
+    Poracode's.
+  - Disabled update checks, release downloads, and other online services
+    that would contact the Poracode project, unless the builder configures
+    a ViscosityCode release feed.
+
+ViscosityCode is not affiliated with or endorsed by Porabuild or the
+Poracode project. "Poracode" is used only to identify the upstream work.
+
+Third-party components bundled with this product keep their own licenses
+and notices; see the files under resources/third-party and the license
+files of the bundled packages.

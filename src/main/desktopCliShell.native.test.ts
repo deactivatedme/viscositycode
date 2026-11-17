@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -72,7 +73,7 @@ describe.skipIf(process.platform === "win32")("native shell PATH discovery", () 
       const profile = shell.endsWith("fish")
         ? join(root, ".config", "fish", "config.fish")
         : join(root, shell.endsWith("zsh") ? ".zshrc" : ".bashrc");
-      expect(readFileSync(profile, "utf8")).toContain("Poracode desktop CLI PATH v1");
+      expect(readFileSync(profile, "utf8")).toContain("ViscosityCode desktop CLI PATH v1");
     });
   }
 });

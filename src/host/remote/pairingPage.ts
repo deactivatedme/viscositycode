@@ -1,4 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { type PoracodeChannel, productNameFor, resolvePoracodeChannel } from "@/shared/channel";
+
+// ViscosityCode: brand dark base (matches index.html and the PWA manifest).
+// These server-rendered pages are dark-only, so the light base (#f4f4f5) is
+// not used here.
+const BRAND_BACKGROUND_DARK = "#0a0a0b";
 
 function jsonForScript(value: string): string {
   return JSON.stringify(value).replaceAll("<", "\\u003c");
@@ -23,7 +30,7 @@ function buildDarkPageShell(input: {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#070709" />
+  <meta name="theme-color" content="${BRAND_BACKGROUND_DARK}" />
   <title>${productNameFor(resolvePoracodeChannel())}</title>${input.headExtra ?? ""}
   <style>
 ${input.css}
@@ -57,7 +64,7 @@ export function buildLocalPairingPageHtml(input: {
   <link rel="icon" href="/app-icon.svg" />`,
     css: `    :root {
       color-scheme: dark;
-      --bg: #070709;
+      --bg: ${BRAND_BACKGROUND_DARK};
       --panel: #0e0e14;
       --line: rgba(255, 255, 255, 0.12);
       --text: #eaf0fb;
@@ -122,7 +129,7 @@ export function buildLocalPairingPageHtml(input: {
     body: `  <div class="app">
     <main>
       <h1>${productNameFor(resolvePoracodeChannel())}</h1>
-      <p>The web app bundle is not available from this desktop build. Rebuild Poracode so <span class="inline-code">index.html</span> is included in the renderer output, then open the pairing link again.</p>
+      <p>The web app bundle is not available from this desktop build. Rebuild ${BRAND_NAME} so <span class="inline-code">index.html</span> is included in the renderer output, then open the pairing link again.</p>
       <p>Desktop endpoint</p>
       <code class="endpoint" id="endpoint"></code>
 ${fingerprintHint}
@@ -146,7 +153,7 @@ export function buildForwardEnterErrorPageHtml(): string {
     css: `    :root {
       color-scheme: dark;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #070709;
+      background: ${BRAND_BACKGROUND_DARK};
       color: #eaf0fb;
     }
     body {
@@ -202,8 +209,8 @@ function buildPairingManifest(channel: PoracodeChannel): string {
     display: "standalone",
     // Matches the installed PWA's splash/status chrome to the app's dark
     // background (canonical index theme-color).
-    background_color: "#070709",
-    theme_color: "#070709",
+    background_color: BRAND_BACKGROUND_DARK,
+    theme_color: BRAND_BACKGROUND_DARK,
     // PNG icons are copied from public/ into the built renderer (/icons) and
     // served by the canonical static client; the SVG falls back for older builds.
     icons: [

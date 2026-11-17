@@ -1,8 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { safeStorage } from "electron";
 import { writeFileAtomic } from "@/shared/atomicFile";
+import { BRAND_NAME } from "@/shared/brand";
 import { restrictToOwner } from "@/shared/restrictToOwner";
 import { safeStorageHealth } from "./safeStorageHealth";
 
@@ -44,15 +46,15 @@ export class SafeStorageKeyUnavailableError extends Error {
     keyFileName: string,
   ) {
     super(
-      `The stored Poracode credential key (${keyFileName}) could not be decrypted with this ` +
+      `The stored ${BRAND_NAME} credential key (${keyFileName}) could not be decrypted with this ` +
         `machine's OS secret storage (${reason === "invalid_key" ? "decrypted to invalid key material" : "decryption failed"}). ` +
         "Nothing was rotated, deleted or replaced. Stored provider sign-ins and other sealed " +
         "secrets encrypted with the previous key can no longer be unlocked by this " +
         "installation until the original OS keychain entry is restored. To recover: restore " +
         "the original OS keychain entry (keychain migration, reset or profile recreation " +
-        "causes this) and start Poracode again. To start over deliberately: quit Poracode, " +
+        `causes this) and start ${BRAND_NAME} again. To start over deliberately: quit ${BRAND_NAME}, ` +
         `remove the preserved ${keyFileName} file from this profile's data directory, then ` +
-        "start Poracode and sign in again — sealed values from the previous key must be " +
+        `start ${BRAND_NAME} and sign in again — sealed values from the previous key must be ` +
         "re-entered on each surface.",
     );
     this.name = "SafeStorageKeyUnavailableError";
@@ -65,13 +67,13 @@ function createPersistentKey(path: string, platform: NodeJS.Platform): string {
   try {
     encrypted = safeStorage.encryptString(key);
   } catch {
-    throw new Error("Unable to encrypt the Poracode secret storage key.");
+    throw new Error(`Unable to encrypt the ${BRAND_NAME} secret storage key.`);
   }
   try {
     writeFileAtomic(path, encrypted.toString("base64"), { encoding: "utf8", mode: 0o600 });
     restrictToOwner(path, { platform });
   } catch {
-    throw new Error("Unable to persist the encrypted Poracode secret storage key.");
+    throw new Error(`Unable to persist the encrypted ${BRAND_NAME} secret storage key.`);
   }
   return key;
 }
@@ -97,7 +99,7 @@ export function readOrCreateSafeStorageSecretKey(
     serialized = readFileSync(path, "utf8");
   } catch (error) {
     if (hasErrorCode(error, "ENOENT")) return createPersistentKey(path, platform);
-    throwSecretStorageError("Unable to read the encrypted Poracode secret storage key.");
+    throwSecretStorageError(`Unable to read the encrypted ${BRAND_NAME} secret storage key.`);
   }
 
   try {

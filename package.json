@@ -2,14 +2,10 @@
   "name": "poracode",
   "version": "2.0.0",
   "private": true,
-  "description": "The universal desktop orchestrator for AI agents. Run terminal-native and structured chat agents side-by-side.",
-  "homepage": "https://poracode.com/",
+  "description": "ViscosityCode: a Cursor-inspired desktop orchestrator for AI coding agents, built on the Poracode engine. Run terminal-native and structured chat agents side-by-side.",
+  "homepage": "https://github.com/Porabuild/Poracode",
   "license": "Apache-2.0",
-  "author": "Porabuild",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Porabuild/Poracode"
-  },
+  "author": "ViscosityCode contributors",
   "workspaces": [
     "website",
     "packages/agents-usage",
@@ -334,6 +330,7 @@
     "monaco-editor@0.56.0": "patches/monaco-editor@0.56.0.patch",
     "@expo/hub-client@1.5.0": "patches/@expo__hub-client@1.5.0.patch"
   },
+  "productName": "ViscosityCode",
   "trustedDependencies": [
     "@sentry/cli",
     "bun",

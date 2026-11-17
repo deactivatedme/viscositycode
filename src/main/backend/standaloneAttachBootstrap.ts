@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Focused Electron bootstrap helpers for standalone attach. Extracted from
 // `src/main/main.ts` so the God file stays flat: main owns windows/tray/quit,
 // this module owns the attach namespace, the deferred authenticated decision,
@@ -13,6 +14,7 @@
 
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { BRAND_NAME } from "@/shared/brand";
 import type { PoracodeChannel } from "@/shared/channel";
 import { resolvePoracodeBaseDir } from "@/shared/poracodePaths";
 import { PORACODE_REMOTE_PROTOCOL_VERSION } from "@/shared/remote/protocol";
@@ -38,7 +40,8 @@ export interface DesktopBaseDirInput {
 /** Single mapping of PORACODE_BASE_DIR/dev/channel to the profile namespace. */
 export function resolveDesktopBaseDir(input: DesktopBaseDirInput): string {
   if (input.baseDirOverride) return input.baseDirOverride;
-  if (input.isDev) return join((input.homedir ?? homedir)(), ".poracode-dev");
+  // ViscosityCode: fork-owned dev profile, never a real Poracode dev profile.
+  if (input.isDev) return join((input.homedir ?? homedir)(), ".viscositycode-dev");
   return resolvePoracodeBaseDir(input.channel);
 }
 
@@ -111,7 +114,8 @@ export function describeAttachRefusal(
 ): string {
   if (outcome.kind !== "refuse") return "Standalone attach did not refuse.";
   return (
-    `Poracode found an existing host owner for this profile but cannot attach to it ` +
+    // ViscosityCode: shown in the startup failure dialog, so it names the product.
+    `${BRAND_NAME} found an existing host owner for this profile but cannot attach to it ` +
     `(${outcome.reason}). Stop the running owner or use its profile before starting ` +
     `another authority. Detail: ${outcome.detail}`
   );
@@ -183,7 +187,7 @@ export function createStandaloneAttachSession(input: {
     if (reply.ownerGeneration !== input.info.ownerGeneration) {
       throw new Error(
         "The standalone owner generation changed (the owner restarted under this profile). " +
-          "Restart Poracode to re-decide and re-pair; refusing to continue against a " +
+          `Restart ${BRAND_NAME} to re-decide and re-pair; refusing to continue against a ` +
           "different owner.",
       );
     }

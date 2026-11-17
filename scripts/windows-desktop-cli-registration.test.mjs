@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
@@ -19,8 +20,8 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Dedicated native qualification: compiles and runs only this fixture, using a
 // fresh UUID-scoped registry key. Never downloads a compiler or touches real PATH.
 async function exerciseDesktopCliRegistration(channel, unqualified = false) {
-  const commandName = channel === "nightly" ? "poracode-next" : "poracode";
-  const productFilename = channel === "nightly" ? "Poracode Nightly" : "Poracode";
+  const commandName = channel === "nightly" ? "viscositycode-next" : "viscositycode";
+  const productFilename = channel === "nightly" ? "ViscosityCode Nightly" : "ViscosityCode";
   const cache = join(process.env.LOCALAPPDATA, "electron-builder", "Cache", "nsis");
   const nsisDir = process.env.PORACODE_TEST_NSIS_DIR ?? join(cache, "nsis-3.0.4.1-nsis-3.0.4.1");
   const plugins =
@@ -43,7 +44,7 @@ async function exerciseDesktopCliRegistration(channel, unqualified = false) {
     return value.replaceAll("$", () => "$$").replaceAll('"', () => '$\\"');
   };
   const fixtureId = randomUUID();
-  const ownKey = `Software\\Poracode\\CliRegistrationTests\\${fixtureId}`;
+  const ownKey = `Software\\ViscosityCode\\CliRegistrationTests\\${fixtureId}`;
   const prefix = join(root, "selected ü ! & (app)");
   const commandDir = join(prefix, "resources", "desktop-cli");
   mkdirSync(commandDir, { recursive: true });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { realpathSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DESKTOP_CLI_RESOURCE_DIRECTORIES } from "../../packages/poracode-cli/lib/desktopBundle.mjs";
@@ -38,7 +39,7 @@ export function desktopAppImageLaunchArguments(): string[] {
   const bootstrap = [
     'const {join} = require("node:path");',
     'const {pathToFileURL} = require("node:url");',
-    'if (!process.env.APPDIR) throw new Error("Poracode AppImage did not mount its runtime.");',
+    'if (!process.env.APPDIR) throw new Error("ViscosityCode AppImage did not mount its runtime.");',
     'process.argv[1] = join(process.env.APPDIR, "resources/desktop-cli/bootstrap.mjs");',
     "import(pathToFileURL(process.argv[1]).href)",
     ".catch(error => { console.error(error); process.exitCode = 1; });",

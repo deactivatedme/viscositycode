@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
 import { performPageActions, readPerformSteps } from "@/host/browser/mcp/tools/perform";
 import {
   addInitScript,
@@ -42,16 +44,16 @@ export async function dispatchTool(
     case "api":
       return {
         server: "browser",
-        description:
-          "Controls the Poracode in-app browser panel through tabs, navigation, inspection, input, screenshots, console, network, dialogs, cookies, and storage.",
+        // ViscosityCode: agents may quote this text back to the user.
+        description: `Controls the ${BRAND_NAME} in-app browser panel through tabs, navigation, inspection, input, screenshots, console, network, dialogs, cookies, and storage.`,
         guidance: [
-          "Prefer this MCP server over shell-driven browser automation when a page is visible in Poracode.",
+          `Prefer this MCP server over shell-driven browser automation when a page is visible in ${BRAND_NAME}.`,
           "Call enable before a browsing session and disable before pausing for user input or finishing.",
           "Start with snapshot or find to identify @e refs before click, fill, type, hover, get, is, or scroll.",
           "Use fill for form fields when replacing text; use type only when appending text to the current value.",
           "Use wait after navigation or mutations instead of fixed sleeps unless a plain ms delay is intentional.",
           "Use requests and console after actions to verify web app behavior and diagnose failures.",
-          "Use eval, cookies, and storage only when the corresponding Poracode setting allows it.",
+          `Use eval, cookies, and storage only when the corresponding ${BRAND_NAME} setting allows it.`,
         ],
         workflows: {
           inspect: ["list_tabs", "snapshot", "find", "get", "is"],

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * `bun run tui:build` — compile the production TUI entry (`tui/src/main.ts`)
  * into one self-contained executable per target with the matching OpenTUI
@@ -23,6 +24,7 @@ import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { FORK_GITHUB_REPOSITORY } from "../src/shared/viscosityRelease.ts";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const tuiRoot = join(repoRoot, "tui");
@@ -58,8 +60,32 @@ const sha256File = (path) => createHash("sha256").update(readFileSync(path)).dig
 
 const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
 const appVersion = packageJson.version;
-const repository = packageJson.repository?.url ?? "https://github.com/Porabuild/Poracode";
-const downloadBaseUrl = `${repository.replace(/\.git$/, "")}/releases/download`;
+
+/**
+ * ViscosityCode: TUI binaries download only from the fork's own GitHub
+ * releases, named as "owner/repo" by VISCOSITYCODE_UPDATE_REPO or
+ * FORK_GITHUB_REPOSITORY (src/shared/viscosityRelease.ts) — never from
+ * package.json's upstream repository. Without either, the manifest carries no
+ * download base, so the CLI reports that no download source is configured
+ * instead of contacting upstream.
+ */
+function forkTuiDownloadBaseUrl(env = process.env) {
+  const fromEnv = env.VISCOSITYCODE_UPDATE_REPO?.trim();
+  const raw = fromEnv || FORK_GITHUB_REPOSITORY.trim();
+  if (!raw) return undefined;
+  const match = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/u.exec(raw);
+  if (!match || match[2] === "." || match[2] === "..") {
+    const source = fromEnv ? "VISCOSITYCODE_UPDATE_REPO" : "FORK_GITHUB_REPOSITORY";
+    throw new Error(`${source} must be "owner/repo"; got ${JSON.stringify(raw)}.`);
+  }
+  return `https://github.com/${match[1]}/${match[2]}/releases/download`;
+}
+const downloadBaseUrl = forkTuiDownloadBaseUrl();
+if (!downloadBaseUrl)
+  console.warn(
+    "[tui:build] no fork release repository (VISCOSITYCODE_UPDATE_REPO or FORK_GITHUB_REPOSITORY); " +
+      "the manifest declares no download source.",
+  );
 
 async function buildTarget(target) {
   const spec = TARGETS[target];
@@ -156,7 +182,7 @@ for (const target of targets) {
 const manifest = {
   formatVersion: 1,
   appVersion,
-  downloadBaseUrl,
+  ...(downloadBaseUrl ? { downloadBaseUrl } : {}),
   assets,
 };
 const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`;

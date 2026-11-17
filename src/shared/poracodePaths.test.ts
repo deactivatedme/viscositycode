@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,7 +10,7 @@ import {
 
 describe("poracodePaths", () => {
   it("derives the default base dir under the user home", () => {
-    expect(resolvePoracodeBaseDir("stable")).toBe(join(homedir(), ".poracode"));
+    expect(resolvePoracodeBaseDir("stable")).toBe(join(homedir(), ".viscositycode"));
   });
 
   it("accepts an absolute PORACODE_DATA_DIR from the environment", () => {
@@ -27,7 +28,7 @@ describe("poracodePaths", () => {
   });
 
   it("returns the nightly base dir when the channel is nightly", () => {
-    expect(resolvePoracodeBaseDir("nightly")).toBe(join(homedir(), ".poracode-nightly"));
+    expect(resolvePoracodeBaseDir("nightly")).toBe(join(homedir(), ".viscositycode-nightly"));
   });
 
   it("derives all persisted paths from the provided base dir", () => {

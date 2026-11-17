@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Focused regression for the never-silent startup refusal (V5 plan H5 /
 // batch 0.3): a startup failure — the load-bearing case being a standalone
 // owner that is still starting — must surface a modal dialog built from the
@@ -5,6 +6,7 @@
 // old console-only quit.
 
 import { describe, expect, it, vi } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import { msg } from "@/shared/messages";
 import { describeAttachRefusal } from "./backend/standaloneAttachBootstrap";
 import {
@@ -47,7 +49,8 @@ describe("startup failure dialog", () => {
     expect(spec.message).toBe(
       msg("startup.failure.body", {
         detail:
-          "Poracode found an existing host owner for this profile but cannot attach to it " +
+          // ViscosityCode: the refusal names the product.
+          `${BRAND_NAME} found an existing host owner for this profile but cannot attach to it ` +
           "(non-ready-owner). Stop the running owner or use its profile before starting " +
           "another authority. Detail: Host control refused describe: not-ready.",
       }),

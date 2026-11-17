@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { once } from "node:events";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
@@ -357,13 +358,13 @@ describe("bundled web client route precedence", () => {
     const document = await fetch(new URL("/", info.httpBaseUrl));
     expect(document.status).toBe(200);
     const html = await document.text();
-    expect(html).toContain("Poracode");
+    expect(html).toContain("ViscosityCode"); // ViscosityCode: fork brand on the pairing fallback page
     expect(html).toContain('rel="manifest"');
     expect(html).not.toContain(INDEX_MARKER);
 
     const manifest = await fetch(new URL("/manifest.webmanifest", info.httpBaseUrl));
     expect(manifest.status).toBe(200);
-    await expect(manifest.json()).resolves.toMatchObject({ name: "Poracode", start_url: "/" });
+    await expect(manifest.json()).resolves.toMatchObject({ name: "ViscosityCode", start_url: "/" });
 
     const worker = await fetch(new URL("/service-worker.js", info.httpBaseUrl));
     expect(worker.status).toBe(200);

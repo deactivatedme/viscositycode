@@ -1,6 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { existsSync, realpathSync, rmSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
+import { BRAND_NAME } from "@/shared/brand";
 import { resolvePoracodeBaseDir } from "@/shared/poracodePaths";
+import { FORK_GITHUB_REPOSITORY } from "@/shared/viscosityRelease";
 import { resolveHostRootPaths } from "@/backend/ownership/hostRootPaths";
 import { readStandaloneRuntimeMarker } from "../../scripts/server-release-install.mjs";
 import { defaultCliInstallPrefix } from "../../packages/poracode-cli/lib/installPaths.mjs";
@@ -13,7 +16,10 @@ import { probeRunningOwner } from "./serverUpgradeIdentity";
  * every lifecycle command (`update`, `uninstall`, `up`) needs to stay inside
  * it — prefix resolution, the running-owner probe, and TUI cache cleanup.
  */
-export const RELEASE_REPOSITORY = "Porabuild/Poracode";
+// ViscosityCode: CLI releases come only from the fork's own GitHub repository
+// ("owner/repo" in src/shared/viscosityRelease.ts), never from upstream
+// Poracode. Empty means this build has no release feed.
+export const RELEASE_REPOSITORY: string = FORK_GITHUB_REPOSITORY;
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
 
 export class SelfUpdateError extends Error {
@@ -21,6 +27,22 @@ export class SelfUpdateError extends Error {
     super(message);
     this.name = "SelfUpdateError";
   }
+}
+
+/**
+ * The release repository for CLI self-update and release downloads. Refuses
+ * before any network request when this build has none configured.
+ */
+export function requireReleaseRepository(repository: string = RELEASE_REPOSITORY): string {
+  const trimmed = repository.trim();
+  if (!trimmed) {
+    throw new SelfUpdateError(
+      `This ${BRAND_NAME} build has no release repository configured, so it cannot check ` +
+        "for or download CLI releases. Install a newer build with what installed this one, " +
+        "or upgrade from a local archive with --from <tarball>.",
+    );
+  }
+  return trimmed;
 }
 
 export interface InstallerPrefix {
@@ -49,9 +71,9 @@ export function resolveInstallerPrefix(input: {
       !existsSync(join(dirname(releases), "current"))
     ) {
       throw new SelfUpdateError(
-        "This poracode was not installed by the one-line installer. Update it with what " +
-          "installed it (the desktop app's updater, Homebrew, Scoop, the AUR, or npx " +
-          "poracode@latest), or pass --prefix for a one-line-installer prefix.",
+        "This CLI was not installed by the one-line installer. Update it with what " +
+          "installed it (for example the desktop app's updater or your package manager), " +
+          "or pass --prefix for a one-line-installer prefix.",
       );
     }
     prefix = dirname(releases);

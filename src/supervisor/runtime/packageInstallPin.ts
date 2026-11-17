@@ -1,7 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { writeFileAtomic } from "@/shared/atomicFile";
+import { resolvePoracodeChannel, userDataDirNameFor } from "@/shared/channel";
 import { poracodeBaseDirFromEnv, resolvePoracodePaths } from "@/shared/poracodePaths";
 
 /**
@@ -53,8 +55,10 @@ function defaultPaths(): PackageInstallPinPaths {
   // included, so a run pointed at a scratch profile — a test, a smoke harness —
   // records pins there instead of into the user's real profile.
   return {
-    pinsPath: resolvePoracodePaths(poracodeBaseDirFromEnv() ?? join(homedir(), ".poracode"))
-      .packageInstallPinsPath,
+    // ViscosityCode: the fallback is the fork's channel data folder (~/.viscositycode).
+    pinsPath: resolvePoracodePaths(
+      poracodeBaseDirFromEnv() ?? join(homedir(), userDataDirNameFor(resolvePoracodeChannel())),
+    ).packageInstallPinsPath,
   };
 }
 

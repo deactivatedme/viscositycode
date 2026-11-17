@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   lstatSync,
@@ -59,13 +60,21 @@ describe("desktop CLI registration admission", () => {
   });
 });
 
+// ViscosityCode: fixtures carry the fork's command names. The selected-bundle
+// type comes from packages/poracode-cli, so the mocked bundle widens its
+// command name and registration itself validates the fork's names.
+type SelectedBundle = ReturnType<typeof readSelectedDesktopBundle>;
+type BundleFixture = Omit<SelectedBundle, "commandName"> & { commandName: string };
+const selectBundle = (fixture: BundleFixture) =>
+  vi.mocked(readSelectedDesktopBundle).mockReturnValue(fixture as SelectedBundle);
+
 // Real POSIX fixture operations exercise binding/record custody. The selected
 // bundle is mocked here; native ASAR/Electron validation is a separate gate.
 describe.skipIf(process.platform === "win32")("owned macOS command binding", () => {
   const scratch = resolve("tmp");
   let root: string;
   let input: Parameters<typeof registerPosixDesktopCli>[0];
-  let bundle: ReturnType<typeof readSelectedDesktopBundle>;
+  let bundle: BundleFixture;
   let recordPath: string;
   let linkPath: string;
   let lockPath: string;
@@ -78,17 +87,17 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
     root = mkdtempSync(join(scratch, "desktop-registration-"));
     const appDataDir = join(root, "Application Support");
     const bin = join(root, "owned bin");
-    const resourcesDir = join(root, "Poracode.app", "Contents", "Resources");
-    const executablePath = join(root, "Poracode.app", "Contents", "MacOS", "Poracode");
+    const resourcesDir = join(root, "ViscosityCode.app", "Contents", "Resources");
+    const executablePath = join(root, "ViscosityCode.app", "Contents", "MacOS", "ViscosityCode");
     for (const directory of [
       appDataDir,
       bin,
       join(resourcesDir, "desktop-cli"),
-      join(root, "Poracode.app", "Contents", "MacOS"),
+      join(root, "ViscosityCode.app", "Contents", "MacOS"),
     ])
       mkdirSync(directory, { recursive: true });
     writeFileSync(executablePath, "owned selected executable");
-    writeFileSync(join(resourcesDir, "desktop-cli", "poracode"), "owned selected command");
+    writeFileSync(join(resourcesDir, "desktop-cli", "viscositycode"), "owned selected command");
     input = {
       resourcesDir,
       executablePath,
@@ -103,24 +112,24 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
       formatVersion: 1,
       runtime: "electron-run-as-node",
       channel: "stable",
-      commandName: "poracode",
+      commandName: "viscositycode",
       appVersion: "2.0.0",
       electronVersion: "44.4.4",
       platform: "darwin",
-      executableName: "Poracode",
+      executableName: "ViscosityCode",
       serverPrefixRelative: "app.asar/dist/cli-runtime",
       entryRelative: "lib/server.cjs",
       resourcesDir,
       prefix: join(resourcesDir, "app.asar", "dist", "cli-runtime"),
       entry: "unused selected entry",
-      files: [{ path: "desktop-cli/poracode", bytes: 22, sha256: "a".repeat(64) }],
+      files: [{ path: "desktop-cli/viscositycode", bytes: 22, sha256: "a".repeat(64) }],
       sources: new Map(),
     };
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue(bundle);
-    const stateDir = join(appDataDir, "poracode-desktop-cli-stable");
+    selectBundle(bundle);
+    const stateDir = join(appDataDir, "viscositycode-desktop-cli-stable");
     recordPath = join(stateDir, "registration.json");
     lockPath = join(stateDir, "registration.lock");
-    linkPath = join(bin, "poracode");
+    linkPath = join(bin, "viscositycode");
   });
   afterEach(() => {
     effects.beforeCreate = undefined;
@@ -133,7 +142,7 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
   it("registers the exact selected command and revalidates it after an in-place update", () => {
     expect(registerPosixDesktopCli(input).state).toBe("registered");
     expect(lstatSync(linkPath).isSymbolicLink()).toBe(true);
-    expect(readlinkSync(linkPath)).toBe(join(bundle.resourcesDir, "desktop-cli", "poracode"));
+    expect(readlinkSync(linkPath)).toBe(join(bundle.resourcesDir, "desktop-cli", "viscositycode"));
     const before = JSON.parse(readFileSync(recordPath, "utf8"));
     expect(before).toMatchObject({
       formatVersion: 1,
@@ -142,10 +151,10 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
       account: { kind: "uid", id: process.getuid?.() },
       launcherSha256: "a".repeat(64),
     });
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue({
+    selectBundle({
       ...bundle,
       appVersion: "2.0.1",
-      files: [{ path: "desktop-cli/poracode", bytes: 22, sha256: "b".repeat(64) }],
+      files: [{ path: "desktop-cli/viscositycode", bytes: 22, sha256: "b".repeat(64) }],
     });
     expect(registerPosixDesktopCli({ ...input, appVersion: "2.0.1" }).state).toBe("registered");
     expect(JSON.parse(readFileSync(recordPath, "utf8"))).toMatchObject({
@@ -176,8 +185,11 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
       path: join(root, "missing-path"),
       fallbackDirectory: fallback,
     });
-    expect(result).toMatchObject({ state: "registered", linkPath: join(fallback, "poracode") });
-    expect(readlinkSync(join(fallback, "poracode"))).toBe(result.launcherPath);
+    expect(result).toMatchObject({
+      state: "registered",
+      linkPath: join(fallback, "viscositycode"),
+    });
+    expect(readlinkSync(join(fallback, "viscositycode"))).toBe(result.launcherPath);
     const previous = readFileSync(recordPath, "utf8");
     // A pre-upgrade format-1 record keeps its installation identity and location.
     expect(
@@ -187,25 +199,25 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
   });
 
   it("registers a durable AppImage shim and retains it across remounts and updates", () => {
-    const image = join(root, "Poracode Nightly's release.AppImage");
+    const image = join(root, "ViscosityCode Nightly's release.AppImage");
     writeFileSync(image, "owned AppImage fixture");
     const linux = { ...input, platform: "linux" as const, appImagePath: image };
     const result = registerPosixDesktopCli(linux);
     expect(result.state).toBe("registered");
     expect(readlinkSync(linkPath)).toBe(result.launcherPath);
     expect(result.launcherPath).toBe(
-      join(input.appDataDir, "poracode-desktop-cli-stable", "poracode.sh"),
+      join(input.appDataDir, "viscositycode-desktop-cli-stable", "viscositycode.sh"),
     );
     const before = JSON.parse(readFileSync(recordPath, "utf8"));
     expect(before.appExecutable).toBe(image);
     const wrapper = readFileSync(result.launcherPath, "utf8");
     expect(wrapper).toContain("process.env.APPDIR");
     expect(wrapper).not.toContain(input.resourcesDir);
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue({
+    selectBundle({
       ...bundle,
       resourcesDir: join(root, "new ephemeral mount", "resources"),
       appVersion: "2.0.1",
-      files: [{ path: "desktop-cli/poracode", bytes: 22, sha256: "b".repeat(64) }],
+      files: [{ path: "desktop-cli/viscositycode", bytes: 22, sha256: "b".repeat(64) }],
     });
     expect(registerPosixDesktopCli({ ...linux, appVersion: "2.0.1" }).state).toBe("registered");
     expect(JSON.parse(readFileSync(recordPath, "utf8"))).toMatchObject({
@@ -239,38 +251,38 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
         installationDirectories: [fallback, broken],
         fallbackDirectory: fallback,
       }),
-    ).toMatchObject({ state: "registered", linkPath: join(fallback, "poracode") });
+    ).toMatchObject({ state: "registered", linkPath: join(fallback, "viscositycode") });
     expect(existsSync(linkPath)).toBe(false);
   });
 
   it("keeps Stable and Nightly commands and registration generations separate", () => {
     registerPosixDesktopCli(input);
     const stable = readFileSync(recordPath, "utf8");
-    const nightlyLauncher = join(bundle.resourcesDir, "desktop-cli", "poracode-next");
+    const nightlyLauncher = join(bundle.resourcesDir, "desktop-cli", "viscositycode-next");
     writeFileSync(nightlyLauncher, "owned selected nightly command");
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue({
+    selectBundle({
       ...bundle,
       channel: "nightly",
-      commandName: "poracode-next",
-      files: [{ path: "desktop-cli/poracode-next", bytes: 30, sha256: "b".repeat(64) }],
+      commandName: "viscositycode-next",
+      files: [{ path: "desktop-cli/viscositycode-next", bytes: 30, sha256: "b".repeat(64) }],
     });
     expect(registerPosixDesktopCli({ ...input, channel: "nightly" }).state).toBe("registered");
     const nightly = JSON.parse(
       readFileSync(
-        join(input.appDataDir, "poracode-desktop-cli-nightly", "registration.json"),
+        join(input.appDataDir, "viscositycode-desktop-cli-nightly", "registration.json"),
         "utf8",
       ),
     );
-    expect(nightly.commandName).toBe("poracode-next");
+    expect(nightly.commandName).toBe("viscositycode-next");
     expect(nightly.installationId).not.toBe(JSON.parse(stable).installationId);
-    expect(readlinkSync(join(input.path, "poracode-next"))).toBe(nightlyLauncher);
+    expect(readlinkSync(join(input.path, "viscositycode-next"))).toBe(nightlyLauncher);
     expect(readFileSync(recordPath, "utf8")).toBe(stable);
   });
 
   it("does not shadow an existing command later on PATH", () => {
     const later = join(root, "later bin");
     mkdirSync(later);
-    writeFileSync(join(later, "poracode"), "user-managed command");
+    writeFileSync(join(later, "viscositycode"), "user-managed command");
     expect(registerPosixDesktopCli({ ...input, path: `${input.path}:${later}` }).state).toBe(
       "collision",
     );
@@ -278,19 +290,19 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
   });
 
   it("registers the Nightly name while preserving an existing npm Stable command", () => {
-    const npmCommand = join(input.path, "poracode");
+    const npmCommand = join(input.path, "viscositycode");
     writeFileSync(npmCommand, "npm-owned command");
-    const nightlyLauncher = join(bundle.resourcesDir, "desktop-cli", "poracode-next");
+    const nightlyLauncher = join(bundle.resourcesDir, "desktop-cli", "viscositycode-next");
     writeFileSync(nightlyLauncher, "owned selected nightly command");
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue({
+    selectBundle({
       ...bundle,
       channel: "nightly",
-      commandName: "poracode-next",
-      files: [{ path: "desktop-cli/poracode-next", bytes: 30, sha256: "b".repeat(64) }],
+      commandName: "viscositycode-next",
+      files: [{ path: "desktop-cli/viscositycode-next", bytes: 30, sha256: "b".repeat(64) }],
     });
     expect(registerPosixDesktopCli({ ...input, channel: "nightly" }).state).toBe("registered");
     expect(readFileSync(npmCommand, "utf8")).toBe("npm-owned command");
-    expect(readlinkSync(join(input.path, "poracode-next"))).toBe(nightlyLauncher);
+    expect(readlinkSync(join(input.path, "viscositycode-next"))).toBe(nightlyLauncher);
     expect(existsSync(recordPath)).toBe(false);
   });
 
@@ -300,7 +312,19 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
       path: `:relative:$HOME/bin:${join(root, "missing-absolute")}`,
     });
     expect(result.state).toBe("unavailable");
-    expect(result.detail).toContain(join(bundle.resourcesDir, "desktop-cli", "poracode"));
+    expect(result.detail).toContain(join(bundle.resourcesDir, "desktop-cli", "viscositycode"));
+    expect(existsSync(linkPath)).toBe(false);
+    expect(existsSync(recordPath)).toBe(false);
+  });
+
+  // ViscosityCode: an upstream Poracode bundle's command is never published.
+  it("refuses a selected bundle that advertises a non-ViscosityCode command", () => {
+    selectBundle({
+      ...bundle,
+      commandName: "poracode",
+      files: [{ path: "desktop-cli/poracode", bytes: 22, sha256: "a".repeat(64) }],
+    });
+    expect(() => registerPosixDesktopCli(input)).toThrow(/unknown bundled command name/u);
     expect(existsSync(linkPath)).toBe(false);
     expect(existsSync(recordPath)).toBe(false);
   });
@@ -311,7 +335,9 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
     for (const changed of [
       { formatVersion: 2 },
       { future: true },
-      { commandName: "poracode-nightly" },
+      { commandName: "viscositycode-nightly" },
+      // ViscosityCode: an upstream Poracode record is never adopted.
+      { commandName: "poracode" },
     ]) {
       const bytes = JSON.stringify({ ...before, ...changed });
       writeFileSync(recordPath, bytes);
@@ -351,7 +377,7 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
     const elsewhere = join(root, "elsewhere");
     mkdirSync(elsewhere);
     expect(registerPosixDesktopCli({ ...input, path: elsewhere }).state).toBe("unavailable");
-    expect(existsSync(join(elsewhere, "poracode"))).toBe(false);
+    expect(existsSync(join(elsewhere, "viscositycode"))).toBe(false);
   });
 
   it("preserves a concurrent command arrival and retains prepared custody", () => {
@@ -371,7 +397,7 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
     expect(() => registerPosixDesktopCli(input)).toThrow("claim changed");
     expect(readFileSync(lockPath, "utf8")).toBe("foreign replacement claim");
     expect(JSON.parse(readFileSync(recordPath, "utf8")).state).toBe("prepared");
-    expect(readlinkSync(linkPath)).toBe(join(bundle.resourcesDir, "desktop-cli", "poracode"));
+    expect(readlinkSync(linkPath)).toBe(join(bundle.resourcesDir, "desktop-cli", "viscositycode"));
   });
 
   it("refuses a replaced claim even when its nonce bytes were copied", () => {
@@ -401,7 +427,7 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
   });
 
   it("does not steal an existing registration claim", () => {
-    const stateDir = join(input.appDataDir, "poracode-desktop-cli-stable");
+    const stateDir = join(input.appDataDir, "viscositycode-desktop-cli-stable");
     mkdirSync(stateDir, { mode: 0o700 });
     writeFileSync(lockPath, "existing claim");
     expect(() => registerPosixDesktopCli(input)).toThrow(Error);
@@ -414,7 +440,7 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
     const foreign = join(root, "foreign record directory");
     mkdirSync(foreign);
     writeFileSync(join(foreign, "keep.json"), "foreign bytes");
-    symlinkSync(foreign, join(input.appDataDir, "poracode-desktop-cli-stable"), "dir");
+    symlinkSync(foreign, join(input.appDataDir, "viscositycode-desktop-cli-stable"), "dir");
     expect(() => registerPosixDesktopCli(input)).toThrow("not private and owned");
     expect(readFileSync(join(foreign, "keep.json"), "utf8")).toBe("foreign bytes");
     expect(existsSync(join(foreign, "registration.lock"))).toBe(false);
@@ -422,10 +448,10 @@ describe.skipIf(process.platform === "win32")("owned macOS command binding", () 
   });
 
   it("refuses a mismatched package before registration state exists", () => {
-    vi.mocked(readSelectedDesktopBundle).mockReturnValue({ ...bundle, channel: "nightly" });
+    selectBundle({ ...bundle, channel: "nightly" });
     expect(() => registerPosixDesktopCli(input)).toThrow("different channel or app version");
     expect(existsSync(recordPath)).toBe(false);
     expect(existsSync(linkPath)).toBe(false);
-    expect(existsSync(join(input.appDataDir, "poracode-desktop-cli-stable"))).toBe(false);
+    expect(existsSync(join(input.appDataDir, "viscositycode-desktop-cli-stable"))).toBe(false);
   });
 });

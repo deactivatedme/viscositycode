@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFile } from "node:child_process";
 import {
   closeSync,
@@ -19,7 +20,9 @@ const execFileAsync = promisify(execFile);
 const PATH_MARKER = "__PORACODE_CLI_PATH__";
 const CONFIG_MARKER = "__PORACODE_CLI_CONFIG__";
 // Additive shell startup snippets, independent of registration format 1.
-const SHELL_PATH_MARKER = "# Poracode desktop CLI PATH v1";
+// ViscosityCode: the marker names the fork so users can tell the line apart
+// from a real Poracode install's snippet.
+const SHELL_PATH_MARKER = "# ViscosityCode desktop CLI PATH v1";
 
 /** Finder's environment omits PATH additions from login/interactive startup files. */
 export async function registerPosixDesktopCliForShell(

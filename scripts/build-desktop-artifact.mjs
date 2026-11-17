@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Stage-and-install packaging entrypoint.
 //
 // Why: building electron-builder against the project's workspace pulls in
@@ -33,6 +34,7 @@ import { npmInvocation, releaseScratchRoot } from "./server-host-tools.mjs";
 import { verifyRuntimeResources } from "../src/shared/runtimeResourceInventory.ts";
 import { readPtyJobOwnerArtifact } from "../src/shared/ptyJobOwnerArtifact.ts";
 import { SUPPORTED_LOCALES } from "../src/shared/locale.ts";
+import { forkRepositoryUrl, UPSTREAM_REPOSITORY_URL } from "../src/shared/viscosityRelease.ts";
 import {
   MAC_NOTARIZE_VERSION,
   verifyMacNotarizationDependency,
@@ -47,7 +49,37 @@ const {
   snapshotMacUpdaterManifests,
   setMacUpdaterMinimumSystemVersion,
 } = requireFromHere("./mac-updater-manifest.cjs");
-const { supportEmail } = requireFromHere("../branding/contact.json");
+
+// ViscosityCode: packaging identity. The fork never publishes to, or checks for
+// updates from, the upstream Poracode repository.
+const FORK_COPYRIGHT =
+  "Copyright (C) 2026 ViscosityCode contributors. Based on Poracode (Apache-2.0).";
+const FORK_MAINTAINER = "ViscosityCode contributors";
+const UPDATE_REPO_ENV = "VISCOSITYCODE_UPDATE_REPO";
+
+/**
+ * The fork's GitHub release feed from VISCOSITYCODE_UPDATE_REPO ("owner/repo"),
+ * or undefined when the build has no update feed.
+ */
+export function resolveUpdateRepository(env = process.env) {
+  const raw = env[UPDATE_REPO_ENV]?.trim();
+  if (!raw) return undefined;
+  const match = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/u.exec(raw);
+  if (!match || match[2] === "." || match[2] === "..") {
+    throw new Error(`${UPDATE_REPO_ENV} must be "owner/repo"; got ${JSON.stringify(raw)}.`);
+  }
+  return { owner: match[1], repo: match[2] };
+}
+
+/** The fork's repository URL for package metadata, or undefined when none exists yet. */
+function forkPackageRepositoryUrl(env = process.env) {
+  const fromConstant = forkRepositoryUrl();
+  if (fromConstant) return fromConstant;
+  const updateRepository = resolveUpdateRepository(env);
+  return updateRepository
+    ? `https://github.com/${updateRepository.owner}/${updateRepository.repo}`
+    : undefined;
+}
 
 // Runtime externals — packages tsdown does NOT inline into dist/main/*.cjs.
 // Regenerate with `node scripts/scan-runtime-externals.mjs`.
@@ -170,7 +202,11 @@ function expandPeerDeps(externals, rootPkg, nodeModulesDir) {
   return [...expanded];
 }
 
-export function buildStagePackageJson(rootPkg, nodeModulesDir = join(repoRoot, "node_modules")) {
+export function buildStagePackageJson(
+  rootPkg,
+  nodeModulesDir = join(repoRoot, "node_modules"),
+  env = process.env,
+) {
   const pinOptions = {
     rootPackage: {
       ...rootPkg,
@@ -187,14 +223,21 @@ export function buildStagePackageJson(rootPkg, nodeModulesDir = join(repoRoot, "
 
   const devDependencies = pinInstalledVersions(STAGE_DEV_DEPS, pinOptions);
 
+  // ViscosityCode: Electron names the app (and its userData folder) after
+  // `productName`, so the packaged app never shares Poracode's folder. The
+  // upstream repository is never packaged: electron-builder would otherwise
+  // derive an update feed from it.
+  const channel = channelTable.normalizeChannel(env.PORACODE_CHANNEL);
+  const repositoryUrl = forkPackageRepositoryUrl(env);
   return {
     name: rootPkg.name,
+    productName: channelTable.productNameFor(channel),
     version: rootPkg.version,
     description: rootPkg.description ?? "",
-    homepage: rootPkg.homepage,
+    homepage: repositoryUrl ?? UPSTREAM_REPOSITORY_URL,
     license: rootPkg.license,
     author: rootPkg.author,
-    repository: rootPkg.repository,
+    ...(repositoryUrl ? { repository: { type: "git", url: repositoryUrl } } : {}),
     private: true,
     type: rootPkg.type ?? "module",
     main: rootPkg.main ?? "dist/main/main.cjs",
@@ -478,14 +521,14 @@ async function main() {
     };
 
     if (platform === "mac" && !target) {
-      // Build updater ZIPs first with the legacy technical executable name so
-      // Lightcode -> Poracode does not trigger Squirrel's broken outer-bundle
-      // rename. Then build branded DMGs for fresh/manual installs. The second
-      // pass overwrites the channel manifest with DMG metadata, so preserve the
-      // updater ZIP manifest around it and restore that as the published feed.
+      // Build updater ZIPs first, then DMGs for fresh/manual installs. The
+      // second pass overwrites the channel manifest with DMG metadata, so
+      // preserve the updater ZIP manifest around it and restore that as the
+      // published feed. ViscosityCode: both passes use the product name as the
+      // executable name, and a build without an update feed has no manifest.
       runElectronBuilder("zip", "updater");
       const updaterManifests = snapshotMacUpdaterManifests(join(stageRoot, "release"));
-      if (updaterManifests.size === 0) {
+      if (resolveUpdateRepository() && updaterManifests.size === 0) {
         throw new Error("macOS updater ZIP build produced no channel manifest");
       }
       runElectronBuilder("dmg", "branded");
@@ -511,8 +554,8 @@ async function main() {
   }
 }
 
-// macOS ZIP updates ship under the legacy executable name as a Squirrel.Mac
-// migration bridge; DMGs and every other platform stay fully Poracode-branded.
+// macOS ZIP updates and DMGs are packaged in separate passes; ViscosityCode
+// names both executables after the product (no legacy bridge to keep).
 function macArtifactKindFor(platform, target) {
   return platform === "mac" && target === "zip" ? "updater" : "branded";
 }
@@ -537,6 +580,14 @@ export function buildElectronBuilderConfig(
   const runtimeIconSuffix = channel === "nightly" ? "-nightly-mac" : "-mac";
   const macExecutableName = channelTable.macExecutableNameFor(channel, macArtifactKind);
   const publishChannelLine = updaterChannel ? `\n  channel: ${updaterChannel}` : "";
+  // ViscosityCode: emit a GitHub feed only for the fork's own repository.
+  // `publish: null` (rather than no key) also stops electron-builder from
+  // deriving a feed from GH_TOKEN or package.json repository metadata, so a
+  // build without VISCOSITYCODE_UPDATE_REPO ships no app-update.yml at all.
+  const updateRepository = resolveUpdateRepository();
+  const publishYaml = updateRepository
+    ? `publish:\n  provider: github\n  owner: ${updateRepository.owner}\n  repo: ${updateRepository.repo}${publishChannelLine}`
+    : "publish: null";
   const includeDesktopCli = ["win", "mac", "linux"].includes(platform);
   const desktopCliFiles = includeDesktopCli
     ? '\n  - dist/cli-runtime/**/*\n  - "!dist/cli-runtime/**/*.map"'
@@ -587,7 +638,7 @@ export function buildElectronBuilderConfig(
 
   return `appId: ${appId}
 productName: ${productName}
-copyright: Copyright (C) 2026 Poracode
+copyright: ${JSON.stringify(FORK_COPYRIGHT)}
 electronLanguages: ${JSON.stringify(electronLanguages)}
 
 directories:
@@ -676,10 +727,7 @@ asarUnpack:
 
 afterPack: build/after-pack.cjs
 
-publish:
-  provider: github
-  owner: Porabuild
-  repo: Poracode${publishChannelLine}
+${publishYaml}
 
 win:
   target:
@@ -711,7 +759,7 @@ linux:
         - x64
   icon: build/icon${iconSuffix}.png
   category: Development
-  maintainer: Porabuild <${supportEmail}>
+  maintainer: ${FORK_MAINTAINER}
   artifactName: ${prefix}-\${version}-\${arch}.\${ext}
 
 mac:
@@ -732,7 +780,7 @@ mac:
   hardenedRuntime: true
   gatekeeperAssess: false
   extendInfo:
-    NSMicrophoneUsageDescription: Poracode uses the microphone for local voice input in the composer.
+    NSMicrophoneUsageDescription: ${JSON.stringify(`${productName} uses the microphone for local voice input in the composer.`)}
   entitlements: ${macEntitlements}
   entitlementsInherit: ${macEntitlementsInherit}${lockedComputerUseBinaries}
   notarize: true
@@ -743,7 +791,7 @@ npmRebuild: false
 
 function linuxDesktopExecutableName(channel) {
   // Keep the package manager's GUI symlink separate from the terminal command.
-  return channel === "nightly" ? "poracode-nightly-desktop" : "poracode-desktop";
+  return channel === "nightly" ? "viscositycode-nightly-desktop" : "viscositycode-desktop";
 }
 
 if (

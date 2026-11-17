@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,7 +28,7 @@ describe("service destination profile admission", () => {
   it("accepts a free profile but refuses an owner or existing native definition", async () => {
     const home = realpathSync.native(mkdtempSync(join(tmpdir(), "poracode-profile-admission-")));
     try {
-      const profile = join(home, ".poracode-nightly");
+      const profile = join(home, ".viscositycode-nightly");
       const account = { kind: "uid" as const, id: "1000" };
       const candidate = fakeDoctor(home);
       const deps = {

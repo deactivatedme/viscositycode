@@ -1,35 +1,38 @@
 <p align="center">
-  <img src="build/icon.png" width="128" height="128" alt="Poracode" />
+  <img src="build/icon.png" width="128" height="128" alt="ViscosityCode" />
 </p>
 
-<h1 align="center">Poracode</h1>
+<h1 align="center">ViscosityCode</h1>
 
 <p align="center">
-  <strong>One window for all your AI coding agents.</strong><br />
+  <strong>One window for all your AI coding agents, with a Cursor-inspired interface.</strong><br />
   Run Claude, Codex, OpenCode, Gemini, Grok, Kimi Code, Qwen Code, Pi, Qoder, Factory Droid, Antigravity, Cursor, Command Code, Copilot, and fx side-by-side. Terminal and chat, any layout — with built-in MCP so agents can orchestrate each other and the app itself.
-</p>
-
-<p align="center">
-  <a href="https://poracode.com">Website</a> · <a href="https://github.com/Porabuild/Poracode/releases">Download</a> · <a href="https://github.com/Porabuild/Poracode/issues">Report a Bug</a> · <a href="https://github.com/Porabuild/Poracode/issues">Request Feature</a>
 </p>
 
 <p align="center">
   <em>Bring your own agent subscriptions & API keys</em>
 </p>
 
+> **ViscosityCode is a modified version of [Poracode](https://github.com/Porabuild/Poracode), licensed under Apache-2.0.**
+> It keeps Poracode's engine — the supervisor, agent runtimes, ACP and MCP support, Git worktrees, and session persistence — and replaces the look and feel with a Cursor-inspired UI. ViscosityCode is not affiliated with or endorsed by the Poracode project. See [NOTICE](NOTICE) for attribution.
+
 ---
 
-<p align="center">
-  <img src="website/public/hero-screenshot.png" alt="Poracode — AI agents running side-by-side" width="960" />
-</p>
+## What ViscosityCode changes
+
+- **A Cursor-inspired interface** on top of the same agent engine: a new theme and layout for the desktop app on macOS and Windows.
+- **Its own identity.** ViscosityCode installs, stores data, and registers its command line separately from Poracode (`~/.viscositycode`, app ID `com.viscositycode.app`, command `viscositycode`), so both apps can live on the same machine.
+- **No calls home to Poracode.** Update checks and CLI self-update only use a ViscosityCode release feed when one is configured, and are off otherwise.
+
+Everything below the interface — how agents run, how threads are saved, how worktrees and MCP servers work — comes from Poracode.
 
 ## Supported Agents
 
 **Claude** · **Codex** · **OpenCode** · **Gemini** · **Grok** · **Kimi Code** · **Qwen Code** · **Pi** · **Qoder** · **Factory Droid** · **Antigravity** · **Cursor** · **Command Code** · **Copilot** · **fx** and any agent from the [ACP registry](https://agentclientprotocol.com).
 
-## Why Poracode?
+## Features
 
-If you use more than one AI coding agent, you know the pain: separate terminals, separate apps, no shared context. Poracode puts them all in one place.
+If you use more than one AI coding agent, you know the pain: separate terminals, separate apps, no shared context. ViscosityCode puts them all in one place.
 
 ### Infinite Threads & Layouts
 
@@ -45,7 +48,7 @@ Let one agent delegate work to another across providers. Subagent output streams
 
 ### Built-in MCP & App Controls
 
-Poracode ships its own MCP servers. Point any agent at them to create and steer threads, organize projects, list and merge Git worktrees, commit and sync, open and merge pull requests, schedule runs, manage skills, and change settings — or add your own MCP servers over stdio, HTTP, or SSE.
+ViscosityCode ships its own MCP servers. Point any agent at them to create and steer threads, organize projects, list and merge Git worktrees, commit and sync, open and merge pull requests, schedule runs, manage skills, and change settings — or add your own MCP servers over stdio, HTTP, or SSE.
 
 ### Agent Experiments
 
@@ -53,7 +56,7 @@ Run one prompt across several agents in parallel worktrees, then let an AI judge
 
 ### Scheduled Runs
 
-Put recurring work on a schedule — nightly reviews, dependency sweeps, changelog drafts — and let Poracode start the thread for you.
+Put recurring work on a schedule — nightly reviews, dependency sweeps, changelog drafts — and let ViscosityCode start the thread for you.
 
 ### Skills & Marketplace
 
@@ -83,29 +86,17 @@ See session and weekly quota for every provider — Claude Max, ChatGPT Pro, and
 
 Run CLI agents in real terminal sessions, with the same output and controls you expect from your own shell.
 
-### Built for Speed
-
-Optimized to stay fast and responsive, even when you have lots of agent sessions running side by side.
-
 ### Session Persistence
 
-Sessions are saved automatically, so you can close Poracode and pick up right where you left off.
+Sessions are saved automatically, so you can close ViscosityCode and pick up right where you left off.
 
 ### Built-in Browser
 
 Open web pages, attach browser context to agents, and keep research in the same workspace.
 
-### Remote Access
+### Standalone Server & Remote Machines
 
-Pair the Poracode web app with your desktop to follow live threads, read terminal output, send messages, and receive notifications from your phone or browser.
-
-### Standalone Server
-
-Run the same backend without Electron and connect desktop, browser, iOS, or Android clients to it. The one-line installer, the version-pinned `poracode` launcher, release artifact, service, container, security, backup, and upgrade paths are documented in [Standalone server: run, install, operate](docs/STANDALONE_SERVER.md).
-
-### Remote Machines over SSH
-
-Connect a server from your SSH config and Poracode installs its runtime there, then runs agents on that machine — clone repos, open threads, and drive projects that never leave the box.
+Run the same backend without Electron, or connect a server from your SSH config and run agents on that machine. The engine's server, install, and operations guide is in [Standalone server: run, install, operate](docs/STANDALONE_SERVER.md) (written for upstream Poracode; ViscosityCode does not publish CLI release archives yet).
 
 ### In-App PRs
 
@@ -115,10 +106,6 @@ Review pull requests, browse diffs, stage changes, and generate AI commits — t
 
 Monaco-based editor with LSP support for quick edits without switching to your IDE.
 
-### Cross-Platform Desktop
-
-Run Poracode on macOS, Windows, and Linux, with a polished interface that feels at home on both Mac and Windows.
-
 ### WSL Support
 
 Use Windows and WSL projects side by side, with agent commands routed through the right environment automatically.
@@ -127,37 +114,39 @@ Use Windows and WSL projects side by side, with agent commands routed through th
 
 Install and run any agent from the [Agent Client Protocol](https://agentclientprotocol.com) registry directly from settings.
 
-## Install
+## Build from source
 
-Download the latest release for your platform from the [releases page](https://github.com/Porabuild/Poracode/releases) or visit [poracode.com](https://poracode.com).
+ViscosityCode does not publish prebuilt releases yet. Build it yourself:
 
 | Platform | Format                        |
 | -------- | ----------------------------- |
 | macOS    | DMG (Apple silicon or Intel)  |
 | Windows  | NSIS installer (x64 or Arm64) |
-| Linux    | AppImage or `.deb` (x64)      |
+
+```sh
+bun install          # Bun version pinned in package.json; Node.js 26.13.0 or newer
+bun run dev          # run the desktop app in development
+bun run build        # build the app
+bun run dist         # package an installer into release/
+```
+
+Packaged builds have no update feed unless you set `VISCOSITYCODE_UPDATE_REPO=owner/repo` (your own GitHub repository) when running `bun run dist`; without it the app never checks for updates.
 
 ### Command line
 
-The `poracode` CLI (terminal UI, server, web app, and one-shot prompts) installs from a self-contained release archive that carries its own Node.js, so no Node, npm, or compiler is needed:
+Packaged desktop builds register a `viscositycode` command (`viscositycode-next` for Nightly builds) that runs the server bundled with the app, for example:
 
 ```sh
-curl -fsSL https://poracode.com/install.sh | sh      # macOS and Linux
-irm https://poracode.com/install.ps1 | iex           # Windows PowerShell
+viscositycode -p "PROMPT" --directory PATH     # one-shot run
+viscositycode serve --open                     # serve and open the web app
 ```
-
-Stable releases before 2.0.0 do not include these archives; until a 2.x stable release is out, install the nightly train: `curl -fsSL https://poracode.com/install.sh | PORACODE_CHANNEL=nightly sh` (PowerShell: `$env:PORACODE_CHANNEL = 'nightly'; irm https://poracode.com/install.ps1 | iex`). `PORACODE_VERSION` pins a release. On Linux the bundled Node.js needs glibc and `libatomic1`; minimal images such as `debian:bookworm-slim` lack it (`apt-get install libatomic1`). The npm launcher is already published: `npx poracode@nightly` runs the nightly train without installing, and `npx poracode@latest` will once a 2.x stable release is out (Node.js 20.11 or newer, for `npx` only). Details: [Standalone server](docs/STANDALONE_SERVER.md#2-install-the-cli).
 
 ### Getting Started
 
-1. Install Poracode for your platform.
+1. Build and install ViscosityCode for your platform.
 2. Install the AI agent CLIs you want to use (e.g., [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [Codex](https://github.com/openai/codex)).
-3. Open Poracode, add your project, and start orchestrating.
-
-## Contributing
-
-Contributions are welcome! Please open an [issue](https://github.com/Porabuild/Poracode/issues) first to discuss what you'd like to change.
+3. Open ViscosityCode, add your project, and start orchestrating.
 
 ## License
 
-[Apache-2.0](LICENSE)
+ViscosityCode is licensed under the [Apache License 2.0](LICENSE), like the Poracode project it is based on. See [NOTICE](NOTICE) for attribution and a summary of modifications.

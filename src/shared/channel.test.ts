@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   appIdFor,
@@ -14,18 +15,18 @@ describe("channel", () => {
   });
 
   it("returns the right product names", () => {
-    expect(productNameFor("stable")).toBe("Poracode");
-    expect(productNameFor("nightly")).toBe("Poracode Nightly");
+    expect(productNameFor("stable")).toBe("ViscosityCode");
+    expect(productNameFor("nightly")).toBe("ViscosityCode Nightly");
   });
 
   it("returns the right app ids", () => {
-    expect(appIdFor("stable")).toBe("com.lightcode.app");
-    expect(appIdFor("nightly")).toBe("com.lightcode.app.nightly");
+    expect(appIdFor("stable")).toBe("com.viscositycode.app");
+    expect(appIdFor("nightly")).toBe("com.viscositycode.app.nightly");
   });
 
   it("returns the right user data dir names", () => {
-    expect(userDataDirNameFor("stable")).toBe(".poracode");
-    expect(userDataDirNameFor("nightly")).toBe(".poracode-nightly");
+    expect(userDataDirNameFor("stable")).toBe(".viscositycode");
+    expect(userDataDirNameFor("nightly")).toBe(".viscositycode-nightly");
   });
 
   it("only returns a published channel name for nightly", () => {
@@ -34,8 +35,8 @@ describe("channel", () => {
   });
 
   it("returns artifact prefixes that are distinct between channels", () => {
-    expect(artifactPrefixFor("stable")).toBe("Poracode");
-    expect(artifactPrefixFor("nightly")).toBe("Poracode-Nightly");
+    expect(artifactPrefixFor("stable")).toBe("ViscosityCode");
+    expect(artifactPrefixFor("nightly")).toBe("ViscosityCode-Nightly");
     expect(artifactPrefixFor("stable")).not.toBe(artifactPrefixFor("nightly"));
   });
 });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import {
   existsSync,
@@ -23,27 +24,27 @@ describe("standalone CLI profile defaults", () => {
   it("separates published nightly releases from stable desktop data", () => {
     const home = tmpdir();
     expect(defaultCliProfileNamespace("2.0.0-nightly.202611091529", {}, home)).toBe(
-      join(home, ".poracode-nightly"),
+      join(home, ".viscositycode-nightly"),
     );
-    expect(defaultCliProfileNamespace("2.0.0", {}, home)).toBe(join(home, ".poracode"));
+    expect(defaultCliProfileNamespace("2.0.0", {}, home)).toBe(join(home, ".viscositycode"));
   });
 
   it("keeps an explicit pre-upgrade namespace for existing service definitions", () => {
     expect(
       defaultCliProfileNamespace(
         "2.0.0-nightly.202611091529",
-        { PORACODE_BASE_DIR: "/home/u/.poracode" },
+        { PORACODE_BASE_DIR: "/home/u/.viscositycode" },
         "/home/u",
       ),
-    ).toBe("/home/u/.poracode");
+    ).toBe("/home/u/.viscositycode");
   });
 
   it("discloses an existing non-service profile without silently adopting it", () => {
     const home = mkdtempSync(join(tmpdir(), "poracode-profile-notice-"));
     try {
-      mkdirSync(join(home, ".poracode.host-v1"));
+      mkdirSync(join(home, ".viscositycode.host-v1"));
       const selected = defaultCliProfileNamespace("2.0.0-nightly.202611091529", {}, home);
-      expect(selected).toBe(join(home, ".poracode-nightly"));
+      expect(selected).toBe(join(home, ".viscositycode-nightly"));
       expect(legacyProfileNotice("2.0.0-nightly.202611091529", selected, home)).toContain(
         "stable profile",
       );
@@ -58,10 +59,14 @@ describe("standalone CLI profile defaults", () => {
       const alias = join(home, "alias");
       symlinkSync(home, alias, "junction");
       expect(() =>
-        assertChannelProfileNamespace("2.0.0-nightly.202611100001", join(alias, ".poracode"), home),
+        assertChannelProfileNamespace(
+          "2.0.0-nightly.202611100001",
+          join(alias, ".viscositycode"),
+          home,
+        ),
       ).toThrow(/other channel/u);
       expect(() =>
-        assertChannelProfileNamespace("2.0.0", join(home, ".poracode-nightly"), home),
+        assertChannelProfileNamespace("2.0.0", join(home, ".viscositycode-nightly"), home),
       ).toThrow(/other channel/u);
       expect(() =>
         assertChannelProfileNamespace("2.0.0-nightly.202611100001", join(home, "custom"), home),
@@ -74,8 +79,8 @@ describe("standalone CLI profile defaults", () => {
   it("honors case-sensitive volumes for an uncreated custom profile", () => {
     const home = realpathSync.native(mkdtempSync(join(tmpdir(), "poracode-channel-case-")));
     try {
-      const left = join(home, ".PORACODE");
-      const right = join(home, ".poracode");
+      const left = join(home, ".VISCOSITYCODE");
+      const right = join(home, ".viscositycode");
       expect(sameChannelProfile(left, right, () => false)).toBe(false);
       expect(sameChannelProfile(left, right, () => true)).toBe(true);
     } finally {
@@ -89,7 +94,7 @@ describe("standalone CLI profile defaults", () => {
       writeFileSync(join(root, "CaseMarker"), "");
       const home = join(root, "empty");
       mkdirSync(home);
-      expect(sameChannelProfile(join(home, ".PORACODE"), join(home, ".poracode"))).toBe(
+      expect(sameChannelProfile(join(home, ".VISCOSITYCODE"), join(home, ".viscositycode"))).toBe(
         existsSync(join(root, "caseMarker")),
       );
       expect(readdirSync(home)).toEqual([]);
@@ -102,7 +107,7 @@ describe("standalone CLI profile defaults", () => {
     const home = realpathSync.native(mkdtempSync(join(tmpdir(), "poracode-channel-case-")));
     try {
       writeFileSync(join(home, "CaseMarker"), "");
-      const otherCase = join(home, ".PORACODE");
+      const otherCase = join(home, ".VISCOSITYCODE");
       const insensitive = existsSync(join(home, "caseMarker"));
       let refused = false;
       try {
@@ -112,7 +117,7 @@ describe("standalone CLI profile defaults", () => {
       }
       expect(refused).toBe(insensitive);
       expect(serviceProfileForRelease("2.0.0-nightly.202611100001", otherCase, home)).toBe(
-        insensitive ? join(home, ".poracode-nightly") : undefined,
+        insensitive ? join(home, ".viscositycode-nightly") : undefined,
       );
     } finally {
       rmSync(home, { recursive: true, force: true });

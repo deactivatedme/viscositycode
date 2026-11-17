@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createHash, randomUUID } from "node:crypto";
 import {
   accessSync,
@@ -28,7 +29,11 @@ import { appImageCliLauncher } from "@/shared/desktopAppImage";
 // existing format-1 registrations remain valid and retain their custody.
 // Linux is a new OS-local writer of that same format; AppImage records bind
 // the durable image/shim rather than the changing mount. Windows stays separate.
+// ViscosityCode: the fork's commands are `viscositycode` / `viscositycode-next`
+// and its records live in a fork-owned state directory, so a real Poracode
+// install's format-1 records are never read, adopted, or rewritten.
 export const DESKTOP_CLI_REGISTRATION_VERSION = 1;
+const DESKTOP_CLI_STATE_DIR_PREFIX = "viscositycode-desktop-cli";
 const absolutePath = z
   .string()
   .min(1)
@@ -39,7 +44,7 @@ const registrationSchema = z.strictObject({
   installationId: z.uuid(),
   state: z.enum(["prepared", "installed"]),
   channel: z.enum(["stable", "nightly"]),
-  commandName: z.enum(["poracode", "poracode-next"]),
+  commandName: z.enum(["viscositycode", "viscositycode-next"]),
   account: z.strictObject({ kind: z.literal("uid"), id: z.int().nonnegative() }),
   appExecutable: absolutePath,
   launcherPath: absolutePath,
@@ -110,18 +115,23 @@ export function registerPosixDesktopCli(input: {
   });
   if (bundle.channel !== input.channel || bundle.appVersion !== input.appVersion)
     throw new Error("Desktop CLI registration refused a different channel or app version.");
+  // ViscosityCode: only the fork's own command names are ever published.
+  const parsedCommandName = registrationSchema.shape.commandName.safeParse(bundle.commandName);
+  if (!parsedCommandName.success)
+    throw new Error("Desktop CLI registration refused an unknown bundled command name.");
+  const commandName = parsedCommandName.data;
   const account = { kind: "uid" as const, id: process.getuid() };
   const stateDir = join(
     realpathSync.native(input.appDataDir),
-    `poracode-desktop-cli-${input.channel}`,
+    `${DESKTOP_CLI_STATE_DIR_PREFIX}-${input.channel}`,
   );
   const imagePath = platform === "linux" ? input.appImagePath : undefined;
   const appExecutable = realpathSync.native(imagePath ?? input.executablePath);
   const imageLauncher = imagePath ? appImageCliLauncher(appExecutable) : undefined;
   const launcherPath = imageLauncher
-    ? join(stateDir, `${bundle.commandName}.sh`)
-    : join(bundle.resourcesDir, "desktop-cli", bundle.commandName);
-  const launcher = bundle.files.find((file) => file.path === `desktop-cli/${bundle.commandName}`);
+    ? join(stateDir, `${commandName}.sh`)
+    : join(bundle.resourcesDir, "desktop-cli", commandName);
+  const launcher = bundle.files.find((file) => file.path === `desktop-cli/${commandName}`);
   if (!launcher) throw new Error("The selected desktop bundle has no validated command launcher.");
   const launcherSha256 = imageLauncher
     ? createHash("sha256").update(imageLauncher).digest("hex")
@@ -131,7 +141,7 @@ export function registerPosixDesktopCli(input: {
     detail: string,
   ): DesktopCliRegistrationResult => ({
     state,
-    commandName: bundle.commandName,
+    commandName,
     launcherPath,
     detail: `${detail} The bundled command is ${launcherPath}. No shell profile or existing command was changed.`,
   });
@@ -188,7 +198,7 @@ export function registerPosixDesktopCli(input: {
     if (
       previous &&
       (previous.channel !== input.channel ||
-        previous.commandName !== bundle.commandName ||
+        previous.commandName !== commandName ||
         previous.account.id !== account.id ||
         previous.appExecutable !== appExecutable ||
         previous.launcherPath !== launcherPath)
@@ -220,17 +230,17 @@ export function registerPosixDesktopCli(input: {
       );
     };
     for (const directory of directories) {
-      const command = join(directory, bundle.commandName);
+      const command = join(directory, commandName);
       if (fileInfo(command) && !isOwnedLink(command))
         return unavailable("collision", `An existing command or link at ${command} was preserved.`);
     }
     if (
       previous &&
-      !directories.some((directory) => join(directory, bundle.commandName) === previous.linkPath)
+      !directories.some((directory) => join(directory, commandName) === previous.linkPath)
     )
       return unavailable("unavailable", "The recorded command directory is no longer on PATH.");
     const canWrite = (directory: string) => {
-      if (previous && join(directory, bundle.commandName) !== previous.linkPath) return false;
+      if (previous && join(directory, commandName) !== previous.linkPath) return false;
       const info = lstatSync(directory);
       if (
         !info.isDirectory() ||
@@ -267,7 +277,7 @@ export function registerPosixDesktopCli(input: {
         "unavailable",
         "No suitable existing writable PATH directory is available.",
       );
-    const linkPath = join(writable, bundle.commandName);
+    const linkPath = join(writable, commandName);
     const existingLink = fileInfo(linkPath);
     if (existingLink && !isOwnedLink(linkPath))
       return unavailable(
@@ -279,7 +289,7 @@ export function registerPosixDesktopCli(input: {
       installationId: previous?.installationId ?? randomUUID(),
       state: "prepared",
       channel: input.channel,
-      commandName: bundle.commandName,
+      commandName,
       account,
       appExecutable,
       launcherPath,
@@ -295,10 +305,10 @@ export function registerPosixDesktopCli(input: {
       assertClaim();
       return {
         state: "registered",
-        commandName: bundle.commandName,
+        commandName,
         launcherPath,
         linkPath,
-        detail: `Desktop command ${bundle.commandName} remains registered at ${linkPath}.`,
+        detail: `Desktop command ${commandName} remains registered at ${linkPath}.`,
       };
     }
     const saveRecord = (state: "prepared" | "installed") => {
@@ -346,10 +356,10 @@ export function registerPosixDesktopCli(input: {
     saveRecord("installed");
     return {
       state: "registered",
-      commandName: bundle.commandName,
+      commandName,
       launcherPath,
       linkPath,
-      detail: `Desktop command ${bundle.commandName} is registered at ${linkPath}. Open a new terminal if command lookup was cached.`,
+      detail: `Desktop command ${commandName} is registered at ${linkPath}. Open a new terminal if command lookup was cached.`,
     };
   } finally {
     closeSync(descriptor);

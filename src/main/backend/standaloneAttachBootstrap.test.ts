@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Focused regression for the extracted Electron bootstrap helpers: namespace
 // mapping, sync peek side-effect-freedom, deferred outcomes, refusal text,
 // ephemeral shell state isolation, attach-mode database guards, and the S1.4
@@ -91,8 +92,10 @@ describe("standalone attach bootstrap", () => {
         channel: "stable",
       }),
     ).toBe("/tmp/custom-profile");
-    expect(resolveDesktopBaseDir({ isDev: true, channel: "stable" })).toContain(".poracode-dev");
-    expect(resolveDesktopBaseDir({ isDev: false, channel: "stable" })).toContain(".poracode");
+    expect(resolveDesktopBaseDir({ isDev: true, channel: "stable" })).toContain(
+      ".viscositycode-dev",
+    );
+    expect(resolveDesktopBaseDir({ isDev: false, channel: "stable" })).toContain(".viscositycode");
   });
 
   it("peeks without side effects on definitive absence", () => {

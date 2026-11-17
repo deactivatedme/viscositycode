@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Mutable desktop-app process state shared by the Electron entry, window
 // helpers, attach-mode startup, and managed ready path.
 import { app, type BrowserWindow } from "electron";
+import { BRAND_NAME } from "@/shared/brand";
 import { resolvePoracodeChannel } from "@/shared/channel";
 import type { PoracodePaths } from "@/shared/poracodePaths";
 import type { RemoteThreadCommand } from "@/shared/contracts";
@@ -35,7 +37,11 @@ export const posthogHost = (process.env.POSTHOG_HOST ?? "").trim();
 export const posthogEnableDev = process.env.POSTHOG_ENABLE_DEV === "1";
 
 export const defaultElectronUserDataDir = app.getPath("userData");
-export const preserveLegacySafeStorageIdentity = !isDev && process.platform !== "win32";
+// ViscosityCode: upstream started Chromium under the pre-rebrand "Lightcode"
+// name so migrated Keychain/secret-store entries stayed decryptable. The fork
+// has no older installs, so it always keeps its own product name as the
+// OS-owned safe-storage identity.
+export const preserveLegacySafeStorageIdentity: boolean = false;
 
 export const WINDOW_CHROME_HEIGHT = 32;
 export const PENDING_THREAD_COMMAND_LIMIT = 64;
@@ -149,7 +155,8 @@ export const desktopApp: DesktopAppState = {
 
 export function requirePoracodePaths(): PoracodePaths {
   if (!desktopApp.poracodePaths) {
-    throw new Error("Poracode paths are not initialized.");
+    // ViscosityCode: user-visible if it ever reaches the startup failure dialog.
+    throw new Error(`${BRAND_NAME} paths are not initialized.`);
   }
   return desktopApp.poracodePaths;
 }

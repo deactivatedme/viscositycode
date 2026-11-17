@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
@@ -52,13 +53,21 @@ function fixture(markerVersion = "2.0.0-nightly.202611091529") {
   const name = standaloneArchiveFileName(version, hostRuntimeTarget());
   const fetchImpl = async (url: string) =>
     url.endsWith("SHA256SUMS") ? new Response(`${sha}  ${name}\n`) : new Response(bytes);
-  return { root, prefix, archive, sha, version, fetchImpl };
+  // ViscosityCode: downloads use an explicit mirror; the fork ships with no
+  // default release repository.
+  const env = { PORACODE_RELEASE_BASE_URL: "https://mirror.invalid/download" };
+  return { root, prefix, archive, sha, version, fetchImpl, env };
 }
 
 describe("service release provisioning", () => {
   it("verifies the release and publishes a service-owned runtime", async () => {
     const f = fixture();
-    await installServiceRelease({ prefix: f.prefix, version: f.version, fetchImpl: f.fetchImpl });
+    await installServiceRelease({
+      prefix: f.prefix,
+      version: f.version,
+      env: f.env,
+      fetchImpl: f.fetchImpl,
+    });
     expect(readlinkSync(join(f.prefix, "current")).replaceAll("\\", "/")).toMatch(
       /releases\/release-/u,
     );
@@ -68,13 +77,19 @@ describe("service release provisioning", () => {
   it("rejects an archive for a different version before publishing current", async () => {
     const f = fixture("1.0.0");
     await expect(
-      installServiceRelease({ prefix: f.prefix, version: f.version, fetchImpl: f.fetchImpl }),
+      installServiceRelease({
+        prefix: f.prefix,
+        version: f.version,
+        env: f.env,
+        fetchImpl: f.fetchImpl,
+      }),
     ).rejects.toThrow(/does not match/u);
     expect(existsSync(join(f.prefix, "current"))).toBe(false);
     const correct = fixture();
     await installServiceRelease({
       prefix: f.prefix,
       version: f.version,
+      env: correct.env,
       fetchImpl: correct.fetchImpl,
     });
     expect(existsSync(join(f.prefix, "current", "lib", "server.cjs"))).toBe(true);
@@ -85,7 +100,12 @@ describe("service release provisioning", () => {
     mkdirSync(f.prefix);
     mkdirSync(join(f.prefix, "current"));
     await expect(
-      installServiceRelease({ prefix: f.prefix, version: f.version, fetchImpl: f.fetchImpl }),
+      installServiceRelease({
+        prefix: f.prefix,
+        version: f.version,
+        env: f.env,
+        fetchImpl: f.fetchImpl,
+      }),
     ).rejects.toThrow(/not empty/u);
     expect(existsSync(join(f.prefix, "current"))).toBe(true);
     rmSync(join(f.prefix, "current"), { recursive: true });
@@ -149,7 +169,12 @@ describe("service release provisioning", () => {
     mkdirSync(f.prefix);
     writeFileSync(join(f.prefix, "sentinel"), "user data");
     await expect(
-      installServiceRelease({ prefix: f.prefix, version: f.version, fetchImpl: f.fetchImpl }),
+      installServiceRelease({
+        prefix: f.prefix,
+        version: f.version,
+        env: f.env,
+        fetchImpl: f.fetchImpl,
+      }),
     ).rejects.toThrow(/not empty/u);
     expect(readFileSync(join(f.prefix, "sentinel"), "utf8")).toBe("user data");
   });

@@ -1,5 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import {
+  DESKTOP_CLI_COMMAND_NAMES,
+  DESKTOP_CLI_DATA_DIR_NAMES,
+} from "../../packages/poracode-cli/lib/desktopBundle.mjs";
 import {
   appIdFor,
   artifactPrefixFor,
@@ -43,10 +48,31 @@ describe("electron-builder.shared.cjs mirrors src/shared/channel.ts", () => {
     expect(cjs.normalizeChannel("beta")).toBe("stable");
   });
 
-  it("keeps macOS updater ZIPs on the legacy technical executable name", () => {
-    expect(cjs.macExecutableNameFor("stable", "updater")).toBe("Lightcode");
-    expect(cjs.macExecutableNameFor("nightly", "updater")).toBe("Lightcode Nightly");
-    expect(cjs.macExecutableNameFor("stable", "branded")).toBe("Poracode");
-    expect(cjs.macExecutableNameFor("nightly", "branded")).toBe("Poracode Nightly");
+  // ViscosityCode: no legacy install to bridge, so updater ZIPs and DMGs share
+  // the product name as their macOS executable name.
+  it("names macOS updater ZIP and DMG executables after the product", () => {
+    for (const channel of PORACODE_CHANNELS) {
+      expect(cjs.macExecutableNameFor(channel, "updater")).toBe(productNameFor(channel));
+      expect(cjs.macExecutableNameFor(channel, "branded")).toBe(productNameFor(channel));
+    }
+    expect(cjs.macExecutableNameFor("stable", "updater")).toBe("ViscosityCode");
+    expect(cjs.macExecutableNameFor("nightly", "updater")).toBe("ViscosityCode Nightly");
+  });
+});
+
+// ViscosityCode: the packaged desktop CLI bootstrap carries its own copy of the
+// fork's command names and default host data folders.
+describe("the desktop CLI bootstrap mirrors src/shared/channel.ts", () => {
+  for (const channel of PORACODE_CHANNELS) {
+    it(`defaults the "${channel}" desktop CLI to the channel's data folder`, () => {
+      expect(DESKTOP_CLI_DATA_DIR_NAMES[channel]).toBe(userDataDirNameFor(channel));
+    });
+  }
+
+  it("names the desktop commands after the fork, never upstream", () => {
+    expect(DESKTOP_CLI_COMMAND_NAMES).toEqual({
+      stable: "viscositycode",
+      nightly: "viscositycode-next",
+    });
   });
 });

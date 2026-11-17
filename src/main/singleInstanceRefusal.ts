@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { readlinkSync } from "node:fs";
 import { join } from "node:path";
+import { BRAND_NAME } from "@/shared/brand";
 
 /**
  * Never-silent single-instance refusal (P2). When a second instance cannot
@@ -87,12 +89,12 @@ export function describeSingleInstanceRefusal(
       ? `PID ${holder.pid} on ${holder.hostname}`
       : `PID ${holder.pid} on ${holder.hostname} (that process is no longer running — the lock is stale)`;
     return (
-      "[poracode] Another Poracode instance is already running and holds this profile's " +
+      `[poracode] Another ${BRAND_NAME} instance is already running and holds this profile's ` +
       `single-instance lock (${holderState}), so this launch is quitting. Profile: ${userDataDir}`
     );
   }
   return (
-    "[poracode] Another Poracode instance appears to hold this profile's single-instance " +
+    `[poracode] Another ${BRAND_NAME} instance appears to hold this profile's single-instance ` +
     `lock (lock could not be read${target === null ? "" : ` as hostname-PID: ${target}`}), ` +
     `so this launch is quitting. Profile: ${userDataDir}`
   );
