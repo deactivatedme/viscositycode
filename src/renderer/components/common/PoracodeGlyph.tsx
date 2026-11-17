@@ -1,14 +1,23 @@
-import type { SVGProps } from "react";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import glyphMaskUrl from "@/renderer/viscosity/brand/viscosity-glyph-mask.png";
 
-export function PoracodeGlyph(props: SVGProps<SVGSVGElement>) {
+/**
+ * ViscosityCode: the small in-app product mark (model menus, composer summary,
+ * experiment targets). Draws the fork's "V" logo silhouette in `currentColor`
+ * through a CSS mask, so it follows text colour like the upstream glyph did.
+ * The export name stays upstream's to keep call sites (and merges) unchanged.
+ */
+export function PoracodeGlyph({ className }: { className?: string | undefined }) {
   return (
-    <svg {...props} viewBox="300 290 460 460" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        fillRule="evenodd"
-        d="M352,300 H556 A152,152 0 0 1 556,604 H472 V730 H352 Z M472,392 H548 A60,60 0 0 1 548,512 H472 Z"
-      />
-      <circle cx="636" cy="694" r="46" fill="var(--accent)" />
-    </svg>
+    <span
+      aria-hidden="true"
+      className={`inline-block bg-current ${className ?? ""}`}
+      style={{
+        maskImage: `url(${glyphMaskUrl})`,
+        maskSize: "contain",
+        maskRepeat: "no-repeat",
+        maskPosition: "center",
+      }}
+    />
   );
 }

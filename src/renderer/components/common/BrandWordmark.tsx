@@ -1,16 +1,26 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BRAND_NAME } from "@/shared/brand";
+
 /**
- * The Pora·code brand wordmark — "Pora" + the indigo baseline dot + "code".
+ * ViscosityCode: the product halves of the wordmark, "Viscosity" + the accent
+ * baseline dot + "Code" (upstream drew "Pora" · "code" the same way).
+ */
+const WORDMARK_LEAD = "Viscosity";
+const WORDMARK_TAIL = "Code";
+
+/**
+ * The brand wordmark — lead + the accent baseline dot + tail.
  *
  * The dot is a real round SVG circle, not a typed period: Geist (like most
  * geometric sans) renders the "." glyph as a square. It's tuned to sit on the
  * baseline and inherits the theme accent, mirroring
- * `branding/brand-showcase.html`. Reads as "Poracode" to assistive tech.
+ * `branding/brand-showcase.html`. Reads as the product name to assistive tech.
  */
 export function BrandWordmark({ className }: { className?: string | undefined }) {
   return (
-    <span className={className} aria-label="Poracode">
+    <span className={className} aria-label={BRAND_NAME}>
       <span className="font-bold" aria-hidden="true">
-        Pora
+        {WORDMARK_LEAD}
       </span>
       <svg
         viewBox="0 0 24 100"
@@ -20,7 +30,7 @@ export function BrandWordmark({ className }: { className?: string | undefined })
         <circle cx="12" cy="96" r="9" />
       </svg>
       <span className="font-semibold" aria-hidden="true">
-        code
+        {WORDMARK_TAIL}
       </span>
     </span>
   );
