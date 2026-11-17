@@ -1,3 +1,4 @@
+/* Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md. */
 @import "tailwindcss" source(none);
 @import "./herouiStyles.css";
 @import "@xterm/xterm/css/xterm.css";
