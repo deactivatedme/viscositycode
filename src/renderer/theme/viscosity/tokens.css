@@ -1,0 +1,102 @@
+/*
+ * ViscosityCode design tokens (fork of Poracode).
+ *
+ * Every fork component reads these `--vc-*` custom properties instead of
+ * hard-coded values. Colour tokens are derived from the HeroUI/Poracode theme
+ * variables (`--background`, `--accent`, …), so every theme preset — built-in,
+ * Viscosity or user-made — drives them automatically.
+ *
+ * Contract: token NAMES below are stable and shared by layout/, fx/ and theme/.
+ * Values may be tuned by theme work.
+ */
+:root {
+  /* Radii */
+  --vc-radius-xs: 3px;
+  --vc-radius-sm: 5px;
+  --vc-radius-md: 7px;
+  --vc-radius-lg: 10px;
+  --vc-radius-xl: 14px;
+  --vc-radius-pill: 999px;
+
+  /* Spacing scale */
+  --vc-space-0: 2px;
+  --vc-space-1: 4px;
+  --vc-space-2: 6px;
+  --vc-space-3: 8px;
+  --vc-space-4: 12px;
+  --vc-space-5: 16px;
+  --vc-space-6: 24px;
+
+  /* Typography */
+  --vc-font-ui:
+    "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --vc-font-mono:
+    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --vc-font-size-2xs: 10px;
+  --vc-font-size-xs: 11px;
+  --vc-font-size-sm: 12px;
+  --vc-font-size-md: 13px;
+  --vc-font-size-lg: 14px;
+
+  /* Shell metrics */
+  --vc-activitybar-width: 48px;
+  --vc-statusbar-height: 24px;
+  --vc-tabstrip-height: 35px;
+  --vc-titlebar-height: 32px;
+
+  /* Shadows */
+  --vc-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.18);
+  --vc-shadow-md: 0 4px 14px rgb(0 0 0 / 0.22), 0 1px 3px rgb(0 0 0 / 0.16);
+  --vc-shadow-lg: 0 18px 48px rgb(0 0 0 / 0.36), 0 2px 8px rgb(0 0 0 / 0.2);
+  --vc-shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--vc-accent) 45%, transparent),
+    0 0 18px color-mix(in oklab, var(--vc-accent) 28%, transparent);
+
+  /* Motion */
+  --vc-motion-instant: 60ms;
+  --vc-motion-fast: 120ms;
+  --vc-motion-base: 200ms;
+  --vc-motion-slow: 360ms;
+  --vc-motion-pulse: 1800ms;
+  --vc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --vc-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --vc-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Colour roles (derived from the active theme) */
+  --vc-accent: var(--accent);
+  --vc-accent-foreground: var(--accent-foreground);
+  --vc-chrome-bg: var(--sidebar-background, var(--background));
+  --vc-panel-bg: var(--content-background, var(--background));
+  --vc-surface: var(--surface);
+  --vc-border: var(--border);
+  --vc-border-subtle: color-mix(in oklab, var(--border) 65%, transparent);
+  --vc-text: var(--foreground);
+  --vc-text-muted: var(--muted);
+  --vc-hover: color-mix(in oklab, var(--foreground) 6%, transparent);
+  --vc-active: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --vc-focus-ring: color-mix(in oklab, var(--vc-accent) 70%, transparent);
+
+  /* Agent-state colours (Step 4 effects, status bar badges) */
+  --vc-state-working: var(--vc-accent);
+  --vc-state-thinking: color-mix(in oklab, var(--vc-accent) 80%, white);
+  --vc-state-tool: color-mix(in oklab, var(--vc-accent) 55%, var(--warning));
+  --vc-state-attention: var(--warning);
+  --vc-state-error: var(--danger);
+  --vc-state-success: var(--success);
+
+  /* Translucency over the animated background (Step 3). 1 = opaque. */
+  --vc-panel-alpha: 1;
+  --vc-panel-blur: 0px;
+  --vc-chrome-alpha: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --vc-motion-instant: 0ms;
+    --vc-motion-fast: 0ms;
+    --vc-motion-base: 0ms;
+    --vc-motion-slow: 0ms;
+    --vc-motion-pulse: 0ms;
+  }
+}

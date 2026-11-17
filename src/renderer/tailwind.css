@@ -4,6 +4,8 @@
 @import "katex/dist/katex.min.css";
 @import "./styles.css";
 @import "./components/common/mobileModals.css";
+/* ViscosityCode: fork styles load last so they can override upstream rules. */
+@import "./viscosity/viscosity.css";
 
 @source "./**/*.{ts,tsx}";
 @source not "./**/*.{test,spec}.{ts,tsx}";

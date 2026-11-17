@@ -1,0 +1,15 @@
+/*
+ * ViscosityCode fork stylesheet entry (fork of Poracode — see FORK_CHANGES.md).
+ *
+ * Everything the fork adds to the renderer's look lives behind this one import
+ * so upstream stylesheets stay untouched and merges stay easy:
+ *   - theme/viscosity/tokens.css  design tokens + Viscosity base palette
+ *   - viscosity/layout/layout.css Cursor-style shell (activity bar, tabs, status bar)
+ *   - fx/fx.css                   background layer + agent-state effects
+ *
+ * Fork shell rules are scoped to `html[data-vc-shell]` (desktop, non-compact) so
+ * the phone/PWA layout and the Chrome-extension side panel keep upstream styling.
+ */
+@import "../theme/viscosity/tokens.css";
+@import "./layout/layout.css";
+@import "../fx/fx.css";
