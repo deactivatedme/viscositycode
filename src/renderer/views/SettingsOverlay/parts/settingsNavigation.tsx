@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   Archive,
   Bell,
@@ -34,6 +35,7 @@ import { isDevApp, isRemoteSession } from "@/renderer/bridge";
 import { hasClientCapability } from "@/renderer/clientRuntime";
 import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { getSettingsInstalledAgents } from "@/shared/agentStatus";
+import { hasChangelogSource } from "@/shared/changelog";
 import { ProviderIcon } from "@/renderer/components/providers/ProviderIcon";
 import type { SettingsSection } from "./types";
 
@@ -65,6 +67,7 @@ const DESKTOP_ONLY_SECTIONS = new Set<SettingsSection>([
 export function isSettingsSectionVisible(id: SettingsSection, remoteSession: boolean): boolean {
   return (
     (id !== "remoteAccess" || hasClientCapability("localBackend")) &&
+    (id !== "changelog" || hasChangelogSource()) && // ViscosityCode: no source → no section
     (!remoteSession ||
       !DESKTOP_ONLY_SECTIONS.has(id) ||
       (id === "remoteServers" && hasClientCapability("manageRemoteEnvironments")))

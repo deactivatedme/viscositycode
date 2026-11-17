@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { Gauge, Keyboard, Star } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -15,6 +16,7 @@ import { usageWindowDisplayLabel } from "@/renderer/components/providers/usageFo
 import { KIND_ICON } from "@/renderer/components/changelog/ChangelogView";
 import { GitHubMark, XMark } from "@/renderer/components/common/BrandIcons";
 import {
+  activeCommunityPromotionIds,
   COMMUNITY_PROMOTION_IDS,
   COMMUNITY_PROMOTION_URLS,
   type CommunityPromotionId,
@@ -253,8 +255,10 @@ export function useNewsLineSources(visit: NewsVisit): NewsLineSourcesModel {
       label: t`Follow ${"@serg_vecher"}`,
     },
   };
-  const promotions: NewsItem[] = COMMUNITY_PROMOTION_IDS.filter((id) => !dismissed.has(id)).map(
-    (id) => ({
+  // ViscosityCode: only the fork's active promotions (none: upstream ones promote Poracode).
+  const promotions: NewsItem[] = activeCommunityPromotionIds()
+    .filter((id) => !dismissed.has(id))
+    .map((id) => ({
       id: `promotion:${id}`,
       kind: "promotion",
       category: "promotion",
@@ -273,8 +277,7 @@ export function useNewsLineSources(visit: NewsVisit): NewsLineSourcesModel {
         },
       },
       onDismiss: () => dismissPromotion(id),
-    }),
-  );
+    }));
 
   return {
     sources: {

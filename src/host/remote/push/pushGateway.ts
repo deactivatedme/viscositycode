@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Client for the hosted push gateway. The desktop cannot talk to APNs directly
  * (that needs the team's `.p8` auth key, which can't ship in the app), so a
@@ -10,14 +11,23 @@ import type { RemoteWebPushSubscription } from "@/shared/remote";
 import { readBoundedResponseBody } from "@/shared/http";
 import { assertIOSPushPayload, type IOSPushPayload } from "./payloads";
 
-/** Production gateway origin (co-hosted with the marketing site / PWA). The
- * canonical domain is `website/src/lib/seo.ts` `SITE_URL`. */
-const DEFAULT_PUSH_GATEWAY_URL = "https://poracode.com";
+/** ViscosityCode: no default gateway. Upstream's is Poracode's website, which
+ * the fork never contacts, so push stays off unless `PORACODE_PUSH_GATEWAY_URL`
+ * names a gateway the fork owner runs (same API). */
+const DEFAULT_PUSH_GATEWAY_URL: string | null = null;
 
-/** Resolve the gateway origin: env override, else the production default. */
-export function resolvePushGatewayUrl(): string {
+/** Resolve the gateway origin: env override, else the default (none in ViscosityCode). */
+export function resolvePushGatewayUrl(): string | null {
   const fromEnv = process.env.PORACODE_PUSH_GATEWAY_URL?.trim();
   return fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_PUSH_GATEWAY_URL;
+}
+
+/** ViscosityCode: raised (without any request) when no gateway is configured. */
+class PushGatewayUnconfiguredError extends Error {
+  constructor() {
+    super("No push gateway is configured.");
+    this.name = "PushGatewayUnconfiguredError";
+  }
 }
 
 interface NativeSendPushInputBase {
@@ -182,12 +192,13 @@ function createGatewayTransport(options: CreatePushGatewayOptions): GatewayTrans
   const base = options.gatewayUrl ?? resolvePushGatewayUrl();
   const doFetch: FetchLike = options.fetchImpl ?? ((url, init) => fetch(url, init as RequestInit));
   const timeoutMs = options.timeoutMs ?? DEFAULT_GATEWAY_TIMEOUT_MS;
-  const endpoint = new URL("/api/push", base).toString();
+  const endpoint = base ? new URL("/api/push", base).toString() : null; // ViscosityCode
   const controllers = new Set<AbortController>();
   let closed = false;
   return {
     async request(init, consume) {
       if (closed) throw new Error("Push gateway transport is closed.");
+      if (!endpoint) throw new PushGatewayUnconfiguredError(); // ViscosityCode
       const controller = new AbortController();
       controllers.add(controller);
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -262,6 +273,10 @@ export function createPushGateway(options: CreatePushGatewayOptions = {}): SendP
         },
       );
     } catch (error) {
+      // ViscosityCode: push is off without a gateway; nothing to report.
+      if (error instanceof PushGatewayUnconfiguredError) {
+        return { ok: false, status: 0, unregistered: false, reason: error.message };
+      }
       const outcome = classifyTransportOutcome(error);
       reportOperationalIssue("send", outcome, input.platform, 0);
       return {
@@ -328,6 +343,7 @@ export function createWebPushPublicKeyResolver(
         return publicKey;
       });
     } catch (error) {
+      if (error instanceof PushGatewayUnconfiguredError) throw error; // ViscosityCode
       if (error instanceof PushGatewayOperationalError) {
         reportOperationalIssue("resolve-web-key", "invalid-response", "web", error.status);
       } else if (

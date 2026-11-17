@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NEWS_FEED_URL, NEWS_FEED_VERSION } from "@/shared/newsFeed";
 import {
@@ -6,6 +7,13 @@ import {
   NEWS_FEED_RETRY_MS,
   useNewsFeedStore,
 } from "./newsFeedStore";
+
+// ViscosityCode ships without a feed source (see newsFeedStore.noSource.test.ts);
+// these tests exercise the fetch path against a stand-in feed URL.
+vi.mock("@/shared/newsFeed", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/newsFeed")>()),
+  NEWS_FEED_URL: "https://news.example.test/news.json",
+}));
 
 const item = { id: "hello", kind: "announcement", text: { en: "Hello" } };
 

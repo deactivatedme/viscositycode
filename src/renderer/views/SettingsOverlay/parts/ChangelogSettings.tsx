@@ -1,12 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect } from "react";
 import { ExternalLink } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { readBridge } from "@/renderer/bridge";
 import { ChangelogView } from "@/renderer/components/changelog/ChangelogView";
 import { useChangelogStore } from "@/renderer/state/changelogStore";
+// ViscosityCode: releases live on the fork's repository (link hidden until it exists).
+import { communityReleasesUrl } from "@/shared/communityLinks";
 import { SettingsPage } from "./SettingsForm";
-
-const RELEASES_URL = "https://github.com/Porabuild/Poracode/releases";
 
 export function ChangelogSettings() {
   const { t } = useLingui();
@@ -21,16 +22,17 @@ export function ChangelogSettings() {
     void loadChangelog();
   }, [markCurrentSeen, loadChangelog]);
 
-  const releasesLink = (
+  const releasesUrl = communityReleasesUrl();
+  const releasesLink = releasesUrl ? (
     <button
       type="button"
       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-      onClick={() => void readBridge().openExternal(RELEASES_URL)}
+      onClick={() => void readBridge().openExternal(releasesUrl)}
     >
       <Trans>View all releases on GitHub</Trans>
       <ExternalLink className="size-3" />
     </button>
-  );
+  ) : null;
 
   return (
     <SettingsPage
@@ -43,7 +45,7 @@ export function ChangelogSettings() {
           <p className="text-sm text-muted">
             <Trans>Couldn't load the changelog. Check your connection, or view it on GitHub.</Trans>
           </p>
-          <div className="mt-3 flex justify-center">{releasesLink}</div>
+          {releasesLink ? <div className="mt-3 flex justify-center">{releasesLink}</div> : null}
         </div>
       ) : (
         <ChangelogView releases={releases} footer={releasesLink} />

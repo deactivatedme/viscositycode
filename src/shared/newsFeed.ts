@@ -1,10 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { compareVersions } from "./changelog";
 import { isDiscoverableFeatureId, type DiscoverableFeatureId } from "./featureDiscovery";
 
 /**
- * Remote news feed for the new-thread news line, served by the website at
- * https://poracode.com/news.json. It combines hand-written announcements
+ * Remote news feed for the new-thread news line. Upstream serves it from its
+ * website, combining hand-written announcements
  * (`website/src/lib/news/items.json`) with items the website derives from
  * public GitHub data, so new content ships without an app release.
  *
@@ -16,7 +17,12 @@ import { isDiscoverableFeatureId, type DiscoverableFeatureId } from "./featureDi
  * with newer feeds. Bump {@link NEWS_FEED_VERSION} only for a breaking change;
  * apps ignore a feed whose version they do not support.
  */
-export const NEWS_FEED_URL = "https://poracode.com/news.json";
+/**
+ * ViscosityCode: no feed source. The fork never contacts Poracode's website, so
+ * the news line makes no request and shows no remote items. Point this at a
+ * feed the fork owner hosts (same schema) to turn announcements back on.
+ */
+export const NEWS_FEED_URL: string | null = null;
 export const NEWS_FEED_VERSION = 1;
 
 /** Hosts a feed link may open. GitHub links must stay inside the Porabuild org. */

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -8,7 +9,11 @@ import { useChangelogStore } from "@/renderer/state/changelogStore";
 import { useKeybindingStore } from "@/renderer/commands/keybindingStore";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
 import { NEWS_LINE_STORAGE_KEYS, useNewsLineStore } from "@/renderer/state/newsLineStore";
-import { COMMUNITY_PROMOTION_URLS } from "@/shared/communityLinks";
+import {
+  COMMUNITY_PROMOTION_IDS,
+  COMMUNITY_PROMOTION_URLS,
+  type CommunityPromotionId,
+} from "@/shared/communityLinks";
 import { NEWS_LONG_DWELL_MS, NEWS_ROTATE_MS, NEWS_TYPING_PAUSE_MS, NewsLine } from "./NewsLine";
 import { resetNewsVisit } from "./newsVisit";
 import { resetProfileStatsCache } from "./useProfileStats";
@@ -24,7 +29,17 @@ const mocks = vi.hoisted(() => ({
   openExternalNative: vi.fn<(url: string) => Promise<void>>(),
   openProfileSettings: vi.fn<() => void>(),
   runPalette: vi.fn<() => void>(),
+  /** ViscosityCode ships none; these tests exercise the promotion slot with all of them. */
+  promotions: null as readonly CommunityPromotionId[] | null,
 }));
+
+vi.mock("@/shared/communityLinks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/communityLinks")>();
+  return {
+    ...actual,
+    activeCommunityPromotionIds: () => mocks.promotions ?? actual.activeCommunityPromotionIds(),
+  };
+});
 
 vi.mock("@/renderer/bridge", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/renderer/bridge")>()),
@@ -136,6 +151,7 @@ describe("NewsLine", () => {
     resetProfileStatsCache();
     mocks.stats = null;
     mocks.browserClient = false;
+    mocks.promotions = COMMUNITY_PROMOTION_IDS;
     mocks.openExternal.mockReset().mockResolvedValue(undefined);
     mocks.openExternalNative.mockReset().mockResolvedValue(undefined);
     vi.spyOn(Math, "random").mockReturnValue(0.25);
@@ -299,6 +315,16 @@ describe("NewsLine", () => {
       expect(screen.queryByRole("button", { name: label })).not.toBeInTheDocument();
     },
   );
+
+  it("shows no upstream community promotions by default", () => {
+    mocks.promotions = null;
+    render(<NewsLine />);
+    for (let step = 0; step < 14; step++) {
+      expect(currentKind()).not.toBe("promotion");
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+    expect(document.body).not.toHaveTextContent(/Star on GitHub|Follow @/);
+  });
 
   it("shows the short headline and expands the full point with a way to the next one", () => {
     render(<NewsLine />);

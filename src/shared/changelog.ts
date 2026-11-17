@@ -1,22 +1,30 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 
 /**
  * Changelog types, validation, and version helpers.
  *
- * The actual release data is NOT bundled here. It lives in a single source of
- * truth — `website/public/changelog.json` on master — served by the marketing
- * site and fetched at runtime:
- *
- *   https://poracode.com/changelog.json
- *
- * so the notes can be edited, reworded, or extended by committing to master
- * (Vercel redeploys the site) without shipping a new app build. The desktop app
- * fetches + caches it (see `src/renderer/state/changelogStore.ts`); the site's
- * own /changelog page imports the same file at build time. This module only
+ * The actual release data is NOT bundled here. Upstream keeps a single source
+ * of truth — `website/public/changelog.json` on master — served by its
+ * marketing site and fetched at runtime, so the notes can be edited, reworded,
+ * or extended without shipping a new app build. The desktop app fetches +
+ * caches it (see `src/renderer/state/changelogStore.ts`); the site's own
+ * /changelog page imports the same file at build time. This module only
  * carries the shape + the pure helpers.
  */
 
-export const CHANGELOG_URL = "https://poracode.com/changelog.json";
+/**
+ * ViscosityCode: no changelog source. The fork never contacts Poracode's
+ * website, so nothing is fetched, the changelog stays empty, and the What's New
+ * entry points (sidebar entry, Settings → Changelog, palette command) hide.
+ * Point this at a `changelog.json` the fork owner hosts to turn them back on.
+ */
+export const CHANGELOG_URL: string | null = null;
+
+/** Whether the app has a changelog source to read from (ViscosityCode). */
+export function hasChangelogSource(): boolean {
+  return CHANGELOG_URL !== null;
+}
 
 export type ChangelogChangeKind = "added" | "improved" | "fixed";
 

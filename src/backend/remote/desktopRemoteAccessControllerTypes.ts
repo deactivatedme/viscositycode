@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { BrowserPanelManager } from "@/main/browser";
 import type { ManagedLoopbackBootstrap } from "@/shared/managedLoopback";
 import type { PoracodeDiagnosticTags } from "@/shared/diagnostics/sentryPrivacy";
@@ -26,15 +27,20 @@ import type {
 import type { RemoteBrowserGatewayLike } from "@/host/remote/RemoteBrowserGateway";
 import type { EnvironmentRuntimeService } from "@/host/environments/environmentRuntimeService";
 
-export const PRODUCTION_PAIRING_APP_URL: Record<PoracodeChannel, string> = {
-  stable: "https://poracode.com",
-  nightly: "https://app-nightly.poracode.com",
+/**
+ * ViscosityCode: no hosted pairing web app. Upstream's lives on Poracode's
+ * website, which the fork never contacts, so pairing links open the web client
+ * the desktop serves itself (its remote-access HTTP base URL) — local and LAN
+ * pairing keep working — unless `PORACODE_REMOTE_ACCESS_PAIRING_APP_URL`
+ * names one.
+ */
+export const PRODUCTION_PAIRING_APP_URL: Record<PoracodeChannel, string | undefined> = {
+  stable: undefined,
+  nightly: undefined,
 };
 
-export const PRODUCTION_HOSTED_APP_URLS = [
-  "https://app.poracode.com",
-  "https://app-nightly.poracode.com",
-] as const;
+/** ViscosityCode: no hosted web-app origins are trusted for CORS by default. */
+export const PRODUCTION_HOSTED_APP_URLS: readonly string[] = [];
 
 export interface DesktopRemoteAccessControllerOptions {
   readonly appVersion: string;

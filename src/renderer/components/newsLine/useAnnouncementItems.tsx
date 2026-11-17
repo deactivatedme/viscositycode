@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect } from "react";
 import { HeartHandshake, Megaphone, Star } from "lucide-react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
@@ -47,10 +48,10 @@ function TemplateText(props: { template: NewsFeedTemplate }) {
 }
 
 /**
- * Items from the remote news feed (`https://poracode.com/news.json`). The
- * feed is refreshed when the news line mounts (at most every few hours) and
- * filtered by `selectNewsFeedItems`. Opening or closing an item hides it on
- * this device.
+ * Items from the remote news feed (`NEWS_FEED_URL`; ViscosityCode ships none,
+ * so this yields nothing and never fetches). The feed is refreshed when the
+ * news line mounts (at most every few hours) and filtered by
+ * `selectNewsFeedItems`. Opening or closing an item hides it on this device.
  */
 export function useAnnouncementItems(options: {
   context: FeatureContext;

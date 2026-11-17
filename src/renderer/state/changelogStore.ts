@@ -1,8 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { create } from "zustand";
 import { readBridge } from "@/renderer/bridge";
 import {
   CHANGELOG_URL,
   compareVersions,
+  hasChangelogSource,
   hasUnseenChangelog,
   parseChangelogDocument,
   releasesSince,
@@ -27,6 +29,11 @@ const {
 } = CHANGELOG_STORAGE_KEYS;
 
 if (typeof localStorage !== "undefined") migrateLegacyChangelogStorage(localStorage);
+
+// ViscosityCode: without a changelog source there is nothing to fetch, show, or
+// announce — no cached releases, no unread badge, and the sidebar entry stays
+// hidden (see `CHANGELOG_URL`).
+const CHANGELOG_SOURCE = hasChangelogSource();
 
 /** The running app version, or "0.0.0" when no bridge is installed (tests, early boot). */
 export function currentAppVersion(): string {
@@ -141,16 +148,18 @@ interface ChangelogState {
 let inFlightLoad: Promise<void> | null = null;
 
 export const useChangelogStore = create<ChangelogState>((set, get) => ({
-  releases: loadCachedReleases(),
+  releases: CHANGELOG_SOURCE ? loadCachedReleases() : [], // ViscosityCode
   lastSeenVersion: readStoredString(SEEN_VERSION_KEY),
   acknowledgedVersion: readStoredString(ACK_VERSION_KEY),
   whatsNewOpen: false,
-  whatsNewHidden: readStoredBoolean(HIDDEN_KEY, false),
+  whatsNewHidden: !CHANGELOG_SOURCE || readStoredBoolean(HIDDEN_KEY, false), // ViscosityCode
 
   loadChangelog: () => {
+    const url = CHANGELOG_URL; // ViscosityCode: no source → no request
+    if (!url) return Promise.resolve();
     inFlightLoad ??= (async () => {
       try {
-        const response = await fetch(CHANGELOG_URL);
+        const response = await fetch(url);
         if (!response.ok) return;
         const releases = parseChangelogDocument(await response.json());
         if (!releases) return;
@@ -212,7 +221,10 @@ export function useHasUnseenChangelog(): boolean {
   const releases = useChangelogStore((s) => s.releases);
   const lastSeenVersion = useChangelogStore((s) => s.lastSeenVersion);
   const acknowledgedVersion = useChangelogStore((s) => s.acknowledgedVersion);
-  return hasUnseenChangelog(releases, currentAppVersion(), lastSeenVersion, acknowledgedVersion);
+  return (
+    CHANGELOG_SOURCE && // ViscosityCode
+    hasUnseenChangelog(releases, currentAppVersion(), lastSeenVersion, acknowledgedVersion)
+  );
 }
 
 /** Releases the user has not seen yet (newest first); empty when caught up. */

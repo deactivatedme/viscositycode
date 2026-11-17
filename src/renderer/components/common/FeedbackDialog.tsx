@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useState } from "react";
 import { Input, Label, Modal, TextField } from "@heroui/react";
 import { Bug, CircleAlert, ExternalLink, Globe, Lightbulb, Search, Send } from "lucide-react";
@@ -15,8 +16,12 @@ import { LightballTabs } from "./LightballTabs";
 import { PixelLoader } from "./PixelLoader";
 import { TextArea } from "./TextArea";
 import { FeedbackAttachments } from "./FeedbackAttachments";
+// ViscosityCode: no hosted feedback service by default — never Poracode's.
+import { BRAND_NAME } from "@/shared/brand";
+import { communityIssuesUrl } from "@/shared/communityLinks";
+import { FEEDBACK_SERVICE_URL } from "./feedbackService";
 
-const SERVICE = "https://poracode.com";
+const SERVICE = FEEDBACK_SERVICE_URL;
 
 export function FeedbackDialog({
   isOpen,
@@ -33,12 +38,16 @@ export function FeedbackDialog({
   const setDetails = (value: string) => updateFeedbackDraft({ details: value });
   const setFiles = (value: File[]) => updateFeedbackDraft({ files: value });
   const [enabled, setEnabled] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() =>
+    SERVICE ? "" : t`Feedback is temporarily unavailable. Please try again later.`,
+  );
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState("");
   const hasDelivery = Boolean(delivery);
-  const environment = `Poracode ${bridge.appVersion}; ${bridge.platform}`;
+  const environment = `${BRAND_NAME} ${bridge.appVersion}; ${bridge.platform}`;
+  const issuesUrl = communityIssuesUrl();
   useEffect(() => {
+    if (!SERVICE) return; // ViscosityCode: no service, no request
     let disposed = false;
     void fetch(`${SERVICE}/api/feedback`, {
       credentials: "omit",
@@ -78,7 +87,7 @@ export function FeedbackDialog({
     if (enabled) setMessage("");
   }
   async function send() {
-    if (busy) return;
+    if (busy || !SERVICE) return;
     setBusy(true);
     try {
       const result = await deliverFeedback({
@@ -253,16 +262,16 @@ export function FeedbackDialog({
                 </p>
               </Modal.Body>
               <Modal.Footer className="flex-wrap">
-                <Button
-                  variant="ghost"
-                  className="mr-auto text-muted max-[400px]:basis-full max-[400px]:justify-start"
-                  onPress={() =>
-                    void bridge.openExternal("https://github.com/Porabuild/Poracode/issues")
-                  }
-                >
-                  <Search className="size-3.5" />
-                  <Trans>Existing issues</Trans>
-                </Button>
+                {issuesUrl ? (
+                  <Button
+                    variant="ghost"
+                    className="mr-auto text-muted max-[400px]:basis-full max-[400px]:justify-start"
+                    onPress={() => void bridge.openExternal(issuesUrl)}
+                  >
+                    <Search className="size-3.5" />
+                    <Trans>Existing issues</Trans>
+                  </Button>
+                ) : null}
                 <Button slot="close" variant="ghost" isDisabled={busy} className="text-muted">
                   <Trans>Cancel</Trans>
                 </Button>

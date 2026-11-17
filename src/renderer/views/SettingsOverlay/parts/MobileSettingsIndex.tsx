@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Button } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -14,13 +15,13 @@ import {
   Mic,
   Palette,
   Settings2,
-  ShieldCheck,
   Sparkles,
   TerminalSquare,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { isRemoteSession, readBridge } from "@/renderer/bridge";
+import { communityIssuesUrl } from "@/shared/communityLinks";
 import type { SettingsSection } from "./types";
 
 function MobileSettingsRow(props: {
@@ -64,6 +65,7 @@ export function MobileSettingsIndex(props: {
   // A remote client edits these on its paired host; only its own preferences
   // stay on this device.
   const remote = isRemoteSession();
+  const supportUrl = communityIssuesUrl(); // ViscosityCode
 
   if (props.screen === "desktop") {
     const rows: Array<{
@@ -234,16 +236,15 @@ export function MobileSettingsIndex(props: {
             disabled={!props.hasDesktop}
             onPress={props.onOpenDesktop}
           />
-          <MobileSettingsRow
-            icon={ShieldCheck}
-            label={t`Privacy Policy`}
-            onPress={() => void readBridge().openExternal("https://poracode.com/privacy")}
-          />
-          <MobileSettingsRow
-            icon={LifeBuoy}
-            label={t`Support`}
-            onPress={() => void readBridge().openExternal("https://poracode.com/support")}
-          />
+          {/* ViscosityCode: no hosted privacy or support pages (they were Poracode's
+              website); Support opens the fork's issue tracker once it exists. */}
+          {supportUrl ? (
+            <MobileSettingsRow
+              icon={LifeBuoy}
+              label={t`Support`}
+              onPress={() => void readBridge().openExternal(supportUrl)}
+            />
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,11 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { create } from "zustand";
 import { NEWS_FEED_URL, parseNewsFeed, type NewsFeed } from "@/shared/newsFeed";
 import { readStoredJson, writeStoredJson } from "@/renderer/utils/localStorage";
 
 /**
- * The remote news feed (`https://poracode.com/news.json`), cached on the
- * device so the news line has content offline and instantly on launch. The
- * fetch is anonymous: a static GET with no credentials or identifiers.
+ * The remote news feed (`NEWS_FEED_URL`), cached on the device so the news line
+ * has content offline and instantly on launch. The fetch is anonymous: a static
+ * GET with no credentials or identifiers. ViscosityCode ships without a feed
+ * source, so it never fetches and ignores any cached feed.
  */
 export const NEWS_FEED_CACHE_KEY = "poracode-news-feed-cache";
 /** Refresh at most this often after a success; the website caches GitHub data hourly. */
@@ -34,8 +36,8 @@ interface NewsFeedState {
 
 let inFlight: Promise<void> | null = null;
 
-async function fetchFeed(): Promise<NewsFeed | null> {
-  const response = await fetch(NEWS_FEED_URL, { credentials: "omit" });
+async function fetchFeed(url: string): Promise<NewsFeed | null> {
+  const response = await fetch(url, { credentials: "omit" });
   if (!response.ok) return null;
   const raw: unknown = await response.json();
   const feed = parseNewsFeed(raw);
@@ -44,9 +46,11 @@ async function fetchFeed(): Promise<NewsFeed | null> {
 }
 
 export const useNewsFeedStore = create<NewsFeedState>((set, get) => ({
-  ...readCache(),
+  ...(NEWS_FEED_URL ? readCache() : { feed: null, fetchedAt: 0 }), // ViscosityCode
   failedAt: 0,
   refresh: (options) => {
+    const url = NEWS_FEED_URL; // ViscosityCode: no source → no request
+    if (!url) return Promise.resolve();
     const now = Date.now();
     const { fetchedAt, failedAt } = get();
     if (
@@ -55,7 +59,7 @@ export const useNewsFeedStore = create<NewsFeedState>((set, get) => ({
     ) {
       return Promise.resolve();
     }
-    inFlight ??= fetchFeed()
+    inFlight ??= fetchFeed(url)
       .then((feed) => set(feed ? { feed, fetchedAt: Date.now() } : { failedAt: Date.now() }))
       // Offline, blocked, or malformed: keep what we have and back off.
       .catch(() => set({ failedAt: Date.now() }))

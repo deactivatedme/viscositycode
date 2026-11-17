@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
+import { BRAND_NAME } from "@/shared/brand";
 import { FeedbackDialog } from "./FeedbackDialog";
 import {
   resetFeedbackDraft,
@@ -16,6 +18,11 @@ vi.mock("@/renderer/bridge", () => ({
   }),
 }));
 vi.mock("@vercel/blob/client", () => ({ put: vi.fn<() => Promise<void>>() }));
+// ViscosityCode ships without a feedback service (see FeedbackDialog.offline.test.tsx);
+// these tests exercise the delivery flow against a stand-in service.
+vi.mock("./feedbackService", () => ({
+  FEEDBACK_SERVICE_URL: "https://feedback.example.test",
+}));
 const NativeURL = URL;
 beforeEach(() => {
   resetFeedbackDraft();
@@ -128,7 +135,7 @@ it("sends without a challenge and retries the same receipt after reopening", asy
     receipt,
   });
   expect(JSON.parse(String(fetcher.mock.calls[1]![1]!.body))).toMatchObject({
-    diagnostics: "Poracode 2.0.0; win32",
+    diagnostics: `${BRAND_NAME} 2.0.0; win32`,
   });
   expect(JSON.parse(String(fetcher.mock.calls[1]![1]!.body))).not.toHaveProperty("token");
 });
