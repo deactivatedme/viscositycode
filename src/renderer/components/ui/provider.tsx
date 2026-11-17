@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Toast, toast as heroToast } from "@heroui/react";
 import { Copy } from "lucide-react";
@@ -14,6 +15,8 @@ import { detectOSLocale, resolveLocale } from "@/renderer/i18n/locales";
 import { EditContextMenuHost } from "@/renderer/components/common/EditContextMenuHost";
 import { getToastActionLabel, normalizeToastContent } from "./toastContent";
 import { SwipeDismissToast } from "./SwipeDismissToast";
+// ViscosityCode: Windows backdrop preference (Auto/Mica/Acrylic/None).
+import { useWindowMaterialPreference } from "@/renderer/viscosity/windowMaterial/windowMaterialStore";
 
 function systemPrefersReducedTransparency(): boolean {
   return (
@@ -86,6 +89,7 @@ export function AppProvider(props: {
   const sidebarTranslucency = useSharedSettings((state) => state.sidebarTranslucency);
   const sidebarGlassTint = useSharedSettings((state) => state.sidebarGlassTint);
   const [reducedTransparency, setReducedTransparency] = useState(systemPrefersReducedTransparency);
+  const windowMaterial = useWindowMaterialPreference(); // ViscosityCode:
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -173,6 +177,7 @@ export function AppProvider(props: {
         symbolColor: appearance === "dark" ? "#fafafa" : "#1f2937",
         materialEnabled: wantMaterial,
         appearance,
+        windowMaterial, // ViscosityCode:
       })
       .then((result) => {
         // The native material is toggled live by the main process; reveal it via
@@ -184,7 +189,14 @@ export function AppProvider(props: {
         captureRendererException(error, { featureArea: "window-chrome" });
         // Keep renderer boot resilient if Electron rejects a color value.
       });
-  }, [appearance, effectiveGlassEnabled, contentReady, syncWindowChrome, remoteSession]);
+  }, [
+    appearance,
+    effectiveGlassEnabled,
+    contentReady,
+    syncWindowChrome,
+    remoteSession,
+    windowMaterial, // ViscosityCode:
+  ]);
 
   // User-tuned sidebar frosting (Appearance slider): override the glass tint
   // alpha for the active appearance. No-op on platforms without a native blur

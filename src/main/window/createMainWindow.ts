@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { pathToFileURL } from "node:url";
 import { registerLocalFontRenderer } from "../browser/localFontPermissions";
 import type { ShellStateStore } from "../backend/BackendStateStore";
@@ -7,6 +8,14 @@ import type { PoracodeWindowKind } from "@/shared/ipc";
 import type { RendererProcessGoneIntent } from "@/main/diagnostics/processGone";
 import { installSessionPermissions } from "../browser/permissions";
 import { supportsNativeWindowMaterial, syncNativeThemeForMaterial } from "./windowMaterial";
+import type { WindowMaterialPreference } from "@/shared/ipc/procedures/settings";
+import {
+  TRANSPARENT_WINDOW_BACKGROUND,
+  resolveWindowsBackgroundMaterial,
+  startupWindowMaterialPreference,
+  windowBaseBackgroundColor,
+  windowCaptionSymbolColor,
+} from "./windowChromeAppearance";
 import {
   buildRendererAdditionalArguments,
   installAppNavigationGuards,
@@ -92,6 +101,11 @@ export interface CreateMainWindowOptions {
   appearance: "light" | "dark";
   /** Saved opt-in translucent ("liquid glass") sidebar, so the window opens with the material already applied. */
   sidebarTranslucency: boolean;
+  /**
+   * ViscosityCode: Windows backdrop preference for the first frame. Defaults to
+   * the last one a renderer sent this process (else `auto`).
+   */
+  windowMaterial?: WindowMaterialPreference;
   onClosed(): void;
   onClose?: (event: Electron.Event) => void;
   onRendererProcessGone?: (
@@ -110,11 +124,11 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
     options.boundsStateKey === undefined ? "window-bounds" : options.boundsStateKey;
   const saved = boundsStateKey ? getSavedWindowBounds(options.state, boundsStateKey) : null;
   const supportsTitleBarOverlay = process.platform === "win32" || process.platform === "linux";
-  const isDark = options.appearance === "dark";
   // Base bg/symbol per appearance, matching styles.css and the runtime
   // setWindowChrome values, so the first frame doesn't flash a fixed palette.
-  const backgroundColor = isDark ? "#070709" : "#f1f1f4";
-  const symbolColor = isDark ? "#fafafa" : "#1f2937";
+  // ViscosityCode: ViscosityCode base colours (windowChromeAppearance.ts).
+  const backgroundColor = windowBaseBackgroundColor(options.appearance);
+  const symbolColor = windowCaptionSymbolColor(options.appearance);
   // macOS: always create the window transparent + vibrancy-capable so the glass
   // sidebar can be toggled live (the renderer reveals/hides it purely via CSS —
   // with glass off the opaque content simply covers the material). macOS can't
@@ -122,8 +136,17 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
   // from creation. Windows acrylic is applied here for a flash-free first paint
   // when glass is already on, and toggled live via setBackgroundMaterial.
   const isMacOS = process.platform === "darwin";
-  const winGlassAtStart =
-    process.platform === "win32" && options.sidebarTranslucency && supportsNativeWindowMaterial();
+  // ViscosityCode: the Windows backdrop follows the material preference
+  // (Auto = Mica) instead of always acrylic; `none` keeps the window opaque.
+  const winMaterialAtStart =
+    process.platform === "win32"
+      ? resolveWindowsBackgroundMaterial({
+          preference: options.windowMaterial ?? startupWindowMaterialPreference(),
+          translucent: options.sidebarTranslucency,
+          capable: supportsNativeWindowMaterial(),
+        })
+      : "none";
+  const winGlassAtStart = winMaterialAtStart !== "none";
   if (options.sidebarTranslucency && supportsNativeWindowMaterial()) {
     // Match the native appearance to the app theme so the material renders in the
     // right light/dark variant from the first frame.
@@ -137,17 +160,17 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
     ...(saved?.x != null && saved?.y != null ? { x: saved.x, y: saved.y } : {}),
     minWidth: options.minWidth ?? 540,
     minHeight: options.minHeight ?? 720,
-    backgroundColor: isMacOS || winGlassAtStart ? "#00000000" : backgroundColor,
+    backgroundColor: isMacOS || winGlassAtStart ? TRANSPARENT_WINDOW_BACKGROUND : backgroundColor,
     autoHideMenuBar: true,
     ...(isMacOS
       ? { vibrancy: "sidebar" as const, visualEffectState: "active" as const, transparent: true }
       : {}),
-    ...(winGlassAtStart ? { backgroundMaterial: "acrylic" as const } : {}),
+    ...(winGlassAtStart ? { backgroundMaterial: winMaterialAtStart } : {}),
     ...(supportsTitleBarOverlay
       ? {
           titleBarStyle: "hidden" as const,
           titleBarOverlay: {
-            color: "#00000000",
+            color: TRANSPARENT_WINDOW_BACKGROUND,
             symbolColor,
             height: options.windowChromeHeight,
           },

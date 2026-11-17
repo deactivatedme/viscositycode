@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "@heroui/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +19,9 @@ const settingsState: {
 };
 
 const runtime = vi.hoisted(() => ({ browser: false, remote: false }));
+const setWindowChrome = vi.hoisted(() =>
+  vi.fn<(payload: Record<string, unknown>) => Promise<{ nativeCapable: boolean }>>(),
+);
 
 vi.mock("../../state/sharedSettingsStore", () => ({
   useSharedSettings: (selector: (s: typeof settingsState) => unknown) => selector(settingsState),
@@ -27,9 +31,7 @@ vi.mock("@/renderer/bridge", () => ({
   isMac: () => false,
   isRemoteSession: () => runtime.remote,
   isWindows: () => false,
-  readBridge: () => ({
-    setWindowChrome: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
-  }),
+  readBridge: () => ({ setWindowChrome }),
 }));
 
 vi.mock("@/renderer/clientRuntime", () => ({
@@ -38,6 +40,7 @@ vi.mock("@/renderer/clientRuntime", () => ({
 }));
 
 import { AppProvider } from "./provider";
+import { setWindowMaterialPreference } from "@/renderer/viscosity/windowMaterial/windowMaterialStore";
 
 function setMatchMedia(prefersDark: boolean) {
   Object.defineProperty(window, "matchMedia", {
@@ -57,6 +60,7 @@ function setMatchMedia(prefersDark: boolean) {
 }
 
 beforeEach(() => {
+  setWindowChrome.mockResolvedValue({ nativeCapable: true });
   settingsState.themeMode = "system";
   settingsState.themePreset = "default";
   settingsState.sidebarTranslucency = false;
@@ -295,5 +299,34 @@ describe("AppProvider", () => {
       </AppProvider>,
     );
     expect(document.documentElement.dataset.theme).toBe("light");
+  });
+
+  // ViscosityCode: the Windows backdrop preference rides on setWindowChrome.
+  it("forwards the window material preference to the native window chrome", async () => {
+    Object.defineProperty(window, "poracode", { configurable: true, value: {} });
+    try {
+      settingsState.sidebarTranslucency = true;
+      setWindowMaterialPreference("acrylic");
+      render(
+        <AppProvider contentReady>
+          <span />
+        </AppProvider>,
+      );
+      await waitFor(() => {
+        expect(setWindowChrome).toHaveBeenLastCalledWith(
+          expect.objectContaining({ materialEnabled: true, windowMaterial: "acrylic" }),
+        );
+      });
+
+      act(() => setWindowMaterialPreference("mica"));
+      await waitFor(() => {
+        expect(setWindowChrome).toHaveBeenLastCalledWith(
+          expect.objectContaining({ windowMaterial: "mica" }),
+        );
+      });
+    } finally {
+      setWindowMaterialPreference("auto");
+      Reflect.deleteProperty(window, "poracode");
+    }
   });
 });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdir } from "node:fs/promises";
 import { closeLocalPort, listLocalPorts } from "@/host/localPorts";
 import {
@@ -32,15 +33,22 @@ import {
   type IpcProcedurePayload,
   type IpcProcedureResult,
   type MainLocalIpcHandlerMap,
-  type WindowChromePayload,
   type WindowChromeResult,
 } from "@/shared/ipc";
+import type { WindowChromeProcedurePayload } from "@/shared/ipc/procedures/settings";
 import type {
   BackendDatabaseCaller,
   BackendDatabaseProcedureName,
   BackendServiceCaller,
 } from "@/shared/backendHostProtocol";
 import { supportsNativeWindowMaterial, syncNativeThemeForMaterial } from "../window/windowMaterial";
+import {
+  TRANSPARENT_WINDOW_BACKGROUND,
+  rememberWindowMaterialPreference,
+  resolveWindowsBackgroundMaterial,
+  windowBaseBackgroundColor,
+  windowReportsNativeMaterial,
+} from "../window/windowChromeAppearance";
 import type { CheckpointRevertResult } from "@/shared/contracts";
 import type { PoracodePaths } from "@/shared/poracodePaths";
 import { UsageLoginManager } from "../usageLogin/UsageLoginManager";
@@ -309,8 +317,16 @@ export function createLocalIpcHandlers(
       callService("updateCrossagentMemoryEntryTags", payload),
     setProfileEnvironment: (payload) => callService("setProfileEnvironment", payload),
     createProfile: (payload) => callService("createProfile", payload),
-    setWindowChrome: async (payload: WindowChromePayload): Promise<WindowChromeResult> => {
-      const nativeCapable = supportsNativeWindowMaterial();
+    setWindowChrome: async (payload: WindowChromeProcedurePayload): Promise<WindowChromeResult> => {
+      // ViscosityCode: the optional Windows backdrop preference. Absent (an
+      // upstream-shaped payload) keeps the upstream acrylic behaviour.
+      const capable = supportsNativeWindowMaterial();
+      if (payload.windowMaterial) rememberWindowMaterialPreference(payload.windowMaterial);
+      const nativeCapable = windowReportsNativeMaterial({
+        platform: process.platform,
+        capable,
+        preference: payload.windowMaterial,
+      });
       const mainWindow = options.getMainWindow();
       if (!mainWindow) {
         return { nativeCapable };
@@ -324,12 +340,20 @@ export function createLocalIpcHandlers(
       }
       // Toggle the native translucency material live. macOS vibrancy is created
       // with the window and revealed/hidden purely via CSS, so there is nothing
-      // to switch here. Windows acrylic is toggled at runtime (no relaunch).
+      // to switch here. The Windows backdrop is toggled at runtime (no relaunch);
+      // the resolver only yields Mica/acrylic where the OS capability check passes.
       const wantsMaterial = payload.materialEnabled === true && nativeCapable;
       if (process.platform === "win32") {
-        mainWindow.setBackgroundMaterial(wantsMaterial ? "acrylic" : "none");
+        const material = resolveWindowsBackgroundMaterial({
+          preference: payload.windowMaterial,
+          translucent: wantsMaterial,
+          capable,
+        });
+        mainWindow.setBackgroundMaterial(material);
         mainWindow.setBackgroundColor(
-          wantsMaterial ? "#00000000" : payload.appearance === "dark" ? "#070709" : "#f1f1f4",
+          material === "none"
+            ? windowBaseBackgroundColor(payload.appearance)
+            : TRANSPARENT_WINDOW_BACKGROUND,
         );
       }
       if (wantsMaterial && payload.appearance) {

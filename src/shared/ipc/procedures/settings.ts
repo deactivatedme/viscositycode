@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import type {
   AgentInstanceConfig,
@@ -22,11 +23,25 @@ import {
   type SettingsSnapshot,
 } from "../../settingsTransactions";
 import { defineNoArgProcedure, definePayloadProcedure } from "../core";
-import {
-  windowChromePayloadSchema,
-  type WindowChromePayload,
-  type WindowChromeResult,
-} from "../schemas";
+import { windowChromePayloadSchema, type WindowChromeResult } from "../schemas";
+
+// ViscosityCode: native window backdrop preference carried by `setWindowChrome`.
+// Additive and optional on purpose (see the comment on the procedure below).
+export const WINDOW_MATERIAL_PREFERENCES = ["auto", "mica", "acrylic", "none"] as const;
+export const windowMaterialPreferenceSchema = z.enum(WINDOW_MATERIAL_PREFERENCES);
+export type WindowMaterialPreference = z.infer<typeof windowMaterialPreferenceSchema>;
+
+/**
+ * ViscosityCode: `setWindowChrome` payload = the upstream shape plus the
+ * optional Windows backdrop preference. Absent means "legacy caller": the main
+ * process keeps the upstream behaviour (acrylic while the translucent sidebar
+ * is on). `z.object` strips unknown keys, so a main process predating the field
+ * ignores it instead of rejecting the call.
+ */
+export const windowChromeProcedurePayloadSchema = windowChromePayloadSchema.extend({
+  windowMaterial: windowMaterialPreferenceSchema.optional(),
+});
+export type WindowChromeProcedurePayload = z.infer<typeof windowChromeProcedurePayloadSchema>;
 
 export const confirmSupervisorSettingsEditsPayloadSchema = z.object({
   requestId: z.string().uuid(),
@@ -138,9 +153,15 @@ export const settingsProcedures = {
     void,
     "supervisor"
   >("confirmSupervisorSettingsEdits", "supervisor", confirmSupervisorSettingsEditsPayloadSchema),
+  // ViscosityCode: payload widened with the optional `windowMaterial` field.
+  // Hop/map versions stay: the name and transport are unchanged (fingerprint is
+  // `name:transport`), the field is optional, and the procedure is main-local
+  // ("local-shell") so it never leaves this app's own renderer→main hop. A
+  // payload without it parses and behaves exactly as before; an older main
+  // strips the unknown key. Pre-upgrade parse pinned in `settings.test.ts`.
   setWindowChrome: definePayloadProcedure<
-    WindowChromePayload,
+    WindowChromeProcedurePayload,
     WindowChromeResult | void,
     "main-local"
-  >("setWindowChrome", "main-local", windowChromePayloadSchema),
+  >("setWindowChrome", "main-local", windowChromeProcedurePayloadSchema),
 } as const;

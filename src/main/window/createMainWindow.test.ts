@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const installSessionPermissions = vi.hoisted(() => vi.fn<() => void>());
@@ -5,6 +6,8 @@ const dbGetState = vi.hoisted(() => vi.fn<() => string | null>(() => null));
 const dbSetState = vi.hoisted(() => vi.fn<() => void>());
 const setUserAgent = vi.hoisted(() => vi.fn<(userAgent: string) => void>());
 const openDevToolsAfterStartup = vi.hoisted(() => vi.fn<() => void>());
+const supportsNativeWindowMaterial = vi.hoisted(() => vi.fn<() => boolean>(() => false));
+const syncNativeThemeForMaterial = vi.hoisted(() => vi.fn<(appearance: string) => void>());
 
 let browserWindowOptions: Record<string, unknown> | null = null;
 let webContentsHandlers: Record<string, (...args: never[]) => void> = {};
@@ -68,6 +71,11 @@ vi.mock("./deferredDevTools", () => ({
 
 vi.mock("../browser/permissions", () => ({
   installSessionPermissions,
+}));
+
+vi.mock("./windowMaterial", () => ({
+  supportsNativeWindowMaterial,
+  syncNativeThemeForMaterial,
 }));
 
 describe("createMainWindow", () => {
@@ -341,5 +349,139 @@ describe("createMainWindow", () => {
 
     expect(window.maximize).toHaveBeenCalledOnce();
     expect(window.show).toHaveBeenCalledOnce();
+  });
+});
+
+// ViscosityCode: startup colours and the Windows backdrop preference.
+describe("createMainWindow native chrome", () => {
+  const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    browserWindowOptions = null;
+    dbGetState.mockReturnValue(null);
+    supportsNativeWindowMaterial.mockReturnValue(false);
+  });
+
+  afterEach(async () => {
+    if (platformDescriptor) Object.defineProperty(process, "platform", platformDescriptor);
+    const { resetRememberedWindowMaterialPreferenceForTests } =
+      await import("./windowChromeAppearance");
+    resetRememberedWindowMaterialPreferenceForTests();
+  });
+
+  async function createOnPlatform(
+    platform: NodeJS.Platform,
+    overrides: {
+      appearance: "light" | "dark";
+      sidebarTranslucency: boolean;
+      windowMaterial?: "auto" | "mica" | "acrylic" | "none";
+      windowKind?: "main" | "thread" | "sideChat" | "browserExtract";
+    },
+  ) {
+    Object.defineProperty(process, "platform", { configurable: true, value: platform });
+    const { createMainWindow } = await import("./createMainWindow");
+    createMainWindow({
+      state: { get: dbGetState, set: dbSetState },
+      title: "ViscosityCode",
+      isDev: false,
+      channel: "stable",
+      preloadPath: "/tmp/preload.cjs",
+      rendererHtmlPath: "/tmp/index.html",
+      appVersion: "1.2.1",
+      posthogEnableDev: false,
+      posthogEnabled: false,
+      posthogHost: "",
+      posthogKey: "",
+      sentryEnabled: false,
+      windowChromeHeight: 32,
+      browserUserAgent: "ViscosityCode",
+      onClosed: vi.fn<() => void>(),
+      ...overrides,
+    });
+    return browserWindowOptions ?? {};
+  }
+
+  it.each([
+    ["dark", "#0a0a0b", "#fafafa"],
+    ["light", "#f4f4f5", "#1f2937"],
+  ] as const)(
+    "paints the %s first frame in the base colour with OS caption buttons",
+    async (appearance, background, symbolColor) => {
+      const options = await createOnPlatform("win32", { appearance, sidebarTranslucency: false });
+      expect(options.backgroundColor).toBe(background);
+      expect(options.backgroundMaterial).toBeUndefined();
+      expect(options.titleBarStyle).toBe("hidden");
+      expect(options.titleBarOverlay).toEqual({ color: "#00000000", symbolColor, height: 32 });
+    },
+  );
+
+  it("starts a translucent Windows 11 window with Mica for the default Auto preference", async () => {
+    supportsNativeWindowMaterial.mockReturnValue(true);
+    const options = await createOnPlatform("win32", {
+      appearance: "dark",
+      sidebarTranslucency: true,
+    });
+    expect(options.backgroundMaterial).toBe("mica");
+    expect(options.backgroundColor).toBe("#00000000");
+  });
+
+  it("starts with the remembered preference, and None stays opaque", async () => {
+    supportsNativeWindowMaterial.mockReturnValue(true);
+    const { rememberWindowMaterialPreference } = await import("./windowChromeAppearance");
+    rememberWindowMaterialPreference("acrylic");
+    expect(
+      (await createOnPlatform("win32", { appearance: "dark", sidebarTranslucency: true }))
+        .backgroundMaterial,
+    ).toBe("acrylic");
+
+    const none = await createOnPlatform("win32", {
+      appearance: "dark",
+      sidebarTranslucency: true,
+      windowMaterial: "none",
+    });
+    expect(none.backgroundMaterial).toBeUndefined();
+    expect(none.backgroundColor).toBe("#0a0a0b");
+  });
+
+  it("applies no material on Windows builds without the capability", async () => {
+    supportsNativeWindowMaterial.mockReturnValue(false);
+    const options = await createOnPlatform("win32", {
+      appearance: "light",
+      sidebarTranslucency: true,
+      windowMaterial: "mica",
+    });
+    expect(options.backgroundMaterial).toBeUndefined();
+    expect(options.backgroundColor).toBe("#f4f4f5");
+  });
+
+  it.each(["thread", "sideChat", "browserExtract"] as const)(
+    "builds a %s window from the same factory",
+    async (windowKind) => {
+      supportsNativeWindowMaterial.mockReturnValue(true);
+      const options = await createOnPlatform("win32", {
+        appearance: "dark",
+        sidebarTranslucency: windowKind === "browserExtract",
+        windowKind,
+      });
+      expect(options.titleBarStyle).toBe("hidden");
+      expect(options.backgroundMaterial).toBe(windowKind === "browserExtract" ? "mica" : undefined);
+    },
+  );
+
+  it("keeps macOS hidden-inset vibrancy without a Windows material", async () => {
+    supportsNativeWindowMaterial.mockReturnValue(true);
+    const options = await createOnPlatform("darwin", {
+      appearance: "dark",
+      sidebarTranslucency: true,
+      windowMaterial: "mica",
+    });
+    expect(options.titleBarStyle).toBe("hiddenInset");
+    expect(options.vibrancy).toBe("sidebar");
+    expect(options.transparent).toBe(true);
+    expect(options.backgroundColor).toBe("#00000000");
+    expect(options.backgroundMaterial).toBeUndefined();
+    expect(options.trafficLightPosition).toBeUndefined();
+    expect(syncNativeThemeForMaterial).toHaveBeenCalledWith("dark");
   });
 });
