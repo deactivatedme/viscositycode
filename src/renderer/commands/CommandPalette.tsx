@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   useEffect,
   useRef,
@@ -83,15 +84,22 @@ export function CommandPalette() {
     <Modal.Backdrop
       isOpen={isOpen}
       variant="blur"
+      // ViscosityCode: styling hooks for the desktop shell's compact palette (viscosity/layout/shell.css).
+      data-vc-palette-backdrop=""
       className={`z-[70] transition-opacity duration-100 ${draggingThread ? "pointer-events-none opacity-0" : ""}`}
       onOpenChange={(open) => {
         if (!open) close();
       }}
     >
-      <Modal.Container placement="top" className="px-3 pt-[min(12vh,80px)] pb-3">
+      <Modal.Container
+        placement="top"
+        data-vc-palette-container="" // ViscosityCode: styling hook.
+        className="px-3 pt-[min(12vh,80px)] pb-3"
+      >
         <Modal.Dialog
           aria-label={t`Search`}
           data-overlay-surface
+          data-vc-palette="" // ViscosityCode: styling hook.
           className={`flex w-full max-w-[720px] max-h-[min(720px,82dvh)] flex-col overflow-hidden rounded-2xl border border-[var(--hairline-strong)] bg-background p-0 shadow-2xl ${draggingThread ? "pointer-events-none" : ""}`}
         >
           {isOpen ? <SearchPaletteContent /> : null}

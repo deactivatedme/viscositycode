@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { lazy, Suspense, type ReactNode, useEffect, useRef } from "react";
 import { useDroppable } from "@dnd-kit/react";
 import { getAppName } from "@/shared/appName";
@@ -22,6 +23,8 @@ import { CompactThreadHeader } from "@/renderer/components/thread/CompactThreadH
 import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { useExperimentStore } from "@/renderer/state/experimentStore";
 import { useDevTerminalStore } from "@/renderer/state/devTerminalStore";
+// ViscosityCode: open-thread tab strip above the center content.
+import { ViscosityCenterFrame } from "@/renderer/viscosity/layout/tabs";
 
 const DeferredMainRightPanel = lazy(() =>
   import("@/renderer/views/MainView/parts/MainRightPanel").then((module) => ({
@@ -138,15 +141,18 @@ export function MainPageLayout(props: { onTitleClick: () => void }) {
       sidebarHeaderChildren={compactLayout && !compactHome ? null : <SidebarHeaderControls />}
       sidebar={<Sidebar />}
       content={
-        <MainPanelDropZone>
-          <AppContent />
-          <AgentTerminalHost />
-          {!compactLayout ? (
-            <Suspense>
-              <DeferredFileEditorPanel />
-            </Suspense>
-          ) : null}
-        </MainPanelDropZone>
+        // ViscosityCode: renders its children unchanged outside the fork's desktop shell.
+        <ViscosityCenterFrame>
+          <MainPanelDropZone>
+            <AppContent />
+            <AgentTerminalHost />
+            {!compactLayout ? (
+              <Suspense>
+                <DeferredFileEditorPanel />
+              </Suspense>
+            ) : null}
+          </MainPanelDropZone>
+        </ViscosityCenterFrame>
       }
       rightPanel={
         !compactLayout && activeMobileUtilityPage === null ? (

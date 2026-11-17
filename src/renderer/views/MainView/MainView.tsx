@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Suspense, startTransition, useEffect, useState, type ReactNode } from "react";
 import type { AgentStatus } from "@/shared/contracts";
 import { buildPaneLayoutFromLegacy } from "@/shared/paneLayout";
@@ -40,6 +41,8 @@ import { ThreadLiveWorkflowTracker } from "@/renderer/components/thread/ChatPane
 import { RendererRuntimeDiagnosticContextSync } from "@/renderer/diagnostics/runtimeContext";
 import { MobileTopLevelPage } from "./parts/MobileTopLevelPage";
 import { useMobilePageHistory } from "./parts/mobilePageHistory";
+// ViscosityCode: status bar below the desktop shell.
+import { ViscosityStatusBarFrame } from "@/renderer/viscosity/layout/statusBar";
 
 function findMissingWslDistro(distros: readonly string[], statuses: readonly AgentStatus[]) {
   const cachedDistros = new Set(
@@ -147,7 +150,10 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
       checkingConnection={!browserConnectionChecked}
       fallback={<BrowserConnectionPage />}
     >
-      <MainPageLayout onTitleClick={() => startTransition(() => openHome())} />
+      {/* ViscosityCode: status bar below the desktop shell (not on the connection page). */}
+      <ViscosityStatusBarFrame>
+        <MainPageLayout onTitleClick={() => startTransition(() => openHome())} />
+      </ViscosityStatusBarFrame>
     </BrowserRemoteConnectionGate>
   );
 
