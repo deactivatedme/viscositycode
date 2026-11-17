@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { HighlighterCore, ShikiTransformer } from "shiki/core";
 import type { HighlightLanguage } from "./languageDetect";
 
@@ -25,7 +26,10 @@ const LANGUAGE_LOADERS = {
   diff: () => import("@shikijs/langs/diff"),
 } satisfies Record<HighlightLanguage, () => Promise<unknown>>;
 
-export const SHIKI_THEMES = ["github-light", "github-dark"] as const;
+// ViscosityCode: the "-default" GitHub variants use neutral greys (no blue cast
+// in dark, softer greys in light) that sit better on the near-black / near-white
+// Viscosity panels than the classic github-dark/light pair.
+export const SHIKI_THEMES = ["github-light-default", "github-dark-default"] as const;
 export type ShikiTheme = (typeof SHIKI_THEMES)[number];
 
 let highlighterPromise: Promise<HighlighterCore> | null = null;
@@ -44,7 +48,10 @@ export function getShikiHighlighter(): Promise<HighlighterCore> {
         import("shiki/engine/javascript"),
       ]);
       return createHighlighterCore({
-        themes: [import("@shikijs/themes/github-light"), import("@shikijs/themes/github-dark")],
+        themes: [
+          import("@shikijs/themes/github-light-default"),
+          import("@shikijs/themes/github-dark-default"),
+        ],
         langs: [],
         engine: createJavaScriptRegexEngine(),
       });

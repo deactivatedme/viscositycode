@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { ImageAddon } from "@xterm/addon-image";
@@ -7,6 +8,8 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { TerminalLinkProvider } from "./TerminalLinkProvider";
 import { resolveTerminalColor } from "./terminalColors";
+// ViscosityCode: theme-derived ANSI palette for getTerminalTheme.
+import { buildTerminalPalette } from "@/renderer/theme/viscosity/terminalPalette";
 import { TerminalReplayGate } from "./terminalReplayGate";
 import { TerminalWriteQueue } from "./terminalWriteQueue";
 import { TerminalInputQueue, registerTerminalInputQueue } from "./terminalInputQueue";
@@ -98,12 +101,23 @@ function getTerminalTheme(appearance: "light" | "dark", backgroundVar = "--conte
       ? { background: "#2b2a2f", foreground: "#e7edf6", cursor: "#94bfff" }
       : { background: "#f1f1ef", foreground: "#132034", cursor: "#1d4c89" };
 
+  const background = readVar(backgroundVar) || fallback.background;
+  const foreground = readVar("--foreground") || fallback.foreground;
+  const cursor = readVar("--accent") || fallback.cursor;
+  // ViscosityCode: 16-colour ANSI palette + accent selection from the active theme.
+  const presetId =
+    typeof document !== "undefined" ? document.documentElement.dataset.themePreset : "";
   return {
-    background: readVar(backgroundVar) || fallback.background,
-    foreground: readVar("--foreground") || fallback.foreground,
-    cursor: readVar("--accent") || fallback.cursor,
-    selectionBackground:
-      appearance === "dark" ? "rgba(148, 191, 255, 0.24)" : "rgba(29, 76, 137, 0.16)",
+    background,
+    foreground,
+    cursor,
+    ...buildTerminalPalette({
+      appearance,
+      presetId: presetId ?? "",
+      background,
+      foreground,
+      accent: cursor,
+    }),
   };
 }
 

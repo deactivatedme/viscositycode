@@ -1,7 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Applies a theme preset's variant to the document root as inline CSS custom
  * properties. Inline properties win over the `.light` / `.dark` rules in
- * styles.css, so the base ("Poracode") theme is expressed by *clearing* the
+ * styles.css, so the base ("Viscosity") theme is expressed by *clearing* the
  * managed properties — letting styles.css stay the source of truth — rather
  * than by re-setting equivalent values.
  */
@@ -12,6 +13,8 @@ import { resolveThemeMode } from "@/shared/themeMode";
 import type { ThemeMode } from "@/shared/contracts";
 import { DEFAULT_THEME_ID, getThemePreset } from "./themePresets";
 import { MANAGED_THEME_VARS } from "./themeTokens";
+// ViscosityCode: client-side appearance prefs (UI font) applied before mount.
+import { applyViscosityAppearance } from "./viscosity/viscosityAppearanceStore";
 
 type Appearance = "light" | "dark";
 
@@ -77,6 +80,13 @@ export function systemPrefersDark(): boolean {
  * if the cache was stale. Defensive: never throws into the boot path.
  */
 export function bootstrapAppThemeFromCache(): void {
+  // ViscosityCode: apply the fork's client appearance prefs (UI font) first;
+  // they do not depend on the shared-settings cache below.
+  try {
+    applyViscosityAppearance();
+  } catch {
+    // Never block boot on a fork preference.
+  }
   try {
     const raw = localStorage.getItem(SHARED_SETTINGS_CACHE_KEY);
     if (!raw) return;

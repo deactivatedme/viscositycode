@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, screen } from "@testing-library/react";
 import { THEME_SPECS } from "@/renderer/theme/themePresets";
 import * as terminalColors from "./terminalColors";
@@ -442,6 +443,59 @@ describe("XTermSurface", () => {
         }),
       );
       root.style.setProperty("--content-background", originalBg);
+    }
+  });
+
+  // ViscosityCode: full ANSI palette + accent selection derived from the theme.
+  it("passes a full ANSI palette and an accent selection to xterm", async () => {
+    const root = document.documentElement;
+    const original = {
+      preset: root.dataset.themePreset,
+      background: root.style.getPropertyValue("--content-background"),
+      foreground: root.style.getPropertyValue("--foreground"),
+      accent: root.style.getPropertyValue("--accent"),
+    };
+    vi.spyOn(terminalColors, "resolveTerminalColor").mockImplementation((color) => color || null);
+    try {
+      root.dataset.themePreset = "nord";
+      root.style.setProperty("--content-background", "#2e3440");
+      root.style.setProperty("--foreground", "#eff2f6");
+      root.style.setProperty("--accent", "#88c0d0");
+      render(<XTermSurface terminalId="ansi-theme-terminal" />);
+      await flushFrame();
+      const theme = (state.terminalOptions?.theme ?? {}) as Record<string, string>;
+      const ansiKeys = [
+        "black",
+        "red",
+        "green",
+        "yellow",
+        "blue",
+        "magenta",
+        "cyan",
+        "white",
+        "brightBlack",
+        "brightRed",
+        "brightGreen",
+        "brightYellow",
+        "brightBlue",
+        "brightMagenta",
+        "brightCyan",
+        "brightWhite",
+      ];
+      expect(ansiKeys.filter((key) => !/^#[0-9a-f]{6}$/.test(theme[key] ?? ""))).toEqual([]);
+      expect(theme).toMatchObject({
+        background: "#2e3440",
+        foreground: "#eff2f6",
+        cursor: "#88c0d0",
+        cursorAccent: "#2e3440",
+        selectionBackground: "rgba(136, 192, 208, 0.3)",
+      });
+    } finally {
+      if (original.preset === undefined) delete root.dataset.themePreset;
+      else root.dataset.themePreset = original.preset;
+      root.style.setProperty("--content-background", original.background);
+      root.style.setProperty("--foreground", original.foreground);
+      root.style.setProperty("--accent", original.accent);
     }
   });
 

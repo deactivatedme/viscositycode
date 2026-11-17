@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Catalog of selectable app themes.
  *
@@ -5,7 +6,7 @@
  * the user's appearance mode (system / light / dark), so e.g. Catppuccin is
  * Latte in light and Mocha in dark. Palettes are adapted from the popular
  * VS Code / Cursor / editor themes of the same name and remapped onto
- * Poracode's token set — the app keeps its own layout, radius, and typography.
+ * the app's token set — the app keeps its own layout, radius, and typography.
  *
  * `THEME_SPECS` holds the authored anchor colors (the source of truth, also
  * consumed by the contrast test); `APP_THEME_PRESETS` is the derived token set.
@@ -33,43 +34,77 @@ export interface AppThemePreset {
 }
 
 export const DEFAULT_THEME_ID = "default";
+/** ViscosityCode: bold showcase preset id (persisted in settings; keep stable). */
+export const VISCOSITY_SHOWCASE_THEME_ID = "viscosity-showcase";
 
 export const THEME_SPECS: AppThemeSpec[] = [
-  // Poracode base. Mirrors the `.light` / `.dark` values in styles.css and is
-  // used only for the gallery preview — at runtime the base theme clears all
-  // overrides so styles.css stays the source of truth (see applyAppTheme).
+  // ViscosityCode: Viscosity base. Mirrors the `.light` / `.dark` base palette
+  // in theme/viscosity/tokens.css and is used only for the gallery preview and
+  // as the starting point for custom themes / JSON export — at runtime the base
+  // theme clears all overrides so the CSS base cascade stays the source of
+  // truth (see applyAppTheme). viscosityPalette.test.ts keeps the two in sync.
   {
     id: DEFAULT_THEME_ID,
-    label: "Poracode",
-    // sRGB hex of the styles.css oklch values (anchors must be hex so muted can
-    // be contrast-derived). Preview-only — runtime clears overrides for default.
+    label: "Viscosity",
     light: {
-      bg: "#f1f1f4",
-      surface: "#fafafb",
+      bg: "#f4f4f5",
+      surface: "#ffffff",
       fg: "#18181b",
-      accent: "#5f6cd9",
+      // Deepened from sky-600 (#0284c7, 4.1:1) so white button labels clear
+      // WCAG AA (4.7:1) while keeping the same hue.
+      accent: "#0279bb",
       accentFg: "#ffffff",
-      border: "#cacace",
-      sidebar: "#ececef",
-      content: "#f6f6f9",
+      border: "#e3e3e8",
+      sidebar: "#efeff1",
+      content: "#fafafa",
+      composer: "#ffffff",
     },
     dark: {
-      bg: "#070709",
-      surface: "#0e0e14",
-      fg: "#fafafa",
-      accent: "#8892ef",
-      accentFg: "#0a0a12",
-      border: "#24242e",
-      sidebar: "#0e0e14",
-      content: "#0b0b11",
+      bg: "#0a0a0b",
+      surface: "#111113",
+      fg: "#e6e6e8",
+      accent: "#38bdf8",
+      accentFg: "#04121c",
+      border: "#1f1f23",
+      sidebar: "#0d0d0f",
+      content: "#0e0e10",
+      composer: "#141417",
     },
   },
 
-  // Poracode Legacy — the original pre-Poracode look (neutral graphite +
-  // blue accent), preserved as a selectable theme so the old style isn't lost.
+  // ViscosityCode: Viscosity Showcase — a bold violet palette made to show off
+  // the animated background (deep ink panels, luminous accent).
+  {
+    id: VISCOSITY_SHOWCASE_THEME_ID,
+    label: "Viscosity Showcase",
+    light: {
+      bg: "#f7f4ff",
+      surface: "#ffffff",
+      fg: "#1d1533",
+      accent: "#7c3aed",
+      accentFg: "#ffffff",
+      border: "#ddd3f5",
+      sidebar: "#f0ebff",
+      content: "#fbf9ff",
+    },
+    dark: {
+      bg: "#07050f",
+      surface: "#100b1e",
+      fg: "#f3f0ff",
+      accent: "#c084fc",
+      accentFg: "#12051f",
+      border: "#2a1f45",
+      sidebar: "#0b0716",
+      content: "#0c0818",
+    },
+  },
+
+  // Graphite — the original neutral graphite + blue accent look, preserved as
+  // a selectable theme. ViscosityCode: relabelled; the id stays
+  // "poracode-legacy" because it is persisted in users' settings.
   {
     id: "poracode-legacy",
-    label: "Poracode Legacy",
+    label: "Graphite",
     light: {
       bg: "#f1f1f4",
       surface: "#fafafb",

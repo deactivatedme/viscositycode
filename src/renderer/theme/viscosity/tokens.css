@@ -10,12 +10,12 @@
  * Values may be tuned by theme work.
  */
 :root {
-  /* Radii */
-  --vc-radius-xs: 3px;
-  --vc-radius-sm: 5px;
-  --vc-radius-md: 7px;
-  --vc-radius-lg: 10px;
-  --vc-radius-xl: 14px;
+  /* Radii (crisp, Cursor-like: controls 4-6px, floating panels 8px) */
+  --vc-radius-xs: 2px;
+  --vc-radius-sm: 4px;
+  --vc-radius-md: 6px;
+  --vc-radius-lg: 8px;
+  --vc-radius-xl: 12px;
   --vc-radius-pill: 999px;
 
   /* Spacing scale */
@@ -98,5 +98,98 @@
     --vc-motion-base: 0ms;
     --vc-motion-slow: 0ms;
     --vc-motion-pulse: 0ms;
+  }
+}
+
+/* ViscosityCode: Viscosity base palette.
+ *
+ * The built-in base theme (preset id "default", labelled "Viscosity") is
+ * rendered by clearing every inline preset variable so the `.light` / `.dark`
+ * base cascade applies (see theme/applyAppTheme.ts). These blocks join the same
+ * `base` cascade layer as styles.css and load after it, so they replace the
+ * upstream base values without editing styles.css. Presets and custom themes
+ * still win: they set inline properties on <html>. Unlayered upstream rules
+ * (the compact/PWA true-black dark override, native-material glass tints) keep
+ * winning too, so phone and translucent layouts behave as before.
+ *
+ * Values mirror the `default` anchors in theme/themePresets.ts and the
+ * derivation in theme/themeTokens.ts (viscosityPalette.test.ts keeps them in
+ * sync). Only secondary text, placeholder, scrollbar and row washes are tuned
+ * by hand for a Cursor-like hierarchy: near-black panels, 1px hairlines,
+ * muted grey text and a single accent.
+ */
+@layer base {
+  /* HeroUI v3 multiplies --radius (x3 buttons and popovers, x2 menu rows), so
+     upstream's 2px scale already lands on Cursor-like 4-6px controls. Fields
+     match the 6px buttons. The phone layout keeps its upstream geometry. */
+  :root:not([data-compact-layout]) {
+    --field-radius: 0.375rem;
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    --background: #0a0a0b;
+    --foreground: #e6e6e8;
+    --surface: #111113;
+    --surface-secondary: color-mix(in oklab, #111113 92%, #e6e6e8 8%);
+    --surface-tertiary: color-mix(in oklab, #111113 85%, #e6e6e8 15%);
+    --overlay: color-mix(in oklab, #111113 98%, #e6e6e8 2%);
+    --muted: #8a8a93;
+    --scrollbar: color-mix(in oklab, #8a8a93 45%, transparent);
+    --default: color-mix(in oklab, #111113 86%, #e6e6e8 14%);
+    --accent: #38bdf8;
+    --accent-foreground: #04121c;
+    --field-background: color-mix(in oklab, #111113 95%, #e6e6e8 5%);
+    --field-foreground: #e6e6e8;
+    --field-placeholder: #6e6e76;
+    --field-border: color-mix(in oklab, #1f1f23 70%, transparent);
+    --segment: color-mix(in oklab, #111113 78%, #e6e6e8 22%);
+    --border: #1f1f23;
+    --separator: color-mix(in oklab, #1f1f23 75%, transparent);
+    --sidebar-row-active: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --sidebar-background: #0d0d0f;
+    --content-background: #0e0e10;
+    --composer-surface: #141417;
+  }
+
+  .light,
+  [data-theme="light"] {
+    --background: #f4f4f5;
+    --foreground: #18181b;
+    --surface: #ffffff;
+    --surface-secondary: color-mix(in oklab, #ffffff 92%, #18181b 8%);
+    --surface-tertiary: color-mix(in oklab, #ffffff 85%, #18181b 15%);
+    --overlay: color-mix(in oklab, #ffffff 93%, #18181b 7%);
+    --muted: #6b6b73;
+    --scrollbar: color-mix(in oklab, #6b6b73 45%, transparent);
+    --default: color-mix(in oklab, #ffffff 82%, #18181b 18%);
+    --accent: #0279bb;
+    --accent-foreground: #ffffff;
+    --field-background: color-mix(in oklab, #ffffff 95%, #18181b 5%);
+    --field-foreground: #18181b;
+    --field-placeholder: #84848b;
+    --field-border: color-mix(in oklab, #e3e3e8 70%, transparent);
+    --segment: #ffffff;
+    --border: #e3e3e8;
+    --separator: color-mix(in oklab, #e3e3e8 75%, transparent);
+    --sidebar-row-active: color-mix(in oklab, var(--foreground) 9%, transparent);
+    --sidebar-background: #efeff1;
+    --content-background: #fafafa;
+    --composer-surface: #ffffff;
+  }
+
+  /* Row washes are not preset-managed variables, so scope the quieter
+     Cursor-style hover/selection to the Viscosity base theme only; other
+     presets keep upstream's washes. */
+  .dark[data-theme-preset="default"],
+  [data-theme="dark"][data-theme-preset="default"] {
+    --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --row-active: color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+
+  .light[data-theme-preset="default"],
+  [data-theme="light"][data-theme-preset="default"] {
+    --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --row-active: color-mix(in oklab, var(--foreground) 9%, transparent);
   }
 }

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Blob as NodeBlob } from "node:buffer";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createHighlighterCore } from "shiki/core";
@@ -45,7 +46,10 @@ describe("highlighting fidelity", () => {
     await ensureLanguage("markdown");
     const highlighter = await getShikiHighlighter();
     const reference = await createHighlighterCore({
-      themes: [import("@shikijs/themes/github-light"), import("@shikijs/themes/github-dark")],
+      themes: [
+        import("@shikijs/themes/github-light-default"),
+        import("@shikijs/themes/github-dark-default"),
+      ],
       langs: [
         import("@shikijs/langs/json"),
         import("@shikijs/langs/jsonc"),

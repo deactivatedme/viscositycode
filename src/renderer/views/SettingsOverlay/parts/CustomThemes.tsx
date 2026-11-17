@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useRef, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -7,7 +8,9 @@ import {
   type CustomTheme,
 } from "@/shared/customThemes";
 import { THEME_SPECS, getThemePreset } from "@/renderer/theme/themePresets";
+import { exportBuiltInTheme } from "@/renderer/theme/viscosity/themeExport"; // ViscosityCode:
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { downloadTextFile } from "@/renderer/utils/downloadTextFile"; // ViscosityCode:
 import { Button, ConfirmDialog } from "@/renderer/components/common";
 import { CustomThemeEditor } from "./CustomThemeEditor";
 
@@ -61,6 +64,19 @@ export function CustomThemes() {
         <Button size="sm" variant="secondary" onPress={() => fileInput.current?.click()}>
           <Trans>Import theme</Trans>
         </Button>
+        {/* ViscosityCode: export the active built-in preset as a v1 theme document. */}
+        {!activeCustom ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() => {
+              const exported = exportBuiltInTheme(themePreset);
+              if (exported) downloadTextFile(exported.filename, exported.json, "application/json");
+            }}
+          >
+            <Trans>Export as JSON</Trans>
+          </Button>
+        ) : null}
         {activeCustom ? (
           <>
             <Button

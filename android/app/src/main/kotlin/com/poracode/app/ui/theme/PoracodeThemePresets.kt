@@ -18,7 +18,7 @@ private fun preset(id: String, label: String, light: PoracodeColors, dark: Porac
     PoracodeThemePreset(id, label, light, dark)
 
 internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(
-    preset("default", "Poracode",
+    preset("default", "Viscosity",
         light = PoracodeColors(
             isDark = false, // color scheme
             background = Color(0xFFF1F1F4), // --background
@@ -96,7 +96,85 @@ internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(
             scrim = Color(0x99000000), // fixed scrim (not themed)
         ),
     ),
-    preset("poracode-legacy", "Poracode Legacy",
+    preset("viscosity-showcase", "Viscosity Showcase",
+        light = PoracodeColors(
+            isDark = false, // color scheme
+            background = Color(0xFFF7F4FF), // --background
+            foreground = Color(0xFF1D1533), // --foreground
+            muted = Color(0xFF726C83), // --muted
+            surface = Color(0xFFFFFFFF), // --surface
+            surfaceSecondary = Color(0xFFEAEAED), // --surface-secondary
+            surfaceTertiary = Color(0xFFD9D8DE), // --surface-tertiary
+            overlay = Color(0xFFEDECEF), // --overlay
+            listRow = Color(0xFFFFFFFF), // --m-list-row-surface (compact)
+            glass = Color(0xCCE5E5E9), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFFE5E5E9), // --composer-surface
+            default = Color(0xFFD1D0D7), // --default
+            accent = Color(0xFF7C3AED), // --accent
+            accentForeground = Color(0xFFFFFFFF), // --accent-foreground
+            accentSoft = Color(0x267C3AED), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFF6132B8), // --color-accent-soft-foreground
+            success = Color(0xFF006C1A), // --success (fixed per mode)
+            successForeground = Color(0xFFFCFCFC), // --success-foreground (fixed)
+            warning = Color(0xFF8E5500), // --warning (fixed per mode)
+            warningForeground = Color(0xFFFCFCFC), // --warning-foreground (fixed)
+            danger = Color(0xFFB30018), // --danger (fixed per mode)
+            dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFFF2F2F4), // --field-background
+            fieldPlaceholder = Color(0xFF918B9F), // --field-placeholder
+            fieldBorder = Color(0xB3DDD3F5), // --field-border
+            segment = Color(0xFFFFFFFF), // --segment
+            border = Color(0xFFDDD3F5), // --border
+            separator = Color(0xBFDDD3F5), // --separator
+            hairline = Color(0x171D1533), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x261D1533), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x1C1D1533), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFF306CE2), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFF6946BF), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFF3E5FAD), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x140F172A), // fixed shadow tint (not themed)
+            scrim = Color(0x52000000), // fixed scrim (not themed)
+        ),
+        dark = PoracodeColors(
+            isDark = true, // color scheme
+            background = Color(0xFF07050F), // --background
+            foreground = Color(0xFFF3F0FF), // --foreground
+            muted = Color(0xFF7B7885), // --muted
+            surface = Color(0xFF100B1E), // --surface
+            surfaceSecondary = Color(0xFF1E1A2D), // --surface-secondary
+            surfaceTertiary = Color(0xFF2B273B), // --surface-tertiary
+            overlay = Color(0xFF130F22), // --overlay
+            listRow = Color(0x24F3F0FF), // --m-list-row-surface (compact)
+            glass = Color(0xCC221D31), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFF221D31), // --composer-surface
+            default = Color(0xFF292539), // --default
+            accent = Color(0xFFC084FC), // --accent
+            accentForeground = Color(0xFF12051F), // --accent-foreground
+            accentSoft = Color(0x1FC084FC), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFFCDA1FE), // --color-accent-soft-foreground
+            success = Color(0xFF17C964), // --success (fixed per mode)
+            successForeground = Color(0xFF18181B), // --success-foreground (fixed)
+            warning = Color(0xFFF7B750), // --warning (fixed per mode)
+            warningForeground = Color(0xFF18181B), // --warning-foreground (fixed)
+            danger = Color(0xFFED4A4A), // --danger (fixed per mode)
+            dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFF191427), // --field-background
+            fieldPlaceholder = Color(0xFF5A5763), // --field-placeholder
+            fieldBorder = Color(0xB32A1F45), // --field-border
+            segment = Color(0xFF100B1E), // --segment
+            border = Color(0xFF2A1F45), // --border
+            separator = Color(0xBF2A1F45), // --separator
+            hairline = Color(0x17F3F0FF), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x26F3F0FF), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x33F3F0FF), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFF96C5FF), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFFA287FE), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFF7B7885), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
+            scrim = Color(0x99000000), // fixed scrim (not themed)
+        ),
+    ),
+    preset("poracode-legacy", "Graphite",
         light = PoracodeColors(
             isDark = false, // color scheme
             background = Color(0xFFF1F1F4), // --background

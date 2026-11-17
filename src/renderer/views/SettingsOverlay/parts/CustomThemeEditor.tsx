@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState, type CSSProperties } from "react";
 import { Label, Modal, TextField } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,8 +32,9 @@ export function CustomThemeEditor(props: { initial: CustomTheme; onClose: () => 
 
   const exportTheme = () => {
     if (!parsed.success) return;
+    // ViscosityCode: user-visible download name carries the fork's brand.
     downloadTextFile(
-      "poracode-theme.json",
+      "viscositycode-theme.json",
       serializeThemeDocument(parsed.data),
       "application/json",
     );

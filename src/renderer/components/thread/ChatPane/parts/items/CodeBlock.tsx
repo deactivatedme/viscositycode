@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useState } from "react";
 import { useResolvedAppearance } from "@/renderer/components/ui/provider";
 import {
@@ -35,7 +36,8 @@ function cacheKey(theme: ShikiTheme, lang: string, text: string): string {
  */
 export function CodeBlock({ text, lang, className }: CodeBlockProps) {
   const appearance = useResolvedAppearance();
-  const theme: ShikiTheme = appearance === "dark" ? "github-dark" : "github-light";
+  // ViscosityCode: neutral-grey GitHub "-default" variants (see SHIKI_THEMES).
+  const theme: ShikiTheme = appearance === "dark" ? "github-dark-default" : "github-light-default";
   const key = cacheKey(theme, lang, text);
   const [html, setHtml] = useState<string | null>(() => cache.get(key) ?? null);
   // Show the current source immediately while an uncached grammar/theme loads.

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { contrastRatio } from "./colorMath";
 import { afterEach, describe, expect, it } from "vitest";
 import { type CustomTheme } from "@/shared/customThemes";
@@ -52,7 +53,11 @@ describe("custom theme application", () => {
     expect(root.style.getPropertyValue("--sidebar-row-active-override")).toBe("");
   });
   it("preserves the previous derived composer and content/sidebar relationship", () => {
-    const vars = buildVariant(THEME_SPECS[0]!.dark, "dark");
+    // ViscosityCode: the Viscosity base spec authors an explicit composer fill,
+    // so derive from the same anchors without it to keep exercising the
+    // automatic composer derivation.
+    const { composer: _explicitComposer, ...derivedComposerSpec } = THEME_SPECS[0]!.dark;
+    const vars = buildVariant(derivedComposerSpec, "dark");
     expect(vars["--composer-surface"]).toContain("color-mix");
     expect(vars["--sidebar-panel-background"]).toBe(THEME_SPECS[0]!.dark.content);
     // A literal wash avoids --row-active -> --sidebar-row-active -> --row-active cycles.

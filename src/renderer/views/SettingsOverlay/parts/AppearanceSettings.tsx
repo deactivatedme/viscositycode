@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useState, type CSSProperties } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -8,6 +9,9 @@ import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useResolvedAppearance } from "@/renderer/components/ui/provider";
 import { getThemePreset } from "@/renderer/theme/themePresets";
 import { applySidebarGlassTint, sidebarGlassTintDefault } from "@/renderer/theme/sidebarGlass";
+// ViscosityCode: client-side UI font preference + fork appearance rows.
+import { useViscosityAppearance } from "@/renderer/theme/viscosity/viscosityAppearanceStore";
+import { ViscosityAppearanceExtras } from "@/renderer/viscosity/settings/ViscosityAppearanceExtras";
 import { useNativeMaterialActive } from "@/renderer/hooks/useGlassState";
 import { Select, ToggleSwitch } from "@/renderer/components/common";
 import { SettingRow, SettingsPage } from "./SettingsForm";
@@ -34,6 +38,8 @@ export function AppearanceSettings() {
   const sidebarGlassTint = useSharedSettings((state) => state.sidebarGlassTint);
   const setSidebarGlassTint = useSharedSettings((state) => state.setSidebarGlassTint);
   const remote = isRemoteSession();
+  const uiFont = useViscosityAppearance((state) => state.uiFont);
+  const setUiFont = useViscosityAppearance((state) => state.setUiFont);
 
   // Frosting slider: tunes the active appearance's glass tint. Applies on the
   // native-material platforms (Windows 11 acrylic, macOS vibrancy), which both
@@ -139,6 +145,30 @@ export function AppearanceSettings() {
         {themeOpen ? <ThemeGallery /> : null}
       </div>
 
+      {/* ViscosityCode: UI font is a per-client view preference (local storage). */}
+      <SettingRow
+        anchorId="appearance.uiFont"
+        title={t`UI font`}
+        description={
+          <Trans>
+            Typeface for the app interface; code keeps its monospace font. Saved on this device.
+          </Trans>
+        }
+      >
+        <Select
+          aria-label={t`UI font`}
+          className="w-[160px] shrink-0"
+          options={[
+            { id: "geist", label: t`Geist` },
+            { id: "system", label: t`System` },
+          ]}
+          value={uiFont}
+          onChange={(value) => {
+            setUiFont(value === "system" ? "system" : "geist");
+          }}
+        />
+      </SettingRow>
+
       <SettingRow
         anchorId="appearance.guiChatFontSize"
         title={t`GUI chat font size`}
@@ -229,6 +259,9 @@ export function AppearanceSettings() {
           </Slider>
         </SettingRow>
       ) : null}
+
+      {/* ViscosityCode: fork appearance rows (window material, background, …). */}
+      <ViscosityAppearanceExtras />
     </SettingsPage>
   );
 }

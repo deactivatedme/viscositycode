@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { downloadTextFile } from "@/renderer/utils/downloadTextFile";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -157,6 +158,9 @@ describe("custom theme settings", () => {
     expect(screen.queryByRole("table", { name: "Text contrast" })).not.toBeInTheDocument();
   });
   it("syncs typed and picked colors, recovers invalid input, and restores automatic fills", async () => {
+    // ViscosityCode: the Viscosity base spec authors an explicit composer fill,
+    // so start from a bundled preset whose composer is still automatic.
+    useSharedSettings.setState({ themePreset: "github" });
     render(<ThemeGallery />);
     fireEvent.click(screen.getByRole("button", { name: "Create custom theme" }));
     expect(screen.getAllByRole("button", { name: /^Choose color for/ })).toHaveLength(10);
@@ -235,11 +239,53 @@ describe("custom theme settings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create custom theme" }));
     fireEvent.click(screen.getByRole("button", { name: "Export theme" }));
     const [filename, json, type] = vi.mocked(downloadTextFile).mock.calls[0]!;
-    expect(filename).toBe("poracode-theme.json");
+    expect(filename).toBe("viscositycode-theme.json");
     expect(type).toBe("application/json");
     expect(JSON.parse(json)).toMatchObject({ version: 1, label: "My theme" });
     expect(JSON.parse(json)).not.toHaveProperty("id");
     expect(useSharedSettings.getState().customThemes).toEqual([]);
+  });
+  it("exports the active built-in preset as an importable JSON document", () => {
+    vi.mocked(downloadTextFile).mockClear();
+    render(<ThemeGallery />);
+    fireEvent.click(screen.getByRole("button", { name: "Export as JSON" }));
+    const [filename, json, type] = vi.mocked(downloadTextFile).mock.calls[0]!;
+    expect(filename).toBe("viscosity-theme.json");
+    expect(type).toBe("application/json");
+    expect(JSON.parse(json)).toMatchObject({
+      version: 1,
+      label: "Viscosity",
+      dark: { bg: "#0a0a0b", accent: "#38bdf8" },
+    });
+    expect(JSON.parse(json)).not.toHaveProperty("id");
+    expect(useSharedSettings.getState().customThemes).toEqual([]);
+  });
+  it("offers built-in export only while a bundled preset is active", () => {
+    const custom = {
+      version: 1 as const,
+      id: "custom:active",
+      label: "Active custom",
+      light: {
+        bg: "#ffffff",
+        surface: "#ffffff",
+        fg: "#111111",
+        accent: "#0055aa",
+        accentFg: "#ffffff",
+        border: "#dddddd",
+      },
+      dark: {
+        bg: "#111111",
+        surface: "#161616",
+        fg: "#eeeeee",
+        accent: "#66aaff",
+        accentFg: "#001122",
+        border: "#333333",
+      },
+    };
+    useSharedSettings.setState({ customThemes: [custom], themePreset: custom.id });
+    render(<ThemeGallery />);
+    expect(screen.queryByRole("button", { name: "Export as JSON" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit theme" })).toBeInTheDocument();
   });
   it("does not reopen a stale imported theme after Create and Cancel", async () => {
     render(<ThemeGallery />);
