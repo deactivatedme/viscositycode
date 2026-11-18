@@ -573,6 +573,10 @@ msgstr "{agentLabel}: {statusLabel}. Für Statusdetails den Mauszeiger darüber 
 msgid "{agentLead} needs your input to continue."
 msgstr "{agentLead} benötigt deine Eingabe, um fortzufahren."
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "{base} ({detail})"
+msgstr "{base} ({detail})"
+
 #: src/renderer/views/PullRequestsOverlay/summary/RailChanges.tsx
 msgid "{commentCount, plural, one {# comment} other {# comments}}"
 msgstr "{commentCount, plural, one {# Kommentar} other {# Kommentare}}"
@@ -723,6 +727,10 @@ msgstr "{issues, plural, one {# Good-First-Issue ist} other {# Good-First-Issues
 #~ msgid "{judgingLabel} is reviewing each candidate's changes to recommend a winner."
 #~ msgstr "{judgingLabel} überprüft die Änderungen jedes Kandidaten, um einen Gewinner zu empfehlen."
 
+#: src/renderer/viscosity/roundtable/engine/threadPortLive.ts
+msgid "{label} · {roundtableTitle}"
+msgstr "{label} · {roundtableTitle}"
+
 #: src/renderer/i18n/sharedMessages.ts
 #~ msgid "{label} · Previous sessions; sign in again for new threads."
 #~ msgstr "{label} · Frühere Sitzungen; für neue Threads erneut anmelden."
@@ -761,6 +769,10 @@ msgstr "{label}-Nutzung"
 #: src/renderer/components/thread/ThreadUsageBubble.tsx
 msgid "{label} usage — open usage panel"
 msgstr "{label}-Nutzung – Nutzungsbereich öffnen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
+msgid "{label} usage: {used}% of the tightest limit used"
+msgstr "{label}-Nutzung: {used} % der knappsten Grenze verbraucht"
 
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
@@ -807,6 +819,42 @@ msgstr "{moved} · fortgesetzt mit {agentLabel}"
 #: src/renderer/actions/workspaceActions.ts
 msgid "{movedCount, plural, one {Moved # project to {target}.} other {Moved # projects to {target}.}}"
 msgstr "{movedCount, plural, one {# Projekt nach {target} verschoben.} other {# Projekte nach {target} verschoben.}}"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} building"
+msgstr "{name} entwickelt"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "{name} is waiting for your approval. The Roundtable continues once you answer in its thread."
+msgstr "{name} wartet auf Ihre Genehmigung. Der Roundtable geht weiter, sobald Sie in seinem Thread antworten."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} judging"
+msgstr "{name} entscheidet"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} needs your approval"
+msgstr "{name} benötigt Ihre Genehmigung"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} planning"
+msgstr "{name} plant"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} replying"
+msgstr "{name} antwortet"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} reviewing"
+msgstr "{name} prüft"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "{name} testing"
+msgstr "{name} testet"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "{name}, round {round}"
+msgstr "{name}, Runde {round}"
 
 #. placeholder {0}: reaction.count
 #: src/renderer/views/PullRequestsOverlay/parts/PrReactions.tsx
@@ -959,6 +1007,10 @@ msgstr "{targetLabel} ist offline. Verbinde dich zuerst damit."
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "{targetLabel} is reached through this computer, so you can't open it while this computer is off."
 msgstr "{targetLabel} ist nur über diesen Computer erreichbar, daher kannst du es nicht öffnen, während dieser Computer ausgeschaltet ist."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "{total, plural, one {# participant} other {# participants}}"
+msgstr "{total, plural, one {# Teilnehmer} other {# Teilnehmer}}"
 
 #: src/renderer/views/PrReviewOverlay/parts/PrReviewSidebar.tsx
 #~ msgid "{totalAdditions} additions and {totalDeletions} deletions"
@@ -1256,6 +1308,10 @@ msgstr "Ein kurzes Aufblitzen, wenn ein Agent auf einen Fehler stößt."
 msgid "A candidate is no longer on its experiment branch."
 msgstr "Ein Kandidat befindet sich nicht mehr auf seinem Experiment-Branch."
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "A chain of stages (plan, implement, test, review), one participant each."
+msgstr "Eine Kette von Phasen (planen, umsetzen, testen, prüfen), je ein Teilnehmer pro Phase."
+
 #: src/renderer/components/providers/settings/CursorProfileIdentity.tsx
 msgid "A Cursor profile with this name already exists."
 msgstr "Ein Cursor-Profil mit diesem Namen existiert bereits."
@@ -1268,9 +1324,17 @@ msgstr "Ein Gerät konnte nicht gestartet werden."
 msgid "A different plugin already uses this identifier. It will not be replaced."
 msgstr "Ein anderes Plugin verwendet bereits diese Kennung. Es wird nicht ersetzt."
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "A free group chat: @mention who should answer."
+msgstr "Ein freier Gruppenchat: Erwähnen Sie mit @, wer antworten soll."
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "A frozen worktree source requires a full commit hash"
 msgstr "Eine eingefrorene Worktree-Quelle erfordert einen vollständigen Commit-Hash"
+
+#: src/renderer/viscosity/bots/botActions.ts
+msgid "A group chat needs 2 to 5 bots."
+msgstr "Ein Gruppenchat braucht 2 bis 5 Bots."
 
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -1284,6 +1348,14 @@ msgstr "Eine eingefrorene Worktree-Quelle erfordert einen vollständigen Commit-
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "A missed run was skipped."
 msgstr "Ein verpasster Lauf wurde übersprungen."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "A participant's agent is not signed in for this project."
+msgstr "Der Agent eines Teilnehmers ist für dieses Projekt nicht angemeldet."
+
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "A participant's turn failed."
+msgstr "Der Durchgang eines Teilnehmers ist fehlgeschlagen."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "A Poracode Helper owns this connection but is not responding. Stop the remote helper, then reconnect."
@@ -1301,6 +1373,14 @@ msgstr "Ein Profil kann höchstens 100 Repositories enthalten."
 msgid "A profile with this name already exists."
 msgstr "Ein Profil mit diesem Namen existiert bereits."
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "A race needs at least two installed agents (an API model can only judge)."
+msgstr "Ein Wettlauf braucht mindestens zwei installierte Agenten (ein API-Modell kann nur bewerten)."
+
+#: src/renderer/viscosity/roundtable/engine/liveServices.ts
+msgid "A race runs on the machine hosting the project. Open the project on its host to start one."
+msgstr "Ein Wettlauf läuft auf dem Rechner, der das Projekt hostet. Öffnen Sie das Projekt auf seinem Host, um einen zu starten."
+
 #: src/renderer/views/PullRequestsOverlay/changes/ReviewDraftSummary.tsx
 msgid "A review can carry at most 100 line comments."
 msgstr "Ein Review kann höchstens 100 Zeilenkommentare enthalten."
@@ -1308,6 +1388,22 @@ msgstr "Ein Review kann höchstens 100 Zeilenkommentare enthalten."
 #: src/renderer/i18n/sharedMessages.ts
 msgid "A review or comment body is required."
 msgstr "Ein Review- oder Kommentartext ist erforderlich."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "A reviewer approved the work."
+msgstr "Ein Prüfer hat die Arbeit genehmigt."
+
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "A Roundtable seats {min} to {MAX_PARTICIPANTS} participants."
+msgstr "Ein Roundtable bietet Platz für {min} bis {MAX_PARTICIPANTS} Teilnehmer."
+
+#: src/renderer/viscosity/roundtable/chat/mentionRouting.ts
+msgid "A Roundtable seats up to {MAX_ROUNDTABLE_PARTICIPANTS} participants, this chat included. Mention someone already seated, or start another chat."
+msgstr "Ein Roundtable bietet Platz für bis zu {MAX_ROUNDTABLE_PARTICIPANTS} Teilnehmer, diesen Chat eingeschlossen. Erwähnen Sie jemanden, der bereits am Tisch sitzt, oder starten Sie einen anderen Chat."
+
+#: src/renderer/components/thread/ThreadDraftComposerArea.tsx
+msgid "A Roundtable takes a text task only. Remove the attachments to start it."
+msgstr "Ein Roundtable akzeptiert nur eine Textaufgabe. Entfernen Sie die Anhänge, um ihn zu starten."
 
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "A scout maps the code, a builder implements and verifies, and a reviewer checks the diff; the lead plans and decides."
@@ -1688,9 +1784,17 @@ msgstr "Aktion hinzufügen"
 msgid "Add an existing folder"
 msgstr "Vorhandenen Ordner hinzufügen"
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Add an xAI API key in Settings, or set the XAI_API_KEY environment variable."
+msgstr "Fügen Sie in den Einstellungen einen xAI-API-Schlüssel hinzu oder setzen Sie die Umgebungsvariable XAI_API_KEY."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Add another Devin account with its own sign-in."
 msgstr "Füge ein weiteres Devin-Konto mit eigener Anmeldung hinzu."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "Add at least one more participant."
+msgstr "Fügen Sie mindestens einen weiteren Teilnehmer hinzu."
 
 #: src/renderer/components/composer/ComposerAddMenu.tsx
 msgid "Add attachment or capability"
@@ -1729,6 +1833,10 @@ msgstr "Dateien hinzufügen, hier ablegen oder ein Bild einfügen"
 msgid "Add folder"
 msgstr "Ordner hinzufügen"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Add Grok (xAI API)"
+msgstr "Grok hinzufügen (xAI-API)"
+
 #: src/renderer/components/plugins/PluginCatalogBrowser.tsx
 msgid "Add marketplace"
 msgstr "Marketplace hinzufügen"
@@ -1748,6 +1856,11 @@ msgstr "Modell hinzufügen"
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Add one manually or import from another agent."
 msgstr "Fügen Sie einen manuell hinzu oder importieren Sie ihn aus einem anderen Agenten."
+
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Add participant"
+msgstr "Teilnehmer hinzufügen"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordsPage.tsx
 msgid "Add password"
@@ -1860,9 +1973,21 @@ msgstr "Füge in den Einstellungen für MCP-Server benutzerdefinierte MCP-Server
 msgid "Add workspace"
 msgstr "Arbeitsbereich hinzufügen"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Add your xAI API key first."
+msgstr "Fügen Sie zuerst Ihren xAI-API-Schlüssel hinzu."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Add your xAI API key in Settings → Bots"
+msgstr "Fügen Sie Ihren xAI-API-Schlüssel unter Einstellungen → Bots hinzu"
+
 #: src/renderer/views/PullRequestsOverlay/changes/FileKindIcon.tsx
 msgid "Added"
 msgstr "Hinzugefügt"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Added to the next prompt of {delivered}"
+msgstr "Zum nächsten Prompt von {delivered} hinzugefügt"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
@@ -1909,6 +2034,7 @@ msgstr "Eine benutzerdefinierte Basis-URL bekanntgeben, z. B. für einen Reverse
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Agent"
 msgstr "Agent"
 
@@ -1919,6 +2045,10 @@ msgstr "Agent ({subagent}):{description}"
 #: src/renderer/fx/settings/AgentEffectsSettings.tsx
 msgid "Agent activity"
 msgstr "Agentenaktivität"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Agent and model for this bot"
+msgstr "Agent und Modell für diesen Bot"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 msgid "Agent chat (ACP / markdown). Command rows use this size minus 1 px; tool and plan lines minus 2 px."
@@ -2133,6 +2263,10 @@ msgstr "Alle Agent-Apps"
 msgid "All agents"
 msgstr "Alle Agenten"
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "All build in separate worktrees, review each other, best wins"
+msgstr "Alle entwickeln in getrennten Worktrees, prüfen sich gegenseitig, der Beste gewinnt"
+
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarThreadGroup.tsx
 msgid "All candidate sessions, worktrees, and branches will be removed."
@@ -2271,6 +2405,7 @@ msgid "Always excluded"
 msgstr "Immer ausgeschlossen"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Amber"
 msgstr "Bernstein"
 
@@ -2322,6 +2457,10 @@ msgstr "Animierter Hintergrund und Live-Effekte für Agenten. Auf diesem Gerät 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Another automation is already using this conversation."
 msgstr "Eine andere Automation verwendet dieses Gespräch bereits."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Another bot already has this name."
+msgstr "Ein anderer Bot hat bereits diesen Namen."
 
 #: src/renderer/components/thread/ChatPane/parts/CheckpointRevertControls.tsx
 msgid "Another chat uses this same tree. File restore could overwrite that chat's changes."
@@ -2465,6 +2604,7 @@ msgid "Approval or reply required from you."
 msgstr "Zustimmung oder Antwort Ihrerseits erforderlich."
 
 #: src/renderer/views/PullRequestsOverlay/parts/SubmitReviewPopover.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Approve"
 msgstr "Genehmigen"
 
@@ -2586,6 +2726,10 @@ msgstr "Argumente"
 #: src/renderer/views/QuickComposerOverlay/QuickComposerOverlay.tsx
 msgid "Ask {0} anything about this workspace"
 msgstr "Fragen Sie {0} etwas zu diesem Arbeitsbereich"
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+msgid "Ask {name} anything. The chat stays on this device; New session starts over."
+msgstr "Fragen Sie {name} alles. Der Chat bleibt auf diesem Gerät; Neue Sitzung beginnt von vorn."
 
 #: src/renderer/components/thread/threadSlashCommands.ts
 msgid "Ask a question in a separate side chat"
@@ -2922,6 +3066,10 @@ msgstr "Verfügbare Modelle erscheinen, nachdem die Engine installiert wurde."
 msgid "Available when {names} is back online."
 msgstr "Verfügbar, sobald {names} wieder online ist."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Avatar"
+msgstr "Avatar"
+
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 msgid "Avatar color"
 msgstr "Avatar-Farbe"
@@ -2929,6 +3077,14 @@ msgstr "Avatar-Farbe"
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 msgid "Avatar color {color}"
 msgstr "Avatar-Farbe {color}"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Avatar colour"
+msgstr "Avatarfarbe"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Avatar emoji or initials"
+msgstr "Avatar-Emoji oder Initialen"
 
 #. placeholder {0}: formatDuration(avgTurnMs)
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
@@ -2992,6 +3148,10 @@ msgstr "Zurück zu Plugins"
 #: src/renderer/components/layout/UnifiedRightPanel.tsx
 msgid "Back to Thread Info"
 msgstr "Zurück zu den Thread-Infos"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
+msgid "Back to threads"
+msgstr "Zurück zu den Threads"
 
 #. Settings → Effects group heading
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
@@ -3134,6 +3294,7 @@ msgid "blocked:"
 msgstr "blockiert:"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Blue"
 msgstr "Blau"
 
@@ -3153,6 +3314,50 @@ msgstr "Lesezeichen"
 #: src/renderer/views/SettingsOverlay/parts/CustomThemePalette.tsx
 msgid "Border"
 msgstr "Rahmen"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "Bot"
+msgstr "Bot"
+
+#: src/renderer/viscosity/roundtable/chat/useRoundtableMentionItems.ts
+msgid "Bot · Roundtable"
+msgstr "Bot · Roundtable"
+
+#. placeholder {0}: bot.label
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Bot actions for {0}"
+msgstr "Bot-Aktionen für {0}"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Bot name"
+msgstr "Bot-Name"
+
+#. Settings section: named AI teammates (bots)
+#. Settings section: named AI teammates (bots)
+#: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+#: src/renderer/viscosity/bots/registerBotsChrome.ts
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Bots"
+msgstr "Bots"
+
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Bots are named teammates with their own brain, instructions and memory. They use the agents you are already signed in to, or Grok over the xAI API."
+msgstr "Bots sind benannte Teammitglieder mit eigenem Gehirn, eigenen Anweisungen und eigenem Gedächtnis. Sie nutzen die Agenten, bei denen Sie bereits angemeldet sind, oder Grok über die xAI-API."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Bots can also think with a Grok model over the xAI API, billed to your xAI account."
+msgstr "Bots können auch mit einem Grok-Modell über die xAI-API denken, abgerechnet über Ihr xAI-Konto."
+
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Bots in this chat"
+msgstr "Bots in diesem Chat"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Bots on an agent brain run through the agents you already use, on your existing subscriptions and logins, with each agent's own approval settings. Nothing here is needed for them."
+msgstr "Bots mit einem Agenten als Gehirn laufen über die Agenten, die Sie bereits nutzen, mit Ihren bestehenden Abonnements und Anmeldungen und den Genehmigungseinstellungen des jeweiligen Agenten. Dafür ist hier nichts nötig."
 
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "Bottom"
@@ -3185,6 +3390,10 @@ msgstr "Begrenzt, wie viele kurzlebige Generierungs-Helfer (Thread-Titel, Commit
 msgid "Bounds how many terminal shells can run at once on this host. Counts logical execution slots, not OS processes or memory. 0 means unlimited."
 msgstr "Begrenzt, wie viele Terminal-Shells auf diesem Host gleichzeitig ausgeführt werden können. Zählt logische Ausführungs-Slots, nicht Betriebssystem-Prozesse oder Arbeitsspeicher. 0 = unbegrenzt."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Brain"
+msgstr "Gehirn"
+
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 #: src/renderer/components/thread/ThreadDetailsDocks.tsx
 #: src/renderer/components/thread/WorktreeModeSelect.tsx
@@ -3213,9 +3422,13 @@ msgstr "Branch {branch}: {detail}"
 msgid "Branch <0>{0}</0> has unmerged changes:"
 msgstr "Branch <0>{0}</0> weist nicht zusammengeführte Änderungen auf:"
 
-#: src/renderer/components/thread/MoveThreadToWorktreeDialog.tsx
-#~ msgid "Branch name"
-#~ msgstr "Zweigname"
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Branch name"
+msgstr "Zweigname"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Branch name (optional)"
+msgstr "Branchname (optional)"
 
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectWorktreeBaseBranch.tsx
 msgid "Branch new worktrees fork from. You can also star one in the composer's branch picker."
@@ -3389,7 +3602,17 @@ msgstr "Budgetgrenze erreicht"
 msgid "Bug"
 msgstr "Fehler"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Build"
+msgstr "Entwicklung"
+
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Build ↔ review"
+msgstr "Entwickeln ↔ prüfen"
+
 #: src/renderer/components/crew/crewRoleTemplates.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Builder"
 msgstr "Entwickler"
 
@@ -3575,6 +3798,10 @@ msgstr "Diese Modellauswahl kann in dieser Oberfläche nicht verwendet werden"
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/ShortcutsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/SshConnectionForm.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -3652,6 +3879,10 @@ msgstr "Abgebrochen"
 #: src/renderer/views/ExperimentView/parts/ExperimentCandidateCard.tsx
 msgid "Candidate actions"
 msgstr "Kandidatenaktionen"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Candidate run"
+msgstr "Kandidatenlauf"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cannot create a default worktree path without a branch name"
@@ -3822,6 +4053,8 @@ msgstr "Diagrammdetails"
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeDialog.tsx
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/modelSurfaceLabel.ts
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Chat"
 msgstr "Chat"
 
@@ -3943,8 +4176,13 @@ msgstr "Dieser Host wird überprüft…"
 #: src/renderer/components/startup/StartupRecoveryScreen.tsx
 #: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostUpdateControl.tsx
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Checking…"
 msgstr "Wird überprüft…"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Checkout"
+msgstr "Checkout"
 
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "Checkout is unavailable while this review is read-only"
@@ -4001,6 +4239,10 @@ msgstr "Wählen Sie einen Ordner…"
 msgid "Choose a local base branch for the experiment."
 msgstr "Wählen Sie einen lokalen Basis-Branch für das Experiment aus."
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Choose a model for every participant."
+msgstr "Wählen Sie für jeden Teilnehmer ein Modell."
+
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 msgid "Choose a parent folder"
 msgstr "Übergeordneten Ordner auswählen"
@@ -4009,13 +4251,26 @@ msgstr "Übergeordneten Ordner auswählen"
 msgid "Choose a photo"
 msgstr "Foto auswählen"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Choose a project"
+msgstr "Projekt auswählen"
+
 #: src/renderer/components/sessionImport/importSessionsActions.ts
 msgid "Choose a project for sessions whose folder no longer exists."
 msgstr "Wähle ein Projekt für Sitzungen, deren Ordner nicht mehr existiert."
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Choose a project for the Roundtable."
+msgstr "Wählen Sie ein Projekt für den Roundtable."
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectIconPicker.tsx
 msgid "Choose a project icon image"
 msgstr "Projektsymbol-Bild auswählen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Choose a project."
+msgstr "Wählen Sie ein Projekt."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Choose a saved credential to sign out."
@@ -4312,6 +4567,8 @@ msgstr "Transkript löschen"
 #: src/renderer/components/experiment/ExperimentDraftTargets.tsx
 #: src/renderer/components/thread/PresentationModeTabs.tsx
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "CLI"
 msgstr "CLI"
 
@@ -4412,6 +4669,7 @@ msgid "Close changes"
 msgstr "Änderungen schließen"
 
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatPanel.tsx
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
 msgid "Close chat"
 msgstr "Chat schließen"
 
@@ -4565,6 +4823,14 @@ msgstr "Vorschau schließen"
 #: src/renderer/views/PullRequestsOverlay/detail/header/usePrStateChange.ts
 msgid "Close pull request"
 msgstr "Pull Request schließen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
+msgid "Close Roundtable"
+msgstr "Roundtable schließen"
+
+#: src/renderer/viscosity/layout/tabs/RoundtableTab.tsx
+msgid "Close Roundtable {title}"
+msgstr "Roundtable {title} schließen"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 msgid "Close run details"
@@ -4820,6 +5086,10 @@ msgstr "Aufgaben-Dock einklappen"
 #: src/renderer/components/thread/ThreadResumeUnavailableDock.tsx
 msgid "Collapse warning"
 msgstr "Warnung einklappen"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Colour"
+msgstr "Farbe"
 
 #: src/renderer/views/MainView/parts/Sidebar/parts/useProjectEnvironmentMenuItems.tsx
 msgid "Combine with {name} ({machines})"
@@ -5486,6 +5756,10 @@ msgstr "Mit unvollständiger Historie fortfahren"
 msgid "Continuing will keep the remaining history and mark this episode acknowledged; it does not restore the missing content."
 msgstr "Beim Fortfahren bleibt die verbleibende Historie erhalten und dieser Vorfall wird als bestätigt markiert; fehlende Inhalte werden nicht wiederhergestellt."
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Contribution"
+msgstr "Beitrag"
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Control"
 msgstr "Steuern"
@@ -5902,6 +6176,10 @@ msgstr "Plugins konnten nicht verwaltet werden. Prüfe Paketname, OpenCode-Versi
 #~ msgid "Couldn't reach the desktop. If the browser asked to access your local network, allow it and pair again. Otherwise open the pairing link directly from the desktop (LAN), or expose the desktop over HTTPS."
 #~ msgstr "Der Desktop ist nicht erreichbar. Wenn der Browser um Zugriff auf dein lokales Netzwerk gebeten hat, erlaube ihn und kopple erneut. Andernfalls öffne den Kopplungslink direkt vom Desktop (LAN), oder stelle den Desktop über HTTPS bereit."
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Couldn't reach the xAI API. Check your internet connection."
+msgstr "Die xAI-API ist nicht erreichbar. Prüfen Sie Ihre Internetverbindung."
+
 #: src/renderer/views/SettingsOverlay/parts/ShortcutsSettings.tsx
 msgid "Couldn't save the shortcut."
 msgstr "Tastenkürzel konnte nicht gespeichert werden."
@@ -5966,6 +6244,10 @@ msgstr "Erstelle mit einem Klick eine nützliche Routine und passe sie jederzeit
 #: src/renderer/components/newsLine/featureCatalog.ts
 msgid "Create a workspace"
 msgstr "Arbeitsbereich erstellen"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Create bot"
+msgstr "Bot erstellen"
 
 #: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
 msgid "Create custom theme"
@@ -6176,6 +6458,10 @@ msgstr "Crew: {subagent}"
 msgid "Crews"
 msgstr "Crews"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Critique"
+msgstr "Kritik"
+
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "Cron"
 msgstr "Cron"
@@ -6193,6 +6479,10 @@ msgstr "Cron-Ausdruck"
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "Cross-repository pull requests cannot be checked out here"
 msgstr "Repository-übergreifende Pull Requests können hier nicht ausgecheckt werden"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Cross-review"
+msgstr "Kreuz-Review"
 
 #: src/renderer/components/thread/ChatPane/parts/items/ActiveSubAgentTile.tsx
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentOverlay.tsx
@@ -6308,6 +6598,10 @@ msgstr "Währung"
 #: src/renderer/views/SettingsOverlay/parts/CursorRuntimeCard.tsx
 msgid "Current"
 msgstr "Aktuell"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Current checkout"
+msgstr "Aktueller Checkout"
 
 #: src/renderer/components/skills/SkillImportModal.tsx
 #~ msgid "Current project"
@@ -6535,9 +6829,19 @@ msgstr "Datum und Uhrzeit"
 msgid "Days"
 msgstr "Tage"
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Debate → decide"
+msgstr "Debattieren → entscheiden"
+
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "Debug crew"
 msgstr "Debug-Crew"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Decision"
+msgstr "Entscheidung"
 
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/QuestionFormActions.tsx
 msgid "Decline"
@@ -6598,10 +6902,20 @@ msgstr "Standardberechtigungen"
 msgid "Default PR automation"
 msgstr "Standardmäßige PR-Automatisierung"
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "Default region"
+msgstr "Standardregion"
+
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
 msgid "Default thread removal"
 msgstr "Standardmäßiges Entfernen von Threads"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "Default tools"
+msgstr "Standardwerkzeuge"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
@@ -6671,6 +6985,10 @@ msgstr "{0} löschen"
 msgid "Delete {0}?"
 msgstr "{0} löschen?"
 
+#: src/renderer/viscosity/bots/ui/BotsDialogHost.tsx
+msgid "Delete {name}?"
+msgstr "{name} löschen?"
+
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Delete {serverName}"
 msgstr "{serverName} löschen"
@@ -6691,6 +7009,11 @@ msgstr "Archivierten Thread löschen?"
 #: src/renderer/views/SettingsOverlay/parts/ArchivedThreadsSettings.tsx
 msgid "Delete archived threads?"
 msgstr "Archivierte Threads löschen?"
+
+#: src/renderer/viscosity/bots/ui/BotsDialogHost.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Delete bot"
+msgstr "Bot löschen"
 
 #: src/renderer/components/common/BranchSelector/BranchSelector.tsx
 msgid "Delete branch?"
@@ -6840,9 +7163,17 @@ msgstr "Bereitstellung"
 msgid "Describe the result that completes this heartbeat."
 msgstr "Beschreiben Sie das Ergebnis, mit dem dieser Heartbeat abgeschlossen wird."
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Describe the task for the Roundtable."
+msgstr "Beschreiben Sie die Aufgabe für den Roundtable."
+
 #: src/renderer/components/experiment/NewExperimentModal.tsx
 #~ msgid "Describe the task to run with multiple agents…"
 #~ msgstr "Beschreiben Sie die Aufgabe, die mit mehreren Agenten ausgeführt werden soll…"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Describe the task."
+msgstr "Beschreiben Sie die Aufgabe."
 
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "Describe what the agent should do"
@@ -7417,6 +7748,8 @@ msgstr "erledigt"
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Done"
 msgstr "Fertig"
 
@@ -7536,6 +7869,8 @@ msgstr "Downloads aus dem integrierten Browser werden in diesem Verlauf gespeich
 
 #: src/renderer/utils/prStatus.ts
 #: src/renderer/views/PullRequestsOverlay/changes/inlineComments.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Draft"
 msgstr "Entwurf"
 
@@ -7638,6 +7973,10 @@ msgstr "z. B. Codex GPT-5.5 fast für schnelle Recherchen, OpenCode GLM für umf
 msgid "e.g. Work"
 msgstr "z.B. Arbeit"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Each participant builds on its own new worktree."
+msgstr "Jeder Teilnehmer entwickelt in einem eigenen neuen Worktree."
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "Each repository entry must be 1–512 characters without control characters."
 msgstr "Jeder Repository-Eintrag muss 1–512 Zeichen lang sein und keine Steuerzeichen enthalten."
@@ -7669,6 +8008,12 @@ msgstr "{0} bearbeiten"
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Edit {serverName}"
 msgstr "{serverName} bearbeiten"
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Edit bot"
+msgstr "Bot bearbeiten"
 
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/PlanCommentCard.tsx
 #: src/renderer/views/PullRequestsOverlay/parts/PrCommentBody.tsx
@@ -8196,6 +8541,31 @@ msgstr "Jede Stunde"
 msgid "Every hour at {0} minutes past"
 msgstr "Jede Stunde {0} Minuten nach der vollen Stunde"
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Every participant needs its own id."
+msgstr "Jeder Teilnehmer braucht eine eigene ID."
+
+#: src/renderer/viscosity/roundtable/engine/liveServices.ts
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "Every racer must be an installed agent."
+msgstr "Jeder Teilnehmer am Wettlauf muss ein installierter Agent sein."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Every stage finished."
+msgstr "Alle Phasen sind abgeschlossen."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Everyone builds on their own worktree, reviews the others, and the best is picked."
+msgstr "Jeder entwickelt in seinem eigenen Worktree, prüft die anderen, und der Beste wird ausgewählt."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Everyone proposes and critiques the others, then a judge or a vote decides."
+msgstr "Jeder macht Vorschläge und kritisiert die anderen, dann entscheidet ein Schiedsrichter oder eine Abstimmung."
+
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "Everyone proposes and critiques, then a decision is made"
+msgstr "Alle schlagen vor und kritisieren, dann wird entschieden"
+
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServerProjectList.tsx
 msgid "Exclude from sync"
@@ -8524,6 +8894,8 @@ msgstr "fehlgeschlagen"
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Failed"
 msgstr "Fehlgeschlagen"
 
@@ -9229,6 +9601,10 @@ msgstr "Von"
 msgid "From {from} to {to}"
 msgstr "Von {from} zu {to}"
 
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "From chat: {originTitle}"
+msgstr "Aus dem Chat: {originTitle}"
+
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 msgid "From config.toml: {configValue}"
 msgstr "Aus config.toml: {configValue}"
@@ -9492,8 +9868,14 @@ msgstr "global"
 #: src/renderer/components/providers/devin/sessionListings.tsx
 #: src/renderer/components/skills/SkillImportModal.tsx
 #: src/renderer/components/thread/ThreadCommandPanel.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Global"
 msgstr "Global"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Global (api.x.ai)"
+msgstr "Global (api.x.ai)"
 
 #: src/renderer/components/skills/skillTargets.ts
 msgid "Global (Linux)"
@@ -9583,16 +9965,68 @@ msgid "Granted scopes"
 msgstr "Gewährte Berechtigungen"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Green"
 msgstr "Grün"
+
+#. Bot brain: a Grok model reached directly over the xAI API with the user's key
+#: src/renderer/viscosity/bots/ui/brainLabel.ts
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Grok (xAI API)"
+msgstr "Grok (xAI-API)"
+
+#: src/renderer/viscosity/bots/botActions.ts
+msgid "Grok bot chats open in the desktop layout."
+msgstr "Chats mit Grok-Bots öffnen sich im Desktop-Layout."
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+msgid "Grok bots need your xAI API key."
+msgstr "Grok-Bots benötigen Ihren xAI-API-Schlüssel."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Grok bots work only in the desktop app."
+msgstr "Grok-Bots funktionieren nur in der Desktop-App."
 
 #: src/renderer/components/providers/grok/manifest.ts
 msgid "Grok Build"
 msgstr "Grok Build"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Grok model"
+msgstr "Grok-Modell"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Grok model for participant {seatNumber}"
+msgstr "Grok-Modell für Teilnehmer {seatNumber}"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Grok on the xAI API"
+msgstr "Grok über die xAI-API"
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API is only available in the desktop app."
+msgstr "Grok über die xAI-API ist nur in der Desktop-App verfügbar."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Grok over the xAI API needs an API key in Settings."
+msgstr "Grok über die xAI-API benötigt einen API-Schlüssel in den Einstellungen."
+
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
 msgstr "Gruppe"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Group chat"
+msgstr "Gruppenchat"
+
+#: src/renderer/viscosity/bots/botActions.ts
+msgid "Group chat: {list}"
+msgstr "Gruppenchat: {list}"
+
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "Group chats"
+msgstr "Gruppenchats"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserTabGroupMenu.tsx
 msgid "Group name"
@@ -10028,6 +10462,10 @@ msgstr "So funktioniert das Verschieben"
 msgid "How much the background is blurred behind panels."
 msgstr "Wie stark der Hintergrund hinter Panels weichgezeichnet wird."
 
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+msgid "How participants take turns"
+msgstr "Wie sich die Teilnehmer abwechseln"
+
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 #: src/renderer/fx/settings/effectsSettingsSearch.ts
 msgid "How solid panels look over the background. Lower shows more of it."
@@ -10136,6 +10574,10 @@ msgstr "Bildvorschau"
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectIconPicker.tsx
 msgid "Images"
 msgstr "Bilder"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Implementation"
+msgstr "Umsetzung"
 
 #: src/renderer/components/crew/crewRoleTemplates.ts
 #~ msgid "Implements changes and runs tests"
@@ -10820,6 +11262,10 @@ msgstr "Anweisungen"
 msgid "Instructions agents follow when choosing which agent or model to delegate to."
 msgstr "Anweisungen, denen Agenten folgen, wenn sie auswählen, an welchen Agenten oder welches Modell delegiert wird."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Instructions and memory reach an agent at the start of a session. Use New session to apply changes."
+msgstr "Anweisungen und Gedächtnis erreichen einen Agenten zu Beginn einer Sitzung. Verwenden Sie Neue Sitzung, um Änderungen zu übernehmen."
+
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 #: src/renderer/fx/settings/effectsSettingsSearch.ts
 msgid "Intensity"
@@ -10876,6 +11322,18 @@ msgstr "Ungültige Visualisierungsspezifikation. Es wird nur der Quelltext angez
 msgid "Investigator"
 msgstr "Ermittler"
 
+#: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
+msgid "Invite another model into this chat…"
+msgstr "Ein weiteres Modell in diesen Chat einladen…"
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "Invite models into this chat"
+msgstr "Modelle in diesen Chat einladen"
+
+#: src/renderer/viscosity/roundtable/chat/useRoundtableMentionItems.ts
+msgid "Invite to Roundtable"
+msgstr "Zum Roundtable einladen"
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 #~ msgid "iOS Simulator requires a macOS host with Xcode."
 #~ msgstr "Der iOS-Simulator benötigt einen macOS-Host mit Xcode."
@@ -10911,6 +11369,10 @@ msgstr "Jobs"
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "JSON"
 msgstr "JSON"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Judge"
+msgstr "Schiedsrichter"
 
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 msgid "Judging…"
@@ -11231,6 +11693,10 @@ msgstr "Leer lassen, um die von Devin ausgewählte Organisation zu verwenden. Nu
 #: src/renderer/views/GitHubActionsView/GitHubActionsDispatchDialog.tsx
 #~ msgid "Leave empty to use the repository default branch."
 #~ msgstr "Leer lassen, um den Standard-Branch des Repositorys zu verwenden."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "Leave Roundtable mode"
+msgstr "Roundtable-Modus verlassen"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Leave the credential reference empty to keep the current one."
@@ -11739,9 +12205,17 @@ msgstr "Browserprofile werden gesucht…"
 msgid "Looking for dev servers…"
 msgstr "Suche nach Dev-Servern…"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Looking for installed agents…"
+msgstr "Suche nach installierten Agenten…"
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/LocalPortsPanel.tsx
 msgid "Looking for listening ports…"
 msgstr "Suche nach offenen Ports…"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Looking for your agents…"
+msgstr "Suche nach Ihren Agenten…"
 
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 msgid "Losing worktrees and branches will be removed. Their session history will remain."
@@ -12078,6 +12552,10 @@ msgstr "Max. aktive Terminal-Shells, 0 für unbegrenzt"
 msgid "Max concurrent sub-agents"
 msgstr "Maximale Anzahl paralleler Subagenten"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Max rounds"
+msgstr "Max. Runden"
+
 #: src/renderer/components/layout/UnifiedRightPanel.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/BrowserPanel.tsx
 msgid "Maximize"
@@ -12236,6 +12714,26 @@ msgstr "Medien"
 msgid "Medium"
 msgstr "Mittel"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Member"
+msgstr "Mitglied"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Memory"
+msgstr "Gedächtnis"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Memory note"
+msgstr "Gedächtnisnotiz"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Mention {name}"
+msgstr "{name} erwähnen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Mention a participant"
+msgstr "Einen Teilnehmer erwähnen"
+
 #: src/renderer/views/PullRequestsOverlay/compact/PrCompactMergeAction.tsx
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrMergeControls.tsx
 msgid "Merge"
@@ -12369,6 +12867,10 @@ msgstr "Der Gewinner des Experiments wurde in {sourceBranch} zusammengeführt."
 msgid "Merging is blocked"
 msgstr "Das Zusammenführen ist blockiert"
 
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+msgid "Message {name}"
+msgstr "Nachricht an {name}"
+
 #: src/renderer/components/thread/ChatPane/UserMessageActionsSheet.tsx
 msgid "Message actions"
 msgstr "Nachrichtenaktionen"
@@ -12380,6 +12882,14 @@ msgstr "Nachrichtensuche nicht verfügbar"
 #: src/renderer/views/RemoteThreadView/RemoteThreadView.tsx
 #~ msgid "Message the remote agent…"
 #~ msgstr "Nachricht an den Remote-Agenten…"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Message the Roundtable"
+msgstr "Nachricht an den Roundtable"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Message the Roundtable. @mention who should answer."
+msgstr "Nachricht an den Roundtable. Erwähnen Sie mit @, wer antworten soll."
 
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 #~ msgid "Message to send after moving"
@@ -12908,6 +13418,7 @@ msgstr "my-mcp-server"
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Name"
 msgstr "Name"
 
@@ -12918,6 +13429,10 @@ msgstr "Name ist erforderlich."
 #: src/renderer/views/MainView/parts/CreateProject/CreateProjectModal.tsx
 msgid "Name your project and choose where to create it."
 msgstr "Benennen Sie Ihr Projekt und wählen Sie aus, wo es erstellt werden soll."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Named AI teammates with their own brain, instructions and memory."
+msgstr "Benannte KI-Teammitglieder mit eigenem Gehirn, eigenen Anweisungen und eigenem Gedächtnis."
 
 #: src/renderer/views/SettingsOverlay/parts/AcpRegistrySettings.tsx
 msgid "Native"
@@ -13024,6 +13539,15 @@ msgstr "Neuer Aktionsbefehl"
 msgid "New action name"
 msgstr "Neuer Aktionsname"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "New bot"
+msgstr "Neuer Bot"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "New branch"
+msgstr "Neuer Branch"
+
 #: src/renderer/components/common/BranchSelector/parts/BranchFooterActions.tsx
 msgid "New branch name..."
 msgstr "Neuer Branchname..."
@@ -13109,6 +13633,11 @@ msgstr "Neuer Ordner"
 msgid "New Gemini profile home directory"
 msgstr "Home-Verzeichnis des neuen Gemini-Profils"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "New group chat"
+msgstr "Neuer Gruppenchat"
+
 #: src/renderer/components/newsLine/useDiscoveryItems.tsx
 #: src/renderer/components/newsLine/useNewsLineItems.tsx
 msgid "New in {version}"
@@ -13143,6 +13672,16 @@ msgstr "Neues Projekt"
 msgid "New quick thread"
 msgstr "Neuer schneller Thread"
 
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSidebarView.tsx
+msgid "New Roundtable"
+msgstr "Neuer Roundtable"
+
+#: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
+msgid "New Roundtable…"
+msgstr "Neuer Roundtable…"
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "New schedule"
 msgstr "Neuer Zeitplan"
@@ -13150,6 +13689,11 @@ msgstr "Neuer Zeitplan"
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 #~ msgid "New scheduled task"
 #~ msgstr "Neue geplante Aufgabe"
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "New session"
+msgstr "Neue Sitzung"
 
 #: src/renderer/components/providers/devin/sessionActionDialog.tsx
 #~ msgid "New session title"
@@ -13374,6 +13918,10 @@ msgstr "Keine archivierten Threads."
 msgid "No bookmarks yet — add the current page with the star."
 msgstr "Noch keine Lesezeichen — fügen Sie die aktuelle Seite über den Stern hinzu."
 
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+msgid "No bots yet"
+msgstr "Noch keine Bots"
+
 #: src/renderer/components/common/BranchSelector/parts/BranchListBox.tsx
 msgid "No branches found"
 msgstr "Keine Branches gefunden"
@@ -13568,6 +14116,10 @@ msgstr "Noch keine Plugins installiert."
 msgid "No jobs reported for this run."
 msgstr "Für diese Ausführung wurden keine Jobs gemeldet."
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "No key yet. Grok bots stay unavailable until you add one."
+msgstr "Noch kein Schlüssel. Grok-Bots bleiben nicht verfügbar, bis Sie einen hinzufügen."
+
 #: src/renderer/views/PullRequestsOverlay/summary/RailLabels.tsx
 msgid "No labels"
 msgstr "Keine Labels"
@@ -13682,6 +14234,10 @@ msgstr "Keine Modelle gefunden"
 msgid "No other agents installed"
 msgstr "Keine anderen Agenten installiert"
 
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "No other signed-in models are ready."
+msgstr "Keine weiteren angemeldeten Modelle sind bereit."
+
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "No output yet"
 msgstr "Noch keine Ausgabe"
@@ -13693,6 +14249,10 @@ msgstr "Keine Plugin-Pakete installiert."
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "No paired devices yet."
 msgstr "Noch keine gekoppelten Geräte."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "No participants yet."
+msgstr "Noch keine Teilnehmer."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordsPage.tsx
 msgid "No passwords match your search"
@@ -13791,6 +14351,10 @@ msgstr "Keine Anbieter gefunden"
 msgid "No pull requests found."
 msgstr "Keine Pull Requests gefunden."
 
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "No race candidate finished its work."
+msgstr "Kein Kandidat des Wettlaufs hat seine Arbeit abgeschlossen."
+
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/GitReviewSidebar.tsx
 msgid "No remote configured. Add a remote to enable push and pull."
 msgstr "Kein Remote konfiguriert. Fügen Sie ein Remote hinzu, um Push und Pull zu ermöglichen."
@@ -13799,6 +14363,10 @@ msgstr "Kein Remote konfiguriert. Fügen Sie ein Remote hinzu, um Push und Pull 
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
 msgid "No remote environments connected yet."
 msgstr "Noch keine Remote-Umgebungen verbunden."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "No reply"
+msgstr "Keine Antwort"
 
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "No repositories"
@@ -13830,6 +14398,10 @@ msgstr "Keine Reviewer angefragt"
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 msgid "No reviews"
 msgstr "Keine Reviews"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSidebarView.tsx
+msgid "No roundtables yet"
+msgstr "Noch keine Roundtables"
 
 #: src/renderer/components/providers/devin/sessionActionDialog.tsx
 msgid "No rules were listed for this session."
@@ -13866,6 +14438,18 @@ msgstr "Keine Sitzungen entsprechen den aktuellen Filtern."
 #: src/renderer/views/SettingsOverlay/parts/ShortcutsSettings.tsx
 msgid "No shortcuts found"
 msgstr "Keine Tastenkürzel gefunden"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "No signed-in agent can run in this project. Install or sign in to an agent, or use Grok over the xAI API."
+msgstr "Kein angemeldeter Agent kann in diesem Projekt laufen. Installieren Sie einen Agenten oder melden Sie sich bei einem an, oder verwenden Sie Grok über die xAI-API."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "No signed-in agents for this project. Install an agent and sign in to it in Settings → Agents, then come back."
+msgstr "Keine angemeldeten Agenten für dieses Projekt. Installieren Sie einen Agenten, melden Sie sich unter Einstellungen → Agenten an und kommen Sie dann zurück."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "No signed-in models are ready. Install or sign in to a provider first."
+msgstr "Keine angemeldeten Modelle sind bereit. Installieren Sie zuerst einen Anbieter oder melden Sie sich bei einem an."
 
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "No simulators or emulators found."
@@ -13968,6 +14552,10 @@ msgstr "Noch keine Nutzungsdaten."
 msgid "No windows reported"
 msgstr "Keine Fenster gemeldet"
 
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "No winner could be chosen."
+msgstr "Es konnte kein Gewinner ermittelt werden."
+
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 msgid "No workflow runs found."
 msgstr "Keine Workflow-Ausführungen gefunden."
@@ -14011,6 +14599,10 @@ msgstr "Kein Git-Repository"
 #: src/renderer/views/SettingsOverlay/parts/machineScope/MachineScopeRows.tsx
 msgid "Not detected on this machine yet."
 msgstr "Auf diesem Computer noch nicht erkannt."
+
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "Not enough participants are left to continue."
+msgstr "Es sind nicht mehr genug Teilnehmer übrig, um fortzufahren."
 
 #: src/renderer/components/thread/AgentDiscoveryScreen.tsx
 #~ msgid "Not found"
@@ -14076,6 +14668,10 @@ msgstr "Notizen"
 #: src/renderer/components/thread/CompactThreadHeader.tsx
 msgid "Notes & to-dos"
 msgstr "Notizen & Aufgaben"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Notes the bot keeps between chats"
+msgstr "Notizen, die der Bot zwischen Chats behält"
 
 #: src/renderer/views/PullRequestsOverlay/summary/ActivityFeed.tsx
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineTab.tsx
@@ -14205,6 +14801,14 @@ msgstr "Zur vollen Stunde"
 msgid "Once on {0}"
 msgstr "Einmal am {0}"
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "One builds, the others review until they approve"
+msgstr "Einer entwickelt, die anderen prüfen bis zur Genehmigung"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "One builds, the others review, until a reviewer approves or the rounds run out."
+msgstr "Einer entwickelt, die anderen prüfen, bis ein Prüfer genehmigt oder die Runden aufgebraucht sind."
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "One Header: value pair per line"
 msgstr "Ein Paar „Header: Wert“ pro Zeile"
@@ -14237,6 +14841,10 @@ msgstr "Online"
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Only chat threads can move to another machine."
 msgstr "Nur Chat-Threads können auf einen anderen Computer verschoben werden."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Only one candidate finished."
+msgstr "Nur ein Kandidat ist fertig geworden."
 
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "Only the conversation moves: this folder isn't a Git repository."
@@ -14288,10 +14896,18 @@ msgstr "{0} öffnen"
 msgid "Open {label}"
 msgstr "{label} öffnen"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Open {label} thread"
+msgstr "Thread von {label} öffnen"
+
 #: src/renderer/views/PullRequestsOverlay/summary/ActivityRows.tsx
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Open {location} in changes"
 msgstr "{location} in den Änderungen öffnen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Open {name} thread"
+msgstr "Thread von {name} öffnen"
 
 #: src/renderer/commands/registry.ts
 msgid "Open a new browser tab"
@@ -14465,6 +15081,10 @@ msgstr "Öffnen Sie Git Review"
 msgid "Open git review as a right-side panel or a full page."
 msgstr "Öffnen Sie Git Review als rechten Bereich oder als ganze Seite."
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "Open group chat"
+msgstr "Offener Gruppenchat"
+
 #. placeholder {0}: index + 1
 #. placeholder {1}: gallery.length
 #: src/renderer/components/thread/ThreadImagesDock.tsx
@@ -14624,6 +15244,15 @@ msgstr "Öffnen Sie die erforderliche URL"
 msgid "Open review by {0}"
 msgstr "Review von {0} öffnen"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "Open Roundtable {title}"
+msgstr "Roundtable {title} öffnen"
+
+#. placeholder {0}: progress.label
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "Open Roundtable {title}: {0}"
+msgstr "Roundtable {title} öffnen: {0}"
+
 #: src/renderer/views/PullRequestsOverlay/summary/RailChecks.tsx
 msgid "Open run in GitHub Actions"
 msgstr "Ausführung in GitHub Actions öffnen"
@@ -14636,6 +15265,14 @@ msgstr "Einstellungen öffnen"
 #: src/renderer/components/composer/voiceError.ts
 msgid "Open Settings"
 msgstr "Öffnen Sie Einstellungen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Open Settings → Agents"
+msgstr "Einstellungen → Agenten öffnen"
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+msgid "Open Settings → Bots"
+msgstr "Einstellungen → Bots öffnen"
 
 #: src/mobile/views/DesktopsView.tsx
 #~ msgid "Open Settings → Remote Access in Poracode on this computer, then paste its pairing token here."
@@ -14703,6 +15340,10 @@ msgstr "Aufwandsauswahl öffnen"
 #: src/renderer/components/providers/standardGuiSlashCommands.ts
 msgid "Open the model picker"
 msgstr "Modellauswahl öffnen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Open thread"
+msgstr "Thread öffnen"
 
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Open thread in summary"
@@ -14787,6 +15428,7 @@ msgid "Operator"
 msgstr "Operator"
 
 #: src/renderer/components/mcp/McpServerEditor.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Optional"
 msgstr "Optional"
 
@@ -14827,6 +15469,7 @@ msgstr "oder"
 #~ msgstr "Oder schreiben Sie eine individuelle Antwort"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Orange"
 msgstr "Orange"
 
@@ -15126,6 +15769,20 @@ msgstr "Teilweise"
 msgid "Partially checked"
 msgstr "Teilweise aktiviert"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Participant {seatNumber}"
+msgstr "Teilnehmer {seatNumber}"
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Participants"
+msgstr "Teilnehmer"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Participants ({seatCount}/{MAX_PARTICIPANTS})"
+msgstr "Teilnehmer ({seatCount}/{MAX_PARTICIPANTS})"
+
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 msgid "Particle field"
 msgstr "Partikelfeld"
@@ -15234,13 +15891,24 @@ msgstr "Kopplungs-URL einfügen…"
 #~ msgid "Paste your pairing link"
 #~ msgstr "Füge deinen Kopplungslink ein"
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Paste your xAI API key"
+msgstr "Fügen Sie Ihren xAI-API-Schlüssel ein"
+
 #: src/renderer/components/plugins/PluginCatalogDetail.tsx
 #: src/renderer/components/plugins/PluginDetail.tsx
 #: src/renderer/components/thread/ThreadDetailsDocks.tsx
 msgid "Path"
 msgstr "Pfad"
 
+#: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Pattern"
+msgstr "Muster"
+
 #: src/renderer/views/SchedulesView/parts/ScheduleRow.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Pause"
 msgstr "Pausieren"
 
@@ -15271,11 +15939,17 @@ msgstr "Pausieren, wenn das System reduzierte Bewegung anfordert"
 msgid "Pause when the window is not focused"
 msgstr "Pausieren, wenn das Fenster nicht im Fokus ist"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "paused"
+msgstr "angehalten"
+
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentToolCall.tsx
 #: src/renderer/components/thread/ThreadFollowUpQueue.tsx
 #: src/renderer/components/thread/ThreadGoalDock.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Paused"
 msgstr "Angehalten"
 
@@ -15403,10 +16077,39 @@ msgstr "Fotos"
 msgid "Pi"
 msgstr "Pi"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Pick"
+msgstr "Wahl"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Pick → {picked}"
+msgstr "Wahl → {picked}"
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "Pick 2–5 participants and how they take turns. Approvals still come to you."
+msgstr "Wählen Sie 2–5 Teilnehmer und wie sie sich abwechseln. Genehmigungen landen weiterhin bei Ihnen."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Pick a model for every participant."
+msgstr "Wählen Sie für jeden Teilnehmer ein Modell."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Pick a model."
+msgstr "Wählen Sie ein Modell."
+
 #: src/mobile/ThreadDetail.tsx
 #: src/mobile/views/ThreadView.tsx
 #~ msgid "Pick a thread from the list to follow the agent from here."
 #~ msgstr "Wähle einen Thread aus der Liste, um dem Agenten von hier aus zu folgen."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Pick a workspace project."
+msgstr "Wählen Sie ein Projekt als Arbeitsbereich."
+
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Pick at least two bots."
+msgstr "Wählen Sie mindestens zwei Bots."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserToolbar.tsx
 msgid "Pick element"
@@ -15457,6 +16160,7 @@ msgid "Pin workflow"
 msgstr "Workflow anheften"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Pink"
 msgstr "Pink"
 
@@ -15481,8 +16185,13 @@ msgstr "Pixel 8"
 #: src/renderer/components/thread/ThreadDockBubbles.tsx
 #: src/renderer/components/thread/ThreadDocksPanel.tsx
 #: src/renderer/components/thread/ThreadTodoDock.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Plan"
 msgstr "Plan"
+
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "Plan → implement → test → review, one stage each"
+msgstr "Planen → umsetzen → testen → prüfen, je eine Phase"
 
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/PlanReviewModal.tsx
 msgid "Plan line {lineNumber}"
@@ -15500,6 +16209,10 @@ msgstr "Begründungsaufwand im Planmodus"
 #: src/renderer/views/MainView/parts/Sidebar/parts/MobileQuickCompose.tsx
 msgid "Plan, ask, build…"
 msgstr "Planen, fragen, bauen…"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Planner"
+msgstr "Planer"
 
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "Platform (optional)"
@@ -16090,6 +16803,7 @@ msgstr "Profile"
 #: src/renderer/views/GitHubActionsView/GitHubActionsProjectPicker.tsx
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Project"
 msgstr "Projekt"
 
@@ -16219,6 +16933,10 @@ msgstr "Prompt-Caching deckte diese Woche {percent}% deiner Input-Tokens ab"
 msgid "Prompt navigation"
 msgstr "Prompt-Navigation"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Prompt sent"
+msgstr "Prompt gesendet"
+
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
 msgid "prompts"
 msgstr "Prompts"
@@ -16235,6 +16953,10 @@ msgstr "Prompts gingen in den letzten 30 Tagen um {percent}% zurück"
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "Prompts rose {percent}% over the last 30 days"
 msgstr "Prompts stiegen in den letzten 30 Tagen um {percent}%"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Proposal"
+msgstr "Vorschlag"
 
 #: src/renderer/components/thread/ChatPane/parts/items/PlanProposal.tsx
 #: src/renderer/i18n/sharedMessages.ts
@@ -16256,6 +16978,10 @@ msgstr "Anbieter"
 #: src/renderer/components/providers/settings/ModelProviderEditor.tsx
 msgid "Provider"
 msgstr "Anbieter"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Provider and model for participant {seatNumber}"
+msgstr "Anbieter und Modell für Teilnehmer {seatNumber}"
 
 #: src/renderer/components/thread/ChatPane/parts/MessageList.tsx
 msgid "Provider conversation was not restored"
@@ -16551,6 +17277,11 @@ msgstr "Qwen Code"
 msgid "Qwen Token Plan"
 msgstr "Qwen Token-Plan"
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Race + cross-review"
+msgstr "Wettlauf + Kreuz-Review"
+
 #: src/renderer/components/providers/usageFormat.ts
 msgid "Ran out"
 msgstr "Aufgebraucht"
@@ -16570,6 +17301,14 @@ msgstr "Rate-Limit erreicht · erneuter Versuch in {retry}"
 #: src/renderer/components/providers/usageFormat.ts
 msgid "Rate limited. Try again shortly."
 msgstr "Rate-Limit erreicht. Versuchen Sie es in Kürze noch einmal."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Rationale"
+msgstr "Begründung"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Rationale from {decidedBy}"
+msgstr "Begründung von {decidedBy}"
 
 #: src/renderer/views/SettingsOverlay/parts/CustomThemeContrast.tsx
 msgid "Ratios for opaque theme surfaces. Aim for at least 4.5:1 for text."
@@ -16789,6 +17528,7 @@ msgid "Recordings are processed on {hostName}, not on this device."
 msgstr "Aufnahmen werden auf dem {hostName} verarbeitet, nicht auf diesem Gerät."
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Red"
 msgstr "Rot"
 
@@ -16902,6 +17642,11 @@ msgstr "Der {env}-{0}-Authentifizierungsstatus wird aktualisiert."
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisualDiagram.tsx
 msgid "Relationship diagram"
 msgstr "Beziehungsdiagramm"
+
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Relay"
+msgstr "Staffel"
 
 #: src/renderer/components/newsLine/NewsHighlightCard.tsx
 msgid "Release note"
@@ -17023,6 +17768,7 @@ msgstr "Remote-Sitzung widerrufen."
 msgid "Remote URL"
 msgstr "Remote-URL"
 
+#. Button: remove the saved xAI API key
 #: src/renderer/components/common/BranchSelector/BranchSelector.tsx
 #: src/renderer/components/composer/MentionInput.tsx
 #: src/renderer/components/providers/opencode2/OpenCode2PluginCards.tsx
@@ -17031,6 +17777,7 @@ msgstr "Remote-URL"
 #: src/renderer/views/SettingsOverlay/parts/AgentProfileList.tsx
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Remove"
 msgstr "Entfernen"
 
@@ -17047,6 +17794,8 @@ msgstr "„{removingTarget}“ aus OpenCode 2 entfernen? Du kannst es später ü
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
 #: src/renderer/views/PullRequestsOverlay/summary/RailReviewers.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 msgid "Remove {0}"
 msgstr "{0} entfernen"
 
@@ -17177,6 +17926,10 @@ msgstr "Speichereintrag für {0} entfernen"
 #: src/renderer/components/providers/settings/ClaudeProfileSettings.tsx
 msgid "Remove model"
 msgstr "Modell entfernen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Remove participant {seatNumber}"
+msgstr "Teilnehmer {seatNumber} entfernen"
 
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 msgid "Remove pinned route for {tagLabel}"
@@ -17407,6 +18160,10 @@ msgstr "Reparieren"
 msgid "Repeat"
 msgstr "Wiederholen"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Reply"
+msgstr "Antwort"
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 msgid "Report a bug or suggest an idea."
 msgstr "Melde einen Fehler oder schlage eine Idee vor."
@@ -17486,6 +18243,10 @@ msgstr "Erforderliche Konfidenz vor dem Beenden."
 #: src/renderer/hooks/usePrMergeReadiness.ts
 msgid "Required reviews, conversations, or status checks not met."
 msgstr "Erforderliche Bewertungen, Gespräche oder Statusprüfungen wurden nicht erfüllt."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Required."
+msgstr "Erforderlich."
 
 #: src/renderer/components/thread/ThreadComposerSection.tsx
 msgid "Resend last message"
@@ -17691,6 +18452,7 @@ msgid "Results"
 msgstr "Ergebnisse"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleRow.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Resume"
 msgstr "Fortsetzen"
 
@@ -17898,6 +18660,7 @@ msgstr "Wird zurückgesetzt…"
 #: src/renderer/components/providers/devin/profileSettings.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 #: src/renderer/views/PullRequestsOverlay/list/prListSheetSections.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Review"
 msgstr "Review"
 
@@ -17977,6 +18740,10 @@ msgstr "Review-Leitfaden"
 msgid "Review guide instructions"
 msgstr "Anweisungen für den Review-Leitfaden"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Review my changes for bugs and explain each fix in one sentence."
+msgstr "Prüfe meine Änderungen auf Fehler und erkläre jede Korrektur in einem Satz."
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Review my recent work and summarize today's priorities and next steps."
 msgstr "Prüfe meine letzte Arbeit und fasse die heutigen Prioritäten und nächsten Schritte zusammen."
@@ -18029,6 +18796,8 @@ msgid "Review, manually test, fix, commit, push, create a PR, and merge after ch
 msgstr "Prüfen, manuell testen, Fehler beheben, committen, pushen, einen PR erstellen und nach erfolgreichen Prüfungen mergen."
 
 #: src/renderer/components/crew/crewRoleTemplates.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Reviewer"
 msgstr "Prüfer"
 
@@ -18063,6 +18832,10 @@ msgstr "Reviews & Kommentare"
 #: src/renderer/components/crew/crewRoleTemplates.ts
 #~ msgid "Reviews the finished diff for bugs, regressions and missing tests, and reports findings by file and line."
 #~ msgstr "Prüft den fertigen Diff auf Fehler, Regressionen und fehlende Tests und meldet Funde mit Datei und Zeile."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Revise"
+msgstr "Überarbeiten"
 
 #: src/renderer/components/providers/devin/liveSessionControls.tsx
 #: src/renderer/components/providers/devin/sessionActionDialog.tsx
@@ -18109,6 +18882,10 @@ msgstr "Rollendetails"
 msgid "Role name"
 msgstr "Rollenname"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Role of participant {seatNumber}"
+msgstr "Rolle von Teilnehmer {seatNumber}"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Rotate to…"
 msgstr "Drehen auf…"
@@ -18116,6 +18893,67 @@ msgstr "Drehen auf…"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDeviceToolbar.tsx
 msgid "Rotate viewport"
 msgstr "Ansichtsbereich drehen"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "round {round}"
+msgstr "Runde {round}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Round {round}"
+msgstr "Runde {round}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Round {round} of {max}"
+msgstr "Runde {round} von {max}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "round {round}/{max}"
+msgstr "Runde {round}/{max}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Rounds must be between 1 and {MAX_ROUNDS_LIMIT}."
+msgstr "Die Rundenzahl muss zwischen 1 und {MAX_ROUNDS_LIMIT} liegen."
+
+#: src/renderer/components/composer/ComposerAddMenu.tsx
+#: src/renderer/viscosity/layout/tabs/RoundtableTab.tsx
+#: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+#: src/renderer/viscosity/roundtable/engine/session.ts
+#: src/renderer/viscosity/roundtable/ui/registerRoundtableChrome.ts
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "Roundtable"
+msgstr "Roundtable"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "Roundtable controls"
+msgstr "Roundtable-Steuerung"
+
+#: src/renderer/viscosity/roundtable/ui/roundtableViewStore.ts
+msgid "Roundtable is available in the desktop app."
+msgstr "Roundtable ist in der Desktop-App verfügbar."
+
+#: src/renderer/viscosity/roundtable/chat/composerHooks.ts
+msgid "Roundtable messages are text only. Remove the attachments, or the @mention to send them to this chat."
+msgstr "Roundtable-Nachrichten sind nur Text. Entfernen Sie die Anhänge oder die @-Erwähnung, um sie an diesen Chat zu senden."
+
+#: src/renderer/components/thread/ThreadDraftComposerArea.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Roundtable started"
+msgstr "Roundtable gestartet"
+
+#: src/renderer/viscosity/roundtable/chat/composerHooks.ts
+msgid "Roundtable started with {names}"
+msgstr "Roundtable mit {names} gestartet"
+
+#: src/renderer/viscosity/layout/tabs/RoundtableTab.tsx
+msgid "Roundtable: {title}"
+msgstr "Roundtable: {title}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSidebarView.tsx
+msgid "Roundtables"
+msgstr "Roundtables"
 
 #: src/renderer/state/hostCatalogReorder.ts
 msgid "Rows on different machines can't be reordered together."
@@ -18298,6 +19136,8 @@ msgstr "läuft"
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Running"
 msgstr "Wird ausgeführt"
 
@@ -18328,6 +19168,10 @@ msgstr "Läuft auf"
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Runs on this server. Credentials stay on the server."
 msgstr "Läuft auf diesem Server. Anmeldedaten bleiben auf dem Server."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Runs on your existing subscription and login, with the agent's own approval settings. You still approve its actions."
+msgstr "Läuft mit Ihrem bestehenden Abonnement und Ihrer Anmeldung, mit den eigenen Genehmigungseinstellungen des Agenten. Sie genehmigen seine Aktionen weiterhin selbst."
 
 #: src/renderer/components/providers/usageFormat.ts
 msgid "Runs out early"
@@ -18379,6 +19223,7 @@ msgstr "Samsung Galaxy S24 Ultra"
 msgid "Saturation and brightness"
 msgstr "Sättigung und Helligkeit"
 
+#. Button: save the xAI API key
 #: src/renderer/components/crew/CrewRosterPanel.tsx
 #: src/renderer/components/mcp/McpServerEditor.tsx
 #: src/renderer/components/providers/codex/profileSettings.tsx
@@ -18404,6 +19249,8 @@ msgstr "Sättigung und Helligkeit"
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Save"
 msgstr "Speichern"
 
@@ -18518,6 +19365,14 @@ msgstr "Gespeicherte Schriftart"
 #: src/renderer/commands/CommandPalette.tsx
 msgid "Saved messages, including archived chats"
 msgstr "Gespeicherte Nachrichten, einschließlich archivierter Chats"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved on this device, encrypted by your operating system ({hint})."
+msgstr "Auf diesem Gerät gespeichert, verschlüsselt durch Ihr Betriebssystem ({hint})."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved on this device, encrypted by your operating system."
+msgstr "Auf diesem Gerät gespeichert, verschlüsselt durch Ihr Betriebssystem."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserPasswordRow.tsx
 msgid "Saved password actions"
@@ -18923,6 +19778,34 @@ msgstr "Gespeicherte Nachrichten werden durchsucht…"
 msgid "Searching…"
 msgstr "Suche..."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Seat at least two participants."
+msgstr "Setzen Sie mindestens zwei Teilnehmer an den Tisch."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Seat at most five participants."
+msgstr "Setzen Sie höchstens fünf Teilnehmer an den Tisch."
+
+#: src/renderer/viscosity/roundtable/chat/slashCommand.ts
+msgid "Seat more models at a Roundtable on this task"
+msgstr "Weitere Modelle für diese Aufgabe an einen Roundtable holen"
+
+#: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
+msgid "Seat several models on one task"
+msgstr "Mehrere Modelle an eine Aufgabe setzen"
+
+#: src/renderer/components/composer/ComposerAddMenu.tsx
+msgid "Seat several models on one task and let them take turns."
+msgstr "Setzen Sie mehrere Modelle an eine Aufgabe und lassen Sie sie abwechselnd arbeiten."
+
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Seat two to five bots in one chat. @mention who should answer; the others can react in turn."
+msgstr "Holen Sie zwei bis fünf Bots in einen Chat. Erwähnen Sie mit @, wer antworten soll; die anderen können der Reihe nach reagieren."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSidebarView.tsx
+msgid "Seat two to five of your agents at one task and let them build, review and debate in turns."
+msgstr "Setzen Sie zwei bis fünf Ihrer Agenten an eine Aufgabe und lassen Sie sie abwechselnd entwickeln, prüfen und debattieren."
+
 #: src/renderer/views/SettingsOverlay/parts/CustomThemeContrast.tsx
 msgid "Secondary text"
 msgstr "Sekundärer Text"
@@ -19115,6 +19998,8 @@ msgstr "Ausgewählte Seitenleistenzeile"
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 #: src/renderer/components/thread/SideChat/SideChatBody.tsx
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatComposer.tsx
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Send"
 msgstr "Senden"
 
@@ -19186,6 +20071,11 @@ msgstr "Server-Basis-URL"
 #: src/renderer/components/thread/ThreadHostOfflineDock.tsx
 msgid "Server offline — this conversation may be out of date."
 msgstr "Server offline – diese Unterhaltung ist möglicherweise nicht aktuell."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "Server-side search tools new Grok bots start with."
+msgstr "Serverseitige Suchwerkzeuge, mit denen neue Grok-Bots starten."
 
 #: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -19369,6 +20259,10 @@ msgstr "Ship-Crew"
 #: src/renderer/views/SettingsOverlay/parts/ShortcutsSettings.tsx
 msgid "Shortcuts"
 msgstr "Tastenkürzel"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Shortened to fit the Roundtable record. The full reply is in the thread."
+msgstr "Gekürzt, damit es in das Roundtable-Protokoll passt. Die vollständige Antwort steht im Thread."
 
 #. placeholder {0}: g.label
 #: src/renderer/components/providers/ProviderUsageRail.tsx
@@ -20037,6 +20931,10 @@ msgstr "Etwas anderes…"
 msgid "Something went wrong starting the camera. Paste the pairing link or pick a photo of the code instead."
 msgstr "Beim Starten der Kamera ist etwas schiefgelaufen. Füge stattdessen den Kopplungslink ein oder wähle ein Foto des Codes aus."
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Something went wrong talking to xAI."
+msgstr "Bei der Kommunikation mit xAI ist ein Fehler aufgetreten."
+
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 #: src/renderer/views/PullRequestsOverlay/list/prListSheetSections.ts
 msgid "Sort by"
@@ -20210,6 +21108,10 @@ msgstr "Gestaged"
 msgid "Staged ({0})"
 msgstr "Gestaged ({0})"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Standing instructions"
+msgstr "Ständige Anweisungen"
+
 #: src/renderer/components/newsLine/useNewsLineItems.tsx
 msgid "Star on GitHub"
 msgstr "Auf GitHub mit Stern markieren"
@@ -20220,6 +21122,7 @@ msgstr "Aktuellen Chat oder aktuelles Modell zu Favoriten hinzufügen oder darau
 
 #. Button: start the microphone level test
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Start"
 msgstr "Starten"
 
@@ -20251,6 +21154,14 @@ msgstr "Starten Sie mit dieser Aufgabe einen neuen Thread"
 #~ msgid "Start a new thread to put an agent to work from this device."
 #~ msgstr "Starte einen neuen Thread, um von diesem Gerät aus einen Agenten arbeiten zu lassen."
 
+#: src/renderer/viscosity/roundtable/engine/runtime.ts
+msgid "Start a Roundtable from the main window."
+msgstr "Starten Sie einen Roundtable aus dem Hauptfenster."
+
+#: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
+msgid "Start a Roundtable from this chat"
+msgstr "Einen Roundtable aus diesem Chat starten"
+
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "Start a thread in this worktree"
 msgstr "Thread in diesem Worktree starten"
@@ -20280,6 +21191,10 @@ msgstr "Mit einer Vorlage beginnen"
 msgid "Start from scratch"
 msgstr "Fangen Sie bei Null an"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Start group chat"
+msgstr "Gruppenchat starten"
+
 #: src/renderer/components/composer/LiveVoiceControls.tsx
 msgid "Start live voice"
 msgstr "Live-Sprachchat starten"
@@ -20296,6 +21211,11 @@ msgstr "Starte Poracode, um in deinem Browser zu chatten."
 #: src/renderer/views/RemoteProjectModal/RemoteProjectModal.tsx
 #~ msgid "Start remote thread"
 #~ msgstr "Remote-Thread starten"
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/chat/useRoundtableDraft.ts
+msgid "Start Roundtable"
+msgstr "Roundtable starten"
 
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Start Tailscale"
@@ -20333,6 +21253,10 @@ msgstr "Ohne Kontext starten"
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Started {targetLabel} thread"
 msgstr "Thread {targetLabel} gestartet"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
+msgid "starting"
+msgstr "startet"
 
 #. Button label while the microphone test is starting
 #: src/renderer/components/devices/DeviceListItem.tsx
@@ -20447,6 +21371,7 @@ msgstr "Wird noch verarbeitet. Erneut senden, um denselben Bericht zu prüfen."
 
 #. Button: stop the microphone level test
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Stop"
 msgstr "Stopp"
 
@@ -20514,8 +21439,16 @@ msgid "Stop when"
 msgstr "Beenden, wenn"
 
 #: src/renderer/components/devices/DeviceListItem.tsx
+#: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Stopped"
 msgstr "Gestoppt"
+
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Stopped."
+msgstr "Gestoppt."
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Stopping {label}…"
@@ -20900,6 +21833,10 @@ msgstr "Übernimmt jede praktische Aufgabe des Leitmodells: erkunden, bearbeiten
 #~ msgid "Takes over the desktop while the agent clicks or types"
 #~ msgstr "Übernimmt den Desktop, während der Agent klickt oder tippt"
 
+#: src/renderer/viscosity/roundtable/chat/patterns.ts
+msgid "Talk to everyone; @mention who should reply"
+msgstr "Sprechen Sie mit allen; erwähnen Sie mit @, wer antworten soll"
+
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 msgid "Tap + to add a folder or clone a repository on your desktop."
 msgstr "Tippen Sie auf +, um auf Ihrem Desktop einen Ordner hinzuzufügen oder ein Repository zu klonen."
@@ -20922,6 +21859,9 @@ msgstr "Zielzweig"
 #~ msgstr "Zielanbieter"
 
 #: src/renderer/components/providers/qwen/index.tsx
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Task"
 msgstr "Aufgabe"
 
@@ -20963,6 +21903,7 @@ msgid "Teach your agents reusable procedures with skills"
 msgstr "Bringen Sie Ihren Agenten mit Skills wiederverwendbare Abläufe bei"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Teal"
 msgstr "Petrol"
 
@@ -21079,6 +22020,10 @@ msgstr "Argumente der Terminal-Shell"
 msgid "Terminal tabs"
 msgstr "Terminal-Registerkarten"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Test"
+msgstr "Test"
+
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "Test and fix"
 msgstr "Testen und beheben"
@@ -21098,6 +22043,7 @@ msgid "Test web apps with agents in the built-in browser"
 msgstr "Testen Sie Web-Apps mit Agenten im integrierten Browser"
 
 #: src/renderer/components/crew/crewRoleTemplates.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Tester"
 msgstr "Tester"
 
@@ -21129,6 +22075,10 @@ msgstr "Dieser Commit gehört nicht zu diesem Pull Request. Aktualisiere und wä
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "That conversation is no longer available."
 msgstr "Diese Unterhaltung ist nicht mehr verfügbar."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "That doesn't look like an xAI API key. Paste the full key from console.x.ai."
+msgstr "Das sieht nicht wie ein xAI-API-Schlüssel aus. Fügen Sie den vollständigen Schlüssel aus console.x.ai ein."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/usePairing.ts
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
@@ -21252,6 +22202,35 @@ msgstr "Der Hintergrund wird lebhafter, während ein Agent eine Antwort streamt.
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #~ msgid "the base branch"
 #~ msgstr "der Basis-Branch"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "The best candidate was crowned."
+msgstr "Der beste Kandidat wurde gekrönt."
+
+#: src/renderer/viscosity/bots/botApiChat.ts
+#: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
+msgid "The bot could not answer."
+msgstr "Der Bot konnte nicht antworten."
+
+#: src/renderer/viscosity/bots/botAgentThread.ts
+msgid "The bot's agent is not installed, enabled and signed in. Choose another brain."
+msgstr "Der Agent des Bots ist nicht installiert, aktiviert und angemeldet. Wählen Sie ein anderes Gehirn."
+
+#: src/renderer/viscosity/bots/ui/BotsDialogHost.tsx
+msgid "The bot's profile and its chat on this device are removed."
+msgstr "Das Profil des Bots und sein Chat auf diesem Gerät werden entfernt."
+
+#: src/renderer/viscosity/bots/ui/BotsDialogHost.tsx
+msgid "The bot's profile is removed. Its thread stays in your sidebar."
+msgstr "Das Profil des Bots wird entfernt. Sein Thread bleibt in Ihrer Seitenleiste."
+
+#: src/renderer/viscosity/bots/botAgentThread.ts
+msgid "The bot's workspace is on a machine that is offline right now."
+msgstr "Der Arbeitsbereich des Bots liegt auf einem Rechner, der gerade offline ist."
+
+#: src/renderer/viscosity/bots/botAgentThread.ts
+msgid "The bot's workspace project is no longer available. Pick another one."
+msgstr "Das Arbeitsbereich-Projekt des Bots ist nicht mehr verfügbar. Wählen Sie ein anderes."
 
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "The branch name was taken there, so the work continues on {branch}."
@@ -21406,6 +22385,10 @@ msgstr "Der Dateibaum ist im Vollbild-Editor geöffnet"
 msgid "The finding is no longer available."
 msgstr "Das Ergebnis ist nicht mehr verfügbar."
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "The first participant must be the agent of the chat the Roundtable starts from."
+msgstr "Der erste Teilnehmer muss der Agent des Chats sein, aus dem der Roundtable gestartet wird."
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The fork's saved conversation is unavailable."
 msgstr "Der gespeicherte Verlauf der Abzweigung ist nicht verfügbar."
@@ -21497,6 +22480,10 @@ msgstr "Der Hinweis auf unvollständige Historie hat sich auf dem Server geände
 msgid "The installed provider version is unsupported. Update it in provider settings."
 msgstr "Die installierte Anbieterversion wird nicht unterstützt. Aktualisiere sie in den Anbietereinstellungen."
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "The judge picked a winner."
+msgstr "Der Schiedsrichter hat einen Gewinner gewählt."
+
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatComposer.tsx
 msgid "The last launch may already have started. Use Retry above before asking again."
 msgstr "Der letzte Start wurde möglicherweise bereits ausgeführt. Verwende oben „Erneut versuchen“, bevor du erneut fragst."
@@ -21585,6 +22572,27 @@ msgstr "Die normale App-Shell konnte nicht gerendert werden. Die folgenden Diagn
 msgid "The paired server that owns this environment is not connected."
 msgstr "Der gekoppelte Server, dem diese Umgebung gehört, ist nicht verbunden."
 
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+#: src/renderer/viscosity/roundtable/engine/threadPortLive.ts
+msgid "The participant's thread is no longer available."
+msgstr "Der Thread des Teilnehmers ist nicht mehr verfügbar."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "The participant's thread was removed."
+msgstr "Der Thread des Teilnehmers wurde entfernt."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "The participant's turn ended with an error."
+msgstr "Der Durchgang des Teilnehmers endete mit einem Fehler."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "The participant's turn was cut off by a restart."
+msgstr "Der Durchgang des Teilnehmers wurde durch einen Neustart abgebrochen."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "The participants voted."
+msgstr "Die Teilnehmer haben abgestimmt."
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "The pencil-off icon marks a role told not to edit files: an instruction in its brief, not a permission."
 msgstr "Das Stift-durchgestrichen-Symbol kennzeichnet eine Rolle, die laut Aufgabenbeschreibung keine Dateien bearbeiten soll; es ist keine Berechtigung."
@@ -21600,6 +22608,10 @@ msgstr "Das Stift-durchgestrichen-Symbol kennzeichnet eine Rolle, die laut Aufga
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "The profile this profile shared a login with ({ownerName}) no longer exists or is not usable. Pick another owner or switch the login source — nothing is lost until you save."
 msgstr "Das Profil, mit dem dieses Profil einen Login teilte ({ownerName}), existiert nicht mehr oder ist unbrauchbar. Wählen Sie einen anderen Eigentümer oder wechseln Sie die Login-Quelle — bis zum Speichern geht nichts verloren."
+
+#: src/renderer/viscosity/roundtable/engine/liveServices.ts
+msgid "The project has no current branch to race from."
+msgstr "Das Projekt hat keinen aktuellen Branch, von dem aus der Wettlauf starten kann."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The project moved or was removed before the thread could launch. Review the project and try again."
@@ -21620,6 +22632,10 @@ msgstr "Der Pull Request hat sich geändert, nachdem diese Zeilenkommentare entw
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The pull request head changed or is unavailable. Refresh and review it before merging."
 msgstr "Der Head des Pull Requests hat sich geändert oder ist nicht verfügbar. Aktualisiere und prüfe ihn vor dem Zusammenführen."
+
+#: src/renderer/viscosity/roundtable/engine/liveServices.ts
+msgid "The race could not start."
+msgstr "Der Wettlauf konnte nicht gestartet werden."
 
 #: src/renderer/state/remoteServers/snapshotProjection.ts
 msgid "The remote catalog read failed."
@@ -21661,6 +22677,10 @@ msgstr "Der Speicherort des Repositorys auf der Festplatte. Aktualisieren Sie ih
 msgid "The repository status is not available yet"
 msgstr "Der Repository-Status ist noch nicht verfügbar"
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "The request to xAI was not valid."
+msgstr "Die Anfrage an xAI war ungültig."
+
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "The result will appear when this run finishes."
 msgstr "Das Ergebnis erscheint nach Abschluss dieses Laufs."
@@ -21672,6 +22692,23 @@ msgstr "Das Review wurde übermittelt, aber sein Kommentar ist fehlgeschlagen. A
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrMergeConfirm.tsx
 msgid "The review's changes are merged into its base branch. This cannot be undone here."
 msgstr "Die Änderungen des Reviews werden in den Basis-Branch gemergt. Das kann hier nicht rückgängig gemacht werden."
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "The round limit was reached."
+msgstr "Das Rundenlimit wurde erreicht."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "The Roundtable stopped because of an error."
+msgstr "Der Roundtable wurde wegen eines Fehlers gestoppt."
+
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "The Roundtable stopped making progress."
+msgstr "Der Roundtable kommt nicht mehr voran."
+
+#: src/renderer/viscosity/roundtable/engine/liveServices.ts
+#: src/renderer/viscosity/roundtable/engine/threadPortLive.ts
+msgid "The Roundtable's project is no longer available."
+msgstr "Das Projekt des Roundtables ist nicht mehr verfügbar."
 
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 msgid "The run could not be cancelled."
@@ -21911,6 +22948,10 @@ msgstr "Der Update-Dienst ist vorübergehend nicht verfügbar."
 msgid "The update waited too long for another installation. Try again."
 msgstr "Das Update hat zu lange auf eine andere Installation gewartet. Versuche es erneut."
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "The US endpoint only serves {US_MODELS}. Pick one of those models or switch the region to Global."
+msgstr "Der US-Endpunkt bietet nur {US_MODELS}. Wählen Sie eines dieser Modelle oder stellen Sie die Region auf Global um."
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The voice connection failed. Try again."
 msgstr "Die Sprachverbindung ist fehlgeschlagen. Versuche es erneut."
@@ -21943,10 +22984,22 @@ msgstr "den Windows-Benutzer"
 msgid "the winner"
 msgstr "der Gewinner"
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "The xAI API key couldn't be saved or removed on this device."
+msgstr "Der xAI-API-Schlüssel konnte auf diesem Gerät nicht gespeichert oder entfernt werden."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "The xAI response ended unexpectedly."
+msgstr "Die Antwort von xAI endete unerwartet."
+
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Theme"
 msgstr "Theme"
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Theme accent"
+msgstr "Theme-Akzent"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Theme and chat font size"
@@ -22012,6 +23065,10 @@ msgstr "Dieser Agent unterstützt den Import von Sitzungen nicht."
 msgid "This agent does not support the selected model options. Choose different options and try again."
 msgstr "Dieser Agent unterstützt die gewählten Modelloptionen nicht. Wähle andere Optionen und versuche es erneut."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "This agent is not installed, enabled and signed in for the project."
+msgstr "Dieser Agent ist für das Projekt nicht installiert, aktiviert und angemeldet."
+
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 msgid "This agent is not installed."
 msgstr "Dieser Agent ist nicht installiert."
@@ -22023,6 +23080,14 @@ msgstr "Dieser API-Schlüssel authentifiziert die SDK-Chats dieses Profils und s
 #: src/mobile/routeComponents.tsx
 #~ msgid "This app is served over HTTPS but the desktop is on plain HTTP, which browsers block. Open the pairing link directly from the desktop (LAN), or expose the desktop over HTTPS."
 #~ msgstr "Diese App wird über HTTPS bereitgestellt, aber der Desktop nutzt einfaches HTTP, das Browser blockieren. Öffne den Kopplungslink direkt vom Desktop (LAN), oder stelle den Desktop über HTTPS bereit."
+
+#: src/renderer/viscosity/bots/botAgentThread.ts
+msgid "This bot does not use an agent."
+msgstr "Dieser Bot verwendet keinen Agenten."
+
+#: src/renderer/viscosity/bots/botActions.ts
+msgid "This bot no longer exists."
+msgstr "Dieser Bot existiert nicht mehr."
 
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "This branch is already checked out in a worktree"
@@ -22061,6 +23126,10 @@ msgstr "Dies kann nicht rückgängig gemacht werden."
 #~ msgid "This catalog requires its own API key."
 #~ msgstr "Dieser Katalog benötigt einen eigenen API-Schlüssel."
 
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "This chat keeps its seat. Pick 1–4 more participants and how everyone takes turns. Approvals still come to you."
+msgstr "Dieser Chat behält seinen Platz. Wählen Sie 1–4 weitere Teilnehmer und wie sich alle abwechseln. Genehmigungen landen weiterhin bei Ihnen."
+
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "This code expires in {countdown}"
 msgstr "Dieser Code läuft in {countdown} ab"
@@ -22076,6 +23145,10 @@ msgstr "Diese Codex-Sitzung ist in einer anderen Codex-App geöffnet (Codex Desk
 #: src/renderer/i18n/sharedMessages.ts
 msgid "This comment changed while you were editing it. Refresh before saving."
 msgstr "Dieser Kommentar wurde während deiner Bearbeitung geändert. Aktualisiere ihn vor dem Speichern."
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
+msgid "This composer's model"
+msgstr "Das Modell dieses Composers"
 
 #: src/renderer/utils/machineLabels.ts
 #~ msgid "This computer"
@@ -22202,6 +23275,10 @@ msgstr "Dies ist ein großer Diff und wurde daher nicht geladen."
 #~ msgid "This key is used by Cursor CLI, ACP, and SDK for this profile."
 #~ msgstr "Dieser Schlüssel wird von Cursor CLI, ACP und SDK für dieses Profil verwendet."
 
+#: src/renderer/viscosity/roundtable/engine/driverRegistry.ts
+msgid "This kind of participant is not available in this window."
+msgstr "Diese Art von Teilnehmer ist in diesem Fenster nicht verfügbar."
+
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #~ msgid "This link opens the app Poracode serves on your network. The hosted app is served over HTTPS, which browsers block from reaching a plain-HTTP desktop."
 #~ msgstr "Dieser Link öffnet die App, die Poracode in deinem Netzwerk bereitstellt. Die gehostete App wird über HTTPS ausgeliefert, was Browser daran hindert, einen Desktop über einfaches HTTP zu erreichen."
@@ -22240,6 +23317,10 @@ msgstr "Diese Nachricht ist nicht mehr in der Warteschlange. Du kannst deinen be
 #~ msgid "This message was staged with the host. A recovery copy is saved on this device."
 #~ msgstr "Diese Nachricht wurde beim Host vorgemerkt. Eine Wiederherstellungskopie ist auf diesem Gerät gespeichert."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "This model is not served in the selected region."
+msgstr "Dieses Modell wird in der ausgewählten Region nicht angeboten."
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "This name is reserved by a built-in MCP server."
 msgstr "Dieser Name ist für einen integrierten MCP-Server reserviert."
@@ -22251,6 +23332,22 @@ msgstr "Die Integration für {forge} unterstützt diesen Vorgang nicht. Öffne d
 #: src/mobile/views/DesktopsView.tsx
 #~ msgid "This page is served over HTTPS, so the browser blocks it from reaching a desktop on plain HTTP. Continue on the desktop's own address to finish pairing there."
 #~ msgstr "Diese Seite wird über HTTPS ausgeliefert, daher blockiert der Browser den Zugriff auf einen Desktop über einfaches HTTP. Fahre auf der Adresse des Desktops fort, um die Kopplung dort abzuschließen."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "This participant is not an agent thread."
+msgstr "Dieser Teilnehmer ist kein Agenten-Thread."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "This participant is still answering."
+msgstr "Dieser Teilnehmer antwortet noch."
+
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "This participant left the Roundtable."
+msgstr "Dieser Teilnehmer hat den Roundtable verlassen."
+
+#: src/renderer/viscosity/roundtable/engine/threadDriver.ts
+msgid "This participant was closed."
+msgstr "Dieser Teilnehmer wurde geschlossen."
 
 #. placeholder {0}: deleteRun?.number
 #: src/renderer/views/GitHubActionsView/GitHubActionsView.tsx
@@ -22355,6 +23452,10 @@ msgstr "Diese eingereihte Folgenachricht wurde geändert. Öffne sie erneut, bev
 msgid "This queued follow-up is already being sent."
 msgstr "Diese eingereihte Nachfrage wird bereits gesendet."
 
+#: src/renderer/viscosity/roundtable/engine/runner.ts
+msgid "This racer could not be started."
+msgstr "Dieser Wettlauf-Teilnehmer konnte nicht gestartet werden."
+
 #: src/renderer/views/RemoteProjectModal/RemoteProjectModal.tsx
 #~ msgid "This remote project is unavailable. Reconnect the environment and try again."
 #~ msgstr "Dieses Remote-Projekt ist nicht verfügbar. Verbinden Sie die Umgebung erneut und versuchen Sie es noch einmal."
@@ -22403,6 +23504,18 @@ msgstr "Für diese Anfrage gibt es keine passende dauerhafte Genehmigung. Wähle
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
 msgid "This review watch uses an unsupported source-scope version. Update the app before changing it."
 msgstr "Diese Review-Überwachung verwendet eine nicht unterstützte Quellbereichsversion. Aktualisiere die App, bevor du sie änderst."
+
+#: src/renderer/viscosity/roundtable/api.ts
+msgid "This Roundtable has ended. Start a new one to continue."
+msgstr "Dieser Roundtable ist beendet. Starten Sie einen neuen, um fortzufahren."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
+msgid "This Roundtable is not available. It may have been deleted."
+msgstr "Dieser Roundtable ist nicht verfügbar. Er wurde möglicherweise gelöscht."
+
+#: src/renderer/viscosity/roundtable/api.ts
+msgid "This Roundtable no longer exists."
+msgstr "Dieser Roundtable existiert nicht mehr."
 
 #: src/renderer/i18n/sharedMessages.ts
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
@@ -22467,6 +23580,10 @@ msgstr "Diese SVG-Datei kann nicht angezeigt werden."
 msgid "This system-wide shortcut is unavailable. Choose another key combination."
 msgstr "Diese systemweite Tastenkombination ist nicht verfügbar. Wähle eine andere Tastenkombination."
 
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "This system's secure credential storage isn't available, so the key can't be saved. Set the XAI_API_KEY environment variable instead."
+msgstr "Der sichere Anmeldedatenspeicher dieses Systems ist nicht verfügbar, daher kann der Schlüssel nicht gespeichert werden. Setzen Sie stattdessen die Umgebungsvariable XAI_API_KEY."
+
 #: src/renderer/components/thread/ThreadComposerSection.tsx
 msgid "This thread cannot be resumed. Start a new thread to continue."
 msgstr "Dieser Thread kann nicht fortgesetzt werden. Starte einen neuen Thread, um fortzufahren."
@@ -22512,6 +23629,10 @@ msgstr "Dieser Thread wurde als Fork erstellt, ohne Kontext zu übertragen: {age
 #: src/renderer/i18n/sharedMessages.ts
 msgid "This transcript is not in the agent's session store."
 msgstr "Dieses Transkript liegt nicht im Sitzungsspeicher des Agenten."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "This turn failed."
+msgstr "Dieser Durchgang ist fehlgeschlagen."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "This version of Muse Code does not support session goals. Update Muse Code and try again."
@@ -22578,6 +23699,10 @@ msgstr "Dieser Workflow kann nicht manuell gestartet werden."
 #: src/renderer/views/MainView/parts/PullFromSourceDialog.tsx
 msgid "This worktree has local changes. Poracode can temporarily stash them, pull from {0}, then re-apply your changes."
 msgstr "Dieser Worktree weist lokale Änderungen auf. Poracode kann sie vorübergehend stashen, von {0} pullen und Ihre Änderungen dann erneut anwenden."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "This xAI API key isn't allowed to use that model or feature."
+msgstr "Dieser xAI-API-Schlüssel darf dieses Modell oder diese Funktion nicht verwenden."
 
 #: src/renderer/components/thread/ChatPane/parts/items/Reasoning.tsx
 #: src/renderer/components/thread/ChatPane/parts/items/ReasoningInline.tsx
@@ -22761,6 +23886,8 @@ msgstr "Die Zeitüberschreitung muss eine positive ganze Zahl sein."
 
 #: src/renderer/components/common/FeedbackDialog.tsx
 #: src/renderer/views/PullRequestsOverlay/detail/PrTitleBlock.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Title"
 msgstr "Titel"
 
@@ -22773,6 +23900,10 @@ msgstr "Titelgenerierung"
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Title, commit, and conflict models"
 msgstr "Modelle für Titel, Commit und Konflikte"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "to {to}"
+msgstr "an {to}"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/NotesPanel/TodoList.tsx
 msgid "To-dos"
@@ -22858,6 +23989,10 @@ msgstr "Tokens von {0}"
 msgid "Told not to edit files. Not enforced."
 msgstr "Angewiesen, keine Dateien zu bearbeiten. Nicht erzwungen."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Too long."
+msgstr "Zu lang."
+
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "Too many HTML previews in this message. Showing source only."
 msgstr "Zu viele HTML-Vorschauen in dieser Nachricht. Es wird nur der Quelltext angezeigt."
@@ -22873,6 +24008,10 @@ msgstr "Es laufen zu viele Remote-Anfragen. Versuchen Sie es gleich noch einmal.
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisual.tsx
 msgid "Too many visuals in this message. Showing source only."
 msgstr "Zu viele Visualisierungen in dieser Nachricht. Es wird nur der Quelltext angezeigt."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Too many xAI requests are running at once. Wait for one to finish."
+msgstr "Zu viele xAI-Anfragen laufen gleichzeitig. Warten Sie, bis eine abgeschlossen ist."
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Tool"
@@ -22944,6 +24083,10 @@ msgstr "Tracking und Anzeige"
 #: src/renderer/components/composer/VoiceInputButton.tsx
 msgid "Transcribing voice"
 msgstr "Stimme wird transkribiert"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Transcript"
+msgstr "Transkript"
 
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 msgid "Transcription"
@@ -23598,6 +24741,11 @@ msgstr "Deinstallieren"
 msgid "Uninstall {name}"
 msgstr "{name} deinstallieren"
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "United States only (us.api.x.ai)"
+msgstr "Nur USA (us.api.x.ai)"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 #: src/renderer/components/thread/threadContextUsage.ts
 #: src/renderer/utils/prStatus.ts
@@ -23611,6 +24759,10 @@ msgstr "Unbekannt"
 msgid "Unknown folder"
 msgstr "Unbekannter Ordner"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Unknown participant"
+msgstr "Unbekannter Teilnehmer"
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/LocalPortsPanel.tsx
 msgid "Unknown process"
 msgstr "Unbekannter Prozess"
@@ -23623,6 +24775,10 @@ msgstr "Unbekannter Prozess"
 #: src/renderer/components/providers/UsageProviderCardView.tsx
 msgid "Unlimited"
 msgstr "Unbegrenzt"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Unlimited: the chat runs until you stop it."
+msgstr "Unbegrenzt: Der Chat läuft, bis Sie ihn stoppen."
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
@@ -23745,6 +24901,11 @@ msgstr "Ohne Titel"
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Unverified"
 msgstr "Unbestätigt"
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Up next"
+msgstr "Als Nächstes"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileHostFolderPicker.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostFolderPicker.tsx
@@ -24039,6 +25200,10 @@ msgstr "URL ist erforderlich."
 msgid "URL or deep link"
 msgstr "URL oder Deep Link"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "US only"
+msgstr "Nur USA"
+
 #: src/renderer/components/layout/PanelDock/panelTabMeta.ts
 #: src/renderer/components/mobileComposer/ComposerInfoChips.tsx
 #: src/renderer/components/newsLine/useNewsLineItems.tsx
@@ -24200,6 +25365,10 @@ msgstr "Live-Vorschau verwenden"
 msgid "Use lowercase letters, numbers, and hyphens."
 msgstr "Kleinbuchstaben, Zahlen und Bindestriche verwenden."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Use one emoji or up to two letters."
+msgstr "Verwenden Sie ein Emoji oder bis zu zwei Buchstaben."
+
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/WorktreeSettings.tsx
 msgid "Use one global folder, or nest worktrees inside each project at .poracode/worktrees."
@@ -24290,6 +25459,11 @@ msgstr "Wird für Agenten, Authentifizierung, Installationen und interne Befehle
 msgid "Used for new interactive Terminal-panel sessions."
 msgstr "Wird für neue interaktive Sitzungen im Terminal-Panel verwendet."
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "Used only by Grok bots. Kept in the desktop app's main process, never in pages."
+msgstr "Wird nur von Grok-Bots verwendet. Bleibt im Hauptprozess der Desktop-App, niemals in Seiten."
+
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 #~ msgid "Used when no provider is specified. Explicit Crossagents usage ranks first, followed by favorites, normal agent usage, and built-in order."
 #~ msgstr "Wird verwendet, wenn kein Anbieter angegeben ist. Explizite Crossagents-Nutzung steht an erster Stelle, gefolgt von Favoriten, normaler Agent-Nutzung und integrierter Reihenfolge."
@@ -24314,9 +25488,21 @@ msgstr "Benutzername"
 msgid "Uses Devin's own login on this machine. Sign in or out from the base Devin page — it stays the single global login."
 msgstr "Verwendet Devis eigenen Login auf dieser Maschine. Melden Sie sich auf der Devin-Basisseite an oder ab — er bleibt der einzige globale Login."
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "Uses your xAI API key, which stays in the desktop app's main process."
+msgstr "Verwendet Ihren xAI-API-Schlüssel, der im Hauptprozess der Desktop-App bleibt."
+
 #: src/renderer/components/providers/settings/ClaudeProfileSettings.tsx
 msgid "Using the built-in Claude model list."
 msgstr "Die integrierte Claude-Modellliste wird verwendet."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over a saved key."
+msgstr "XAI_API_KEY aus der Umgebung wird verwendet ({hint}). Diese hat Vorrang vor einem gespeicherten Schlüssel."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
+msgstr "XAI_API_KEY aus der Umgebung wird verwendet. Diese hat Vorrang vor einem gespeicherten Schlüssel."
 
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Using your existing Hex installation. Poracode will not modify it."
@@ -24498,6 +25684,7 @@ msgid "Viewport width"
 msgstr "Breite des Ansichtsbereichs"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Violet"
 msgstr "Violett"
 
@@ -24665,6 +25852,10 @@ msgstr "Warten auf das Gerät…"
 msgid "Waiting for workflow to spawn agents…"
 msgstr "Warten, bis der Workflow Agenten erzeugt …"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Waiting for your approval"
+msgstr "Wartet auf Ihre Genehmigung"
+
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Wake up"
 msgstr "Aufwachen"
@@ -24719,8 +25910,15 @@ msgstr "Warnungen"
 msgid "We have a winner!"
 msgstr "Wir haben einen Gewinner!"
 
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "We use pnpm and Vitest. Prefer small pull requests."
+msgstr "Wir verwenden pnpm und Vitest. Wir bevorzugen kleine Pull Requests."
+
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 #: src/renderer/components/thread/ChatPane/parts/items/webSearchDisplay.ts
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Web search"
 msgstr "Websuche"
 
@@ -24785,10 +25983,22 @@ msgstr "Was soll geändert werden? (optional)"
 #~ msgid "What should the remote agent work on?"
 #~ msgstr "Woran soll der Remote-Agent arbeiten?"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "What should the table work on?"
+msgstr "Woran soll die Runde arbeiten?"
+
+#: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+msgid "What should they work on?"
+msgstr "Woran sollen sie arbeiten?"
+
 #: src/renderer/views/SettingsOverlay/parts/GitSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "What the Create PR button does by default: open a dialog to edit the title and description first, or auto-generate them and create the PR in one click. You can also switch this from the button's menu."
 msgstr "Was die Schaltfläche „PR erstellen“ standardmäßig bewirkt: Öffnen Sie ein Dialogfeld, um zuerst den Titel und die Beschreibung zu bearbeiten, oder generieren Sie sie automatisch und erstellen Sie die PR mit einem Klick. Sie können dies auch über das Menü der Schaltfläche ändern."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "What this bot does and how it answers"
+msgstr "Was dieser Bot tut und wie er antwortet"
 
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "What this server provides"
@@ -24850,6 +26060,11 @@ msgstr "Wohin eine Browser-Element-Auswahl in terminal-nativen Threads geht. Ein
 msgid "Where do you want to begin?"
 msgstr "Wo möchten Sie beginnen?"
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "Where new Grok bots send requests. The US endpoint serves text models only."
+msgstr "Wohin neue Grok-Bots Anfragen senden. Der US-Endpunkt bietet nur Textmodelle."
+
 #: src/renderer/views/SettingsOverlay/parts/WorktreeSettings.tsx
 msgid "Where Poracode creates git worktrees for new branches. Changes apply to worktrees created from now on; existing worktrees stay where they are."
 msgstr "Wo Poracode Git-Worktrees für neue Branches erstellt. Änderungen gelten für ab jetzt erstellte Worktrees; vorhandene Worktrees bleiben, wo sie sind."
@@ -24901,6 +26116,10 @@ msgstr "Windows-Shells"
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 msgid "Winner merged."
 msgstr "Gewinner zusammengeführt."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Winner: <0>{winnerName}</0>"
+msgstr "Gewinner: <0>{winnerName}</0>"
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "With Hex, recordings are sent to your connected Poracode host for processing, not to a cloud transcription service. Recordings are limited to five minutes."
@@ -24996,6 +26215,7 @@ msgstr "Workflows, die unter .github/workflows hinzugefügt werden, erscheinen h
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Working"
 msgstr "Arbeiten"
 
@@ -25013,6 +26233,7 @@ msgstr "Arbeitsverzeichnis sauber"
 
 #: src/renderer/components/thread/ChatPane/ChatTurnElapsed.tsx
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentMessageList.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Working…"
 msgstr "Arbeiten…"
 
@@ -25021,12 +26242,19 @@ msgstr "Arbeiten…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarProjectFilter.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
 #: src/renderer/views/SettingsOverlay/parts/WorkspacesSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
 msgid "Workspace"
 msgstr "Arbeitsbereich"
 
 #: src/renderer/views/ProjectSettingsOverlay/parts/McpSection.tsx
 msgid "Workspace MCP servers override user servers with the same name and are added only when agents start in this project."
 msgstr "MCP-Server des Arbeitsbereichs überschreiben gleichnamige Benutzerserver und werden nur hinzugefügt, wenn Agenten in diesem Projekt starten."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Workspace project"
+msgstr "Arbeitsbereich-Projekt"
 
 #: src/renderer/views/MainView/parts/MobileWorkspacePage.tsx
 msgid "Workspace view"
@@ -25186,6 +26414,61 @@ msgstr "Die WSL-Bridge für die Quellverwaltung ist nicht verfügbar."
 #~ msgid "WSL: {distro}"
 #~ msgstr "WSL: {distro}"
 
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "X search"
+msgstr "X-Suche"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+#: src/renderer/viscosity/bots/settings/botsSettingsSearch.ts
+msgid "xAI API key"
+msgstr "xAI-API-Schlüssel"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "xAI API key removed from this device."
+msgstr "xAI-API-Schlüssel von diesem Gerät entfernt."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "xAI API key saved."
+msgstr "xAI-API-Schlüssel gespeichert."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI couldn't find that model on this endpoint."
+msgstr "xAI konnte dieses Modell an diesem Endpunkt nicht finden."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI couldn't finish the response."
+msgstr "xAI konnte die Antwort nicht abschließen."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI didn't accept the API key. Check the key in Settings or XAI_API_KEY."
+msgstr "xAI hat den API-Schlüssel nicht akzeptiert. Prüfen Sie den Schlüssel in den Einstellungen oder in XAI_API_KEY."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI didn't respond in time."
+msgstr "xAI hat nicht rechtzeitig geantwortet."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI is having trouble right now. Try again shortly."
+msgstr "Bei xAI gibt es gerade Probleme. Versuchen Sie es in Kürze erneut."
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI rate limit reached. Try again in a moment."
+msgstr "xAI-Ratenlimit erreicht. Versuchen Sie es gleich noch einmal."
+
+#: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+msgid "xAI region"
+msgstr "xAI-Region"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "xAI region for participant {seatNumber}"
+msgstr "xAI-Region für Teilnehmer {seatNumber}"
+
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "xAI rejected the request."
+msgstr "xAI hat die Anfrage abgelehnt."
+
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/StructuredElicitationField.tsx
 msgid "Yes"
 msgstr "Ja"
@@ -25217,6 +26500,10 @@ msgstr "Gestern: {prompts, plural, one {# Prompt} other {# Prompts}} · {compact
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "Yesterday: {prompts, plural, one {# prompt} other {# prompts}} · led by {topProvider} ({topProviderPercent}%)"
 msgstr "Gestern: {prompts, plural, one {# Prompt} other {# Prompts}} · angeführt von {topProvider} ({topProviderPercent}%)"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "You"
+msgstr "Sie"
 
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "You coded across {count} connected environments this week"
@@ -25256,6 +26543,10 @@ msgstr "Sie sind am aktivsten gegen {hourLabel}"
 msgid "You're on the latest version"
 msgstr "Die neueste Version ist installiert"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "your bots"
+msgstr "Ihre Bots"
+
 #: src/renderer/views/PullRequestsOverlay/detail/header/usePrCheckout.ts
 #~ msgid "Your local branch {branch} cannot be fast-forwarded to this pull request's head, so no worktree was created and nothing was changed. To keep its commits and start over, run \"git branch -m {branch} {branch}-old\", then try again."
 #~ msgstr "Dein lokaler Branch {branch} kann nicht per Fast-Forward auf den Head dieses Pull Requests gesetzt werden. Es wurde daher kein Worktree erstellt und nichts geändert. Um seine Commits zu behalten und neu anzufangen, führe \"git branch -m {branch} {branch}-old\" aus und versuche es dann erneut."
@@ -25291,6 +26582,10 @@ msgstr "Ihre längste Aufgabe lief {duration}"
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "Your longest task yesterday ran {duration}"
 msgstr "Deine längste Aufgabe gestern dauerte {duration}"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
+msgid "Your message"
+msgstr "Ihre Nachricht"
 
 #: src/renderer/views/PullRequestsOverlay/chat/usePrAskChatSession.ts
 msgid "Your message was not sent: the chat thread is no longer available."
