@@ -614,6 +614,10 @@ msgstr "{count, plural, one {# exécution de sous-agent} other {# exécutions de
 msgid "{count, plural, one {# subagent run} other {# subagent runs}} this week (+{deltaPercent}%)"
 msgstr "{count, plural, one {# exécution de sous-agent} other {# exécutions de sous-agents}} cette semaine (+{deltaPercent}%)"
 
+#: src/renderer/fx/agentState/ToolsRunningStatusItem.tsx
+msgid "{count, plural, one {# tool running} other {# tools running}}"
+msgstr "{count, plural, one {# outil en cours d'exécution} other {# outils en cours d'exécution}}"
+
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "{count, plural, one {# workflow run} other {# workflow runs}} this week"
 msgstr "{count, plural, one {# exécution de workflow} other {# exécutions de workflows}} cette semaine"
@@ -669,6 +673,10 @@ msgstr "{filteredCount} / {totalCount} correspondances"
 #: src/renderer/components/thread/AgentDiscoveryScreen.tsx
 msgid "{foundCount, plural, one {# agent found} other {# agents found}}"
 msgstr "{foundCount, plural, one {# agent trouvé} other {# agents trouvés}}"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{fps} fps"
+msgstr "{fps} fps"
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "{head}, or {tail}"
@@ -976,6 +984,10 @@ msgstr "{usedLabel} / {maxLabel} jetons"
 msgid "{usedLabel} tokens"
 msgstr "{usedLabel} jetons"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{value} px"
+msgstr "{value} px"
+
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesFileTree.tsx
 msgid "{viewedCount} of {totalCount} viewed"
 msgstr "{viewedCount} sur {totalCount} vus"
@@ -1234,6 +1246,11 @@ msgstr "5 fichiers · 10 Mo chacun"
 msgid "7d"
 msgstr "7 j"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A brief flash when an agent hits an error."
+msgstr "Un bref flash lorsqu'un agent rencontre une erreur."
+
 #: src/renderer/actions/experimentDecisionActions.ts
 #: src/renderer/actions/experimentWorktreeActions.ts
 msgid "A candidate is no longer on its experiment branch."
@@ -1307,6 +1324,16 @@ msgstr "Un serveur porte un nom que Poracode ne peut pas utiliser."
 #: src/renderer/components/plugins/pluginCopy.ts
 msgid "A server is not configured correctly and was skipped."
 msgstr "Un serveur n'est pas configuré correctement et a été ignoré."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A short animation when an agent finishes its turn."
+msgstr "Une courte animation lorsqu'un agent termine son tour."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A soft pulse while an agent is reasoning."
+msgstr "Une pulsation douce pendant qu'un agent raisonne."
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "a supported coding agent"
@@ -1889,9 +1916,18 @@ msgstr "Agent"
 msgid "Agent ({subagent}): {description}"
 msgstr "Agent ({subagent}) : {description}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Agent activity"
+msgstr "Activité des agents"
+
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 msgid "Agent chat (ACP / markdown). Command rows use this size minus 1 px; tool and plan lines minus 2 px."
 msgstr "Chat d'agent (ACP / markdown). Les lignes de commande utilisent cette taille moins 1 px ; les lignes d'outil et de plan moins 2 px."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Agent effects"
+msgstr "Effets des agents"
 
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -2246,6 +2282,10 @@ msgstr "Un agent peut lire la description et les modifications et répondre à v
 msgid "An agent is fixing this PR."
 msgstr "Un agent corrige cette PR."
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "An animated backdrop behind the app, drawn under translucent panels."
+msgstr "Un arrière-plan animé derrière l'application, dessiné sous des panneaux translucides."
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 #~ msgid "An exact platform fails visibly when this Devin organization has no cloud machines of that kind."
 #~ msgstr "Une plateforme exacte échoue de manière visible lorsque cette organisation Devin ne possède aucune machine cloud de ce type."
@@ -2269,6 +2309,15 @@ msgstr "Un enquêteur trouve la cause racine, et un correcteur livre le correcti
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "An MCP server with this name already exists."
 msgstr "Un serveur MCP portant ce nom existe déjà."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Animated background"
+msgstr "Arrière-plan animé"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Animated background and live agent effects. Saved on this device."
+msgstr "Arrière-plan animé et effets d'agents en direct. Enregistré sur cet appareil."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Another automation is already using this conversation."
@@ -2640,6 +2689,11 @@ msgstr "Tentative"
 msgid "Attempt {0} · Iteration {1}"
 msgstr "Tentative {0} · Itération {1}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Attention color when an agent needs you"
+msgstr "Couleur d'attention lorsqu'un agent a besoin de vous"
+
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
@@ -2657,6 +2711,10 @@ msgstr "Aperçu audio"
 #: src/renderer/components/composer/VoiceInputFeedback.tsx
 msgid "Audio settings"
 msgstr "paramètres audio"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Aurora grid"
+msgstr "Grille aurore"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Authenticate"
@@ -2935,9 +2993,15 @@ msgstr "Retour aux plugins"
 msgid "Back to Thread Info"
 msgstr "Retour aux informations du fil"
 
+#. Settings → Effects group heading
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/CustomThemePalette.tsx
 msgid "Background"
 msgstr "Arrière-plan"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background intensity"
+msgstr "Intensité de l'arrière-plan"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process exited unexpectedly"
@@ -2950,6 +3014,10 @@ msgstr "Le processus en arrière-plan n'est pas en cours d'exécution"
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process restarted"
 msgstr "Processus en arrière-plan redémarré"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background style"
+msgstr "Style de l'arrière-plan"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Background task"
@@ -3010,6 +3078,11 @@ msgstr "Sortie Bash"
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Basic (CLI)"
 msgstr "De base (CLI)"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Battery saver"
+msgstr "Économie de batterie"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Behind base"
@@ -3168,6 +3241,11 @@ msgstr "Les règles de protection des branches ont bloqué cette fusion."
 #: src/renderer/components/common/BranchSelector/parts/BranchListBox.tsx
 msgid "Branches"
 msgstr "Branches"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Brightness, contrast, and speed of the background."
+msgstr "Luminosité, contraste et vitesse de l'arrière-plan."
 
 #: src/renderer/views/MainView/parts/AppContent/parts/ThreadWindowPlaceholder.tsx
 msgid "Bring back to main window"
@@ -4972,6 +5050,11 @@ msgstr "Terminé"
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisualBlocks.tsx
 msgid "Completed: {0} / {1}"
 msgstr "Terminé : {0} / {1}"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Completion animation"
+msgstr "Animation de fin"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "Completion condition not confirmed"
@@ -7487,6 +7570,11 @@ msgstr "Faites glisser pour réorganiser ; double-cliquez pour modifier"
 msgid "Draggable model"
 msgstr "Modèle déplaçable"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Draw a slow, animated backdrop behind the app's panels."
+msgstr "Dessine un arrière-plan animé et lent derrière les panneaux de l'application."
+
 #: src/renderer/views/SettingsOverlay/parts/MobileHostFolderPicker.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostFolderPicker.tsx
 msgid "Drives"
@@ -7690,6 +7778,21 @@ msgstr "Onglets de l'éditeur"
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Edits the paired desktop and syncs back to it."
 msgstr "Modifie l'ordinateur associé et resynchronise avec lui."
+
+#. Settings section: animated background and live agent effects
+#. Settings section: animated background and live agent effects
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+msgid "Effects"
+msgstr "Effets"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Effects show only in the desktop layout of the main window, so they are off here. Your choices still apply wherever this device shows that layout."
+msgstr "Les effets ne s'affichent que dans la disposition bureau de la fenêtre principale ; ils sont donc désactivés ici. Vos choix s'appliquent toujours partout où cet appareil affiche cette disposition."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Effects that show what each agent is doing on its thread, its tab, and the background."
+msgstr "Effets qui montrent ce que fait chaque agent sur son fil de discussion, son onglet et l'arrière-plan."
 
 #: src/renderer/views/RemoteProjectModal/RemoteProjectModal.tsx
 #~ msgid "Effort"
@@ -8018,6 +8121,11 @@ msgstr "Erreur"
 #: src/renderer/notifications.ts
 msgid "Error · Agent encountered an error"
 msgstr "Erreur · L'agent a rencontré une erreur"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Error flash"
+msgstr "Flash d'erreur"
 
 #: src/renderer/components/mobileComposer/ComposerInfoChips.tsx
 msgid "Errors"
@@ -9092,6 +9200,11 @@ msgstr "{0, plural, one {# compétence importable trouvée} other {# compétence
 msgid "Found a signed-in {0} session."
 msgstr "Session {0} connectée trouvée."
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Frame-rate cap"
+msgstr "Limite d'images par seconde"
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Framed preview"
 msgstr "Aperçu encadré"
@@ -9453,6 +9566,10 @@ msgstr "Compris"
 msgid "Grade {0}"
 msgstr "Note {0}"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Gradient mesh"
+msgstr "Maillage en dégradé"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Grant"
 msgstr "Accorder"
@@ -9533,6 +9650,11 @@ msgstr "identifiant"
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 msgid "Handle"
 msgstr "Identifiant"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Handled by your notification settings (Needs Attention), so you never get the same alert twice."
+msgstr "Géré par vos paramètres de notification (A besoin d'attention), pour que vous ne receviez jamais deux fois la même alerte."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Hard Reload"
@@ -9773,6 +9895,16 @@ msgstr "Masquer les modifications d'espaces"
 msgid "High"
 msgstr "Élevé"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highest frame rate for the background. Lower values use less power."
+msgstr "Fréquence d'images maximale de l'arrière-plan. Des valeurs plus basses consomment moins d'énergie."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highlights threads that are waiting for your approval or reply."
+msgstr "Met en évidence les fils de discussion qui attendent votre approbation ou votre réponse."
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "History"
 msgstr "Historique"
@@ -9890,6 +10022,16 @@ msgstr "Heures"
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "How moving works"
 msgstr "Fonctionnement du déplacement"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How much the background is blurred behind panels."
+msgstr "Intensité du flou appliqué à l'arrière-plan derrière les panneaux."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How solid panels look over the background. Lower shows more of it."
+msgstr "Opacité des panneaux par-dessus l'arrière-plan. Plus bas laisse davantage transparaître l'arrière-plan."
 
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "HTML preview"
@@ -10677,6 +10819,11 @@ msgstr "Instructions"
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 msgid "Instructions agents follow when choosing which agent or model to delegate to."
 msgstr "Instructions que les agents suivent pour choisir à quel agent ou modèle déléguer."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Intensity"
+msgstr "Intensité"
 
 #: src/renderer/components/devices/LiveDevicePreview.tsx
 msgid "Interactive device preview. Tab moves to the next control; Escape closes the workspace."
@@ -11877,6 +12024,11 @@ msgstr "Sources du marché"
 #: src/renderer/components/plugins/PluginCatalogBrowser.tsx
 msgid "Marketplace URL or local path"
 msgstr "URL du marketplace ou chemin local"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Marks threads that are running a tool or command."
+msgstr "Signale les fils de discussion qui exécutent un outil ou une commande."
 
 #: src/renderer/i18n/locales.ts
 msgid "Match app language"
@@ -13953,6 +14105,11 @@ msgstr "Notifier pour les fils de discussion CLI L2"
 msgid "Notify me about"
 msgstr "M'avertir de"
 
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Notify me when an agent needs approval while the window is in the background"
+msgstr "M'avertir lorsqu'un agent a besoin d'une approbation pendant que la fenêtre est en arrière-plan"
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "npx"
 msgstr "npx"
@@ -13973,12 +14130,19 @@ msgstr "Observé"
 msgid "off"
 msgstr "Désactivé"
 
+#. Effects settings: approval notifications are off
 #: src/renderer/components/git/PrAutomationSlider.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/RemoteAccessSidebarIcon.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Off"
 msgstr "Désactivé"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Off by default, so the background keeps animating even with Reduce Motion on in macOS or animation effects off in Windows."
+msgstr "Désactivé par défaut, pour que l'arrière-plan reste animé même si Réduire les animations est activé dans macOS ou si les effets d'animation sont désactivés dans Windows."
 
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
 msgid "Official"
@@ -14019,6 +14183,8 @@ msgstr "Plus anciens d'abord"
 msgid "on"
 msgstr "sur"
 
+#. Effects settings: approval notifications are on
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "On"
@@ -14378,6 +14544,10 @@ msgstr "Ouvrir un nouvel onglet"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Open new threads as a full page or a side-by-side panel."
 msgstr "Ouvrez les nouveaux fils de discussion sous forme de page entière ou de panneau côte à côte."
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Open notification settings"
+msgstr "Ouvrir les paramètres de notification"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
@@ -14908,6 +15078,16 @@ msgstr "Mode de palette"
 msgid "Panel"
 msgstr "Panneau"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel blur"
+msgstr "Flou des panneaux"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel opacity"
+msgstr "Opacité des panneaux"
+
 #: src/renderer/commands/shortcutCatalog.ts
 msgid "Panels and overlays"
 msgstr "Panneaux et superpositions"
@@ -14944,6 +15124,10 @@ msgstr "Partiel"
 #: src/renderer/views/SettingsOverlay/parts/VisibilityCheckIndicator.tsx
 msgid "Partially checked"
 msgstr "Partiellement coché"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Particle field"
+msgstr "Champ de particules"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Passed"
@@ -15075,6 +15259,16 @@ msgstr "Mettre l'objectif en pause"
 #: src/renderer/components/newsLine/NewsLine.tsx
 msgid "Pause news"
 msgstr "Mettre en pause les actualités"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the system asks to reduce motion"
+msgstr "Mettre en pause lorsque le système demande de réduire les animations"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the window is not focused"
+msgstr "Mettre en pause lorsque la fenêtre n'est pas active"
 
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentToolCall.tsx
 #: src/renderer/components/thread/ThreadFollowUpQueue.tsx
@@ -17300,8 +17494,10 @@ msgstr "Renvoyer le dernier message"
 msgid "reset"
 msgstr "réinitialiser"
 
+#. Button: reset effects settings to defaults
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 msgid "Reset"
 msgstr "Réinitialiser"
 
@@ -17316,6 +17512,11 @@ msgstr "Réinitialiser la liste"
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
 msgid "Reset context windows"
 msgstr "Réinitialiser les fenêtres de contexte"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Reset effects to defaults"
+msgstr "Réinitialiser les effets par défaut"
 
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisual.tsx
 msgid "Reset inputs"
@@ -17461,6 +17662,11 @@ msgstr "Restaurer le navigateur"
 #: src/renderer/views/SettingsOverlay/parts/WorktreeBaseFolderField.tsx
 msgid "Restore default worktree base folder"
 msgstr "Restaurer le dossier de base par défaut des arbres de travail"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Restore every background and agent effect setting on this device."
+msgstr "Restaure tous les réglages de l'arrière-plan et des effets d'agents sur cet appareil."
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Restore or delete"
@@ -19321,6 +19527,11 @@ msgstr "Afficher dans le dossier"
 msgid "Show less"
 msgstr "Afficher moins"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Show live effects for what agents are doing. Turn off to hide them all."
+msgstr "Affiche des effets en direct selon ce que font les agents. Désactivez pour tous les masquer."
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Show MCP servers from {providerLabel}"
 msgstr "Afficher les serveurs MCP de {providerLabel}"
@@ -19731,6 +19942,11 @@ msgstr "Ignorés par Crossagents : {0}"
 #: src/renderer/components/thread/ThreadCommandPanel.tsx
 msgid "Slash commands"
 msgstr "Commandes slash"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Slow the background down on battery power and stop it when the battery is low."
+msgstr "Ralentit l'arrière-plan sur batterie et l'arrête lorsque la batterie est faible."
 
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Small"
@@ -20253,6 +20469,11 @@ msgstr "Arrêter {label}"
 msgid "Stop and move"
 msgstr "Arrêter et déplacer"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Stop animating while you work in another app."
+msgstr "Arrête l'animation pendant que vous travaillez dans une autre application."
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/PortsPanel.tsx
 msgid "Stop forwarding"
 msgstr "Arrêter le transfert"
@@ -20332,9 +20553,19 @@ msgstr "Enregistré sur cet appareil ; l’ordinateur conserve ses propres valeu
 #~ msgid "Stored on this phone; the desktop keeps its own values."
 #~ msgstr "Stocké sur ce téléphone ; l'ordinateur conserve ses propres valeurs."
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Streaming energy"
+msgstr "Énergie de diffusion"
+
 #: src/renderer/components/providers/settings/CursorProviderSettings.tsx
 msgid "Structured runtime"
 msgstr "Environnement d’exécution structuré"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Style"
+msgstr "Style"
 
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 msgid "Sub-agent and planning defaults. They override config.toml and apply when a Codex session starts; running sessions keep their current values."
@@ -21012,6 +21243,11 @@ msgstr "L’automatisation a besoin d’une réponse avant de pouvoir continuer.
 msgid "The automation needs approval before it can continue."
 msgstr "L’automatisation a besoin d’une approbation avant de pouvoir continuer."
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The background picks up while an agent streams a reply."
+msgstr "L'arrière-plan s'anime davantage pendant qu'un agent diffuse une réponse."
+
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #~ msgid "the base branch"
 #~ msgstr "la branche de base"
@@ -21043,6 +21279,11 @@ msgstr "le dossier choisi"
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "The completion check failed; the schedule was paused."
 msgstr "La vérification de fin a échoué ; la tâche planifiée a été suspendue."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The composer glows softly while you type."
+msgstr "Le compositeur s'illumine doucement pendant que vous tapez."
 
 #: src/renderer/speech/hexVoice.ts
 msgid "The connected Poracode host is unavailable. Reconnect and try again."
@@ -21286,6 +21527,11 @@ msgstr "l’utilisateur Linux"
 #: src/renderer/components/providers/devin/sessionListings.tsx
 msgid "The listing could not be read."
 msgstr "Impossible de lire la liste."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The look of the animated background."
+msgstr "L'apparence de l'arrière-plan animé."
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the macOS user"
@@ -21747,6 +21993,11 @@ msgstr "Ces serveurs proviennent de plugins. Activez-les ou désactivez-les dans
 #: src/renderer/components/thread/ThreadComposer.tsx
 msgid "Thinking"
 msgstr "Réflexion"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Thinking glow"
+msgstr "Lueur de réflexion"
 
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "This agent cannot run completion checks. Choose another agent or remove the stop condition."
@@ -22626,6 +22877,11 @@ msgstr "Trop de visuels dans ce message. Seul le code source est affiché."
 msgid "Tool"
 msgstr "Outil"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Tool activity indicator"
+msgstr "Indicateur d'activité des outils"
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Tool restrictions cannot be imported"
 msgstr "Les restrictions d’outils ne peuvent pas être importées"
@@ -22825,6 +23081,11 @@ msgstr "Saisissez votre réponse…"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
 msgstr "Police de l'interface de l'application ; le code conserve sa police à chasse fixe. Enregistrée sur cet appareil."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Typing glow"
+msgstr "Lueur de saisie"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts

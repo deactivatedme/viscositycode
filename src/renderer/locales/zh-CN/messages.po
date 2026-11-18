@@ -614,6 +614,10 @@ msgstr "本周子代理运行 {count, plural, one {# 次} other {# 次}} (-{delt
 msgid "{count, plural, one {# subagent run} other {# subagent runs}} this week (+{deltaPercent}%)"
 msgstr "本周子代理运行 {count, plural, one {# 次} other {# 次}} (+{deltaPercent}%)"
 
+#: src/renderer/fx/agentState/ToolsRunningStatusItem.tsx
+msgid "{count, plural, one {# tool running} other {# tools running}}"
+msgstr "{count, plural, one {# 个工具正在运行} other {# 个工具正在运行}}"
+
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "{count, plural, one {# workflow run} other {# workflow runs}} this week"
 msgstr "本周工作流运行 {count, plural, one {# 次} other {# 次}}"
@@ -669,6 +673,10 @@ msgstr "{filteredCount}/{totalCount} 项匹配"
 #: src/renderer/components/thread/AgentDiscoveryScreen.tsx
 msgid "{foundCount, plural, one {# agent found} other {# agents found}}"
 msgstr "{foundCount, plural, one {已找到 # 个代理} other {已找到 # 个代理}}"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{fps} fps"
+msgstr "{fps} fps"
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "{head}, or {tail}"
@@ -976,6 +984,10 @@ msgstr "{usedLabel}/{maxLabel} 令牌"
 msgid "{usedLabel} tokens"
 msgstr "{usedLabel} 令牌"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{value} px"
+msgstr "{value} px"
+
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesFileTree.tsx
 msgid "{viewedCount} of {totalCount} viewed"
 msgstr "已查看 {viewedCount}/{totalCount}"
@@ -1234,6 +1246,11 @@ msgstr "5 个文件 · 每个 10 MB"
 msgid "7d"
 msgstr "7天"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A brief flash when an agent hits an error."
+msgstr "智能体出错时短暂闪烁。"
+
 #: src/renderer/actions/experimentDecisionActions.ts
 #: src/renderer/actions/experimentWorktreeActions.ts
 msgid "A candidate is no longer on its experiment branch."
@@ -1307,6 +1324,16 @@ msgstr "某个服务器的名称是 Poracode 无法使用的。"
 #: src/renderer/components/plugins/pluginCopy.ts
 msgid "A server is not configured correctly and was skipped."
 msgstr "某个服务器配置不正确，已跳过。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A short animation when an agent finishes its turn."
+msgstr "智能体完成当前轮次时播放简短动画。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A soft pulse while an agent is reasoning."
+msgstr "智能体推理时显示柔和的脉动。"
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "a supported coding agent"
@@ -1889,9 +1916,18 @@ msgstr "智能体"
 msgid "Agent ({subagent}): {description}"
 msgstr "代理 ({subagent})：{description}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Agent activity"
+msgstr "智能体活动"
+
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 msgid "Agent chat (ACP / markdown). Command rows use this size minus 1 px; tool and plan lines minus 2 px."
 msgstr "代理聊天（ACP / markdown）。命令行使用此大小减去 1 像素；工具和计划线减去 2 像素。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Agent effects"
+msgstr "智能体效果"
 
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -2246,6 +2282,10 @@ msgstr "智能体可以阅读描述和更改内容，并回答你的问题。"
 msgid "An agent is fixing this PR."
 msgstr "代理正在修复此 PR。"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "An animated backdrop behind the app, drawn under translucent panels."
+msgstr "应用后方的动态背景，绘制在半透明面板之下。"
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 #~ msgid "An exact platform fails visibly when this Devin organization has no cloud machines of that kind."
 #~ msgstr "当该 Devin 组织没有此类云端机器时，指定确切平台会明显失败。"
@@ -2269,6 +2309,15 @@ msgstr "调查者找出根本原因，修复者落地修复并附回归测试。
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "An MCP server with this name already exists."
 msgstr "已存在同名的 MCP 服务器。"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Animated background"
+msgstr "动态背景"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Animated background and live agent effects. Saved on this device."
+msgstr "动态背景和实时智能体效果。保存在此设备上。"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Another automation is already using this conversation."
@@ -2640,6 +2689,11 @@ msgstr "尝试次数"
 msgid "Attempt {0} · Iteration {1}"
 msgstr "尝试 {0} · 迭代 {1}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Attention color when an agent needs you"
+msgstr "智能体需要你时的提醒颜色"
+
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
@@ -2657,6 +2711,10 @@ msgstr "音频预览"
 #: src/renderer/components/composer/VoiceInputFeedback.tsx
 msgid "Audio settings"
 msgstr "音频设置"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Aurora grid"
+msgstr "极光网格"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Authenticate"
@@ -2935,9 +2993,15 @@ msgstr "返回插件"
 msgid "Back to Thread Info"
 msgstr "返回线程信息"
 
+#. Settings → Effects group heading
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/CustomThemePalette.tsx
 msgid "Background"
 msgstr "背景"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background intensity"
+msgstr "背景强度"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process exited unexpectedly"
@@ -2950,6 +3014,10 @@ msgstr "后台进程未运行"
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process restarted"
 msgstr "后台进程重新启动"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background style"
+msgstr "背景样式"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Background task"
@@ -3010,6 +3078,11 @@ msgstr "bash 输出"
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Basic (CLI)"
 msgstr "基本（CLI）"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Battery saver"
+msgstr "省电模式"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Behind base"
@@ -3168,6 +3241,11 @@ msgstr "分支保护规则阻止了这次合并。"
 #: src/renderer/components/common/BranchSelector/parts/BranchListBox.tsx
 msgid "Branches"
 msgstr "分支"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Brightness, contrast, and speed of the background."
+msgstr "背景的亮度、对比度和速度。"
 
 #: src/renderer/views/MainView/parts/AppContent/parts/ThreadWindowPlaceholder.tsx
 msgid "Bring back to main window"
@@ -4972,6 +5050,11 @@ msgstr "已完成"
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisualBlocks.tsx
 msgid "Completed: {0} / {1}"
 msgstr "已完成：{0} / {1}"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Completion animation"
+msgstr "完成动画"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "Completion condition not confirmed"
@@ -7487,6 +7570,11 @@ msgstr "拖动即可重新排序；双击进行编辑"
 msgid "Draggable model"
 msgstr "可拖动的模型"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Draw a slow, animated backdrop behind the app's panels."
+msgstr "在应用面板后方绘制缓慢流动的动态背景。"
+
 #: src/renderer/views/SettingsOverlay/parts/MobileHostFolderPicker.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostFolderPicker.tsx
 msgid "Drives"
@@ -7690,6 +7778,21 @@ msgstr "编辑器选项卡"
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Edits the paired desktop and syncs back to it."
 msgstr "编辑已配对桌面并同步回去。"
+
+#. Settings section: animated background and live agent effects
+#. Settings section: animated background and live agent effects
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+msgid "Effects"
+msgstr "效果"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Effects show only in the desktop layout of the main window, so they are off here. Your choices still apply wherever this device shows that layout."
+msgstr "效果仅在主窗口的桌面布局中显示，因此此处已关闭。在此设备上显示该布局时，你的选择仍会生效。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Effects that show what each agent is doing on its thread, its tab, and the background."
+msgstr "在线程、选项卡和背景上显示每个智能体当前活动的效果。"
 
 #: src/renderer/views/RemoteProjectModal/RemoteProjectModal.tsx
 #~ msgid "Effort"
@@ -8018,6 +8121,11 @@ msgstr "错误"
 #: src/renderer/notifications.ts
 msgid "Error · Agent encountered an error"
 msgstr "错误 · 代理遇到错误"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Error flash"
+msgstr "错误闪烁"
 
 #: src/renderer/components/mobileComposer/ComposerInfoChips.tsx
 msgid "Errors"
@@ -9092,6 +9200,11 @@ msgstr "找到 {0, plural, one {# 个可导入技能} other {# 个可导入技�
 msgid "Found a signed-in {0} session."
 msgstr "找到已登录的{0}会话。"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Frame-rate cap"
+msgstr "帧率上限"
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Framed preview"
 msgstr "带框预览"
@@ -9453,6 +9566,10 @@ msgstr "知道了"
 msgid "Grade {0}"
 msgstr "等级 {0}"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Gradient mesh"
+msgstr "渐变网格"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Grant"
 msgstr "授予"
@@ -9533,6 +9650,11 @@ msgstr "用户名"
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 msgid "Handle"
 msgstr "用户名"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Handled by your notification settings (Needs Attention), so you never get the same alert twice."
+msgstr "由通知设置（需要注意）处理，因此同一提醒不会重复出现。"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Hard Reload"
@@ -9773,6 +9895,16 @@ msgstr "隐藏空白变更"
 msgid "High"
 msgstr "高"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highest frame rate for the background. Lower values use less power."
+msgstr "背景的最高帧率。数值越低越省电。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highlights threads that are waiting for your approval or reply."
+msgstr "突出显示等待你批准或回复的线程。"
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "History"
 msgstr "历史记录"
@@ -9890,6 +10022,16 @@ msgstr "小时"
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "How moving works"
 msgstr "移动的工作方式"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How much the background is blurred behind panels."
+msgstr "面板后方背景的模糊程度。"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How solid panels look over the background. Lower shows more of it."
+msgstr "面板在背景之上的不透明程度。数值越低，背景透出越多。"
 
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "HTML preview"
@@ -10677,6 +10819,11 @@ msgstr "指令"
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 msgid "Instructions agents follow when choosing which agent or model to delegate to."
 msgstr "代理在选择要委派给哪个代理或模型时遵循的说明。"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Intensity"
+msgstr "强度"
 
 #: src/renderer/components/devices/LiveDevicePreview.tsx
 msgid "Interactive device preview. Tab moves to the next control; Escape closes the workspace."
@@ -11877,6 +12024,11 @@ msgstr "市场来源"
 #: src/renderer/components/plugins/PluginCatalogBrowser.tsx
 msgid "Marketplace URL or local path"
 msgstr "市场 URL 或本地路径"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Marks threads that are running a tool or command."
+msgstr "标记正在运行工具或命令的线程。"
 
 #: src/renderer/i18n/locales.ts
 msgid "Match app language"
@@ -13953,6 +14105,11 @@ msgstr "通知 L2 CLI 线程"
 msgid "Notify me about"
 msgstr "通知我有关"
 
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Notify me when an agent needs approval while the window is in the background"
+msgstr "窗口在后台时，如果智能体需要批准则通知我"
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "npx"
 msgstr "npx"
@@ -13973,12 +14130,19 @@ msgstr "已观察"
 msgid "off"
 msgstr "关闭"
 
+#. Effects settings: approval notifications are off
 #: src/renderer/components/git/PrAutomationSlider.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/RemoteAccessSidebarIcon.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Off"
 msgstr "关闭"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Off by default, so the background keeps animating even with Reduce Motion on in macOS or animation effects off in Windows."
+msgstr "默认关闭，因此即使在 macOS 中开启了“减弱动态效果”或在 Windows 中关闭了动画效果，背景仍会继续播放动画。"
 
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
 msgid "Official"
@@ -14019,6 +14183,8 @@ msgstr "最早优先"
 msgid "on"
 msgstr "开"
 
+#. Effects settings: approval notifications are on
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "On"
@@ -14378,6 +14544,10 @@ msgstr "打开新选项卡"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Open new threads as a full page or a side-by-side panel."
 msgstr "以整页或并排面板的形式打开新线程。"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Open notification settings"
+msgstr "打开通知设置"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
@@ -14908,6 +15078,16 @@ msgstr "配色模式"
 msgid "Panel"
 msgstr "面板"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel blur"
+msgstr "面板模糊"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel opacity"
+msgstr "面板不透明度"
+
 #: src/renderer/commands/shortcutCatalog.ts
 msgid "Panels and overlays"
 msgstr "面板和覆盖层"
@@ -14944,6 +15124,10 @@ msgstr "部分"
 #: src/renderer/views/SettingsOverlay/parts/VisibilityCheckIndicator.tsx
 msgid "Partially checked"
 msgstr "部分选中"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Particle field"
+msgstr "粒子场"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Passed"
@@ -15075,6 +15259,16 @@ msgstr "暂停目标"
 #: src/renderer/components/newsLine/NewsLine.tsx
 msgid "Pause news"
 msgstr "暂停新闻"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the system asks to reduce motion"
+msgstr "系统要求减弱动态效果时暂停"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the window is not focused"
+msgstr "窗口未聚焦时暂停"
 
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentToolCall.tsx
 #: src/renderer/components/thread/ThreadFollowUpQueue.tsx
@@ -17300,8 +17494,10 @@ msgstr "重新发送上一条消息"
 msgid "reset"
 msgstr "重置"
 
+#. Button: reset effects settings to defaults
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 msgid "Reset"
 msgstr "重置"
 
@@ -17316,6 +17512,11 @@ msgstr "重置清单"
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
 msgid "Reset context windows"
 msgstr "重置上下文窗口"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Reset effects to defaults"
+msgstr "将效果重置为默认值"
 
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisual.tsx
 msgid "Reset inputs"
@@ -17461,6 +17662,11 @@ msgstr "恢复浏览器"
 #: src/renderer/views/SettingsOverlay/parts/WorktreeBaseFolderField.tsx
 msgid "Restore default worktree base folder"
 msgstr "恢复默认工作树基础文件夹"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Restore every background and agent effect setting on this device."
+msgstr "恢复此设备上的所有背景和智能体效果设置。"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Restore or delete"
@@ -19321,6 +19527,11 @@ msgstr "在文件夹中显示"
 msgid "Show less"
 msgstr "显示较少"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Show live effects for what agents are doing. Turn off to hide them all."
+msgstr "为智能体的当前活动显示实时效果。关闭即可全部隐藏。"
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Show MCP servers from {providerLabel}"
 msgstr "显示 {providerLabel} 的 MCP 服务器"
@@ -19731,6 +19942,11 @@ msgstr "被 Crossagents 跳过：{0}"
 #: src/renderer/components/thread/ThreadCommandPanel.tsx
 msgid "Slash commands"
 msgstr "斜杠命令"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Slow the background down on battery power and stop it when the battery is low."
+msgstr "使用电池供电时放慢背景动画，电量不足时停止。"
 
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Small"
@@ -20253,6 +20469,11 @@ msgstr "停止 {label}"
 msgid "Stop and move"
 msgstr "停止并移动"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Stop animating while you work in another app."
+msgstr "在其他应用中工作时停止动画。"
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/PortsPanel.tsx
 msgid "Stop forwarding"
 msgstr "停止转发"
@@ -20332,9 +20553,19 @@ msgstr "存储在此设备上；桌面端保留自己的设置值。"
 #~ msgid "Stored on this phone; the desktop keeps its own values."
 #~ msgstr "存储在这部手机上；桌面保留自己的值。"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Streaming energy"
+msgstr "流式输出能量"
+
 #: src/renderer/components/providers/settings/CursorProviderSettings.tsx
 msgid "Structured runtime"
 msgstr "结构化运行时"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Style"
+msgstr "样式"
 
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 msgid "Sub-agent and planning defaults. They override config.toml and apply when a Codex session starts; running sessions keep their current values."
@@ -21012,6 +21243,11 @@ msgstr "自动化需要回复才能继续。"
 msgid "The automation needs approval before it can continue."
 msgstr "自动化需要批准才能继续。"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The background picks up while an agent streams a reply."
+msgstr "智能体流式输出回复时，背景会变得更加活跃。"
+
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #~ msgid "the base branch"
 #~ msgstr "基准分支"
@@ -21043,6 +21279,11 @@ msgstr "所选文件夹"
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "The completion check failed; the schedule was paused."
 msgstr "完成检查失败，计划任务已暂停。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The composer glows softly while you type."
+msgstr "输入时输入框会发出柔和的光晕。"
 
 #: src/renderer/speech/hexVoice.ts
 msgid "The connected Poracode host is unavailable. Reconnect and try again."
@@ -21286,6 +21527,11 @@ msgstr "Linux 用户"
 #: src/renderer/components/providers/devin/sessionListings.tsx
 msgid "The listing could not be read."
 msgstr "无法读取列表。"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The look of the animated background."
+msgstr "动态背景的外观。"
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the macOS user"
@@ -21747,6 +21993,11 @@ msgstr "这些服务器来自插件。请在「插件」中启用或禁用，此
 #: src/renderer/components/thread/ThreadComposer.tsx
 msgid "Thinking"
 msgstr "思考"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Thinking glow"
+msgstr "思考光晕"
 
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "This agent cannot run completion checks. Choose another agent or remove the stop condition."
@@ -22626,6 +22877,11 @@ msgstr "此消息中的可视化内容过多。仅显示源代码。"
 msgid "Tool"
 msgstr "工具"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Tool activity indicator"
+msgstr "工具活动指示器"
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Tool restrictions cannot be imported"
 msgstr "无法导入工具限制"
@@ -22825,6 +23081,11 @@ msgstr "输入你的回答…"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
 msgstr "应用界面使用的字体；代码仍使用等宽字体。保存在此设备上。"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Typing glow"
+msgstr "输入光晕"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts

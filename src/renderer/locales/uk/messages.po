@@ -614,6 +614,10 @@ msgstr "{count, plural, one {# запуск субагента} few {# запу�
 msgid "{count, plural, one {# subagent run} other {# subagent runs}} this week (+{deltaPercent}%)"
 msgstr "{count, plural, one {# запуск субагента} few {# запуски субагентів} many {# запусків субагентів} other {# запуску субагентів}} за тиждень (+{deltaPercent}%)"
 
+#: src/renderer/fx/agentState/ToolsRunningStatusItem.tsx
+msgid "{count, plural, one {# tool running} other {# tools running}}"
+msgstr "{count, plural, one {# інструмент виконується} few {# інструменти виконуються} many {# інструментів виконуються} other {# інструмента виконується}}"
+
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "{count, plural, one {# workflow run} other {# workflow runs}} this week"
 msgstr "{count, plural, one {# запуск workflow} few {# запуски workflow} many {# запусків workflow} other {# запуску workflow}} за тиждень"
@@ -669,6 +673,10 @@ msgstr "Збігів: {filteredCount} / {totalCount}"
 #: src/renderer/components/thread/AgentDiscoveryScreen.tsx
 msgid "{foundCount, plural, one {# agent found} other {# agents found}}"
 msgstr "{foundCount, plural, one {Знайдено # агент} few {Знайдено # агенти} many {Знайдено # агентів} other {Знайдено # агентів}}"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{fps} fps"
+msgstr "{fps} fps"
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "{head}, or {tail}"
@@ -976,6 +984,10 @@ msgstr "{usedLabel} / {maxLabel} токенів"
 msgid "{usedLabel} tokens"
 msgstr "{usedLabel} токенів"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "{value} px"
+msgstr "{value} px"
+
 #: src/renderer/views/PullRequestsOverlay/changes/ChangesFileTree.tsx
 msgid "{viewedCount} of {totalCount} viewed"
 msgstr "Переглянуто {viewedCount} з {totalCount}"
@@ -1234,6 +1246,11 @@ msgstr "5 файлів · до 10 МБ кожен"
 msgid "7d"
 msgstr "7 дн"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A brief flash when an agent hits an error."
+msgstr "Короткий спалах, коли агент стикається з помилкою."
+
 #: src/renderer/actions/experimentDecisionActions.ts
 #: src/renderer/actions/experimentWorktreeActions.ts
 msgid "A candidate is no longer on its experiment branch."
@@ -1307,6 +1324,16 @@ msgstr "Сервер має ім'я, яке Poracode не може викори�
 #: src/renderer/components/plugins/pluginCopy.ts
 msgid "A server is not configured correctly and was skipped."
 msgstr "Сервер налаштовано неправильно, його пропущено."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A short animation when an agent finishes its turn."
+msgstr "Коротка анімація, коли агент завершує свій хід."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "A soft pulse while an agent is reasoning."
+msgstr "М’яка пульсація, поки агент міркує."
 
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "a supported coding agent"
@@ -1889,9 +1916,18 @@ msgstr "Агент"
 msgid "Agent ({subagent}): {description}"
 msgstr "Агент ({subagent}): {description}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Agent activity"
+msgstr "Активність агентів"
+
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 msgid "Agent chat (ACP / markdown). Command rows use this size minus 1 px; tool and plan lines minus 2 px."
 msgstr "Чат агента (ACP / markdown). Рядки команд використовують цей розмір мінус 1 px; рядки інструментів і планів — мінус 2 px."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Agent effects"
+msgstr "Ефекти агентів"
 
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -2246,6 +2282,10 @@ msgstr "Агент може прочитати опис і зміни та ві�
 msgid "An agent is fixing this PR."
 msgstr "Агент виправляє цей PR."
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "An animated backdrop behind the app, drawn under translucent panels."
+msgstr "Анімоване тло позаду застосунку, що відображається під напівпрозорими панелями."
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 #~ msgid "An exact platform fails visibly when this Devin organization has no cloud machines of that kind."
 #~ msgstr "Вибір точної платформи завершується видимою помилкою, якщо в цій організації Devin немає хмарних машин такого типу."
@@ -2269,6 +2309,15 @@ msgstr "Слідчий знаходить першопричину, а випр�
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "An MCP server with this name already exists."
 msgstr "Сервер MCP із такою назвою вже існує."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Animated background"
+msgstr "Анімоване тло"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Animated background and live agent effects. Saved on this device."
+msgstr "Анімоване тло та живі ефекти агентів. Зберігається на цьому пристрої."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Another automation is already using this conversation."
@@ -2640,6 +2689,11 @@ msgstr "Спроба"
 msgid "Attempt {0} · Iteration {1}"
 msgstr "Спроба {0} · Ітерація {1}"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Attention color when an agent needs you"
+msgstr "Колір уваги, коли агент чекає на вас"
+
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
@@ -2657,6 +2711,10 @@ msgstr "Попередній перегляд аудіо"
 #: src/renderer/components/composer/VoiceInputFeedback.tsx
 msgid "Audio settings"
 msgstr "Налаштування аудіо"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Aurora grid"
+msgstr "Сітка полярного сяйва"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Authenticate"
@@ -2935,9 +2993,15 @@ msgstr "Назад до плагінів"
 msgid "Back to Thread Info"
 msgstr "Назад до інформації про потік"
 
+#. Settings → Effects group heading
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/CustomThemePalette.tsx
 msgid "Background"
 msgstr "Тло"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background intensity"
+msgstr "Інтенсивність тла"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process exited unexpectedly"
@@ -2950,6 +3014,10 @@ msgstr "Фоновий процес не запущено"
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process restarted"
 msgstr "Фоновий процес перезапущено"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Background style"
+msgstr "Стиль тла"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Background task"
@@ -3010,6 +3078,11 @@ msgstr "Вивід Bash"
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 msgid "Basic (CLI)"
 msgstr "Базовий (CLI)"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Battery saver"
+msgstr "Економія заряду"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Behind base"
@@ -3168,6 +3241,11 @@ msgstr "Правила захисту гілки заблокували це з�
 #: src/renderer/components/common/BranchSelector/parts/BranchListBox.tsx
 msgid "Branches"
 msgstr "Гілки"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Brightness, contrast, and speed of the background."
+msgstr "Яскравість, контрастність і швидкість тла."
 
 #: src/renderer/views/MainView/parts/AppContent/parts/ThreadWindowPlaceholder.tsx
 msgid "Bring back to main window"
@@ -4972,6 +5050,11 @@ msgstr "Завершено"
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisualBlocks.tsx
 msgid "Completed: {0} / {1}"
 msgstr "Виконано: {0} / {1}"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Completion animation"
+msgstr "Анімація завершення"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "Completion condition not confirmed"
@@ -7487,6 +7570,11 @@ msgstr "Перетягніть для зміни порядку; подвійн�
 msgid "Draggable model"
 msgstr "Модель для перетягування"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Draw a slow, animated backdrop behind the app's panels."
+msgstr "Показувати повільне анімоване тло позаду панелей застосунку."
+
 #: src/renderer/views/SettingsOverlay/parts/MobileHostFolderPicker.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostFolderPicker.tsx
 msgid "Drives"
@@ -7690,6 +7778,21 @@ msgstr "Вкладки редактора"
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Edits the paired desktop and syncs back to it."
 msgstr "Змінює підключений десктоп і синхронізує назад до нього."
+
+#. Settings section: animated background and live agent effects
+#. Settings section: animated background and live agent effects
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
+msgid "Effects"
+msgstr "Ефекти"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Effects show only in the desktop layout of the main window, so they are off here. Your choices still apply wherever this device shows that layout."
+msgstr "Ефекти відображаються лише в десктопному макеті головного вікна, тому тут вони вимкнені. Ваш вибір і надалі діє скрізь, де цей пристрій показує цей макет."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+msgid "Effects that show what each agent is doing on its thread, its tab, and the background."
+msgstr "Ефекти, які показують, чим зайнятий кожен агент, — у його треді, на його вкладці та на тлі."
 
 #: src/renderer/views/RemoteProjectModal/RemoteProjectModal.tsx
 #~ msgid "Effort"
@@ -8018,6 +8121,11 @@ msgstr "Помилка"
 #: src/renderer/notifications.ts
 msgid "Error · Agent encountered an error"
 msgstr "Помилка · Агент зіткнувся з помилкою"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Error flash"
+msgstr "Спалах помилки"
 
 #: src/renderer/components/mobileComposer/ComposerInfoChips.tsx
 msgid "Errors"
@@ -9092,6 +9200,11 @@ msgstr "Знайдено {0, plural, one {# навичку для імпорту
 msgid "Found a signed-in {0} session."
 msgstr "Знайдено сесію {0} з виконаним входом."
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Frame-rate cap"
+msgstr "Обмеження частоти кадрів"
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Framed preview"
 msgstr "Попередній перегляд у рамці"
@@ -9453,6 +9566,10 @@ msgstr "Зрозуміло"
 msgid "Grade {0}"
 msgstr "Оцінка {0}"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Gradient mesh"
+msgstr "Градієнтна сітка"
+
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Grant"
 msgstr "Надати"
@@ -9533,6 +9650,11 @@ msgstr "нік"
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
 msgid "Handle"
 msgstr "Нік"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Handled by your notification settings (Needs Attention), so you never get the same alert twice."
+msgstr "Керується налаштуваннями сповіщень («Потребує уваги»), тож ви ніколи не отримаєте те саме сповіщення двічі."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Hard Reload"
@@ -9773,6 +9895,16 @@ msgstr "Сховати зміни пробілів"
 msgid "High"
 msgstr "Високий"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highest frame rate for the background. Lower values use less power."
+msgstr "Максимальна частота кадрів для тла. Менші значення споживають менше енергії."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Highlights threads that are waiting for your approval or reply."
+msgstr "Виділяє треди, що очікують на ваше підтвердження або відповідь."
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "History"
 msgstr "Історія"
@@ -9890,6 +10022,16 @@ msgstr "Години"
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "How moving works"
 msgstr "Як працює перенесення"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How much the background is blurred behind panels."
+msgstr "Наскільки сильно розмивається тло за панелями."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "How solid panels look over the background. Lower shows more of it."
+msgstr "Наскільки щільними виглядають панелі поверх тла. Нижче значення — більше видно тло."
 
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "HTML preview"
@@ -10677,6 +10819,11 @@ msgstr "Інструкції"
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 msgid "Instructions agents follow when choosing which agent or model to delegate to."
 msgstr "Інструкції, яких дотримуються агенти, обираючи, якому агенту чи моделі делегувати."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Intensity"
+msgstr "Інтенсивність"
 
 #: src/renderer/components/devices/LiveDevicePreview.tsx
 msgid "Interactive device preview. Tab moves to the next control; Escape closes the workspace."
@@ -11877,6 +12024,11 @@ msgstr "Джерела маркетплейсу"
 #: src/renderer/components/plugins/PluginCatalogBrowser.tsx
 msgid "Marketplace URL or local path"
 msgstr "URL маркетплейсу або локальний шлях"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Marks threads that are running a tool or command."
+msgstr "Позначає треди, у яких виконується інструмент або команда."
 
 #: src/renderer/i18n/locales.ts
 msgid "Match app language"
@@ -13954,6 +14106,11 @@ msgstr "Сповіщати про треди CLI рівня L2"
 msgid "Notify me about"
 msgstr "Сповіщати мене про"
 
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Notify me when an agent needs approval while the window is in the background"
+msgstr "Сповіщати мене, коли агенту потрібне підтвердження, а вікно перебуває у фоні"
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "npx"
 msgstr "npx"
@@ -13974,12 +14131,19 @@ msgstr "Спостережено"
 msgid "off"
 msgstr "вимк"
 
+#. Effects settings: approval notifications are off
 #: src/renderer/components/git/PrAutomationSlider.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/RemoteAccessSidebarIcon.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Off"
 msgstr "Вимк."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Off by default, so the background keeps animating even with Reduce Motion on in macOS or animation effects off in Windows."
+msgstr "За замовчуванням вимкнено, тож тло продовжує анімуватися, навіть якщо в macOS увімкнено «Зменшення руху» або в Windows вимкнено «Ефекти анімації»."
 
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
 msgid "Official"
@@ -14020,6 +14184,8 @@ msgstr "Спочатку старі"
 msgid "on"
 msgstr "увімк"
 
+#. Effects settings: approval notifications are on
+#: src/renderer/fx/settings/EffectsSettings.tsx
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "On"
@@ -14379,6 +14545,10 @@ msgstr "Відкрити нову вкладку"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Open new threads as a full page or a side-by-side panel."
 msgstr "Відкривати нові треди як повну сторінку або панель поруч."
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+msgid "Open notification settings"
+msgstr "Відкрити налаштування сповіщень"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
@@ -14909,6 +15079,16 @@ msgstr "Режим палітри"
 msgid "Panel"
 msgstr "Панель"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel blur"
+msgstr "Розмиття панелей"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Panel opacity"
+msgstr "Непрозорість панелей"
+
 #: src/renderer/commands/shortcutCatalog.ts
 msgid "Panels and overlays"
 msgstr "Панелі та накладання"
@@ -14945,6 +15125,10 @@ msgstr "Частково"
 #: src/renderer/views/SettingsOverlay/parts/VisibilityCheckIndicator.tsx
 msgid "Partially checked"
 msgstr "Частково позначено"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+msgid "Particle field"
+msgstr "Поле частинок"
 
 #: src/renderer/utils/prStatus.ts
 msgid "Passed"
@@ -15076,6 +15260,16 @@ msgstr "Призупинити мету"
 #: src/renderer/components/newsLine/NewsLine.tsx
 msgid "Pause news"
 msgstr "Призупинити новини"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the system asks to reduce motion"
+msgstr "Призупиняти, коли система просить зменшити рух"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Pause when the window is not focused"
+msgstr "Призупиняти, коли вікно не у фокусі"
 
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentToolCall.tsx
 #: src/renderer/components/thread/ThreadFollowUpQueue.tsx
@@ -17301,8 +17495,10 @@ msgstr "Надіслати останнє повідомлення повтор�
 msgid "reset"
 msgstr "скидання"
 
+#. Button: reset effects settings to defaults
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
+#: src/renderer/fx/settings/EffectsSettings.tsx
 msgid "Reset"
 msgstr "Скинути"
 
@@ -17317,6 +17513,11 @@ msgstr "Скинути список"
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
 msgid "Reset context windows"
 msgstr "Скинути контекстні вікна"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Reset effects to defaults"
+msgstr "Скинути ефекти до значень за замовчуванням"
 
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisual.tsx
 msgid "Reset inputs"
@@ -17462,6 +17663,11 @@ msgstr "Відновити браузер"
 #: src/renderer/views/SettingsOverlay/parts/WorktreeBaseFolderField.tsx
 msgid "Restore default worktree base folder"
 msgstr "Відновити базову папку worktree за замовчуванням"
+
+#: src/renderer/fx/settings/EffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Restore every background and agent effect setting on this device."
+msgstr "Відновити всі налаштування тла та ефектів агентів на цьому пристрої."
 
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Restore or delete"
@@ -19322,6 +19528,11 @@ msgstr "Показати в папці"
 msgid "Show less"
 msgstr "Показати менше"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Show live effects for what agents are doing. Turn off to hide them all."
+msgstr "Показувати живі ефекти того, чим зайняті агенти. Вимкніть, щоб приховати їх усі."
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Show MCP servers from {providerLabel}"
 msgstr "Показати MCP-сервери з {providerLabel}"
@@ -19732,6 +19943,11 @@ msgstr "Пропускаються Crossagents: {0}"
 #: src/renderer/components/thread/ThreadCommandPanel.tsx
 msgid "Slash commands"
 msgstr "Slash-команди"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Slow the background down on battery power and stop it when the battery is low."
+msgstr "Сповільнювати тло під час роботи від батареї та зупиняти його, коли заряд низький."
 
 #: src/renderer/components/devices/DeviceTools.tsx
 msgid "Small"
@@ -20254,6 +20470,11 @@ msgstr "Зупинити {label}"
 msgid "Stop and move"
 msgstr "Зупинити й перенести"
 
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Stop animating while you work in another app."
+msgstr "Зупиняти анімацію, поки ви працюєте в іншому застосунку."
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/PortsPanel.tsx
 msgid "Stop forwarding"
 msgstr "Зупинити переспрямування"
@@ -20333,9 +20554,19 @@ msgstr "Зберігається на цьому пристрої; на комп
 #~ msgid "Stored on this phone; the desktop keeps its own values."
 #~ msgstr "Збережено на цьому телефоні; десктоп зберігає власні значення."
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Streaming energy"
+msgstr "Енергія потоку"
+
 #: src/renderer/components/providers/settings/CursorProviderSettings.tsx
 msgid "Structured runtime"
 msgstr "Структуроване середовище виконання"
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Style"
+msgstr "Стиль"
 
 #: src/renderer/components/providers/settings/CodexAdvancedSettings.tsx
 msgid "Sub-agent and planning defaults. They override config.toml and apply when a Codex session starts; running sessions keep their current values."
@@ -21013,6 +21244,11 @@ msgstr "Для продовження автоматизації потрібн�
 msgid "The automation needs approval before it can continue."
 msgstr "Для продовження автоматизації потрібне схвалення."
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The background picks up while an agent streams a reply."
+msgstr "Тло пожвавлюється, поки агент виводить відповідь."
+
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #~ msgid "the base branch"
 #~ msgstr "базову гілку"
@@ -21044,6 +21280,11 @@ msgstr "обрана папка"
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "The completion check failed; the schedule was paused."
 msgstr "Перевірка завершення не вдалася; розклад призупинено."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The composer glows softly while you type."
+msgstr "Поле вводу м’яко світиться, поки ви друкуєте."
 
 #: src/renderer/speech/hexVoice.ts
 msgid "The connected Poracode host is unavailable. Reconnect and try again."
@@ -21287,6 +21528,11 @@ msgstr "користувача Linux"
 #: src/renderer/components/providers/devin/sessionListings.tsx
 msgid "The listing could not be read."
 msgstr "Не вдалося прочитати список."
+
+#: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "The look of the animated background."
+msgstr "Вигляд анімованого тла."
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the macOS user"
@@ -21748,6 +21994,11 @@ msgstr "Ці сервери надходять із плагінів. Увімк
 #: src/renderer/components/thread/ThreadComposer.tsx
 msgid "Thinking"
 msgstr "Міркування"
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Thinking glow"
+msgstr "Світіння під час міркування"
 
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "This agent cannot run completion checks. Choose another agent or remove the stop condition."
@@ -22627,6 +22878,11 @@ msgstr "У цьому повідомленні забагато візуаліз
 msgid "Tool"
 msgstr "Інструмент"
 
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Tool activity indicator"
+msgstr "Індикатор роботи інструментів"
+
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Tool restrictions cannot be imported"
 msgstr "Обмеження інструментів неможливо імпортувати"
@@ -22826,6 +23082,11 @@ msgstr "Введіть відповідь…"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Typeface for the app interface; code keeps its monospace font. Saved on this device."
 msgstr "Шрифт інтерфейсу застосунку; код і далі відображається моноширинним шрифтом. Зберігається на цьому пристрої."
+
+#: src/renderer/fx/settings/AgentEffectsSettings.tsx
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+msgid "Typing glow"
+msgstr "Світіння під час набору тексту"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
