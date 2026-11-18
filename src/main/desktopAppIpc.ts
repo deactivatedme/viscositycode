@@ -15,6 +15,7 @@ import { registerSideChatWindowIpc } from "./window/sideChatWindows";
 import { registerThreadWindowIpc } from "./window/threadWindows";
 // ViscosityCode: fork-owned xAI (Grok API) channels, main process only.
 import { registerViscosityXaiIpc } from "./viscosity/xai/registerXaiIpc";
+import { registerViscosityThemeFetchIpc } from "./viscosity/themeFetch/registerThemeFetchIpc"; // ViscosityCode:
 import { QuickComposerShortcutManager } from "./quickComposerShortcut";
 import type { AutoUpdaterController } from "./updates/autoUpdater";
 import type { BackendHostClient } from "./backend/BackendHostClient";
@@ -75,6 +76,7 @@ export function registerDesktopIpc(deps: DesktopIpcDeps): void {
   });
   // ViscosityCode: xAI client channels (viscosity:xai:*), outside the procedure map.
   registerViscosityXaiIpc();
+  registerViscosityThemeFetchIpc(); // ViscosityCode: theme import from an https link (viscosity:theme:fetch).
 
   registerSideChatWindowIpc({
     getMainWindow: () => desktopApp.mainWindow,

@@ -153,13 +153,13 @@ describe("dialog Header producer admission", () => {
     // Include saved run details, browser editors, model-provider management,
     // native and HTML inline visuals, marketplace sources, device settings, Hex management,
     // feedback, plan review, and thread moves.
-    // ViscosityCode: + 4 unmarked Modal headers (Roundtable setup and invite, bot editor,
-    // bot group chat).
-    expect(sites).toHaveLength(55);
-    expect(sites.filter((site) => site.family === "Modal")).toHaveLength(50);
+    // ViscosityCode: + 6 unmarked Modal headers (Roundtable setup and invite, bot editor,
+    // bot group chat, theme import from a URL, Smart start preferences).
+    expect(sites).toHaveLength(57);
+    expect(sites.filter((site) => site.family === "Modal")).toHaveLength(52);
     expect(sites.filter((site) => site.family === "AlertDialog")).toHaveLength(5);
     expect(sites.filter((site) => site.marked)).toHaveLength(6);
-    expect(sites.filter((site) => !site.marked)).toHaveLength(49);
+    expect(sites.filter((site) => !site.marked)).toHaveLength(51);
   });
 
   it.each([
