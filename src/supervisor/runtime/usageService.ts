@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { readFile, writeFile } from "node:fs/promises";
 import {
   allUsageProviderDescriptors,
@@ -10,6 +11,8 @@ import { coalesceByKey } from "@/shared/coalesce";
 import type { ProviderUsagePayload, ProviderUsageResponse } from "@/shared/contracts";
 import type { SupervisorEvent } from "@/shared/ipc";
 import { defaultSharedSettings, type SharedSettings, type UsageSettings } from "@/shared/settings";
+// ViscosityCode: pooled accounts that are off only by the built-in default are collected.
+import { usageCollectionDisabledProviders } from "@/shared/accountPoolUsage";
 import { readUsageProfileSources } from "./usageProfileRegistry";
 import { UsageProfileCacheIdentities } from "./usageProfileCache";
 import type { UsageProfileCollector, UsageProfileSource } from "./usageProfileTypes";
@@ -213,7 +216,11 @@ export class UsageService {
       });
     }
     const current = scope ?? this.readScope();
-    return this.enabledProviderIds(current.settings.usage.disabledProviders, current.collectors);
+    // ViscosityCode: account pools need every member's usage (explicit opt-outs stay).
+    return this.enabledProviderIds(
+      usageCollectionDisabledProviders(current.settings),
+      current.collectors,
+    );
   }
 
   /**
@@ -561,7 +568,9 @@ export class UsageService {
     if (!usage.autoRefresh) return [];
     const collectors = this.profileCollectors(this.usageProfileSources(settings));
     const now = this.host.now();
-    return this.enabledProviderIds(usage.disabledProviders, collectors, candidates).filter((id) => {
+    // ViscosityCode: account pools need every member's usage (explicit opt-outs stay).
+    const disabled = usageCollectionDisabledProviders(settings);
+    return this.enabledProviderIds(disabled, collectors, candidates).filter((id) => {
       const interval = this.effectiveIntervalMs(usage, id);
       if (interval === undefined) return false;
       const snap = this.snapshots.get(id);
@@ -584,7 +593,11 @@ export class UsageService {
     if (!usage.autoRefresh) return this.intervalMs(usage);
     const collectors = this.profileCollectors(this.usageProfileSources(settings));
     let min = Infinity;
-    for (const id of this.enabledProviderIds(usage.disabledProviders, collectors)) {
+    // ViscosityCode: account pools need every member's usage (explicit opt-outs stay).
+    for (const id of this.enabledProviderIds(
+      usageCollectionDisabledProviders(settings),
+      collectors,
+    )) {
       const interval = this.effectiveIntervalMs(usage, id);
       if (interval !== undefined) min = Math.min(min, interval);
     }

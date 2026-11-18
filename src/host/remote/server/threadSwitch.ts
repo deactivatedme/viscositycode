@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { isHostResourceAdmissionRefusal } from "@/shared/hostResourceAdmission";
 import {
   THREAD_LAUNCH_FAILED_REFUSAL_CODE,
@@ -58,6 +59,43 @@ export async function applyRemoteThreadSwitch(
   supervisorPayload: StartThreadPayload & { threadId: string },
   markDispatched: () => void,
 ): Promise<StartThreadResult> {
+  // ViscosityCode: the route keeps its behaviour; the routine itself is
+  // context-free so host services (account-pool failover) can call it too.
+  return applyThreadSwitch(remoteThreadSwitchEffects(ctx), supervisorPayload, markDispatched);
+}
+
+/**
+ * ViscosityCode: the effects an in-place switch needs from its host — the
+ * renderer mirror dispatch (desktop only; a renderer-less host omits it), the
+ * supervisor launch and the bounded thread invalidation.
+ */
+export interface ThreadSwitchEffects {
+  dispatchThreadCommand?(command: RemoteThreadCommand): unknown;
+  startThread(payload: StartThreadPayload & { threadId: string }): Promise<StartThreadResult>;
+  publishThreadsChanged(threadIds: readonly string[]): void;
+}
+
+// ViscosityCode: binds the remote route's context to the context-free routine.
+function remoteThreadSwitchEffects(ctx: RemoteServerContext): ThreadSwitchEffects {
+  return {
+    dispatchThreadCommand: (command) => ctx.options.dispatchThreadCommand?.(command),
+    startThread: (payload) => ctx.options.callSupervisor("startThread", payload),
+    publishThreadsChanged: (threadIds) => ctx.publishThreadsChanged(threadIds),
+  };
+}
+
+/**
+ * ViscosityCode: context-free form of {@link applyRemoteThreadSwitch}, shared
+ * by the remote route and host-owned policy. Same validation, ordering,
+ * per-thread serialization and revert-on-failure; only the effects are
+ * injected. Validation failures throw the same typed `RemoteHttpError`s before
+ * `markDispatched` runs.
+ */
+export async function applyThreadSwitch(
+  effects: ThreadSwitchEffects,
+  supervisorPayload: StartThreadPayload & { threadId: string },
+  markDispatched: () => void = () => {},
+): Promise<StartThreadResult> {
   return serializeRemoteThreadSwitch(supervisorPayload.threadId, async () => {
     const current = dbGetThreads().find((thread) => thread.id === supervisorPayload.threadId);
     if (!current) {
@@ -90,12 +128,12 @@ export async function applyRemoteThreadSwitch(
         ? { presentationMode: supervisorPayload.presentationMode }
         : {}),
     });
-    await ctx.options.dispatchThreadCommand?.(
+    await effects.dispatchThreadCommand?.(
       switchRetargetCommand(supervisorPayload, previous.projectId),
     );
     try {
-      const result = await ctx.options.callSupervisor("startThread", supervisorPayload);
-      ctx.publishThreadsChanged([supervisorPayload.threadId]);
+      const result = await effects.startThread(supervisorPayload);
+      effects.publishThreadsChanged([supervisorPayload.threadId]);
       return result;
     } catch (error) {
       const previousWasLive = previous.status === "working" || previous.status === "launching";
@@ -116,7 +154,7 @@ export async function applyRemoteThreadSwitch(
         done: false,
       };
       dbUpsertThread(restored, sortOrderForThread(dbGetThreads(), restored.id));
-      await ctx.options.dispatchThreadCommand?.({
+      await effects.dispatchThreadCommand?.({
         kind: "start",
         threadId: restored.id,
         projectId: restored.projectId,

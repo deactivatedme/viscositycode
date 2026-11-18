@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { resolveProjectLocation } from "@/shared/worktree";
 import { isDeepStrictEqual } from "node:util";
 import { isThreadSessionAbsenceRefusal } from "@/shared/threadSessionRefusal";
@@ -81,7 +82,37 @@ export interface ScheduleRunCoordinatorDeps {
   updateRun(id: string, patch: ScheduleRunPatch): void;
   now?: () => number;
   newId?: () => string;
+  /**
+   * ViscosityCode: true when both agent kinds are accounts of one enabled
+   * account pool, so a heartbeat target an account failover moved to a sibling
+   * account still belongs to its task.
+   */
+  sharesAccountPool?(taskAgentKind: string, threadAgentKind: string): boolean;
+  /**
+   * ViscosityCode: true when an account-pool failover could still claim this
+   * thread's failure (a chat thread on an enabled pool's account). Such a
+   * run's failure settles after a short grace, so a provider that reports its
+   * error state before its reasoned error event (ACP prompt rejections) does
+   * not fail a run the failover then continues. Other runs settle at once.
+   */
+  mayAccountFailover?(threadId: string): boolean;
+  /** ViscosityCode: grace for `mayAccountFailover` (default 2 s). */
+  accountFailoverGraceMs?: number;
+  /**
+   * ViscosityCode: the account a fresh scheduled thread starts on when the
+   * task's account is in an enabled account pool (the member with the most
+   * usage left); undefined keeps the task's own account.
+   */
+  preferredPoolAccount?(agentKind: string, location: ProjectLocation): Promise<string | undefined>;
 }
+
+/** ViscosityCode: default wait for a failover to claim a pooled thread's failure. */
+const ACCOUNT_FAILOVER_GRACE_MS = 2_000;
+
+/** ViscosityCode: how a held account-pool failover ended (see `holdForAccountFailover`). */
+export type ScheduleAccountFailoverOutcome =
+  | { kind: "continued" }
+  | { kind: "failed"; error: string };
 
 interface PendingRun {
   runId: string;
@@ -102,6 +133,10 @@ interface PendingRun {
   waiting: boolean;
   resolveSettlementOverride: ((completion: CompletionInput) => void) | null;
   resolve: (outcome: ScheduleTaskExecutionOutcome) => void;
+  /** ViscosityCode: an account-pool failover owns the failed turn's outcome. */
+  accountFailoverHold?: boolean;
+  /** ViscosityCode: a pooled thread's failure waiting for a failover to claim it. */
+  accountFailoverGrace?: ReturnType<typeof setTimeout> | undefined;
 }
 
 interface CompletionInput {
@@ -168,6 +203,8 @@ export class ScheduleRunCoordinator {
     }
     if (event.type === "thread-exited") {
       if (!this.pendingByThread.has(event.threadId)) return;
+      // ViscosityCode: the failed session closes while its account fails over.
+      if (this.pendingByThread.get(event.threadId)?.accountFailoverHold) return;
       this.complete(event.threadId, {
         status: "interrupted",
         error: msg("automation.run.exited"),
@@ -216,9 +253,12 @@ export class ScheduleRunCoordinator {
       return;
     }
     if (!TERMINAL_STATUSES.has(event.status)) return;
+    // ViscosityCode: the old account's error/teardown states never settle a held run.
+    if (pending.accountFailoverHold) return;
     if (event.status !== "error" && !pending.sawActive) return;
     if (event.status === "error") {
-      this.complete(event.threadId, {
+      // ViscosityCode: a pooled thread's failure may still fail over.
+      this.completeFailure(event.threadId, {
         status: "failed",
         error: event.errorMessage ?? msg("automation.run.failed"),
         stopReason: "runtime-error",
@@ -230,6 +270,55 @@ export class ScheduleRunCoordinator {
       error: null,
       stopReason: null,
     });
+  }
+
+  /**
+   * ViscosityCode: an account-pool failover took over this thread's failed
+   * turn. Until it is released, the old account's error, failed turn
+   * completion, teardown states and exit do not settle the run, and the turn
+   * the failover re-sends is adopted as the run's turn.
+   */
+  holdForAccountFailover(threadId: string): void {
+    const pending = this.pendingByThread.get(threadId);
+    if (!pending || pending.settling) return;
+    clearTimeout(pending.accountFailoverGrace);
+    pending.accountFailoverGrace = undefined;
+    pending.accountFailoverHold = true;
+    pending.turnId = null;
+  }
+
+  /**
+   * ViscosityCode: settle a failure, after a grace when a failover could still
+   * claim it (`mayAccountFailover`). The first failure's completion is the one
+   * recorded, exactly as without the grace; a hold in between replaces it.
+   */
+  private completeFailure(threadId: string, completion: CompletionInput): void {
+    const pending = this.pendingByThread.get(threadId);
+    if (!pending || pending.settling || !this.deps.mayAccountFailover?.(threadId)) {
+      this.complete(threadId, completion);
+      return;
+    }
+    if (pending.accountFailoverGrace !== undefined) return;
+    pending.accountFailoverGrace = setTimeout(() => {
+      pending.accountFailoverGrace = undefined;
+      if (pending.accountFailoverHold) return;
+      this.complete(threadId, completion, pending);
+    }, this.deps.accountFailoverGraceMs ?? ACCOUNT_FAILOVER_GRACE_MS);
+    pending.accountFailoverGrace.unref?.();
+  }
+
+  /** ViscosityCode: end a hold; a failed failover settles the run with its message. */
+  releaseAccountFailover(threadId: string, outcome: ScheduleAccountFailoverOutcome): void {
+    const pending = this.pendingByThread.get(threadId);
+    if (!pending?.accountFailoverHold) return;
+    pending.accountFailoverHold = false;
+    if (outcome.kind === "failed") {
+      this.complete(
+        threadId,
+        { status: "failed", error: outcome.error, stopReason: "runtime-error" },
+        pending,
+      );
+    }
   }
 
   handleSupervisorReset(): void {
@@ -377,7 +466,12 @@ export class ScheduleRunCoordinator {
       const target = this.requireHeartbeatTarget(task, project, threadId);
       pending.projectLocation = resolveProjectLocation(project.location, target.worktreePath);
     }
-    const config = await this.buildThreadConfig(task, pending.projectLocation);
+    // ViscosityCode: a fresh thread starts on its pool's account with the most usage left.
+    const launchTask =
+      automation.mode.kind === "heartbeat"
+        ? task
+        : await this.withPreferredPoolAccount(task, pending.projectLocation);
+    const config = await this.buildThreadConfig(launchTask, pending.projectLocation);
     if (!this.canDispatch(pending)) return;
     if (automation.mode.kind === "heartbeat") {
       this.requireHeartbeatTarget(task, project, threadId, pending.projectLocation);
@@ -404,8 +498,8 @@ export class ScheduleRunCoordinator {
         await this.dispatchHeartbeat(pending, project, config);
       } else {
         freshThread = !this.deps.threadExists(threadId);
-        this.persistFreshThread(task, project, threadId, config, this.nowIso());
-        await this.deps.startThread(this.startPayload(task, project, threadId, config));
+        this.persistFreshThread(launchTask, project, threadId, config, this.nowIso());
+        await this.deps.startThread(this.startPayload(launchTask, project, threadId, config));
       }
     } catch (error) {
       if (this.disposed || !this.canDispatch(pending)) return;
@@ -502,6 +596,9 @@ export class ScheduleRunCoordinator {
       pending.phase === "resuming"
     )
       return;
+    // ViscosityCode: a held failover owns the old account's failure events.
+    if (pending.accountFailoverHold && (event.type === "error" || event.type === "turn.completed"))
+      return;
     if (event.type === "turn.started") {
       pending.turnId ??= event.turnId;
       pending.sawActive = true;
@@ -513,7 +610,8 @@ export class ScheduleRunCoordinator {
       return;
     }
     if (event.type === "error") {
-      this.complete(event.threadId, {
+      // ViscosityCode: a pooled thread's failure may still fail over.
+      this.completeFailure(event.threadId, {
         status: "failed",
         error: event.message,
         stopReason: "runtime-error",
@@ -534,7 +632,7 @@ export class ScheduleRunCoordinator {
       });
       return;
     }
-    this.complete(event.threadId, {
+    const completion: CompletionInput = {
       status:
         event.state === "cancelled"
           ? "cancelled"
@@ -543,12 +641,18 @@ export class ScheduleRunCoordinator {
             : "failed",
       error: event.state === "failed" ? msg("automation.run.failed") : null,
       stopReason: event.state,
-    });
+    };
+    // ViscosityCode: a pooled thread's failed turn may still fail over.
+    if (event.state === "failed") this.completeFailure(event.threadId, completion);
+    else this.complete(event.threadId, completion);
   }
 
   private complete(threadId: string, completion: CompletionInput, expected?: PendingRun): void {
     const pending = this.pendingByThread.get(threadId);
     if (!pending || (expected && expected !== pending)) return;
+    // ViscosityCode: a deferred failure (`completeFailure`) outranks a later
+    // success, exactly as when it settled first.
+    if (completion.status === "succeeded" && pending.accountFailoverGrace !== undefined) return;
     const settlement = this.finishPending(pending, completion).catch((error: unknown) => {
       clearTimeout(pending.timer);
       if (!this.failedSettlements.has(pending.runId)) this.releasePending(pending);
@@ -576,6 +680,7 @@ export class ScheduleRunCoordinator {
     pending.settling = true;
     pending.phase = "collecting";
     clearTimeout(pending.timer);
+    clearTimeout(pending.accountFailoverGrace); // ViscosityCode
 
     let items: PersistedRuntimeItem[] = [];
     try {
@@ -752,7 +857,11 @@ export class ScheduleRunCoordinator {
     if (target.projectId !== project.id) {
       throw new Error(msg("automation.heartbeat.differentProject"));
     }
-    if (target.agentKind !== task.agentKind) {
+    if (
+      target.agentKind !== task.agentKind &&
+      // ViscosityCode: a failover may have moved the target to a pool sibling.
+      !this.deps.sharesAccountPool?.(task.agentKind, target.agentKind)
+    ) {
       throw new Error(msg("automation.heartbeat.differentAgent"));
     }
     if (isThreadTurnActive(target.status)) {
@@ -804,6 +913,8 @@ export class ScheduleRunCoordinator {
         config,
       ),
       prompt: "",
+      // ViscosityCode: resume the account the target runs on (a pool sibling after failover).
+      agentKind: target.agentKind,
       ...(target.worktreePath ? { worktreePath: target.worktreePath } : {}),
       sessionRef: target.sessionRef,
     });
@@ -812,6 +923,26 @@ export class ScheduleRunCoordinator {
     this.requireHeartbeatTarget(task, project, threadId, pending.projectLocation);
     pending.phase = "dispatching";
     await this.deps.sendThreadInput({ threadId, prompt: task.prompt, config });
+  }
+
+  /** ViscosityCode: `task` on its pool's preferred account (see `preferredPoolAccount`). */
+  private async withPreferredPoolAccount(
+    task: ScheduledTask,
+    location: ProjectLocation,
+  ): Promise<ScheduledTask> {
+    if (!this.deps.preferredPoolAccount) return task;
+    try {
+      const agentKind = await this.deps.preferredPoolAccount(task.agentKind, location);
+      return agentKind && agentKind !== task.agentKind ? { ...task, agentKind } : task;
+    } catch (error) {
+      // The pool preference is advisory; the task's own account still runs.
+      try {
+        this.deps.onError?.(error);
+      } catch {
+        /* Reporting never changes run ownership. */
+      }
+      return task;
+    }
   }
 
   private persistFreshThread(

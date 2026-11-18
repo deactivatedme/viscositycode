@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@/shared/messages";
 import { joinRuntimeShutdown } from "./joinRuntimeShutdown";
 import { DeviceWorkspaceService } from "@/host/devices/DeviceWorkspaceService";
@@ -24,6 +25,13 @@ import {
   onThreadsDeleted,
 } from "@/host/db";
 import { AttachmentReclaimService } from "@/host/attachments/attachmentReclaim";
+// ViscosityCode: host-owned account-pool failover (desktop and headless share this graph).
+import {
+  createHostAccountPoolFailover,
+  readAccountPoolsSetting,
+  sharesEnabledAccountPool,
+  type AccountPoolFailoverService,
+} from "@/host/accountPools";
 import {
   AppControlsMcpIngress,
   buildSharedAppControlsIngressDeps,
@@ -118,6 +126,8 @@ export class BackendDurableServices {
   private unsubscribeThreadsDeleted: (() => void) | null = null;
   readonly scheduleCoordinator: ScheduleRunCoordinator;
   readonly scheduleService: ScheduleService;
+  /** ViscosityCode: moves out-of-usage chat threads to the next pooled account. */
+  readonly accountPoolFailover: AccountPoolFailoverService;
   readonly prWatchService: PrWatchService;
   readonly gitStateService: GitStateService;
   readonly forgeActivityService: ForgeActivityService;
@@ -185,6 +195,32 @@ export class BackendDurableServices {
         : {}),
       insertRun: dbInsertScheduleRun,
       updateRun: dbUpdateScheduleRun,
+      // ViscosityCode: a failover may move a heartbeat target to a pool sibling.
+      sharesAccountPool: (taskAgentKind, threadAgentKind) =>
+        sharesEnabledAccountPool(
+          readAccountPoolsSetting(options.getSharedSettings()),
+          taskAgentKind,
+          threadAgentKind,
+        ),
+      // ViscosityCode: a pooled chat thread's failure waits briefly for its failover.
+      mayAccountFailover: (threadId) => this.accountPoolFailover.mayFailOver(threadId),
+      // ViscosityCode: a fresh scheduled thread starts on the pool's best account.
+      preferredPoolAccount: (agentKind, location) =>
+        this.accountPoolFailover.preferredAccount(agentKind, location),
+    });
+    // ViscosityCode: one failover policy per host data owner, observed ahead of
+    // the schedule coordinator so a held run is never settled by the failure.
+    this.accountPoolFailover = createHostAccountPoolFailover({
+      supervisor,
+      getSharedSettings: options.getSharedSettings,
+      dispatchThreadCommand: (command) =>
+        options.emitRemoteThreadCommand
+          ? options.emitRemoteThreadCommand(command)
+          : options.sendThreadCommand(command),
+      publishThreadsChanged: (threadIds) => options.publishThreadsChanged?.(threadIds),
+      notifyUser: (input) => options.notifyUser(input),
+      failoverObserver: this.scheduleCoordinator,
+      ...(options.reportError ? { reportError: options.reportError } : {}),
     });
     this.scheduleService = createDeviceScheduleService({
       runTask: (task, context) => this.scheduleCoordinator.runScheduleAsThread(task, context),
@@ -477,6 +513,7 @@ export class BackendDurableServices {
   }
 
   handleSupervisorReset(): void {
+    this.accountPoolFailover.handleSupervisorReset(); // ViscosityCode
     this.scheduleCoordinator.handleSupervisorReset();
     this.projectWatchLeases.handleSupervisorReset();
   }
@@ -502,6 +539,7 @@ export class BackendDurableServices {
     if (observeRoutingSettingsEvent(this.options, event)) return true;
     if (observeSupervisorSettingsEditsEvent(this.options, event)) return true;
     this.appControls.observeSupervisorEvent(event);
+    this.accountPoolFailover.observeSupervisorEvent(event); // ViscosityCode: before schedules
     this.scheduleCoordinator.observeSupervisorEvent(event);
     this.prWatchService.observeSupervisorEvent(event);
     this.forgeActivityService.observeSupervisorEvent(event);
@@ -551,6 +589,7 @@ export class BackendDurableServices {
           return this.attachmentReclaim?.dispose() ?? Promise.resolve();
         },
         () => this.scheduleService.dispose(),
+        () => this.accountPoolFailover.dispose(), // ViscosityCode
         () => this.scheduleCoordinator.dispose(),
         () => this.prWatchService.dispose(),
         () => Promise.resolve(this.forgeActivityService.dispose()),
