@@ -24,6 +24,7 @@ export const ROUNDTABLE_PATTERNS: readonly RoundtablePattern[] = [
   "relay",
   "race",
   "open",
+  "compare",
 ];
 
 export const PATTERN_LABELS: Readonly<Record<RoundtablePattern, MessageDescriptor>> = {
@@ -32,6 +33,7 @@ export const PATTERN_LABELS: Readonly<Record<RoundtablePattern, MessageDescripto
   relay: msg`Relay`,
   race: msg`Race + cross-review`,
   open: msg`Group chat`,
+  compare: msg`Ask all (compare)`,
 };
 
 export const PATTERN_DESCRIPTIONS: Readonly<Record<RoundtablePattern, MessageDescriptor>> = {
@@ -40,6 +42,7 @@ export const PATTERN_DESCRIPTIONS: Readonly<Record<RoundtablePattern, MessageDes
   relay: msg`A chain of stages (plan, implement, test, review), one participant each.`,
   race: msg`Everyone builds on their own worktree, reviews the others, and the best is picked.`,
   open: msg`A free group chat: @mention who should answer.`,
+  compare: msg`Everyone answers once, side by side. No critique rounds, no verdict.`,
 };
 
 export const ROUNDTABLE_ROLES: readonly ParticipantRole[] = [
@@ -88,6 +91,7 @@ export function defaultRolesForPattern(
     case "race":
       return Array.from({ length: seats }, () => "builder");
     case "open":
+    case "compare":
       return Array.from({ length: seats }, () => "member");
   }
 }
@@ -101,6 +105,7 @@ export function defaultMaxRounds(pattern: RoundtablePattern): number | undefined
       return 2;
     case "relay":
     case "race":
+    case "compare":
       return 1;
     case "open":
       return undefined;
@@ -110,6 +115,14 @@ export function defaultMaxRounds(pattern: RoundtablePattern): number | undefined
 /** Whether the pattern runs every participant on its own worktree. */
 export function patternUsesOwnWorktrees(pattern: RoundtablePattern): boolean {
   return pattern === "race";
+}
+
+/**
+ * Whether participants only answer (compare): nobody changes files, so the
+ * pattern takes no checkout choice, and roles do not apply.
+ */
+export function patternIsAnswerOnly(pattern: RoundtablePattern): boolean {
+  return pattern === "compare";
 }
 
 export const SESSION_STATUS_LABELS: Readonly<
@@ -146,6 +159,7 @@ export const PHASE_LABELS: Readonly<Record<RoundtableTurnPhase, MessageDescripto
   race: msg`Candidate run`,
   "cross-review": msg`Cross-review`,
   reply: msg`Reply`,
+  answer: msg`Answer`,
 };
 
 /** Why a finished Roundtable ended (engine `outcome.reason`). */
@@ -157,6 +171,7 @@ export const OUTCOME_LABELS: Readonly<Record<RoundtableOutcome["reason"], Messag
   crown: msg`The best candidate was crowned.`,
   completed: msg`Every stage finished.`,
   "single-survivor": msg`Only one candidate finished.`,
+  compared: msg`The comparison is complete.`,
 };
 
 /** Same tone vocabulary as the tab strip's status dot (`.vc-tab__dot[data-tone]`). */

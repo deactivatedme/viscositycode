@@ -8,6 +8,7 @@ import { makeThreadTitle } from "@/shared/threadTitle";
 import { i18n } from "@/renderer/i18n/i18n";
 import type { StartRoundtableInput } from "../api";
 import type { RoundtableSession } from "../types";
+import { seedDebateTurns, seedProblem, seedThreadIds } from "./compare";
 import { DEFAULT_MAX_ROUNDS, seatedJudge } from "./planner";
 
 export const MIN_PARTICIPANTS = 2;
@@ -58,6 +59,49 @@ export function validateStartInput(input: StartRoundtableInput): void {
       i18n._(msg`The first participant must be the agent of the chat the Roundtable starts from.`),
     );
   }
+  if (input.seedFromSessionId !== undefined && input.pattern !== "debate") {
+    throw new RoundtableInputError(i18n._(msg`Only a debate can start from a comparison.`));
+  }
+}
+
+/**
+ * Additive (AA compare): checks a debate seeded from a comparison
+ * (`seedFromSessionId`) against that session. Throws a
+ * {@link RoundtableInputError} with a user-facing message when it cannot start.
+ */
+export function validateSeed(
+  input: StartRoundtableInput,
+  source: RoundtableSession | undefined,
+): void {
+  if (input.seedFromSessionId === undefined) return;
+  if (!source) {
+    throw new RoundtableInputError(
+      i18n._(msg`The comparison to start from is no longer available.`),
+    );
+  }
+  switch (
+    seedProblem(
+      source,
+      input.participants.map((participant) => participant.id),
+    )
+  ) {
+    case null:
+      return;
+    case "not-a-comparison":
+      throw new RoundtableInputError(i18n._(msg`Only a comparison can seed a debate.`));
+    case "still-running":
+      throw new RoundtableInputError(
+        i18n._(msg`Wait for the comparison to finish before starting a debate from it.`),
+      );
+    case "not-answered":
+      throw new RoundtableInputError(
+        i18n._(msg`Every debater must have answered in the comparison.`),
+      );
+    case "too-few-answers":
+      throw new RoundtableInputError(
+        i18n._(msg`A debate needs at least two answers to start from.`),
+      );
+  }
 }
 
 export function resolveMaxRounds(
@@ -77,7 +121,9 @@ export function resolveTitle(input: Pick<StartRoundtableInput, "title" | "task">
 /**
  * The new session record. `originThreadId` binds the origin thread to the first
  * participant (no new thread) — except in a race, where every racer gets its
- * own worktree thread and the origin is quoted as context only.
+ * own worktree thread and the origin is quoted as context only. A debate
+ * seeded from a comparison (`seed`, checked with {@link validateSeed}) starts
+ * with the answers as its proposals, in the comparison's threads.
  */
 export function createSessionRecord(
   input: StartRoundtableInput,
@@ -86,10 +132,14 @@ export function createSessionRecord(
     now: number;
     worktreePath?: string | undefined;
     worktreeBranch?: string | undefined;
+    seed?: RoundtableSession | undefined;
+    newId?: () => string;
   },
 ): RoundtableSession {
   const first = input.participants[0];
   const bindOrigin = input.originThreadId && input.pattern !== "race" && first;
+  const seed = input.seedFromSessionId !== undefined ? options.seed : undefined;
+  const newId = options.newId ?? (() => globalThis.crypto.randomUUID());
   return {
     id: options.id,
     version: 1,
@@ -100,12 +150,16 @@ export function createSessionRecord(
     ...(options.worktreePath ? { worktreePath: options.worktreePath } : {}),
     ...(options.worktreeBranch ? { worktreeBranch: options.worktreeBranch } : {}),
     participants: input.participants.map((participant) => ({ ...participant })),
-    threadIds: bindOrigin ? { [first.id]: input.originThreadId! } : {},
+    threadIds: {
+      ...(seed ? seedThreadIds(seed, input.participants) : {}),
+      ...(bindOrigin ? { [first.id]: input.originThreadId! } : {}),
+    },
     maxRounds: resolveMaxRounds(input),
     status: "running",
-    turns: [],
+    turns: seed ? seedDebateTurns(seed, input.participants, newId) : [],
     ...(input.originThreadId ? { originThreadId: input.originThreadId } : {}),
     ...(input.pattern === "debate" && input.implementWinner ? { implementWinner: true } : {}),
+    ...(seed ? { seededFromSessionId: seed.id } : {}),
     createdAt: options.now,
     updatedAt: options.now,
   };

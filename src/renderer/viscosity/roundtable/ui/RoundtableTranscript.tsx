@@ -165,7 +165,8 @@ function OpenThreadButton(props: { threadId: string | undefined; label: string }
   );
 }
 
-function TurnBody(props: {
+/** A turn's body by status (also one column of the side-by-side comparison). */
+export function TurnBody(props: {
   sessionId: string;
   turn: RoundtableTurn;
   name: string;
@@ -419,7 +420,7 @@ function DecisionCard(props: { session: RoundtableSession }) {
   );
 }
 
-function FailureNotice(props: { session: RoundtableSession }) {
+export function FailureNotice(props: { session: RoundtableSession }) {
   const { t } = useLingui();
   if (props.session.status !== "failed") return null;
   return (

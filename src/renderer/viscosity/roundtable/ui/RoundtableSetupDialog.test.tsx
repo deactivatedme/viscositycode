@@ -337,4 +337,102 @@ describe("RoundtableSetupDialog", () => {
       screen.getByText("A participant's agent is not signed in for this project."),
     ).toBeTruthy();
   });
+  it("opens preselected to compare with every ready agent and no roles, rounds or checkout", async () => {
+    api.ready = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta"].map((kind) =>
+      readyBrain(kind),
+    );
+    renderDialog({ projectId: "p1", pattern: "compare", task: "Which cache?" });
+    expect(screen.getByRole("radio", { name: /Ask all \(compare\)/ })).toHaveProperty(
+      "checked",
+      true,
+    );
+    const seats = within(screen.getByRole("list", { name: "Participants" })).getAllByRole(
+      "listitem",
+    );
+    // Every ready agent, up to the five-seat limit.
+    expect(seats).toHaveLength(5);
+    expect(screen.queryAllByLabelText(/Role of participant/)).toHaveLength(0);
+    expect(screen.queryByRole("textbox", { name: "Max rounds" })).toBeNull();
+    expect(screen.getByText("One answer from each participant.")).toBeTruthy();
+    expect(
+      screen.getByText("Everyone reads the current checkout and changes no files."),
+    ).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    const input = api.startRoundtable.mock.calls[0]![0];
+    expect(input).toMatchObject({ pattern: "compare", task: "Which cache?", projectId: "p1" });
+    expect("maxRounds" in input).toBe(false);
+    expect("worktree" in input).toBe(false);
+    expect(input.participants.map((entry) => entry.role)).toEqual(Array(5).fill("member"));
+    // Nothing to post: every participant answers the task on its own.
+    expect(api.postToRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("keeps seating providers that report late for Ask all, until the user edits the seats", () => {
+    const request = { projectId: "p1", pattern: "compare" as const, task: "Which cache?" };
+    const seatLabels = () =>
+      within(screen.getByRole("list", { name: "Participants" }))
+        .getAllByRole("listitem")
+        .map(
+          (seat) => within(seat).getByRole("button", { name: /Provider and model/ }).textContent,
+        );
+    // Statuses arrive one by one: only one agent has reported so far.
+    api.ready = [readyBrain("alpha")];
+    const view = renderDialog(request);
+    expect(seatLabels()).toEqual(["alpha/alpha-m1"]);
+
+    api.ready = [readyBrain("alpha"), readyBrain("beta"), readyBrain("gamma")];
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(seatLabels()).toEqual(["alpha/alpha-m1", "beta/beta-m1", "gamma/gamma-m1"]);
+
+    // A provider that drops out of the ready list loses its seat while following.
+    api.ready = [readyBrain("alpha"), readyBrain("gamma")];
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(seatLabels()).toEqual(["alpha/alpha-m1", "gamma/gamma-m1"]);
+
+    // The same list again (a new array) does not reseat.
+    const before = screen.getAllByRole("listitem").map((seat) => seat.dataset.vcRtSeat);
+    api.ready = [readyBrain("alpha"), readyBrain("gamma")];
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(screen.getAllByRole("listitem").map((seat) => seat.dataset.vcRtSeat)).toEqual(before);
+
+    // Once the user edits the seats, late statuses no longer change them.
+    api.ready = [readyBrain("alpha"), readyBrain("gamma"), readyBrain("delta")];
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(seatLabels()).toHaveLength(3);
+    fireEvent.click(screen.getByRole("button", { name: "Remove participant 3" }));
+    api.ready = ["alpha", "gamma", "delta", "epsilon"].map((kind) => readyBrain(kind));
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(seatLabels()).toEqual(["alpha/alpha-m1", "gamma/gamma-m1"]);
+  });
+
+  it("seats other patterns once, from the first ready list", () => {
+    const request = { projectId: "p1", task: "Fix it" };
+    api.ready = [readyBrain("alpha")];
+    const view = renderDialog(request);
+    const seats = () =>
+      within(screen.getByRole("list", { name: "Participants" })).getAllByRole("listitem");
+    expect(seats().map((seat) => seat.textContent)).toEqual([
+      expect.stringContaining("alpha/alpha-m1"),
+      expect.stringContaining("alpha/alpha-m1"),
+    ]);
+    api.ready = [readyBrain("alpha"), readyBrain("beta"), readyBrain("gamma")];
+    view.rerender(<RoundtableSetupDialog request={request} />);
+    expect(seats()).toHaveLength(2);
+    expect(screen.queryByText("beta/beta-m1")).toBeNull();
+  });
+
+  it("seats the ready agents not seated yet when the compare card is picked", () => {
+    api.ready = [readyBrain("alpha"), readyBrain("beta"), readyBrain("gamma")];
+    renderDialog({ projectId: "p1", task: "Fix it" });
+    const list = () =>
+      within(screen.getByRole("list", { name: "Participants" })).getAllByRole("listitem");
+    expect(list()).toHaveLength(2);
+    expect(screen.queryAllByLabelText(/Role of participant/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("radio", { name: /Ask all \(compare\)/ }));
+    expect(list()).toHaveLength(3);
+    expect(screen.queryAllByLabelText(/Role of participant/)).toHaveLength(0);
+    expect(within(list()[2]!).getByText("gamma/gamma-m1")).toBeTruthy();
+  });
 });

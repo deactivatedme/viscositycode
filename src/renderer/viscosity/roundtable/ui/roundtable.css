@@ -753,6 +753,169 @@ html[data-vc-shell] .vc-rt-setup__status[data-tone="error"] {
   color: var(--vc-state-error);
 }
 
+/* === Compare: answers side by side (additive, AA compare) ================ */
+html[data-vc-shell] .vc-rt-compare {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--vc-space-3);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--vc-space-3) var(--vc-space-5) 0;
+}
+
+html[data-vc-shell] .vc-rt-compare__task {
+  flex: none;
+  max-height: 9rem;
+  padding: var(--vc-space-3) var(--vc-space-4);
+  overflow-y: auto;
+  border: 1px solid color-mix(in oklab, var(--vc-accent) 35%, var(--vc-border-subtle));
+  border-radius: var(--vc-radius-lg);
+  background: color-mix(in oklab, var(--vc-accent) 6%, var(--vc-surface));
+}
+
+html[data-vc-shell] .vc-rt-compare__bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vc-space-2) var(--vc-space-3);
+}
+
+html[data-vc-shell] .vc-rt-compare__progress {
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-vc-shell] .vc-rt-compare__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vc-space-2);
+  margin-left: auto;
+}
+
+html[data-vc-shell] .vc-rt-compare__hint {
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-xs);
+}
+
+html[data-vc-shell] .vc-rt-compare__columns {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(var(--vc-rt-compare-columns, 2), minmax(260px, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--vc-space-3);
+  min-height: 0;
+  padding-bottom: var(--vc-space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+html[data-vc-shell] .vc-rt-compare__column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--vc-border-subtle);
+  border-top: 3px solid var(--vc-agent-accent, var(--vc-accent));
+  border-radius: var(--vc-radius-lg);
+  background: var(--vc-surface);
+}
+
+html[data-vc-shell] .vc-rt-compare__column[data-status="running"] {
+  border-color: color-mix(in oklab, var(--vc-state-working) 45%, transparent);
+  border-top-color: var(--vc-agent-accent, var(--vc-accent));
+}
+
+html[data-vc-shell] .vc-rt-compare__column[data-status="waiting-approval"] {
+  border-color: color-mix(in oklab, var(--vc-state-attention) 55%, transparent);
+  border-top-color: var(--vc-agent-accent, var(--vc-accent));
+}
+
+html[data-vc-shell] .vc-rt-compare__column[data-status="failed"] {
+  border-color: color-mix(in oklab, var(--vc-state-error) 45%, transparent);
+  border-top-color: var(--vc-agent-accent, var(--vc-accent));
+}
+
+html[data-vc-shell] .vc-rt-compare__column[data-status="waiting"],
+html[data-vc-shell] .vc-rt-compare__column[data-status="pending"] {
+  border-style: dashed;
+  border-top-style: solid;
+  background: transparent;
+}
+
+html[data-vc-shell] .vc-rt-compare__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-width: 0;
+  padding: var(--vc-space-2) var(--vc-space-3);
+  border-bottom: 1px solid var(--vc-border-subtle);
+  background: color-mix(in oklab, var(--vc-agent-accent, var(--vc-accent)) 8%, transparent);
+}
+
+html[data-vc-shell] .vc-rt-compare__title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+html[data-vc-shell] .vc-rt-compare__name,
+html[data-vc-shell] .vc-rt-compare__model {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-vc-shell] .vc-rt-compare__name {
+  font-size: var(--vc-font-size-md);
+  font-weight: 600;
+}
+
+html[data-vc-shell] .vc-rt-compare__model {
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-xs);
+}
+
+html[data-vc-shell] .vc-rt-compare__time {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-1);
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-vc-shell] .vc-rt-compare__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--vc-space-2);
+  min-height: 0;
+  padding: var(--vc-space-3) var(--vc-space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+html[data-vc-shell] .vc-rt-compare__body:focus-visible {
+  outline: 2px solid var(--vc-agent-accent, var(--vc-accent));
+  outline-offset: -2px;
+}
+
+html[data-vc-shell] .vc-rt-compare__foot {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  padding: var(--vc-space-2) var(--vc-space-3);
+  border-top: 1px solid var(--vc-border-subtle);
+}
+
 /* === Motion: pause with the other effects, drop it for reduced motion ==== */
 html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-rt-status-dot,
 html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-rt-participant__dot,

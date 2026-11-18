@@ -23,7 +23,13 @@ export type RoundtablePattern =
   /** All build in parallel on separate worktrees, cross-review each other, best is crowned. */
   | "race"
   /** Free group chat: the user (or a bot) @mentions who replies; everyone else may react. */
-  | "open";
+  | "open"
+  /**
+   * Additive (AA compare): everyone answers the task once, independently and in
+   * parallel; the user compares the answers side by side. No critique rounds,
+   * no verdicts.
+   */
+  | "compare";
 
 export type ParticipantRole = "builder" | "reviewer" | "planner" | "tester" | "judge" | "member";
 
@@ -111,7 +117,9 @@ export type RoundtableTurnPhase =
   /** race: reviewing the other candidates. */
   | "cross-review"
   /** open: a reply in the group chat. */
-  | "reply";
+  | "reply"
+  /** Additive (AA compare): a participant's one independent answer. */
+  | "answer";
 
 /**
  * Additive (RT1 engine): a message the user posted to a Roundtable. In the
@@ -130,7 +138,16 @@ export interface RoundtableNote {
 
 /** Additive (RT1 engine): why a Roundtable finished, for the UI to explain (localized there). */
 export interface RoundtableOutcome {
-  reason: "approved" | "max-rounds" | "judge" | "vote" | "crown" | "completed" | "single-survivor";
+  reason:
+    | "approved"
+    | "max-rounds"
+    | "judge"
+    | "vote"
+    | "crown"
+    | "completed"
+    | "single-survivor"
+    /** Additive (AA compare): every participant answered (failed answers are marked). */
+    | "compared";
   /** Judge or crown rationale, when one was given. */
   rationale?: string;
 }
@@ -170,6 +187,12 @@ export interface RoundtableSession {
   outcome?: RoundtableOutcome;
   /** Additive (RT1 engine): why the session failed. */
   error?: string;
+  /**
+   * Additive (AA compare): a debate started from a compare session. Its
+   * round-0 proposals are that session's answers, and each participant
+   * continues in the same thread.
+   */
+  seededFromSessionId?: string;
 }
 
 /** Live streaming callback: text so far for the running turn (throttled by the driver). */

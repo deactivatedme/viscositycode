@@ -1,6 +1,11 @@
 /**
  * ViscosityCode Roundtable UI: the "New Roundtable" setup dialog.
  *
+ * Additive (AA compare): the "Ask all (compare)" card seats every ready
+ * provider (up to five); compare takes no roles, rounds or checkout choice.
+ * Opened through "Ask all models…", the seats keep following the ready list
+ * as agent statuses arrive, until the user edits them.
+ *
  * Seats 2–5 participants. Each agent seat picks provider + model with the
  * app's own `ProviderModelMenu`, limited to the agents the engine reports as
  * ready (installed, enabled, signed in, with models); a Grok model over the
@@ -49,6 +54,7 @@ import {
   MAX_ROUNDS_LIMIT,
   PATTERN_DESCRIPTIONS,
   PATTERN_LABELS,
+  patternIsAnswerOnly,
   patternUsesOwnWorktrees,
   ROLE_LABELS,
   ROUNDTABLE_PATTERNS,
@@ -63,6 +69,7 @@ import {
 import {
   addSeat,
   agentBrainFor,
+  askAllSeatingKey,
   brainLabel,
   buildStartInput,
   canAddSeat,
@@ -73,6 +80,7 @@ import {
   removeSeat,
   type RoundtableSetupDraft,
   roundsApply,
+  seatAllReady,
   seatFromProfile,
   type SetupProblem,
   type SetupSeat,
@@ -210,6 +218,8 @@ function SeatRow(props: {
   index: number;
   ready: readonly ReadyAgentBrain[];
   providers: ReturnType<typeof buildProviderModelMenuProviders>;
+  /** Roles do not apply to every pattern (compare: everyone answers). */
+  showRole: boolean;
   onBrainChange: (brain: ParticipantBrain) => void;
   onRoleChange: (role: ParticipantRole) => void;
   onRemove: () => void;
@@ -260,16 +270,18 @@ function SeatRow(props: {
           />
         )}
       </div>
-      <Select
-        aria-label={t`Role of participant ${seatNumber}`}
-        className="w-[116px] shrink-0"
-        options={roleOptions}
-        value={seat.role}
-        onChange={(value) => {
-          const role = ROUNDTABLE_ROLES.find((candidate) => candidate === value);
-          if (role) props.onRoleChange(role);
-        }}
-      />
+      {props.showRole ? (
+        <Select
+          aria-label={t`Role of participant ${seatNumber}`}
+          className="w-[116px] shrink-0"
+          options={roleOptions}
+          value={seat.role}
+          onChange={(value) => {
+            const role = ROUNDTABLE_ROLES.find((candidate) => candidate === value);
+            if (role) props.onRoleChange(role);
+          }}
+        />
+      ) : null}
       <Button
         isIconOnly
         size="sm"
@@ -332,9 +344,22 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
   const xaiKey = useXaiKeyStatus();
   const xaiConfigured = xaiKey.available && xaiKey.status?.configured === true;
 
-  // Seat two different ready agents once the engine reports them (unless the
-  // request brought its own seats or the user already edited the table).
-  if (!seeded && ready.length > 0) {
+  // "Ask all models…" (compare, no seats in the request): the seats follow the
+  // ready list while agent statuses are still arriving, until the user edits
+  // the seats, so a provider that reports late still gets its seat.
+  const [followReady, setFollowReady] = useState(
+    () => draft.seats.length === 0 && patternIsAnswerOnly(draft.pattern),
+  );
+  const [followedKey, setFollowedKey] = useState<string | null>(null);
+  const readySeatingKey = followReady && ready.length > 0 ? askAllSeatingKey(ready) : null;
+
+  if (readySeatingKey !== null && readySeatingKey !== followedKey) {
+    setSeeded(true);
+    setFollowedKey(readySeatingKey);
+    setDraft((current) => ({ ...current, seats: initialSeats(ready, current.pattern) }));
+  } else if (!seeded && ready.length > 0) {
+    // Seat two different ready agents once the engine reports them (unless the
+    // request brought its own seats or the user already edited the table).
     setSeeded(true);
     setDraft((current) =>
       current.seats.length > 0
@@ -358,14 +383,21 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
   const blocker = findSetupBlocker(draft, ready, xaiConfigured);
   const blockerMessage = useBlockerMessage(blocker);
   const ownWorktrees = patternUsesOwnWorktrees(draft.pattern);
+  const answerOnly = patternIsAnswerOnly(draft.pattern);
 
   function edit(next: (current: RoundtableSetupDraft) => RoundtableSetupDraft) {
     setStartError(null);
     setDraft(next);
   }
 
+  /** A seat (or pattern) edit by the user: the seats stop following the ready list. */
+  function editSeats(next: (current: RoundtableSetupDraft) => RoundtableSetupDraft) {
+    setFollowReady(false);
+    edit(next);
+  }
+
   function addAgentSeat() {
-    edit((current) => {
+    editSeats((current) => {
       const brain = nextReadyBrain(ready, current.seats);
       return brain ? addSeat(current, agentBrainFor(brain)) : current;
     });
@@ -463,7 +495,12 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                 value={draft.pattern}
                 onChange={(value) => {
                   const pattern = ROUNDTABLE_PATTERNS.find((candidate) => candidate === value);
-                  if (pattern) edit((current) => changePattern(current, pattern));
+                  if (!pattern) return;
+                  editSeats((current) => {
+                    const next = changePattern(current, pattern);
+                    // "Ask all": every ready provider joins the seats already chosen.
+                    return patternIsAnswerOnly(pattern) ? seatAllReady(next, ready) : next;
+                  });
                 }}
               >
                 {ROUNDTABLE_PATTERNS.map((pattern: RoundtablePattern) => (
@@ -503,13 +540,14 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                       index={index}
                       ready={ready}
                       providers={providers}
+                      showRole={!answerOnly}
                       onBrainChange={(brain) =>
-                        edit((current) => updateSeat(current, seat.id, { brain }))
+                        editSeats((current) => updateSeat(current, seat.id, { brain }))
                       }
                       onRoleChange={(role) =>
-                        edit((current) => updateSeat(current, seat.id, { role }))
+                        editSeats((current) => updateSeat(current, seat.id, { role }))
                       }
-                      onRemove={() => edit((current) => removeSeat(current, seat.id))}
+                      onRemove={() => editSeats((current) => removeSeat(current, seat.id))}
                     />
                   ))}
                 </ol>
@@ -529,7 +567,7 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                     size="sm"
                     variant="ghost"
                     isDisabled={!canAddSeat(draft)}
-                    onPress={() => edit((current) => addSeat(current, xaiBrain()))}
+                    onPress={() => editSeats((current) => addSeat(current, xaiBrain()))}
                   >
                     <Sparkles aria-hidden="true" className="size-3.5" />
                     <Trans>Add Grok (xAI API)</Trans>
@@ -566,7 +604,11 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                       <Trans>Max rounds</Trans>
                     </span>
                     <p className="text-xs text-muted">
-                      <Trans>Unlimited: the chat runs until you stop it.</Trans>
+                      {answerOnly ? (
+                        <Trans>One answer from each participant.</Trans>
+                      ) : (
+                        <Trans>Unlimited: the chat runs until you stop it.</Trans>
+                      )}
                     </p>
                   </>
                 )}
@@ -578,6 +620,10 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                 {ownWorktrees ? (
                   <p className="text-xs text-muted">
                     <Trans>Each participant builds on its own new worktree.</Trans>
+                  </p>
+                ) : answerOnly ? (
+                  <p className="text-xs text-muted">
+                    <Trans>Everyone reads the current checkout and changes no files.</Trans>
                   </p>
                 ) : (
                   <>

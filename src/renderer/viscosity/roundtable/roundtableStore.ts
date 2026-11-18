@@ -25,6 +25,22 @@ import { capText, RESPONSE_TEXT_CAP, STORED_PROMPT_CAP } from "./engine/text";
 import type { RoundtableNote, RoundtablePattern, RoundtableSession, RoundtableTurn } from "./types";
 
 export const ROUNDTABLE_STORE_NAME = "poracode-viscosity-roundtables";
+/**
+ * Version 1 is still current after the additive AA "compare" pattern
+ * (pattern "compare", turn phase "answer", outcome "compared", optional
+ * `seededFromSessionId`). Audit (.agents/docs/versioning.md):
+ * - Upgrade: every record an older build wrote is still valid as is; the
+ *   pre-upgrade test in roundtableStore.test.ts loads a literal pre-compare
+ *   blob of each pattern unchanged.
+ * - Downgrade: an older build's `sanitizeSession` rejects the unknown pattern,
+ *   so it drops compare sessions one by one, keeps everything else, and its
+ *   next write leaves them out. A debate seeded from a comparison is an
+ *   ordinary debate record (phase "propose" turns) that older builds load and
+ *   run; they ignore and carry `seededFromSessionId`. The participant threads
+ *   stay host-owned either way, so only the compare cards are lost.
+ * - No bump: older builds migrate any version through the same sanitizer, so
+ *   a bump would not make them refuse the blob or keep the compare records.
+ */
 export const ROUNDTABLE_STORE_VERSION = 1;
 /** Finished sessions kept on disk (newest first); running and paused ones are always kept. */
 export const MAX_STORED_SESSIONS = 50;
@@ -45,7 +61,16 @@ export interface RoundtableStoreState {
 
 export type PersistedRoundtableState = Pick<RoundtableStoreState, "sessions">;
 
-const PATTERNS: readonly RoundtablePattern[] = ["build-review", "debate", "relay", "race", "open"];
+const PATTERNS: readonly RoundtablePattern[] = [
+  "build-review",
+  "debate",
+  "relay",
+  "race",
+  "open",
+  // Additive (AA compare). An older build drops these records one by one on
+  // load; see ROUNDTABLE_STORE_VERSION for the audit.
+  "compare",
+];
 const SESSION_STATUSES = ["draft", "running", "paused", "done", "failed", "stopped"];
 const TURN_STATUSES = ["pending", "running", "waiting-approval", "done", "failed", "stopped"];
 

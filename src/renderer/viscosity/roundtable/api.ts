@@ -6,6 +6,8 @@
  *
  * Additive extensions (RT1 engine): `StartRoundtableInput.implementWinner`;
  * see also the "Additive (RT1 engine)" fields in ./types.ts.
+ * Additive extensions (AA compare): the "compare" pattern and
+ * `StartRoundtableInput.seedFromSessionId`.
  *
  * The engine (./engine) is renderer-orchestrated: it creates, sends to and
  * reads participant threads only through the existing renderer actions (the
@@ -21,6 +23,7 @@ import { useProject } from "@/renderer/state/useThread";
 // ViscosityCode: account pools — seats prefer the pooled account with the most usage left.
 import { useAccountPoolPreferredOrder } from "@/renderer/viscosity/accountPools/poolHooks";
 import { selectReadyAgentBrains } from "./engine/agentBrains";
+import { answeredParticipants, hasActiveSeededDebate, latestSeededDebate } from "./engine/compare";
 import { registerDriverFactory } from "./engine/driverRegistry";
 import { clearSessionLiveText, liveTurnKey, useRoundtableLiveText } from "./engine/liveText";
 import { getRoundtableRuntime, startRoundtableSession } from "./engine/runtime";
@@ -39,7 +42,10 @@ export interface StartRoundtableInput {
   pattern: RoundtablePattern;
   projectId: string;
   participants: ParticipantProfile[];
-  /** Defaults per pattern (build-review 4, debate 2 critique rounds, relay 3, open unlimited). */
+  /**
+   * Defaults per pattern (build-review 4, debate 2 critique rounds, relay 3,
+   * open unlimited, compare one answer each).
+   */
   maxRounds?: number;
   /** Sequential patterns share one checkout; race always uses one worktree per participant. */
   worktree?: { mode: "current" } | { mode: "new-branch"; branchName?: string };
@@ -51,6 +57,14 @@ export interface StartRoundtableInput {
    * engine never guesses it from the task text.
    */
   implementWinner?: boolean;
+  /**
+   * Additive (AA compare): debate only — start from a finished compare
+   * session. Each participant's answer there becomes its opening proposal and
+   * it continues in the same thread (and checkout), so the debate goes
+   * straight to the critique rounds. `participants` must be participants of
+   * that session (same ids) that answered.
+   */
+  seedFromSessionId?: string;
 }
 
 export interface RoundtableSummary {
@@ -84,6 +98,36 @@ export type ParticipantDriverFactory = (
  */
 export function startRoundtable(input: StartRoundtableInput): Promise<string> {
   return startRoundtableSession(input);
+}
+
+/**
+ * Additive (AA compare): "Start a debate from here" — a debate seeded with a
+ * finished comparison's answers. Every participant that answered takes part
+ * (as a voter), keeps its thread and starts from its answer, so the debate
+ * opens with the critique rounds. Resolves with the new session's id; rejects
+ * with a user-facing message when the comparison cannot seed a debate.
+ */
+export async function startDebateFromComparison(sessionId: string): Promise<string> {
+  await waitForRoundtableHydration();
+  const sessions = useRoundtableStore.getState().sessions;
+  const source = sessions[sessionId];
+  if (!source) throw new Error(i18n._(msg`The comparison to start from is no longer available.`));
+  // A running debate already drives these threads; a second one would talk over it.
+  if (hasActiveSeededDebate(sessions, sessionId)) {
+    throw new Error(i18n._(msg`A debate from this comparison is already running.`));
+  }
+  const title = source.title;
+  return startRoundtableSession({
+    title: i18n._(msg`Debate: ${title}`),
+    task: source.task,
+    pattern: "debate",
+    projectId: source.projectId,
+    participants: answeredParticipants(source).map((participant) => ({
+      ...participant,
+      role: "member",
+    })),
+    seedFromSessionId: source.id,
+  });
 }
 
 /** Interrupts the participants' running turns and ends the session. */
@@ -181,6 +225,19 @@ export function registerParticipantDriverFactory(
   factory: ParticipantDriverFactory,
 ): void {
   registerDriverFactory(kind, factory);
+}
+
+/** Additive (AA compare): pure reads of a compare session for the UI. */
+export { canSeedDebate, compareAnswers, type CompareAnswer } from "./engine/compare";
+
+/** Additive (AA compare): the newest debate started from a comparison, if any. */
+export function useLatestSeededDebateId(compareId: string): string | undefined {
+  return useRoundtableStore((state) => latestSeededDebate(state.sessions, compareId)?.id);
+}
+
+/** Additive (AA compare): whether a debate from this comparison is still running or paused. */
+export function useHasActiveSeededDebate(compareId: string): boolean {
+  return useRoundtableStore((state) => hasActiveSeededDebate(state.sessions, compareId));
 }
 
 // Register the built-in "agent" driver and, in the main window, resume the

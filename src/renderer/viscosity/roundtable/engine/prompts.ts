@@ -76,6 +76,8 @@ const PATTERN_LINES: Record<RoundtablePattern, string> = {
     "participants work in stages (plan, implement, test, review), each building on the previous stage",
   race: "participants solve the same task in parallel on separate worktrees, then review each other",
   open: "a group chat between the user and several AI participants",
+  compare:
+    "several AI models answer the same task independently, and the user compares the answers side by side",
 };
 
 export interface PromptIdentity {
@@ -252,6 +254,20 @@ export function buildImplementPrompt(
     tail: [
       ...notesTail(identity),
       "Your proposal was chosen. Implement it now in the working tree, then summarise what you changed.",
+    ],
+  });
+}
+
+// --- compare -------------------------------------------------------------------
+
+/** compare: the participant's one independent answer (the others answer at the same time). */
+export function buildCompareAnswerPrompt(identity: PromptIdentity): string {
+  return assemblePrompt({
+    head: headFor(identity),
+    context: originContext(identity),
+    tail: [
+      ...notesTail(identity),
+      `Answer the task on your own: you will not see the other answers, and there are no follow-up rounds. Read the code you need, then give your complete answer: the approach, the key details or code, and the trade-offs. ${NO_FILE_CHANGES}`,
     ],
   });
 }

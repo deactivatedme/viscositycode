@@ -19,12 +19,13 @@ import { createXaiParticipantDriver } from "@/renderer/viscosity/xai/XaiParticip
 import type { StartRoundtableInput } from "../api";
 import { useRoundtableStore, waitForRoundtableHydration } from "../roundtableStore";
 import type { RoundtablePattern } from "../types";
+import { seedWorkspace } from "./compare";
 import { buildDemoSession, installRoundtableDevHook, type DemoSeat } from "./devHook";
 import { createRegisteredDriver, hasDriverFactory, registerDriverFactory } from "./driverRegistry";
 import { createLiveRaceAdapter, prepareWorkspace, readOriginContext } from "./liveServices";
 import { threadIdsToResume, type ThreadPresenceSource, waitForThreads } from "./resumeGate";
 import { RoundtableRunner, type RoundtableRepo } from "./runner";
-import { createSessionRecord, validateStartInput } from "./session";
+import { createSessionRecord, validateSeed, validateStartInput } from "./session";
 import { ThreadParticipantDriver } from "./threadDriver";
 import type { ThreadEnginePort } from "./threadPort";
 import { createLiveThreadEnginePort } from "./threadPortLive";
@@ -139,9 +140,19 @@ export async function startRoundtableSession(input: StartRoundtableInput): Promi
   }
   const { runner } = getRoundtableRuntime();
   await waitForRoundtableHydration();
+  // A debate seeded from a comparison continues in that comparison's threads and checkout.
+  const seed = input.seedFromSessionId
+    ? useRoundtableStore.getState().sessions[input.seedFromSessionId]
+    : undefined;
+  validateSeed(input, seed);
   const id = crypto.randomUUID();
-  const workspace = await prepareWorkspace(input, id);
-  const session = createSessionRecord(input, { id, now: Date.now(), ...workspace });
+  const workspace = seed ? seedWorkspace(seed) : await prepareWorkspace(input, id);
+  const session = createSessionRecord(input, {
+    id,
+    now: Date.now(),
+    ...workspace,
+    ...(seed ? { seed, newId: () => crypto.randomUUID() } : {}),
+  });
   useRoundtableStore.getState().putSession(session);
   void runner.kick(id);
   return id;

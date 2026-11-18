@@ -71,6 +71,8 @@ export function rolesForPattern(pattern: RoundtablePattern, count: number): Part
       case "race":
         return "builder";
       case "open":
+      // Additive (AA compare): not offered in chat; every seat simply answers.
+      case "compare":
         return "member";
     }
   });

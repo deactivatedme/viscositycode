@@ -5,6 +5,7 @@
  * `StartRoundtableInput`. Provider-agnostic: an agent seat is described only
  * by what `useReadyAgentBrains` reports (kind, models, presentation modes).
  */
+import { parseAgentProfileKind } from "@/shared/contracts";
 import { XAI_DEFAULT_TEXT_MODEL } from "@/shared/viscosity/xaiContract";
 import type { ReadyAgentBrain, StartRoundtableInput } from "../api";
 import type {
@@ -19,6 +20,7 @@ import {
   MAX_PARTICIPANTS,
   MAX_ROUNDS_LIMIT,
   MIN_PARTICIPANTS,
+  patternIsAnswerOnly,
   patternUsesOwnWorktrees,
 } from "./patterns";
 
@@ -122,12 +124,80 @@ export function seatFromProfile(profile: ParticipantProfile): SetupSeat {
   };
 }
 
-/** Initial seats: two different ready agents when available. */
+/**
+ * The provider an agent kind belongs to: several accounts of one provider
+ * (account-pool profiles, "<driver>:<id>") count as one.
+ */
+function providerOf(agentKind: string): string {
+  return parseAgentProfileKind(agentKind)?.driver ?? agentKind;
+}
+
+/**
+ * Additive (AA compare): "ask all" — one more seat for every ready provider
+ * not seated yet, in the engine's order (which already prefers the pooled
+ * account with the most usage left), up to the seat limit.
+ */
+export function seatAllReady(
+  draft: RoundtableSetupDraft,
+  ready: readonly ReadyAgentBrain[],
+): RoundtableSetupDraft {
+  const seated = new Set(
+    draft.seats.flatMap((seat) =>
+      seat.brain.kind === "agent" ? [providerOf(seat.brain.agentKind)] : [],
+    ),
+  );
+  let next = draft;
+  for (const brain of ready) {
+    if (!canAddSeat(next)) break;
+    const provider = providerOf(brain.agentKind);
+    if (seated.has(provider)) continue;
+    seated.add(provider);
+    next = addSeat(next, agentBrainFor(brain));
+  }
+  return next;
+}
+
+/**
+ * Additive (AA compare): identifies what "ask all" seats on an empty table
+ * for this ready list (one brain per ready provider, in order, up to the
+ * seat limit). Equal keys mean the same seats, so the setup dialog can keep
+ * following a ready list that is still filling in without reseating on
+ * every render.
+ */
+export function askAllSeatingKey(ready: readonly ReadyAgentBrain[]): string {
+  const seated = new Set<string>();
+  const brains: ParticipantBrain[] = [];
+  for (const brain of ready) {
+    if (brains.length >= MAX_PARTICIPANTS) break;
+    const provider = providerOf(brain.agentKind);
+    if (seated.has(provider)) continue;
+    seated.add(provider);
+    brains.push(agentBrainFor(brain));
+  }
+  return JSON.stringify(brains);
+}
+
+/** Initial seats: two different ready agents when available (compare: every ready provider). */
 export function initialSeats(
   ready: readonly ReadyAgentBrain[],
   pattern: RoundtablePattern,
 ): SetupSeat[] {
   if (ready.length === 0) return [];
+  if (patternIsAnswerOnly(pattern)) {
+    return seatAllReady(
+      {
+        title: "",
+        task: "",
+        projectId: undefined,
+        pattern,
+        seats: [],
+        maxRounds: defaultMaxRounds(pattern) ?? 1,
+        worktreeMode: "current",
+        branchName: "",
+      },
+      ready,
+    ).seats;
+  }
   const roles = defaultRolesForPattern(pattern, MIN_PARTICIPANTS);
   const seats: SetupSeat[] = [];
   for (const role of roles) {
@@ -200,8 +270,9 @@ export function updateSeat(
   };
 }
 
+/** Whether the form asks for a round limit (not for the open chat, nor one-answer compare). */
 export function roundsApply(pattern: RoundtablePattern): boolean {
-  return defaultMaxRounds(pattern) !== undefined;
+  return !patternIsAnswerOnly(pattern) && defaultMaxRounds(pattern) !== undefined;
 }
 
 /** First thing that keeps the form from starting, or null when it can start. */
@@ -262,12 +333,14 @@ export function buildStartInput(
 ): StartRoundtableInput {
   const title = draft.title.trim();
   const branchName = draft.branchName.trim();
-  // Race gives every participant its own worktree, so it takes no checkout choice.
-  const worktree: StartRoundtableInput["worktree"] = patternUsesOwnWorktrees(draft.pattern)
-    ? undefined
-    : draft.worktreeMode === "current"
-      ? { mode: "current" }
-      : { mode: "new-branch", ...(branchName ? { branchName } : {}) };
+  // Race gives every participant its own worktree, and compare changes no
+  // files, so neither takes a checkout choice.
+  const worktree: StartRoundtableInput["worktree"] =
+    patternUsesOwnWorktrees(draft.pattern) || patternIsAnswerOnly(draft.pattern)
+      ? undefined
+      : draft.worktreeMode === "current"
+        ? { mode: "current" }
+        : { mode: "new-branch", ...(branchName ? { branchName } : {}) };
   return {
     ...(title ? { title } : {}),
     task: draft.task.trim(),

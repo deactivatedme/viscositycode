@@ -8,6 +8,9 @@
  * reloaded window resumes exactly where it stopped, and the runner that
  * performs the side effects stays small.
  *
+ * Patterns: build ↔ review, debate, relay, race, open group chat, and
+ * (additive, AA compare) compare — everyone answers once, in parallel.
+ *
  * Turn slots: a slot is (participant, round, phase[, note]). Its latest turn
  * decides its state — `done`, `failed`, or open (no turn, or only `stopped`
  * turns, which are re-run). Pure; no store, no React.
@@ -23,6 +26,7 @@ import type {
 } from "../types";
 import {
   buildBuilderPrompt,
+  buildCompareAnswerPrompt,
   buildCritiquePrompt,
   buildCrossReviewPrompt,
   buildImplementPrompt,
@@ -40,13 +44,14 @@ import {
 import { uniqueLabels } from "./text";
 import { findMentions, parsePick, parseVerdict, tallyPicks, type PickCandidate } from "./verdicts";
 
-/** Per-pattern defaults for `maxRounds` (open: unlimited, the value is unused). */
+/** Per-pattern defaults for `maxRounds` (open: unlimited and compare: one answer; both unused). */
 export const DEFAULT_MAX_ROUNDS: Record<RoundtablePattern, number> = {
   "build-review": 4,
   debate: 2,
   relay: 3,
   race: 1,
   open: 0,
+  compare: 1,
 };
 /** Reaction rounds participants may add to one user message in the open pattern. */
 export const OPEN_REACTION_ROUNDS = 2;
@@ -694,6 +699,44 @@ function planOpen(view: SessionView): RoundtablePlan {
   return { kind: "idle" };
 }
 
+// --- compare -------------------------------------------------------------------
+
+/**
+ * Everyone answers the task once, at the same time and without seeing the
+ * others; no critique, no verdict. Done once every answer is in (a failed
+ * answer is marked on its turn); failed only when nobody answered.
+ */
+function planCompare(view: SessionView): RoundtablePlan {
+  const { session } = view;
+  if (session.participants.length === 0) return failed("not-enough-participants");
+  const notes = view.pendingNotes();
+  const missing = session.participants.filter(
+    (participant) => view.slot(participant.id, 0, "answer").state === "open",
+  );
+  if (missing.length > 0) {
+    return run(
+      missing.map((participant) =>
+        view.planned(
+          participant,
+          0,
+          "answer",
+          buildCompareAnswerPrompt(view.identity(participant, notes.texts)),
+        ),
+      ),
+      notes.ids,
+    );
+  }
+  let answered = 0;
+  let lastFailure: RoundtableTurn | undefined;
+  for (const participant of session.participants) {
+    const slot = view.slot(participant.id, 0, "answer");
+    if (slot.state === "done") answered += 1;
+    else if (slot.state === "failed") lastFailure = slot.turn;
+  }
+  if (answered === 0) return failed("turn-failed", lastFailure);
+  return done({ reason: "compared" });
+}
+
 // --- entry -----------------------------------------------------------------------
 
 export function planNextStep(
@@ -712,6 +755,8 @@ export function planNextStep(
       return planRace(view);
     case "open":
       return planOpen(view);
+    case "compare":
+      return planCompare(view);
   }
 }
 

@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { AGENT_PROFILE_DRIVERS, agentProfileKind } from "@/shared/contracts";
 import { XAI_DEFAULT_TEXT_MODEL } from "@/shared/viscosity/xaiContract";
-import { defaultMaxRounds, defaultRolesForPattern } from "./patterns";
+import {
+  defaultMaxRounds,
+  defaultRolesForPattern,
+  MAX_PARTICIPANTS,
+  patternIsAnswerOnly,
+} from "./patterns";
 import { readyBrain } from "./roundtable.testFixtures";
 import {
   addSeat,
   agentBrainFor,
+  askAllSeatingKey,
   buildStartInput,
   changePattern,
   createSeat,
@@ -12,6 +19,8 @@ import {
   nextReadyBrain,
   removeSeat,
   type RoundtableSetupDraft,
+  roundsApply,
+  seatAllReady,
   uniqueLabels,
   updateSeat,
   validateSetup,
@@ -195,5 +204,70 @@ describe("buildStartInput", () => {
       `Grok · ${XAI_DEFAULT_TEXT_MODEL} 2`,
     ]);
     expect(uniqueLabels(["a", "b", "a", "a"])).toEqual(["a", "b", "a 2", "a 3"]);
+  });
+});
+
+describe("ask all (compare)", () => {
+  // Profile kinds of one registered driver: several accounts of one provider.
+  const driver = AGENT_PROFILE_DRIVERS[0]!.driver;
+  const many = [
+    readyBrain("alpha"),
+    readyBrain(agentProfileKind(driver, "work")),
+    readyBrain(agentProfileKind(driver, "personal")),
+    readyBrain("beta"),
+    readyBrain("gamma"),
+    readyBrain("delta"),
+    readyBrain("epsilon"),
+  ];
+
+  it("seats every ready provider once (one account each), up to five", () => {
+    const seats = initialSeats(many, "compare");
+    expect(seats.map((seat) => seat.brain.kind === "agent" && seat.brain.agentKind)).toEqual([
+      "alpha",
+      agentProfileKind(driver, "work"),
+      "beta",
+      "gamma",
+      "delta",
+    ]);
+    expect(seats.every((seat) => seat.role === "member")).toBe(true);
+    expect(initialSeats(ready, "compare")).toHaveLength(2);
+    expect(initialSeats([], "compare")).toEqual([]);
+  });
+
+  it("keys the ask-all seating by the seats it would make, not by the list's identity", () => {
+    const seatedBrains = JSON.stringify(initialSeats(many, "compare").map((seat) => seat.brain));
+    expect(askAllSeatingKey(many)).toBe(seatedBrains);
+    expect(askAllSeatingKey([...many])).toBe(askAllSeatingKey(many));
+    // A second account of a seated provider, or a sixth provider, seats nobody new.
+    expect(askAllSeatingKey([...many, readyBrain("zeta")])).toBe(askAllSeatingKey(many));
+    expect(askAllSeatingKey([readyBrain("alpha")])).not.toBe(askAllSeatingKey(ready));
+    expect(askAllSeatingKey([])).toBe("[]");
+  });
+
+  it("adds the providers not seated yet when switching to it", () => {
+    const start = draft({ seats: [createSeat(agentBrainFor(readyBrain("beta")), "builder")] });
+    const next = seatAllReady(changePattern(start, "compare"), [readyBrain("alpha"), ...ready]);
+    expect(next.seats.map((seat) => seat.brain.kind === "agent" && seat.brain.agentKind)).toEqual([
+      "beta",
+      "alpha",
+    ]);
+    expect(next.seats.map((seat) => seat.role)).toEqual(["member", "member"]);
+    const full = draft({
+      seats: Array.from({ length: MAX_PARTICIPANTS }, () => createSeat(xaiBrain(), "member")),
+    });
+    expect(seatAllReady(full, many)).toBe(full);
+  });
+
+  it("asks for no rounds and no checkout, and starts with one answer each", () => {
+    expect(roundsApply("compare")).toBe(false);
+    expect(patternIsAnswerOnly("compare")).toBe(true);
+    expect(patternIsAnswerOnly("debate")).toBe(false);
+    const value = changePattern(draft({ worktreeMode: "new-branch", maxRounds: 0 }), "compare");
+    expect(validateSetup(value)).toBeNull();
+    const input = buildStartInput(value, ready);
+    expect(input.pattern).toBe("compare");
+    expect("maxRounds" in input).toBe(false);
+    expect("worktree" in input).toBe(false);
+    expect(input.participants.map((entry) => entry.role)).toEqual(["member", "member"]);
   });
 });

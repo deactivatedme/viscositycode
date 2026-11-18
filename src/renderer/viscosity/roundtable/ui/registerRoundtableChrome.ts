@@ -1,7 +1,8 @@
 /**
  * ViscosityCode Roundtable UI: the activity bar item (sidebar list view) and
  * the status bar item. Both registries only render inside the desktop shell,
- * and the activity item additionally hides itself outside it.
+ * and the activity item additionally hides itself outside it. Also registers
+ * the "Ask all models…" palette command (additive, AA compare).
  */
 import { msg } from "@lingui/core/macro";
 import { lazy } from "react";
@@ -10,6 +11,7 @@ import { registerActivityBarItem } from "@/renderer/viscosity/layout/activityBar
 import { registerStatusBarItem } from "@/renderer/viscosity/layout/statusBar/statusBarRegistry";
 import { useViscosityShellEnabled } from "@/renderer/viscosity/layout/tabs/shellGate";
 import { useRoundtableList } from "../api";
+import { registerCompareCommands } from "./compareCommands";
 import { ROUNDTABLE_STATUS_ITEM_ID, RoundtableStatusItem } from "./RoundtableStatusItem";
 
 export const ROUNDTABLE_ACTIVITY_ITEM_ID = "roundtable";
@@ -54,4 +56,5 @@ export function registerRoundtableChrome(): void {
     order: 300,
     component: RoundtableStatusItem,
   });
+  registerCompareCommands();
 }

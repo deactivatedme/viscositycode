@@ -4,6 +4,7 @@
  *   window.__viscosityRoundtable.sessions()
  *   window.__viscosityRoundtable.simulate()                       // finished build ↔ review demo
  *   window.__viscosityRoundtable.simulate("demo-1", "debate")     // a given id and pattern
+ *   window.__viscosityRoundtable.simulate("demo-2", "compare")    // side-by-side answers
  *
  * `simulate` only seeds a finished demo session (fake turns, no threads) into
  * the Roundtable store, for screenshots in mock mode where no agents run.
@@ -194,6 +195,29 @@ const SCRIPTS: Record<
       [1, 1, "reply", "To answer the question directly: yes, link each error to its field."],
     ],
   },
+  compare: {
+    roles: ["member", "member", "member"],
+    turns: [
+      [
+        0,
+        0,
+        "answer",
+        '**Validate on blur and on submit** with small pure functions:\n\n```ts\nexport function validateEmail(value: string): string | null {\n  return /^[^@\\s]+@[^@\\s]+$/.test(value) ? null : "Enter a valid email.";\n}\n```\n\n- Link each message to its field with `aria-describedby`.\n- Unit-test every rule.\n\nTrade-off: a little more code than a schema library, but no new dependency.',
+      ],
+      [
+        1,
+        0,
+        "answer",
+        "Use a **schema** (one source of truth for the client and the server):\n\n1. Define the signup schema once.\n2. Run it on submit and show every error at once.\n3. Reuse it in the API handler.\n\nTrade-off: adds a dependency, but the rules cannot drift apart.",
+      ],
+      [
+        2,
+        0,
+        "answer",
+        "Keep the browser's **native constraint validation** (`required`, `type=email`, `minLength`) and only add a custom message layer. It is the smallest change and accessible by default; add tests for the custom messages.",
+      ],
+    ],
+  },
 };
 
 /** A finished demo session (fake turns; no threads, nothing runs). */
@@ -209,8 +233,10 @@ export function buildDemoSession(input: {
   const participants = script.roles.map((role, index) => seat(seats, index, role));
   const noteId = "demo-note-1";
   const start = input.now - script.turns.length * 60_000;
+  const parallel = input.pattern === "compare";
   const turns: RoundtableTurn[] = script.turns.map(([participant, round, phase, text], index) => {
-    const startedAt = start + index * 60_000;
+    // Compare answers run side by side: same start, different durations.
+    const startedAt = parallel ? start : start + index * 60_000;
     const turn: RoundtableTurn = {
       id: `demo-turn-${index + 1}`,
       participantId: participants[participant]!.id,
@@ -220,7 +246,7 @@ export function buildDemoSession(input: {
       status: "done",
       responseText: text,
       startedAt,
-      endedAt: startedAt + 45_000,
+      endedAt: startedAt + (parallel ? 38_000 + index * 21_000 : 45_000),
       ...(input.pattern === "open" ? { noteId } : {}),
     };
     if (/^VERDICT: APPROVE$/m.test(text)) turn.verdict = "approve";
@@ -242,7 +268,7 @@ export function buildDemoSession(input: {
     projectId: input.projectId,
     participants,
     threadIds: {},
-    maxRounds: open ? 0 : 4,
+    maxRounds: open ? 0 : parallel ? 1 : 4,
     status: open ? "running" : "done",
     turns,
     ...(open
@@ -267,7 +293,9 @@ export function buildDemoSession(input: {
               ? { reason: "crown" as const, rationale: "Best tested and no new dependency." }
               : input.pattern === "debate"
                 ? { reason: "vote" as const }
-                : { reason: "approved" as const },
+                : input.pattern === "compare"
+                  ? { reason: "compared" as const }
+                  : { reason: "approved" as const },
         }),
     createdAt: start - 60_000,
     updatedAt: input.now,

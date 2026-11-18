@@ -102,6 +102,96 @@ describe("planNextStep", () => {
   });
 });
 
+describe("planNextStep: compare", () => {
+  const trio = [agentSeat("a", "Alpha"), agentSeat("b", "Beta"), agentSeat("c", "Gamma")];
+
+  it("asks every participant at once for one independent answer", () => {
+    const plan = planNextStep(makeSession("compare", trio, { maxRounds: 1 }));
+    expect(plan.kind).toBe("run");
+    if (plan.kind !== "run") return;
+    expect(plan.turns.map((turn) => [turn.participantId, turn.round, turn.phase])).toEqual([
+      ["a", 0, "answer"],
+      ["b", 0, "answer"],
+      ["c", 0, "answer"],
+    ]);
+    for (const turn of plan.turns) {
+      expect(turn.prompt).toContain("Build the thing.");
+      expect(turn.prompt).toContain("you will not see the other answers");
+      // No verdict or pick is asked for.
+      expect(turn.prompt).not.toMatch(/VERDICT:|PICK:/);
+    }
+  });
+
+  it("only re-asks open slots and carries pending notes", () => {
+    const session = makeSession("compare", trio, {
+      turns: [
+        doneTurn({ participantId: "a", phase: "answer" }),
+        doneTurn({ participantId: "b", phase: "answer", status: "stopped" }),
+        doneTurn({ participantId: "c", phase: "answer", status: "failed", error: "boom" }),
+      ],
+      notes: [{ id: "n1", text: "Prefer no new dependency", createdAt: 1 }],
+    });
+    const plan = planNextStep(session);
+    expect(plan.kind).toBe("run");
+    if (plan.kind !== "run") return;
+    // The stopped answer runs again; the failed one stays failed (it is marked, not retried).
+    expect(plan.turns.map((turn) => turn.participantId)).toEqual(["b"]);
+    expect(plan.deliverNoteIds).toEqual(["n1"]);
+    expect(plan.turns[0]!.prompt).toContain("- Prefer no new dependency");
+  });
+
+  it("is done once everyone answered, with failed answers marked", () => {
+    const session = makeSession("compare", trio, {
+      turns: [
+        doneTurn({ participantId: "a", phase: "answer" }),
+        doneTurn({ participantId: "b", phase: "answer", status: "failed", error: "quota" }),
+        doneTurn({ participantId: "c", phase: "answer" }),
+      ],
+    });
+    expect(planNextStep(session)).toEqual({
+      kind: "finish",
+      status: "done",
+      outcome: { reason: "compared" },
+    });
+  });
+
+  it("fails only when nobody answered", () => {
+    const last = doneTurn({ participantId: "b", phase: "answer", status: "failed", error: "x" });
+    const session = makeSession("compare", trio.slice(0, 2), {
+      turns: [
+        doneTurn({ participantId: "a", phase: "answer", status: "failed", error: "y" }),
+        last,
+      ],
+    });
+    expect(planNextStep(session)).toEqual({
+      kind: "finish",
+      status: "failed",
+      reason: "turn-failed",
+      turnId: last.id,
+    });
+  });
+
+  it("a debate seeded with the answers goes straight to the critique round", () => {
+    const debate = makeSession("debate", trio.slice(0, 2), {
+      maxRounds: 1,
+      seededFromSessionId: "compare-1",
+      turns: [
+        doneTurn({ participantId: "a", phase: "propose", responseText: "Use a schema" }),
+        doneTurn({ participantId: "b", phase: "propose", responseText: "Native validation" }),
+      ],
+    });
+    const plan = planNextStep(debate);
+    expect(plan.kind).toBe("run");
+    if (plan.kind !== "run") return;
+    expect(plan.turns.map((turn) => [turn.participantId, turn.round, turn.phase])).toEqual([
+      ["a", 1, "critique"],
+      ["b", 1, "critique"],
+    ]);
+    expect(plan.turns[0]!.prompt).toContain("Native validation");
+    expect(plan.turns[1]!.prompt).toContain("Use a schema");
+  });
+});
+
 describe("interpretTurn", () => {
   const session = makeSession("debate", [agentSeat("a", "Alpha"), agentSeat("b", "Beta")]);
 
@@ -126,7 +216,7 @@ describe("interpretTurn", () => {
 });
 
 describe("demo sessions (dev hook)", () => {
-  const settled: RoundtablePattern[] = ["build-review", "debate", "relay", "race"];
+  const settled: RoundtablePattern[] = ["build-review", "debate", "relay", "race", "compare"];
 
   it.each([...settled, "open" as const])(
     "seeds a valid %s session with finished turns",
@@ -147,6 +237,19 @@ describe("demo sessions (dev hook)", () => {
     const session = buildDemoSession({ id: `demo-${pattern}`, pattern, projectId: "p", now: 1e9 });
     expect(session.status).toBe("done");
     expect(session.outcome).toBeDefined();
+  });
+
+  it("runs the compare demo's answers side by side, with different durations", () => {
+    const session = buildDemoSession({
+      id: "demo-c",
+      pattern: "compare",
+      projectId: "p",
+      now: 1e9,
+    });
+    expect(session.outcome).toEqual({ reason: "compared" });
+    expect(new Set(session.turns.map((turn) => turn.startedAt)).size).toBe(1);
+    expect(new Set(session.turns.map((turn) => turn.endedAt)).size).toBe(session.turns.length);
+    expect(planNextStep(session)).toMatchObject({ kind: "finish", status: "done" });
   });
 
   it("leaves the group-chat demo open and waiting for the user", () => {
