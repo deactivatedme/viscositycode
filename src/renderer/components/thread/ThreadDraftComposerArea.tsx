@@ -2,7 +2,15 @@
 import { RemoteClientError } from "@/shared/remote/clientErrors";
 import { DraftRecoveryNotice } from "@/renderer/components/composer/DraftRecoveryNotice";
 import { mergeDraftContent, composerSeedQueue } from "@/renderer/state/projectReferences";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode, // ViscosityCode:
+  type RefObject,
+} from "react";
 import { toast } from "@heroui/react";
 import { Download, Monitor, Settings2, Webhook, X } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -382,6 +390,8 @@ export function ThreadDraftComposerArea(props: {
   onSwitchBranch: (branch: string, createNew: boolean) => void;
   onRememberPresentationMode: () => void;
   onStart: (input: DraftStartInput) => DraftStartResult | Promise<DraftStartResult>;
+  /** ViscosityCode: a fork dock row above the input (Smart start's pick). */
+  viscosityDock?: ReactNode;
 }) {
   const { t } = useLingui();
   const [prompt, setPrompt] = useState("");
@@ -1619,6 +1629,8 @@ export function ThreadDraftComposerArea(props: {
                 onAdd={addExperimentCandidate}
               />
             ) : null}
+            {/* ViscosityCode: Smart start's pick ("Let ViscosityCode pick"). */}
+            {props.viscosityDock}
             {/* ViscosityCode: Roundtable participants and pattern. */}
             {roundtable.enabled ? (
               <RoundtableDraftPanel

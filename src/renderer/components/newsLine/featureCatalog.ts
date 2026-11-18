@@ -260,6 +260,7 @@ export const NOT_PROMOTED: Readonly<Partial<Record<CoverageKey, string>>> = {
   "settings:bots": "Reached from the Bots activity bar view; the section only holds the xAI key",
   "settings:ai": "AI helper preferences, not a feature",
   "settings:acpRegistry": "Reached while adding agents",
+  // ViscosityCode: Smart start's lists sit here too; Auto shows in the new-thread composer.
   "settings:agentsGeneral": "Agent preferences, not a feature",
   "settings:agents": "Every user sets up agents during onboarding",
   "settings:search": "Preferences, not a feature",

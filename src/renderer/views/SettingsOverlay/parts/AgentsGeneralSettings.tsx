@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { Button, toast } from "@heroui/react";
 import { RefreshCw } from "lucide-react";
@@ -10,6 +11,8 @@ import { refreshAgentDiscovery } from "@/renderer/actions/agentDiscoveryActions"
 import { ModelOrderSection } from "./ModelOrderSection";
 import { ModelVisibilitySection } from "./ModelVisibilitySection";
 import { SettingsPage } from "./SettingsForm";
+// ViscosityCode: Smart start's preferred-provider lists (desktop layout only).
+import { SmartStartSettings } from "@/renderer/viscosity/settings/SmartStartSettings";
 
 export function AgentsGeneralSettings() {
   const { t } = useLingui();
@@ -51,6 +54,8 @@ export function AgentsGeneralSettings() {
     >
       <ModelVisibilitySection />
       <ModelOrderSection />
+      {/* ViscosityCode: Smart start group (desktop layout only). */}
+      <SmartStartSettings />
     </SettingsPage>
   );
 }

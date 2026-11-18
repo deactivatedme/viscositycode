@@ -27,6 +27,8 @@ import {
   useAccountPoolDraftSelection,
   withAccountPoolControl,
 } from "@/renderer/viscosity/accountPools/composerPool";
+// ViscosityCode: Smart start — "Let ViscosityCode pick" chooses the account and model.
+import { useSmartStartDraft } from "@/renderer/viscosity/smartStart";
 import type { DraftContent } from "@/renderer/state/slices/types";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
@@ -533,6 +535,18 @@ export function ThreadDraftView(props: {
     () => (selectedAgent ? agentWithCapabilities(selectedAgent, presentationMode) : undefined),
     [selectedAgent, presentationMode],
   );
+  // ViscosityCode: Smart start — Auto switches the draft to the best ready account.
+  const smartStart = useSmartStartDraft({
+    projectId: project.id,
+    enabled: !isIsolatedSelection && !project.remoteServerId,
+    homeScope: isHomeScope,
+    agents: installedAgents,
+    disabledAgents,
+    presentationMode,
+    lastDraftConfig,
+    currentAgentKind: effectiveAgentKind,
+    selectAgent: setAgentKind,
+  });
   const previousPresentationAgentKindRef = useRef<AgentStatus["kind"] | undefined>(
     selectedAgent?.kind,
   );
@@ -1760,9 +1774,9 @@ export function ThreadDraftView(props: {
       onConfigChange: (patch, origin) => latestConfigPatchRef.current(patch, origin),
     });
     // ViscosityCode: account pools — name the pooled account next to the model picker.
-    const pooled = withAccountPoolControl(
-      composed,
-      accountPoolDraft.controlFor(selectedAgent.kind),
+    const pooled = smartStart.decorateControls(
+      // ViscosityCode: Smart start — the Auto toggle sits right before the model picker.
+      withAccountPoolControl(composed, accountPoolDraft.controlFor(selectedAgent.kind)),
     );
     if (!crewSection) return pooled;
     return applyCrewComposerControls(pooled, {
@@ -2057,7 +2071,8 @@ export function ThreadDraftView(props: {
             onRememberPresentationMode={() => {
               if (!props.chatOnly) setLastPresentationMode(selectedAgent.kind, presentationMode);
             }}
-            onStart={onStart}
+            viscosityDock={smartStart.panel} // ViscosityCode: Smart start pick row
+            onStart={smartStart.wrapStart(onStart)} // ViscosityCode: remember hand-picked providers
           />
         </div>
         {/* Absorbs the slack below the anchored composer in the full draft view.
