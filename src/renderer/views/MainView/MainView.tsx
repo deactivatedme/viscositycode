@@ -43,6 +43,8 @@ import { MobileTopLevelPage } from "./parts/MobileTopLevelPage";
 import { useMobilePageHistory } from "./parts/mobilePageHistory";
 // ViscosityCode: status bar below the desktop shell.
 import { ViscosityStatusBarFrame } from "@/renderer/viscosity/layout/statusBar";
+// ViscosityCode: animated background + agent-state effects (desktop shell only).
+import { FxRoot } from "@/renderer/fx/FxRoot";
 
 function findMissingWslDistro(distros: readonly string[], statuses: readonly AgentStatus[]) {
   const cachedDistros = new Set(
@@ -150,6 +152,8 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
       checkingConnection={!browserConnectionChecked}
       fallback={<BrowserConnectionPage />}
     >
+      {/* ViscosityCode: background layer + agent-state effects; renders nothing outside the desktop shell. */}
+      <FxRoot />
       {/* ViscosityCode: status bar below the desktop shell (not on the connection page). */}
       <ViscosityStatusBarFrame>
         <MainPageLayout onTitleClick={() => startTransition(() => openHome())} />
