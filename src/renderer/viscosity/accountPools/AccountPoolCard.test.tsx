@@ -189,6 +189,69 @@ describe("AccountPoolCard", () => {
     });
   });
 
+  // ViscosityCode: account pool follow-ups — leave an account out of the pool.
+  it("leaves an account out of the pool and brings it back in its place", () => {
+    useSharedSettings.setState({
+      accountPools: {
+        codex: { enabled: true, members: ["codex", "codex:work", "codex:personal"] },
+      },
+    });
+    render(<AccountPoolCard driver="codex" />);
+    const include = () => screen.getByRole("checkbox", { name: "Include Codex Work in the pool" });
+    expect(include()).toBeChecked();
+
+    act(() => {
+      fireEvent.click(include());
+    });
+    expect(useSharedSettings.getState().accountPools?.codex).toEqual({
+      enabled: true,
+      members: ["codex", "codex:work", "codex:personal"],
+      excludedMembers: ["codex:work"],
+    });
+    const row = document.querySelector('[data-pool-member="codex:work"]')!;
+    expect(row.getAttribute("data-pool-member-included")).toBe("false");
+    expect(row.querySelector('[data-pool-badge="left-out"]')).toBeTruthy();
+    // The account keeps its place in the order.
+    expect(memberOrder()).toEqual(["codex", "codex:work", "codex:personal"]);
+
+    act(() => {
+      fireEvent.click(include());
+    });
+    expect(useSharedSettings.getState().accountPools?.codex).toEqual({
+      enabled: true,
+      members: ["codex", "codex:work", "codex:personal"],
+    });
+  });
+
+  it("warns when fewer than two accounts are left in the pool", () => {
+    useSharedSettings.setState({
+      accountPools: {
+        codex: {
+          enabled: true,
+          members: ["codex", "codex:work", "codex:personal"],
+          excludedMembers: ["codex:work", "codex:personal"],
+        },
+      },
+    });
+    render(<AccountPoolCard driver="codex" />);
+    expect(document.querySelector('[data-pool-note="too-few"]')).toBeTruthy();
+  });
+
+  it("says tracking is off only for accounts the host does not collect", () => {
+    useSharedSettings.setState({
+      usage: { ...original.usage, disabledProviders: ["codex:personal"] },
+      accountPools: { codex: { enabled: true, members: ["codex", "codex:work"] } },
+    });
+    useProviderUsageStore.setState({ snapshots: {} });
+    render(<AccountPoolCard driver="codex" />);
+    expect(document.querySelector('[data-pool-member="codex:personal"]')?.textContent).toContain(
+      "Usage tracking is off for this account.",
+    );
+    expect(document.querySelector('[data-pool-member="codex:work"]')?.textContent).toContain(
+      "No usage reported yet.",
+    );
+  });
+
   it("explains that a pool needs a second account", () => {
     useSharedSettings.setState({ agentInstances: {} });
     render(<AccountPoolCard driver="codex" />);

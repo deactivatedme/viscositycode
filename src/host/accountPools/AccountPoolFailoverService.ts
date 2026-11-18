@@ -24,7 +24,7 @@
  */
 import type { UsageSnapshot } from "@poracode/agents-usage/types";
 import type { AccountPools, MemberAvailability, PoolMemberState } from "@/shared/accountPools";
-import { bestPoolMember, memberAvailability } from "@/shared/accountPools";
+import { bestPoolMember } from "@/shared/accountPools";
 import { capabilitiesForPresentation } from "@/shared/agentSelection";
 import { getProjectAgentStatuses } from "@/shared/agentStatus";
 import {
@@ -59,6 +59,7 @@ import {
   decideFailover,
   DEFAULT_EXHAUSTED_COOLDOWN_MS,
   exhaustedMarkFor,
+  failureAvailability,
   failoverThreadConfig,
   promptFromUserMessages,
   resolveAccountPool,
@@ -90,7 +91,13 @@ export interface AccountPoolFailoverDeps {
   switchThread(payload: StartThreadPayload & { threadId: string }): Promise<unknown>;
   /** False for threads another owner must not have switched under it (experiments). */
   canSwitchThread?(threadId: string): boolean;
-  publishNotice(notice: AccountPoolNotice): void;
+  /**
+   * Delivers a host notice. Returns true when the notice was delivered in
+   * place of the thread's error notification (one that leaves the thread
+   * failed): the held generic error notification is then dropped, so the
+   * owner hears about the failure once (`holdErrorNotification`).
+   */
+  publishNotice(notice: AccountPoolNotice): boolean | void;
   /** Called synchronously, before later observers see the failing event. */
   onFailoverPending?(threadId: string): void;
   /** Called exactly once for every `onFailoverPending`. */
@@ -105,6 +112,10 @@ export interface AccountPoolFailoverDeps {
   /** Upper bound on waiting for the failed session to settle before switching. */
   settleTimeoutMs?: number;
   exhaustedCooldownMs?: number;
+  /** Longest a thread's error notification is held for its failover (`holdErrorNotification`). */
+  errorNotificationHoldMs?: number;
+  /** How long a held error notification waits for a failover to claim the failure. */
+  errorNotificationGraceMs?: number;
 }
 
 interface ThreadTrack {
@@ -144,7 +155,22 @@ interface FailoverClaim {
 }
 
 const DEFAULT_SETTLE_TIMEOUT_MS = 5_000;
+/** Bounded hold: an error notification is never delayed longer than this. */
+const DEFAULT_ERROR_NOTIFICATION_HOLD_MS = 10_000;
+/** Matches the schedule coordinator's grace for a failover to claim a failure. */
+const DEFAULT_ERROR_NOTIFICATION_GRACE_MS = 2_000;
 const FALLBACK_ERROR = "The account ran out of usage.";
+
+/** What a held error notification becomes once its failover settles. */
+type HeldNotificationRelease = "publish" | "drop";
+
+/**
+ * A thread that stays failed publishes its held error notification, unless
+ * the failover's own notice was delivered in its place.
+ */
+function releaseAfter(noticeReplacesError: boolean): HeldNotificationRelease {
+  return noticeReplacesError ? "drop" : "publish";
+}
 
 export class AccountPoolFailoverService {
   private readonly tracks = new Map<string, ThreadTrack>();
@@ -153,6 +179,8 @@ export class AccountPoolFailoverService {
   private readonly exhaustedMarks = new Map<string, ExhaustedMark>();
   private readonly settleWaiters = new Map<string, () => void>();
   private readonly terminalSuggested = new Set<string>();
+  /** Error notifications held per thread until its failover settles (`holdErrorNotification`). */
+  private readonly heldNotifications = new Map<string, Set<(publish: boolean) => void>>();
   private readonly runs = new Set<Promise<void>>();
   private disposed = false;
 
@@ -215,7 +243,80 @@ export class AccountPoolFailoverService {
   dispose(): Promise<void> {
     this.disposed = true;
     for (const release of [...this.settleWaiters.values()]) release();
+    // Held notifications are released, never lost, when the owner shuts down.
+    for (const threadId of [...this.heldNotifications.keys()]) {
+      this.releaseHeldNotifications(threadId, "publish");
+    }
     return Promise.allSettled([...this.runs]).then(() => undefined);
+  }
+
+  /**
+   * For the host's thread notification publisher: whether to hold this
+   * thread's "error" notification because an account-pool failover may still
+   * move the thread on. Undefined means publish now. Otherwise the promise
+   * resolves true to publish the notification or false to drop it:
+   * - a failover is pending (or claims the failure within a short grace, for
+   *   providers that report the error state before their reasoned error) —
+   *   dropped when the thread continued on another account, published when it
+   *   stays failed;
+   * - a late error from the session a finished failover left behind
+   *   (`agentKind` is no longer the thread's account) — dropped at once;
+   * - an error from the account a pending switch is moving the thread to is
+   *   not the failover's to answer — published now.
+   * The hold is bounded (`errorNotificationHoldMs`, default 10 s): when the
+   * bound passes first, the notification is published.
+   */
+  holdErrorNotification(threadId: string, agentKind?: string): Promise<boolean> | undefined {
+    if (this.disposed) return undefined;
+    try {
+      const chain = this.chains.get(threadId);
+      // The account a switch is moving the thread to failed on its own: the
+      // failover does not answer that failure, so its notification is never
+      // held (a successful switch would otherwise drop it).
+      if (chain?.inFlight && agentKind !== undefined && agentKind === chain.switchingTo) {
+        return undefined;
+      }
+      if (chain && agentKind !== undefined && !chain.inFlight) {
+        const current = this.deps.getThread(threadId)?.agentKind;
+        if (current !== undefined && current !== agentKind) return Promise.resolve(false);
+      }
+      const pending = chain?.inFlight === true;
+      if (!pending && !this.mayFailOver(threadId)) return undefined;
+      return new Promise<boolean>((resolve) => {
+        let waiters = this.heldNotifications.get(threadId);
+        if (!waiters) {
+          waiters = new Set();
+          this.heldNotifications.set(threadId, waiters);
+        }
+        const held = waiters;
+        let bound: ReturnType<typeof setTimeout> | undefined;
+        let grace: ReturnType<typeof setTimeout> | undefined;
+        const settle = (publish: boolean) => {
+          clearTimeout(bound);
+          clearTimeout(grace);
+          held.delete(settle);
+          if (held.size === 0 && this.heldNotifications.get(threadId) === held) {
+            this.heldNotifications.delete(threadId);
+          }
+          resolve(publish);
+        };
+        held.add(settle);
+        bound = setTimeout(
+          () => settle(true),
+          this.deps.errorNotificationHoldMs ?? DEFAULT_ERROR_NOTIFICATION_HOLD_MS,
+        );
+        bound.unref?.();
+        if (!pending) {
+          grace = setTimeout(() => {
+            if (!this.chains.get(threadId)?.inFlight) settle(true);
+          }, this.deps.errorNotificationGraceMs ?? DEFAULT_ERROR_NOTIFICATION_GRACE_MS);
+          grace.unref?.();
+        }
+      });
+    } catch (error) {
+      this.report(error);
+      return undefined;
+    }
   }
 
   /**
@@ -392,7 +493,7 @@ export class AccountPoolFailoverService {
     const pool = resolveAccountPool(this.deps.getAccountPools(), thread.agentKind);
     if (!pool) return;
     const now = this.now();
-    if (classifyFailure(reason, this.availabilityOf(thread.agentKind, pool, now)) !== "usage") {
+    if (classifyFailure(reason, this.failureAvailabilityOf(thread.agentKind, now)) !== "usage") {
       return;
     }
     this.markExhausted(thread.agentKind, pool, now);
@@ -460,14 +561,14 @@ export class AccountPoolFailoverService {
 
     if (decision.kind === "exhausted") {
       const message = this.exhaustedText(claim.pool, statuses, decision);
-      this.publish(
+      const replacesError = this.publish(
         exhaustedNotice({
           threadId: claim.threadId,
           providerLabel: labelOf(statuses, claim.pool.driver),
           message,
         }),
       );
-      this.finish(claim, { kind: "failed", error: message }, true);
+      this.finish(claim, { kind: "failed", error: message }, true, releaseAfter(replacesError));
       return;
     }
 
@@ -513,8 +614,8 @@ export class AccountPoolFailoverService {
         toLabel,
         error,
       });
-      this.publish(switchFailedNotice({ threadId: claim.threadId, message }));
-      this.finish(claim, { kind: "failed", error: message }, true);
+      const replacesError = this.publish(switchFailedNotice({ threadId: claim.threadId, message }));
+      this.finish(claim, { kind: "failed", error: message }, true, releaseAfter(replacesError));
       return;
     }
     claim.chain.current = decision.to;
@@ -628,18 +729,13 @@ export class AccountPoolFailoverService {
     }
   }
 
-  private availabilityOf(
-    agentKind: string,
-    pool: ResolvedAccountPool,
-    now: number,
-  ): MemberAvailability {
-    const mark = this.exhaustedMarks.get(this.usageIdFor(agentKind));
-    if (mark && mark.until > now) return { kind: "exhausted" };
-    return memberAvailability(
-      this.snapshots.get(this.usageIdFor(agentKind)),
-      now,
-      pool.switchAtPercent,
-    );
+  /**
+   * How a failure on `agentKind` is classified: by the default 100% rule (or a
+   * recent host mark), never the pool's `switchAtPercent` (see `classifyFailure`).
+   */
+  private failureAvailabilityOf(agentKind: string, now: number): MemberAvailability {
+    const usageId = this.usageIdFor(agentKind);
+    return failureAvailability(this.snapshots.get(usageId), this.exhaustedMarks.get(usageId), now);
   }
 
   /** Remember an out-of-usage failure so other threads skip the account too. */
@@ -686,17 +782,36 @@ export class AccountPoolFailoverService {
   /** Disposal or a supervisor reset ended the claim; nothing more may run for it. */
   private isStale(claim: FailoverClaim): boolean {
     if (!this.disposed && !claim.chain.cancelled) return false;
-    this.finish(claim, { kind: "continued" }, true);
+    // The thread did not move on, so its error notification still stands.
+    this.finish(claim, { kind: "continued" }, true, "publish");
     return true;
   }
 
-  private finish(claim: FailoverClaim, outcome: AccountFailoverOutcome, closeChain: boolean): void {
+  private releaseHeldNotifications(threadId: string, release: HeldNotificationRelease): void {
+    const waiters = this.heldNotifications.get(threadId);
+    if (!waiters) return;
+    this.heldNotifications.delete(threadId);
+    for (const settle of [...waiters]) settle(release === "publish");
+  }
+
+  /**
+   * `notification` decides a held error notification (`holdErrorNotification`):
+   * by default a thread that stays failed publishes it and a thread that moved
+   * on drops it.
+   */
+  private finish(
+    claim: FailoverClaim,
+    outcome: AccountFailoverOutcome,
+    closeChain: boolean,
+    notification: HeldNotificationRelease = outcome.kind === "failed" ? "publish" : "drop",
+  ): void {
     if (claim.settled) return;
     claim.settled = true;
     claim.chain.inFlight = false;
     if (closeChain && this.chains.get(claim.threadId) === claim.chain) {
       this.chains.delete(claim.threadId);
     }
+    this.releaseHeldNotifications(claim.threadId, notification);
     if (this.disposed) return;
     try {
       this.deps.onFailoverSettled?.(claim.threadId, outcome);
@@ -705,12 +820,14 @@ export class AccountPoolFailoverService {
     }
   }
 
-  private publish(notice: AccountPoolNotice): void {
-    if (this.disposed) return;
+  /** True when the notice stands in for the thread's error notification (`publishNotice`). */
+  private publish(notice: AccountPoolNotice): boolean {
+    if (this.disposed) return false;
     try {
-      this.deps.publishNotice(notice);
+      return this.deps.publishNotice(notice) === true;
     } catch (error) {
       this.report(error);
+      return false;
     }
   }
 

@@ -123,7 +123,9 @@ function makeHarness(
       }
       return { threadId: payload.threadId };
     },
-    publishNotice: (notice) => notices.push(notice),
+    publishNotice: (notice) => {
+      notices.push(notice);
+    },
     onFailoverPending: (threadId) => pending.push(threadId),
     onFailoverSettled: (threadId, outcome) => settled.push([threadId, outcome]),
     now: () => NOW,
@@ -479,5 +481,259 @@ describe("AccountPoolFailoverService", () => {
     await disposal;
     expect(h.switches).toEqual([]);
     expect(h.notices).toEqual([]);
+  });
+});
+
+// ViscosityCode: account pool follow-ups (classification threshold, left-out
+// accounts, held error notifications).
+function usageAt(providerId: string, usedPercent: number): UsageSnapshot {
+  return {
+    providerId,
+    status: "ok",
+    fetchedAt: NOW,
+    windows: [{ id: "5h", label: "5h", usedPercent, resetsAt: NOW + 3_600_000 }],
+  };
+}
+
+/** A failure the provider reports without a reason, ending the turn. */
+function failTurnWithoutReason(h: Harness, turnId: string): void {
+  h.emit({
+    type: "thread-runtime-events",
+    threadId: "thread-1",
+    events: [
+      { type: "error", threadId: "thread-1", message: "Network error" },
+      { type: "turn.completed", threadId: "thread-1", turnId, state: "failed" },
+    ],
+  });
+  h.emit(state("error"));
+}
+
+describe("AccountPoolFailoverService failure classification", () => {
+  it("does not treat an unrelated failure as out of usage below 100% (switchAtPercent)", async () => {
+    const h = makeHarness();
+    h.pools.codex = { ...h.pools.codex!, switchAtPercent: 90 };
+    h.emit({ type: "provider-usage", snapshot: usageAt("codex", 92) });
+    startTurn(h, "turn-1", "Ship it");
+    failTurnWithoutReason(h, "turn-1");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(h.pending).toEqual([]);
+    expect(h.switches).toEqual([]);
+    expect(h.notices).toEqual([]);
+  });
+
+  it("fails over a reasonless failure once the account is fully used", async () => {
+    const h = makeHarness();
+    h.pools.codex = { ...h.pools.codex!, switchAtPercent: 90 };
+    h.emit({ type: "provider-usage", snapshot: usageAt("codex", 100) });
+    startTurn(h, "turn-1", "Ship it");
+    failTurnWithoutReason(h, "turn-1");
+    await settle(h, 1);
+    expect(h.switches[0]).toMatchObject({ agentKind: "codex:work" });
+  });
+
+  it("still applies switchAtPercent when choosing the next account", async () => {
+    const h = makeHarness();
+    h.pools.codex = { ...h.pools.codex!, switchAtPercent: 90 };
+    h.emit({ type: "provider-usage", snapshot: usageAt("codex:work", 95) });
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await settle(h, 1);
+    // codex:work is past the pool's 90% mark, so the work goes to codex:home.
+    expect(h.switches[0]).toMatchObject({ agentKind: "codex:home" });
+  });
+});
+
+describe("AccountPoolFailoverService left-out accounts", () => {
+  it("never moves work to an account left out of the pool", async () => {
+    const h = makeHarness();
+    h.pools.codex = { ...h.pools.codex!, excludedMembers: ["codex:work"] };
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await settle(h, 1);
+    expect(h.switches.map((entry) => entry.agentKind)).toEqual(["codex:home"]);
+  });
+
+  it("does not fail over a thread running on a left-out account", async () => {
+    const h = makeHarness({ thread: { agentKind: "codex:work" } });
+    h.pools.codex = { ...h.pools.codex!, excludedMembers: ["codex:work"] };
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(h.pending).toEqual([]);
+    expect(h.switches).toEqual([]);
+    expect(h.service.mayFailOver("thread-1")).toBe(false);
+  });
+});
+
+describe("AccountPoolFailoverService held error notifications", () => {
+  /** The provider names the reason first (the claim is synchronous), then the state settles. */
+  function claimFailure(h: Harness, turnId: string): void {
+    h.emit(
+      runtime({
+        type: "error",
+        threadId: "thread-1",
+        message: "You've hit your usage limit.",
+        reason: "usage_limited",
+      }),
+    );
+    h.emit(runtime({ type: "turn.completed", threadId: "thread-1", turnId, state: "failed" }));
+  }
+
+  it("publishes at once for a thread no pool can move", () => {
+    const h = makeHarness({ enabled: false });
+    expect(h.service.holdErrorNotification("thread-1", "codex")).toBeUndefined();
+  });
+
+  it("drops the error notification when the failover switches accounts", async () => {
+    const h = makeHarness();
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    expect(held).toBeInstanceOf(Promise);
+    await expect(held).resolves.toBe(false);
+    expect(h.switches).toHaveLength(1);
+  });
+
+  it("publishes the error notification when every account is out", async () => {
+    const h = makeHarness({
+      usage: [exhausted("codex:work", NOW + 60_000), exhausted("codex:home", NOW + 90_000)],
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await expect(held).resolves.toBe(true);
+    expect(h.notices.map((notice) => notice.kind)).toEqual(["exhausted"]);
+  });
+
+  // ViscosityCode: the owner hears about a pool that ran dry once, not twice.
+  it("drops the error notification when the 'all accounts out' notice stands in for it", async () => {
+    const delivered: AccountPoolNotice[] = [];
+    const h = makeHarness({
+      usage: [exhausted("codex:work", NOW + 60_000), exhausted("codex:home", NOW + 90_000)],
+      overrides: {
+        publishNotice: (notice) => {
+          delivered.push(notice);
+          return notice.kind === "exhausted" || notice.kind === "switch-failed";
+        },
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await expect(held).resolves.toBe(false);
+    expect(delivered.map((notice) => notice.kind)).toEqual(["exhausted"]);
+    // The thread still stays failed, with the pool's message.
+    expect(h.settled.at(-1)?.[1]).toMatchObject({ kind: "failed" });
+  });
+
+  it("drops the error notification when a failed switch's notice stands in for it", async () => {
+    const h = makeHarness({
+      overrides: {
+        switchThread: async () => {
+          throw new Error("spawn failed");
+        },
+        publishNotice: (notice) => notice.kind === "switch-failed",
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await expect(held).resolves.toBe(false);
+  });
+
+  it("publishes the error notification when the stand-in notice could not be delivered", async () => {
+    const h = makeHarness({
+      usage: [exhausted("codex:work", NOW + 60_000), exhausted("codex:home", NOW + 90_000)],
+      overrides: {
+        publishNotice: () => {
+          throw new Error("notification sink is gone");
+        },
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await expect(held).resolves.toBe(true);
+  });
+
+  it("waits a short grace for a failover that is claimed after the error state", async () => {
+    const h = makeHarness({ overrides: { errorNotificationGraceMs: 1_000 } });
+    startTurn(h, "turn-1", "Ship it");
+    // Some providers report the error state before their reasoned error event.
+    h.emit(state("error", "thread-1", "codex"));
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    expect(held).toBeInstanceOf(Promise);
+    claimFailure(h, "turn-1");
+    await expect(held).resolves.toBe(false);
+  });
+
+  it("publishes after the grace when no failover claims the failure", async () => {
+    const h = makeHarness({ overrides: { errorNotificationGraceMs: 10 } });
+    startTurn(h, "turn-1", "Ship it");
+    failTurnWithoutReason(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    await expect(held).resolves.toBe(true);
+    expect(h.switches).toEqual([]);
+  });
+
+  it("never holds longer than its bound", async () => {
+    const h = makeHarness({
+      overrides: {
+        errorNotificationHoldMs: 20,
+        switchThread: () => new Promise<never>(() => {}),
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await expect(held).resolves.toBe(true);
+  });
+
+  it("never holds (or drops) an error from the account the switch is moving to", async () => {
+    const switched = Promise.withResolvers<{ threadId: string }>();
+    let switching = false;
+    const h = makeHarness({
+      overrides: {
+        switchThread: () => {
+          switching = true;
+          return switched.promise;
+        },
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const heldOld = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    await vi.waitFor(() => expect(switching).toBe(true));
+    // The new account's session fails before the switch call returns.
+    expect(h.service.holdErrorNotification("thread-1", "codex:work")).toBeUndefined();
+    switched.resolve({ threadId: "thread-1" });
+    // The old account's error still goes away with the successful switch.
+    await expect(heldOld).resolves.toBe(false);
+  });
+
+  it("drops a late error from the session a finished failover left behind", async () => {
+    const h = makeHarness();
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await settle(h, 1);
+    expect(h.threads.get("thread-1")?.agentKind).toBe("codex:work");
+    await expect(h.service.holdErrorNotification("thread-1", "codex")).resolves.toBe(false);
+  });
+
+  it("releases held notifications (publishing them) on dispose", async () => {
+    const h = makeHarness({ overrides: { switchThread: () => new Promise<never>(() => {}) } });
+    startTurn(h, "turn-1", "Ship it");
+    claimFailure(h, "turn-1");
+    const held = h.service.holdErrorNotification("thread-1", "codex");
+    h.emit(state("error", "thread-1", "codex"));
+    void h.service.dispose();
+    await expect(held).resolves.toBe(true);
   });
 });

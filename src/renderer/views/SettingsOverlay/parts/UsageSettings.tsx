@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useDeferredValue, useEffect, useState, type ReactNode } from "react";
+// ViscosityCode: account pools — pooled accounts the host collects show as tracked.
+import { selectCollectedUsageDisabledProviders } from "@/renderer/viscosity/accountPools/usageTracking";
 import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { Disclosure, NumberField, Tooltip } from "@heroui/react";
 import { RefreshCw, Search, X } from "lucide-react";
@@ -93,11 +96,13 @@ function CurrentHostUsageSettings(props: { selector: ReactNode }) {
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // ViscosityCode: account pools — display what collection applies; writes keep the stored list.
+  const collectedDisabledProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const allProviders = usageProvidersForAgentInstances(agentInstances);
-  const disabledSet = new Set(disabledProviders);
+  const disabledSet = new Set(collectedDisabledProviders);
   const trackedProviders = resolveDisplayedProviders(
     providerOrder,
-    disabledProviders,
+    collectedDisabledProviders,
     agentInstances,
   );
   const untrackedProviders = allProviders.filter((p) => disabledSet.has(p.id));

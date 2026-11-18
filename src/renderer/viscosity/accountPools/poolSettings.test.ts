@@ -10,6 +10,7 @@ import {
   useCanWriteAccountPools,
   writeAccountPool,
 } from "./poolSettings";
+import { selectCollectedUsageDisabledProviders } from "./usageTracking";
 
 const bridgeEnv = vi.hoisted(() => ({ remote: false }));
 vi.mock("@/renderer/bridge", async (importOriginal) => ({
@@ -75,6 +76,37 @@ describe("account pool settings", () => {
       claude: { enabled: false, members: ["claude"] },
       codex: { enabled: true, members: ["codex:work", "codex"] },
     });
+  });
+
+  // ViscosityCode: accounts left out of a pool are stored with it.
+  it("keeps only listed accounts in a written exclusion list", () => {
+    installSetter();
+    writeAccountPool("codex", {
+      enabled: true,
+      members: ["codex", "codex:work", "codex:removed"],
+      excludedMembers: ["codex:work", "codex:removed", "claude"],
+    });
+    expect(readAccountPools().codex).toEqual({
+      enabled: true,
+      members: ["codex", "codex:work"],
+      excludedMembers: ["codex:work"],
+    });
+    writeAccountPool("codex", {
+      enabled: true,
+      members: ["codex", "codex:work"],
+      excludedMembers: ["codex:removed"],
+    });
+    expect(readAccountPools().codex).toEqual({ enabled: true, members: ["codex", "codex:work"] });
+  });
+
+  it("shows the stored usage opt-outs in a remote-session client", () => {
+    useSharedSettings.setState({
+      usage: { ...original.usage, disabledProviders: ["gemini"] },
+      accountPools: { gemini: { enabled: true, members: ["gemini"] } },
+    });
+    bridgeEnv.remote = true;
+    const state = useSharedSettings.getState();
+    expect(selectCollectedUsageDisabledProviders(state)).toBe(state.usage.disabledProviders);
   });
 
   it("refuses to write when the store cannot persist pools", () => {

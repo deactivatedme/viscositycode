@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -25,6 +26,7 @@ const mocks = vi.hoisted(() => ({
       updateGitSummaries: () => void;
       startIfEnabled: () => Promise<void>;
       dispose: () => Promise<void>;
+      publishThreadNotice?: (notice: { threadId: string; title: string; body: string }) => boolean;
     }
   >(() => ({
     getServer: () => null,
@@ -565,5 +567,53 @@ describe("BackendDesktopServices environment composition (F-3)", () => {
     const remoteOptions = remoteOptionsOfLastCall();
     expect(remoteOptions.environments).toBeUndefined();
     expect(remoteOptions.hostCapabilities?.ssh).toBe(false);
+  });
+});
+
+// ViscosityCode: account-pool notices on a desktop host take the headless path.
+describe("BackendDesktopServices account-pool notices", () => {
+  const notice = {
+    threadId: "thread-1",
+    title: "Codex accounts are out of usage",
+    body: "All Codex accounts in your pool are out of usage.",
+  };
+
+  beforeEach(() => {
+    mocks.createDesktopRemoteAccessController.mockClear();
+  });
+
+  it("publishes once through the remote controller's notification publisher", () => {
+    const publishThreadNotice = vi.fn<(input: typeof notice) => boolean>(() => true);
+    mocks.createDesktopRemoteAccessController.mockImplementationOnce(() => ({
+      getServer: () => null,
+      handleSupervisorEvent: () => {},
+      handleSupervisorReset: () => {},
+      updateGitSummaries: () => {},
+      startIfEnabled: () => Promise.resolve(),
+      dispose: () => Promise.resolve(),
+      publishThreadNotice,
+    }));
+    const serviceOptions = options(true);
+    void new BackendDesktopServices(serviceOptions);
+    const durable = mocks.durableOptions.at(-1) as {
+      publishThreadNotice?: (input: typeof notice) => unknown;
+    };
+
+    expect(durable.publishThreadNotice).toBeTypeOf("function");
+    expect(durable.publishThreadNotice!(notice)).toBe(true);
+
+    expect(publishThreadNotice).toHaveBeenCalledExactlyOnceWith(notice);
+    // The publisher reaches the desktop itself (its `user-notification` event);
+    // the composition adds no second OS notification or native event.
+    expect(serviceOptions.requestNative).not.toHaveBeenCalled();
+    expect(serviceOptions.emitNativeEvent).not.toHaveBeenCalled();
+  });
+
+  it("keeps the owner notification path when no desktop remote controller exists", () => {
+    void new BackendDesktopServices(options(false));
+    const durable = mocks.durableOptions.at(-1) as { publishThreadNotice?: unknown };
+
+    expect(mocks.createDesktopRemoteAccessController).not.toHaveBeenCalled();
+    expect(durable).not.toHaveProperty("publishThreadNotice");
   });
 });

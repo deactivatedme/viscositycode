@@ -98,6 +98,11 @@ export interface DesktopRemoteAccessControllerOptions {
    * converts to the wire-safe membership payload. */
   readonly notifyProjectStateChanged: (projects: readonly Project[]) => void;
   readonly notifyUserNotification?: (notification: UserNotification) => void;
+  /** ViscosityCode: account pools hold an error notification while a failover is pending. */
+  readonly holdErrorNotification?: (
+    threadId: string,
+    agentKind?: string,
+  ) => Promise<boolean> | undefined;
   readonly notifyEventInterestsChanged: NonNullable<
     RemoteAccessServerOptions["onEventInterestsChanged"]
   >;
@@ -120,6 +125,15 @@ export interface DesktopRemoteAccessControllerOptions {
 export interface DesktopRemoteAccessController {
   getServer(): RemoteAccessServer | null;
   handleSupervisorEvent(event: SupervisorEvent): void;
+  /**
+   * ViscosityCode: account pools. Delivers a host notice that leaves a thread
+   * failed through this controller's thread notification publisher, as the
+   * headless server does: connected remote clients get it as
+   * `remote-user-notification` and the desktop through `notifyUserNotification`,
+   * replacing the thread's held error notification. False when the owner's
+   * notification settings turn error notifications off.
+   */
+  publishThreadNotice(notice: { threadId: string; title: string; body: string }): boolean;
   /** The supervisor process restarted; its in-session state is gone. */
   handleSupervisorReset(): void;
   updateGitSummaries(summaries: RemoteGitSummaries): void;

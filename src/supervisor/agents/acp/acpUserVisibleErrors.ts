@@ -56,18 +56,28 @@ export function isFatalAcpQuotaError(message: string): boolean {
 // ViscosityCode: name an ACCOUNT running out of usage so host policy (account
 // pools) can move the thread to another account. Provider-agnostic wording of
 // plan, quota, credit, and payment limits, as these failures reach the chat.
+// A bare rate limit ("Rate limit exceeded (HTTP 429). Wait and retry", HTTP
+// 429, RESOURCE_EXHAUSTED) is transient and never matches on its own.
 const ACP_USAGE_LIMIT_RE =
-  /\bquota (?:reached|exceeded|exhausted)\b|\b(?:usage|quota|credit|spend(?:ing)?|billing) limits?\b|\bout of (?:credits|usage|quota)\b|\binsufficient[ _](?:credits?|quota|balance|funds)\b|\bcredit balance (?:is )?too low\b|\bcredits? (?:are |is |have been )?(?:exhausted|depleted|used up)\b|\bpayment required\b|\(http 402\)|\bresource[ _]exhausted\b/i;
+  /\bquota (?:reached|exceeded|exhausted)\b|\b(?:usage|quota|credit|spend(?:ing)?|billing|plan) limits?\b|\bout of (?:credits|usage|quota)\b|\binsufficient[ _](?:credits?|quota|balance|funds)\b|\bcredit balance (?:is )?too low\b|\bcredits? (?:are |is |have been )?(?:exhausted|depleted|used up)\b|\bpayment required\b|\(http 402\)/i;
+
+// ViscosityCode: quota wording that still describes a short rate window (per
+// minute or second, retry in seconds) is a transient limit, not an account
+// that ran out.
+const ACP_TRANSIENT_LIMIT_RE =
+  /\bper (?:minute|second)\b|\b(?:rpm|tpm|qpm)\b|\btry again in \d+(?:\.\d+)? ?(?:s|secs?|seconds?)\b/i;
 
 /**
- * True when a provider failure that ends the turn says the account ran out of
- * usage: the fatal quota errors above (a 429 the agent would otherwise retry
- * forever), or plan / quota / credit / payment-limit wording such as Factory's
- * HTTP 402 usage-limit detail. Only read for messages already surfaced as a
- * turn-ending error, never for ordinary assistant text.
+ * True when a provider failure that ends the turn clearly says the account
+ * ran out of usage: plan / quota / credit / payment-limit wording such as
+ * Antigravity's "Individual quota reached" or Factory's HTTP 402 usage-limit
+ * detail. A transient rate limit is not (`isFatalAcpQuotaError` still fails
+ * those turns so they cannot spin, but the account is not out). Only read for
+ * messages already surfaced as a turn-ending error, never for ordinary
+ * assistant text.
  */
 export function isAcpUsageLimitMessage(message: string): boolean {
-  return isFatalAcpQuotaError(message) || ACP_USAGE_LIMIT_RE.test(message);
+  return ACP_USAGE_LIMIT_RE.test(message) && !ACP_TRANSIENT_LIMIT_RE.test(message);
 }
 
 /** The shared reason for a turn-ending provider failure, when its message names one. */

@@ -83,14 +83,24 @@ describe("usage collection for pool members", () => {
 
   it("tracks a pooled account that is off only by the built-in default", () => {
     expect(DEFAULT_USAGE_DISABLED_PROVIDER_IDS).toContain("gemini");
-    const input = settings({ gemini: { enabled: true, members: ["gemini"] } }, [
+    const base = settings({ gemini: { enabled: true, members: ["gemini", "gemini:alt"] } }, [
       "gemini",
       "cursor",
     ]);
+    const input = {
+      ...base,
+      agentInstances: {
+        ...base.agentInstances,
+        alt: { id: "alt", driver: "gemini", displayName: "Alt" },
+      },
+    };
     const before = structuredClone(input);
     expect(usageCollectionDisabledProviders(input)).toEqual(["cursor"]);
     expect(isUsageProviderEnabledWithPools(input, "gemini")).toBe(true);
     expect(input).toEqual(before);
+    // A pool of one cannot fail over, so it forces no collection.
+    const single = { ...input, accountPools: { gemini: { enabled: true, members: ["gemini"] } } };
+    expect(usageCollectionDisabledProviders(single)).toEqual(["gemini", "cursor"]);
   });
 
   it("keeps the user's own opt-outs, disabled pools and unpooled defaults", () => {

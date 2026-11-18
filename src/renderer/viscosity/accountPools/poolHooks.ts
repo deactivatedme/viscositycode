@@ -11,7 +11,6 @@ import {
   type AgentInstanceConfigMap,
   type AgentStatus,
 } from "@/shared/contracts";
-import { usageCollectionDisabledProviders } from "@/shared/accountPoolUsage";
 import { getProviderManifest } from "@/renderer/components/providers/providerManifest";
 import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
@@ -24,6 +23,7 @@ import {
   type PoolMemberView,
 } from "./poolModel";
 import { useAccountPools } from "./poolSettings";
+import { selectCollectedUsageDisabledProviders } from "./usageTracking";
 
 /**
  * Display name for an account: its detected label ("Codex Work"), else the
@@ -69,16 +69,11 @@ export function usePoolMemberViews(
 ): PoolMemberView[] {
   const statuses = useManagedAgentStatuses();
   const disabledAgents = useSharedSettings((state) => state.disabledAgents);
-  const usage = useSharedSettings((state) => state.usage);
-  const accountPools = useSharedSettings((state) => state.accountPools);
   const agentInstances = useSharedSettings((state) => state.agentInstances);
-  // Collection honours pools (enabled pools' members are tracked unless the
-  // owner turned one off), so "tracking is off" reflects what the host does.
-  // A settings snapshot without usage settings (a partial mirror) adds none.
-  const disabledUsageProviders =
-    order.length > 0 && usage
-      ? usageCollectionDisabledProviders({ usage, accountPools, agentInstances })
-      : [];
+  // Collection honours pools (enabled pools' members in use are tracked unless
+  // the owner turned one off), so "tracking is off" reflects what the host
+  // does — the same list the usage settings, panel and rail show.
+  const disabledUsageProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const snapshots = useProviderUsageStore((state) => state.snapshots);
   const labelFor = useAccountLabelResolver();
   const now = useMinuteClock();

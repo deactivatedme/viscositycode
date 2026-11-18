@@ -12,8 +12,10 @@ import {
   preferBestPoolMembers,
   reorderMember,
   resolvePoolOrder,
+  enabledPoolMembers,
   updatedPool,
   usagePercentLeft,
+  withMemberIncluded,
 } from "./poolModel";
 
 const NOW = 1_800_000_000_000;
@@ -123,7 +125,15 @@ describe("usage readouts", () => {
     expect(usagePercentLeft({ ...snapshot("codex", 0), status: "rate-limited" }, NOW)).toBe(
       undefined,
     );
-    expect(usagePercentLeft({ ...snapshot("codex", 10), credits: { balance: 0 } }, NOW)).toBe(0);
+    // A zero balance next to live windows (no extra credits bought) is not the meter.
+    expect(usagePercentLeft({ ...snapshot("codex", 10), credits: { balance: 0 } }, NOW)).toBe(90);
+    // A credit-only account whose balance ran out has nothing left.
+    expect(
+      usagePercentLeft({ ...snapshot("codex", 10), windows: [], credits: { balance: 0 } }, NOW),
+    ).toBe(0);
+    expect(
+      usagePercentLeft({ ...snapshot("codex", 10), windows: [], credits: { balance: 5 } }, NOW),
+    ).toBeUndefined();
   });
 
   it("tones amber when running low and red when out", () => {
@@ -283,5 +293,52 @@ describe("Roundtable preference", () => {
     ).toEqual(["claude", "codex:work", "codex", "gemini"]);
     expect(preferBestPoolMembers(entries, {})).toEqual(entries);
     expect(preferBestPoolMembers(entries, { codex: "codex" })).toEqual(entries);
+  });
+});
+
+// ViscosityCode: account pool follow-ups — accounts left out of a pool.
+describe("left-out pool members", () => {
+  const profiles = {
+    work: { id: "work", driver: "codex", displayName: "Work" },
+    home: { id: "home", driver: "codex", displayName: "Home" },
+  };
+  const order = ["codex", "codex:work", "codex:home"];
+
+  it("writes the exclusion list only when an account is left out", () => {
+    const out = updatedPool(undefined, order, { enabled: true, excludedMembers: ["codex:work"] });
+    expect(out).toEqual({ enabled: true, members: order, excludedMembers: ["codex:work"] });
+    // Other edits keep the saved exclusions; including everyone drops the key.
+    expect(updatedPool(out, order, { switchAtPercent: 90 }).excludedMembers).toEqual([
+      "codex:work",
+    ]);
+    expect(updatedPool(out, order, { excludedMembers: [] })).toEqual({
+      enabled: true,
+      members: order,
+    });
+    // Unknown or duplicate entries never reach the stored list.
+    expect(
+      updatedPool(out, order, { excludedMembers: ["codex:gone", "codex:home", "codex:home"] })
+        .excludedMembers,
+    ).toEqual(["codex:home"]);
+  });
+
+  it("toggles one account in or out", () => {
+    const pool = { enabled: true, members: order, excludedMembers: ["codex:work"] };
+    expect(withMemberIncluded(pool, "codex:home", false)).toEqual(["codex:work", "codex:home"]);
+    expect(withMemberIncluded(pool, "codex:work", true)).toEqual([]);
+    expect(withMemberIncluded(undefined, "codex", false)).toEqual(["codex"]);
+  });
+
+  it("leaves excluded accounts out of the members in use", () => {
+    const pool = { enabled: true, members: order, excludedMembers: ["codex:work"] };
+    expect(enabledPoolMembers("codex", pool, profiles)).toEqual(["codex", "codex:home"]);
+    expect(activePoolFor("codex:work", { codex: pool }, profiles)).toBeUndefined();
+    expect(
+      enabledPoolMembers(
+        "codex",
+        { ...pool, excludedMembers: ["codex:work", "codex:home"] },
+        profiles,
+      ),
+    ).toBeUndefined();
   });
 });

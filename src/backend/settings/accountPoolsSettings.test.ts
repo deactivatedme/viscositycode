@@ -18,7 +18,11 @@ import {
 } from "@/shared/settingsTransactions";
 import { SettingsAuthority } from "./SettingsAuthority";
 import { SettingsCompatWriter } from "./settingsCompatWrites";
-import { SettingsDocumentError, decodeSettingsDocument } from "./settingsDocument";
+import {
+  SettingsDocumentError,
+  decodeSettingsDocument,
+  preserveUnknownSettingsValues,
+} from "./settingsDocument";
 
 // ViscosityCode: `accountPools` is an additive settings field (no document
 // version bump). These start from documents written before and after it.
@@ -189,5 +193,89 @@ describe("account pools through the settings authority", () => {
       ...POOLS,
       codex: { ...POOLS.codex, members: ["codex"] },
     });
+  });
+});
+
+// ViscosityCode: pool shape v2 adds the optional `excludedMembers` list (accounts
+// the owner left out). Pre-upgrade documents must load and write back unchanged.
+describe("left-out pool members in the settings document (pool shape v2)", () => {
+  const WITH_EXCLUSIONS = {
+    codex: {
+      enabled: true,
+      members: ["codex", "codex:work", "codex:home"],
+      excludedMembers: ["codex:work"],
+    },
+  };
+
+  it("loads a pre-exclusion pool document without materializing the new key", () => {
+    const saved = { $poracodeSettingsVersion: 3, accountPools: POOLS };
+    const document = decodeSettingsDocument(saved);
+    expect(document.settings.accountPools).toEqual(POOLS);
+    expect(Object.hasOwn(document.settings.accountPools!.codex!, "excludedMembers")).toBe(false);
+    expect(document.raw.accountPools).toEqual(POOLS);
+  });
+
+  it("round-trips an exclusion list as written", () => {
+    const document = decodeSettingsDocument({
+      $poracodeSettingsVersion: 3,
+      accountPools: WITH_EXCLUSIONS,
+    });
+    expect(document.settings.accountPools).toEqual(WITH_EXCLUSIONS);
+    const again = decodeSettingsDocument(JSON.parse(JSON.stringify(document.raw)));
+    expect(again.settings.accountPools).toEqual(WITH_EXCLUSIONS);
+  });
+
+  it("keeps the exclusions on disk when an older reader writes the same pool back", () => {
+    // An older build's pool schema has no `excludedMembers`: it parses the pool
+    // without it and writes its own edit without it.
+    const { excludedMembers: _unknownToOlderReaders, ...olderView } = WITH_EXCLUSIONS.codex;
+    const olderEdit = { ...olderView, switchAtPercent: 95 };
+    const merged = preserveUnknownSettingsValues(
+      { codex: WITH_EXCLUSIONS.codex },
+      { codex: olderView },
+      { codex: olderEdit },
+    );
+    expect(merged).toEqual({
+      codex: { ...olderEdit, excludedMembers: ["codex:work"] },
+    });
+  });
+
+  it("commits an exclusion edit through the settings authority", async () => {
+    const root = await mkdtemp(join(tmpdir(), "settings-account-pool-exclusions-"));
+    const generation = randomUUID();
+    try {
+      await writeFile(
+        join(root, "settings.json"),
+        JSON.stringify({ ...defaultSharedSettings, accountPools: POOLS }),
+      );
+      const authority = await SettingsAuthority.open({
+        assertPreparedDatabaseForWrite: () => {},
+        lease: {
+          paths: { dataRoot: root },
+          generation,
+          assertActive: (expected) => {
+            if (expected !== generation) throw new Error("Fixture lease is inactive");
+          },
+        },
+      });
+      try {
+        const writes = new SettingsCompatWriter(authority);
+        const next = { ...POOLS, codex: { ...POOLS.codex, excludedMembers: ["codex:work"] } };
+        const settings = await writes.commitCompatSnapshot({
+          ...authority.readSettings(),
+          accountPools: next,
+        } as SharedSettingsInput);
+        expect(settings.accountPools).toEqual(next);
+        const disk = JSON.parse(await readFile(join(root, "settings.json"), "utf8")) as Record<
+          string,
+          unknown
+        >;
+        expect(disk.accountPools).toEqual(next);
+      } finally {
+        await authority.close();
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

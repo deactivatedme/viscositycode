@@ -31,7 +31,7 @@ const NO_POOLS: AccountPools = {};
  * would reach only this device. Pools are then neither shown nor written here;
  * the host still applies its own. Fails closed while the runtime is unknown.
  */
-function poolsAreHostSettings(): boolean {
+export function poolsAreHostSettings(): boolean {
   try {
     return !isRemoteSession();
   } catch {
@@ -93,8 +93,14 @@ export function writeAccountPool(driver: string, pool: AccountPool): boolean {
     0,
     MAX_POOL_MEMBERS,
   );
+  // Exclusions name listed members only; none at all is stored as no key.
+  const { excludedMembers, ...rest } = pool;
+  const excluded = excludedMembers?.filter((member) => members.includes(member)) ?? [];
   // Other drivers' pools stay exactly as stored.
-  setAccountPools({ ...state.accountPools, [driver]: { ...pool, members } });
+  setAccountPools({
+    ...state.accountPools,
+    [driver]: { ...rest, members, ...(excluded.length > 0 ? { excludedMembers: excluded } : {}) },
+  });
   return true;
 }
 

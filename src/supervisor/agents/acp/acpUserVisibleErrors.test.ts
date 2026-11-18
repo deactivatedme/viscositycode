@@ -42,7 +42,6 @@ describe("parseAcpAgentMessageApiError", () => {
 describe("isAcpUsageLimitMessage", () => {
   it.each([
     "Individual quota reached. Please upgrade your subscription to increase your limits.",
-    "Rate limit exceeded (HTTP 429). Wait and retry, or switch models.",
     "Payment or usage limit reached (HTTP 402). Check your Factory account billing or usage.",
     "You've reached your 5-hour Droid Core usage limit (resets in 0h 3min).",
     "You've reached your weekly standard usage limit (resets in 2 days).",
@@ -51,8 +50,8 @@ describe("isAcpUsageLimitMessage", () => {
     "Your credit balance is too low to access the API.",
     "insufficient_quota: You exceeded your current quota",
     "Quota exceeded for quota metric 'Requests' per day",
-    "RESOURCE_EXHAUSTED",
     "Payment Required",
+    "You have hit your plan limit. Upgrade your plan to continue.",
   ])("recognizes %j", (message) => {
     expect(isAcpUsageLimitMessage(message)).toBe(true);
     expect(resolveAcpUsageLimitReason(message)).toBe("usage_limited");
@@ -64,9 +63,32 @@ describe("isAcpUsageLimitMessage", () => {
     "Request failed (HTTP 500).",
     "transport exploded",
     "Context window limit reached",
+    // ViscosityCode: transient rate limits are not an account running out.
+    "Rate limit exceeded (HTTP 429). Wait and retry, or switch models.",
+    "HTTP 429 Too Many Requests",
+    "RESOURCE_EXHAUSTED",
+    "Quota exceeded for quota metric 'Generate Content API requests' per minute",
+    "Quota exceeded. Please try again in 12.5s.",
+    // An upgrade hint alone does not say the account ran out.
+    "Rate limit exceeded. Upgrade your plan for higher rate limits.",
   ])("ignores %j", (message) => {
     expect(isAcpUsageLimitMessage(message)).toBe(false);
     expect(resolveAcpUsageLimitReason(message)).toBeUndefined();
+  });
+
+  it("does not name the generic message built for a Factory or Antigravity 429", () => {
+    const factory = parseAcpAgentMessageApiError("Error: 429 status code (no body)") ?? "";
+    const antigravity =
+      parseAcpAgentMessageApiError(
+        "Encountered retryable error from model provider: Agent execution terminated due to error. (code 429)",
+      ) ?? "";
+    for (const message of [factory, antigravity]) {
+      expect(message).toBe("Rate limit exceeded (HTTP 429). Wait and retry, or switch models.");
+      // Still fatal to the in-flight prompt, so the turn cannot spin…
+      expect(isFatalAcpQuotaError(message)).toBe(true);
+      // …but the account is not reported as out of usage.
+      expect(resolveAcpUsageLimitReason(message)).toBeUndefined();
+    }
   });
 
   it("recognizes every message the parser builds for a Factory 402", () => {

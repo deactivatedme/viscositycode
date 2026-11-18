@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { joinRuntimeShutdown } from "@/backend/joinRuntimeShutdown";
 import { dbGetProject, dbGetProjects, dbGetThread, dbGetThreads, dbUpdateProject } from "@/host/db";
 import { readSharedSettingsFile } from "@/host/sharedSettingsFile";
@@ -91,6 +92,10 @@ export function createDesktopRemoteAccessController(
       });
       options.notifyUserNotification?.(notification);
     },
+    // ViscosityCode: account pools hold an error notification while a failover is pending.
+    ...(options.holdErrorNotification
+      ? { holdErrorNotification: options.holdErrorNotification }
+      : {}),
   });
 
   const prewarmGitStateOnce = (): void => {
@@ -510,6 +515,8 @@ export function createDesktopRemoteAccessController(
       refs.pushCoordinator?.handleSupervisorEvent(event);
       threadNotifications.handleSupervisorEvent(event);
     },
+    // ViscosityCode: account-pool notices go out through the same publisher as error notifications.
+    publishThreadNotice: (notice) => threadNotifications.publishThreadNotice(notice),
     handleSupervisorReset: () => {
       // No `thread-exited` is emitted for the sessions that died with the old
       // supervisor process, so their cached background-task levels would

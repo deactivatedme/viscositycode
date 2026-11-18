@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+// ViscosityCode: account pools — pooled accounts the host collects show as tracked.
+import { selectCollectedUsageDisabledProviders } from "@/renderer/viscosity/accountPools/usageTracking";
 import { useShallow } from "zustand/shallow";
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { DragDropProvider, type DragEndEvent, KeyboardSensor, PointerSensor } from "@dnd-kit/react";
@@ -362,7 +365,8 @@ export function ProviderUsageRail(props: { orientation?: "row" | "column" }) {
   const { t } = useLingui();
   const orientation = props.orientation ?? "row";
   const showInSidebar = useSharedSettings((s) => s.usage.showInSidebar);
-  const disabledProviders = useSharedSettings((s) => s.usage.disabledProviders);
+  // ViscosityCode: account pools — the list collection applies, not only the stored one.
+  const disabledProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const sidebarHiddenProviders = useSharedSettings((s) => s.usage.sidebarHiddenProviders);
   const providerOrder = useSharedSettings((s) => s.usage.providerOrder);
   const agentInstances = useSharedSettings((s) => s.agentInstances);

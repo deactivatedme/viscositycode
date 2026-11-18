@@ -27,18 +27,23 @@ export function isUsageLimitedHandoffPayload(payload: object): boolean {
 }
 
 /**
- * True when the turn right before the divider `itemId` ended because the
- * account ran out of usage: an `error` item with reason `usage_limited`
- * between the previous user message (or divider) and this divider.
+ * Per transcript (keyed by the thread's item-id array, which streaming never
+ * replaces) the dividers already classified at one structural version.
+ * `runtimeStructuralVersionByThread` bumps on every item add, removal or
+ * payload change but not on `content.delta`, so a streaming delta finds the
+ * answer here in O(1) instead of walking the transcript again. Entries go
+ * away with the array they are keyed by.
  */
-export function selectHandoffFollowsUsageLimit(
-  state: AppState,
-  threadId: string,
+const handoffScans = new WeakMap<
+  readonly string[],
+  { version: number | undefined; results: Map<string, boolean> }
+>();
+
+function scanHandoffFollowsUsageLimit(
+  ids: readonly string[],
+  items: AppState["runtimeItemsByIdByThread"][string],
   itemId: string,
 ): boolean {
-  const ids = state.runtimeItemIdsByThread[threadId];
-  const items = state.runtimeItemsByIdByThread[threadId];
-  if (!ids || !items) return false;
   for (let index = ids.lastIndexOf(itemId) - 1; index >= 0; index -= 1) {
     const item = items[ids[index]!];
     if (!item) continue;
@@ -48,6 +53,36 @@ export function selectHandoffFollowsUsageLimit(
     }
   }
   return false;
+}
+
+/**
+ * True when the turn right before the divider `itemId` ended because the
+ * account ran out of usage: an `error` item with reason `usage_limited`
+ * between the previous user message (or divider) and this divider.
+ *
+ * Runs as a store selector, so it is called on every app-store update; the
+ * transcript walk runs only when the thread's structure changed (see
+ * `handoffScans`), never for a streaming delta.
+ */
+export function selectHandoffFollowsUsageLimit(
+  state: AppState,
+  threadId: string,
+  itemId: string,
+): boolean {
+  const ids = state.runtimeItemIdsByThread[threadId];
+  const items = state.runtimeItemsByIdByThread[threadId];
+  if (!ids || !items) return false;
+  const version = state.runtimeStructuralVersionByThread[threadId];
+  let scan = handoffScans.get(ids);
+  if (!scan || scan.version !== version) {
+    scan = { version, results: new Map() };
+    handoffScans.set(ids, scan);
+  }
+  const known = scan.results.get(itemId);
+  if (known !== undefined) return known;
+  const follows = scanHandoffFollowsUsageLimit(ids, items, itemId);
+  scan.results.set(itemId, follows);
+  return follows;
 }
 
 /** The divider text for an out-of-usage switch. */

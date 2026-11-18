@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { dbGetProject, dbGetThread, dbGetThreads, onProjectThreadDataChanged } from "@/host/db";
 import { callDatabaseRpc } from "@/host/db/databaseRpc";
 import { persistedThreadPageSchema } from "@/shared/ipc/schemas";
@@ -255,6 +256,11 @@ export class BackendDesktopServices {
           ? { delivered: true }
           : { delivered: false, note: "The operating system did not show the notification." };
       },
+      // ViscosityCode: account-pool failures go out as the thread's error notification, as on the
+      // headless server: remote clients and this desktop each get it once (never notifyUser too).
+      ...(desktop
+        ? { publishThreadNotice: (notice) => this.remote?.publishThreadNotice(notice) }
+        : {}),
       checkForUpdate: async () => {
         await options.requestNative({ operation: "check-for-update", payload: {} });
         return {
@@ -362,6 +368,9 @@ export class BackendDesktopServices {
           },
           notifyUserNotification: (notification) =>
             options.emitNativeEvent({ type: "user-notification", notification }),
+          // ViscosityCode: account pools hold an error notification while a failover is pending.
+          holdErrorNotification: (threadId, agentKind) =>
+            this.durable.accountPoolFailover.holdErrorNotification(threadId, agentKind),
           notifyEventInterestsChanged: ignoreRemoteEventInterests,
           imagePreviewGenerator: generateImagePreview,
           imageCardVariantGenerator: generateBackendImageCardVariant,

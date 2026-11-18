@@ -9,7 +9,10 @@
 import type { UsageSnapshot } from "@poracode/agents-usage/types";
 import {
   accountPoolSchema,
+  DEFAULT_SWITCH_AT_PERCENT,
+  isPoolMemberExcluded,
   memberAvailability,
+  MIN_POOL_MEMBERS_IN_USE,
   nextPoolMember,
   type AccountPool,
   type AccountPools,
@@ -77,7 +80,8 @@ export interface ResolvedAccountPool {
 /**
  * The enabled pool `agentKind` belongs to, or undefined. Only profile drivers
  * pool (separate accounts need separate credentials), a member must belong to
- * the pool's driver, and a pool needs a second member to fail over to.
+ * the pool's driver and not be left out (`excludedMembers`), and a pool needs
+ * a second member to fail over to.
  */
 export function resolveAccountPool(
   pools: AccountPools,
@@ -85,10 +89,13 @@ export function resolveAccountPool(
 ): ResolvedAccountPool | undefined {
   const driver = baseAgentKind(agentKind);
   if (!isAgentProfileDriver(driver)) return undefined;
-  const pool = pools[driver];
+  const pool = Object.hasOwn(pools, driver) ? pools[driver] : undefined;
   if (!pool?.enabled) return undefined;
-  const members = [...new Set(pool.members)].filter((member) => baseAgentKind(member) === driver);
-  if (!members.includes(agentKind) || members.length < 2) return undefined;
+  // Accounts the owner left out of the pool never take work over.
+  const members = [...new Set(pool.members)].filter(
+    (member) => baseAgentKind(member) === driver && !isPoolMemberExcluded(pool, member),
+  );
+  if (!members.includes(agentKind) || members.length < MIN_POOL_MEMBERS_IN_USE) return undefined;
   return { driver, pool, members, switchAtPercent: pool.switchAtPercent };
 }
 
@@ -104,6 +111,11 @@ export type FailureClassification = "usage" | "auth" | "other";
  * (`usage_limited`), or the account's latest usage snapshot (or a recent
  * failure on another thread) shows it exhausted. `auth_required` always wins
  * so sign-in stays with the user.
+ *
+ * `currentAvailability` must be judged by the default rule (a window fully
+ * used, credits gone; `failureAvailability`), never by the pool's earlier
+ * `switchAtPercent`: that threshold steers which account takes work, but an
+ * unrelated failure on an account at, say, 92% is not an out-of-usage failure.
  */
 export function classifyFailure(
   reason: string | undefined,
@@ -112,6 +124,20 @@ export function classifyFailure(
   if (reason === AUTH_REQUIRED_ERROR_REASON) return "auth";
   if (reason === USAGE_LIMITED_ERROR_REASON) return "usage";
   return currentAvailability.kind === "exhausted" ? "usage" : "other";
+}
+
+/**
+ * The availability a failure is classified against (`classifyFailure`): a
+ * host mark from a recent provider-reported (or fully used) out-of-usage
+ * failure, else the snapshot at the DEFAULT 100% rule.
+ */
+export function failureAvailability(
+  snapshot: UsageSnapshot | undefined,
+  mark: ExhaustedMark | undefined,
+  now: number,
+): MemberAvailability {
+  if (mark && mark.until > now) return { kind: "exhausted" };
+  return memberAvailability(snapshot, now, DEFAULT_SWITCH_AT_PERCENT);
 }
 
 /** A member is ready when its agent is registered, installed, chat-capable and not signed out. */

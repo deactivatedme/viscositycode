@@ -2,9 +2,10 @@
  * ViscosityCode: the "Account pool" card on a multi-account provider's
  * profile list (fork of Poracode).
  *
- * The owner turns the pool on, orders the accounts (drag or arrows), and picks
- * how early an account counts as out. Each row shows that account's live
- * usage, so the order and the threshold can be judged at a glance. Writes go
+ * The owner turns the pool on, orders the accounts (drag or arrows), leaves
+ * any account out (per-account switch), and picks how early an account counts
+ * as out. Each row shows that account's live usage, so the order and the
+ * threshold can be judged at a glance. Writes go
  * through the shared settings store (`poolSettings.ts`), so the host failover
  * policy, other clients and background threads see the same pool.
  */
@@ -30,6 +31,7 @@ import {
   resolvePoolOrder,
   SWITCH_AT_PERCENT_OPTIONS,
   updatedPool,
+  withMemberIncluded,
   type PoolMemberView,
 } from "./poolModel";
 import { useAccountPools, useCanWriteAccountPools, writeAccountPool } from "./poolSettings";
@@ -41,9 +43,12 @@ function PoolMemberRow(props: {
   index: number;
   count: number;
   now: number;
+  /** False when the owner left this account out of the pool (`excludedMembers`). */
+  included: boolean;
   onMove: (delta: number) => void;
+  onIncludedChange: (included: boolean) => void;
 }) {
-  const { view, index, count, now } = props;
+  const { view, index, count, now, included } = props;
   const { t } = useLingui();
   const { ref, handleRef, isDragging } = useSortable({
     id: `${SORTABLE_TYPE}:${view.agentKind}`,
@@ -61,8 +66,9 @@ function PoolMemberRow(props: {
     <li
       ref={ref}
       data-pool-member={view.agentKind}
+      data-pool-member-included={included ? "true" : "false"}
       className={`flex items-start gap-2 rounded-lg border border-border/15 bg-surface px-2 py-2 text-xs ${
-        isDragging ? "opacity-40" : ""
+        isDragging ? "opacity-40" : included ? "" : "opacity-60"
       }`}
     >
       <button
@@ -103,6 +109,11 @@ function PoolMemberRow(props: {
               <Trans>Not signed in</Trans>
             </Chip>
           ) : null}
+          {!included ? (
+            <Chip size="sm" variant="soft" color="default" data-pool-badge="left-out">
+              <Trans>Left out of the pool</Trans>
+            </Chip>
+          ) : null}
         </div>
         {windows.length > 0 ? (
           <UsageWindowBars windows={windows} showPace={false} className="mt-1.5" />
@@ -116,6 +127,13 @@ function PoolMemberRow(props: {
           </p>
         )}
       </div>
+      <span className="mt-0.5 shrink-0">
+        <ToggleSwitch
+          aria-label={t`Include ${view.label} in the pool`}
+          isSelected={included}
+          onChange={props.onIncludedChange}
+        />
+      </span>
       <div className="flex shrink-0 flex-col">
         <Button
           isIconOnly
@@ -166,9 +184,12 @@ export function AccountPoolCard(props: { driver: string }) {
     );
   }
 
+  const excludedMembers = pool?.excludedMembers ?? [];
+  const includedCount = order.filter((kind) => !excludedMembers.includes(kind)).length;
+
   const save = (
     nextOrder: readonly string[],
-    patch: { enabled?: boolean; switchAtPercent?: number } = {},
+    patch: { enabled?: boolean; switchAtPercent?: number; excludedMembers?: string[] } = {},
   ) => {
     if (!writeAccountPool(driver, updatedPool(pool, nextOrder, patch))) {
       toast.danger(t`Account pool settings couldn't be saved.`);
@@ -231,9 +252,14 @@ export function AccountPoolCard(props: { driver: string }) {
           <p className="mt-3 text-[11px] text-muted">
             <Trans>
               New threads start on the account with the most usage left. When one runs out, work
-              moves to the next account in this order.
+              moves to the next account in this order. Turn an account off to leave it out.
             </Trans>
           </p>
+          {includedCount < 2 ? (
+            <p data-pool-note="too-few" className="mt-1 text-[11px] text-warning">
+              <Trans>Include at least two accounts so work has somewhere to move.</Trans>
+            </p>
+          ) : null}
           <DragDropProvider onDragEnd={handleDragEnd}>
             <ol aria-label={t`Pool order`} className="mt-1.5 flex flex-col gap-1.5">
               {views.map((view, index) => (
@@ -243,10 +269,16 @@ export function AccountPoolCard(props: { driver: string }) {
                   index={index}
                   count={views.length}
                   now={now}
+                  included={!excludedMembers.includes(view.agentKind)}
                   onMove={(delta) => {
                     const next = moveMember(order, view.agentKind, delta);
                     if (next.join("\n") !== order.join("\n")) save(next);
                   }}
+                  onIncludedChange={(next) =>
+                    save(order, {
+                      excludedMembers: withMemberIncluded(pool, view.agentKind, next),
+                    })
+                  }
                 />
               ))}
             </ol>

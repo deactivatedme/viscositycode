@@ -7,6 +7,7 @@ import {
   decideFailover,
   exhaustedMarkFor,
   failoverThreadConfig,
+  failureAvailability,
   FAILOVER_CONTINUE_PROMPT,
   isPoolMemberReady,
   promptFromUserMessages,
@@ -314,5 +315,49 @@ describe("interrupted prompt recovery", () => {
 
   it("asks the next account to continue when nothing was recoverable", () => {
     expect(promptFromUserMessages([])).toEqual({ prompt: FAILOVER_CONTINUE_PROMPT });
+  });
+});
+
+// ViscosityCode: account pool follow-ups.
+describe("left-out accounts and the failure threshold", () => {
+  it("resolves a pool without the accounts the owner left out", () => {
+    const pools = {
+      codex: {
+        enabled: true,
+        members: ["codex", "codex:work", "codex:home"],
+        excludedMembers: ["codex:work"],
+      },
+    };
+    expect(resolveAccountPool(pools, "codex")?.members).toEqual(["codex", "codex:home"]);
+    expect(resolveAccountPool(pools, "codex:work")).toBeUndefined();
+    expect(sharesEnabledAccountPool(pools, "codex", "codex:work")).toBe(false);
+    // Leaving all but one account out leaves nothing to fail over to.
+    expect(
+      resolveAccountPool(
+        { codex: { ...pools.codex, excludedMembers: ["codex:work", "codex:home"] } },
+        "codex",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("classifies failures by the default 100% rule, not switchAtPercent", () => {
+    const at92 = failureAvailability(snapshot("codex", 92), undefined, NOW);
+    expect(at92.kind).toBe("available");
+    expect(classifyFailure(undefined, at92)).toBe("other");
+    const full = failureAvailability(snapshot("codex", 100), undefined, NOW);
+    expect(classifyFailure(undefined, full)).toBe("usage");
+    // A recent provider-reported failure on another thread still counts.
+    const marked = failureAvailability(
+      snapshot("codex", 10),
+      { until: NOW + 60_000, resetKnown: false },
+      NOW,
+    );
+    expect(classifyFailure(undefined, marked)).toBe("usage");
+    expect(
+      classifyFailure(
+        undefined,
+        failureAvailability(undefined, { until: NOW - 1, resetKnown: false }, NOW),
+      ),
+    ).toBe("other");
   });
 });

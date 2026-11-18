@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useState } from "react";
+// ViscosityCode: account pools — pooled accounts the host collects show as tracked.
+import { selectCollectedUsageDisabledProviders } from "@/renderer/viscosity/accountPools/usageTracking";
 import { ChevronsDownUp, ChevronsUpDown, RefreshCw, Settings2 } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
 import { openUsageSettings } from "@/renderer/actions/panelActions";
@@ -19,7 +22,8 @@ export function UsagePanelHeaderActions(props: { dragControlClass: string }) {
   const { dragControlClass } = props;
   const { t } = useLingui();
   const providerOrder = useSharedSettings((s) => s.usage.providerOrder);
-  const disabledProviders = useSharedSettings((s) => s.usage.disabledProviders);
+  // ViscosityCode: account pools — the list collection applies, not only the stored one.
+  const disabledProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const collapsedProviders = useSharedSettings((s) => s.usage.collapsedProviders);
   const agentInstances = useSharedSettings((s) => s.agentInstances);
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);

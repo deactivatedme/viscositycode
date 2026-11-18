@@ -28,6 +28,14 @@ export interface HostAccountPoolFailoverInputs {
   dispatchThreadCommand(command: RemoteThreadCommand): unknown;
   publishThreadsChanged(threadIds: readonly string[]): void;
   notifyUser(input: { title: string; body: string; threadId: string }): unknown;
+  /**
+   * The host's thread notification publisher (`ThreadNotificationPublisher.
+   * publishThreadNotice`). Both the desktop app and the headless server pass
+   * it: notices that leave a thread failed ("all accounts out", a failed
+   * switch) then reach every connected client, and the desktop owner once,
+   * as that thread's error notification, replacing the held generic one.
+   */
+  publishThreadNotice?(notice: { threadId: string; title: string; body: string }): unknown;
   /** Owners that must not settle a thread's work while its failover is pending. */
   failoverObserver?: {
     holdForAccountFailover(threadId: string): void;
@@ -38,17 +46,40 @@ export interface HostAccountPoolFailoverInputs {
   overrides?: Partial<AccountPoolFailoverDeps>;
 }
 
+/** Notices that mean the thread stays failed: they stand in for its error notification. */
+const LEAVES_THREAD_FAILED: ReadonlySet<AccountPoolNotice["kind"]> = new Set([
+  "exhausted",
+  "switch-failed",
+]);
+
 export function createHostAccountPoolFailover(
   inputs: HostAccountPoolFailoverInputs,
 ): AccountPoolFailoverService {
   const { supervisor, failoverObserver, reportError } = inputs;
-  const publishNotice = (notice: AccountPoolNotice): void => {
+  /** True when the notice was delivered as the thread's error notification. */
+  const publishNotice = (notice: AccountPoolNotice): boolean => {
+    const leavesThreadFailed = LEAVES_THREAD_FAILED.has(notice.kind);
+    if (inputs.publishThreadNotice && leavesThreadFailed) {
+      // The publisher applies the owner's notification settings itself and
+      // replaces the thread's held error notification.
+      inputs.publishThreadNotice({
+        threadId: notice.threadId,
+        title: notice.title,
+        body: notice.body,
+      });
+      return true;
+    }
     // Host notices honour the owner's notification switch; the handoff divider
     // in the transcript is always written by the supervisor regardless.
-    if (inputs.getSharedSettings().notificationsEnabled === false) return;
+    if (inputs.getSharedSettings().notificationsEnabled === false) return false;
     void Promise.resolve(
       inputs.notifyUser({ title: notice.title, body: notice.body, threadId: notice.threadId }),
     ).catch((error: unknown) => reportError?.(error));
+    // A host composed without a notification publisher shows notices to the
+    // owner itself: a notice that leaves the thread failed says everything the
+    // generic error would, so the held error notification is dropped and the
+    // owner gets one.
+    return leavesThreadFailed;
   };
   return new AccountPoolFailoverService({
     getAccountPools: () => {

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Cursor SDK → canonical RuntimeEvent mapper.
  *
@@ -12,7 +13,7 @@
  * The normalized stream also works alone as a stable fallback.
  */
 
-import type { RuntimeEvent } from "@/shared/contracts";
+import type { RuntimeErrorReason, RuntimeEvent } from "@/shared/contracts";
 import { msg } from "@/shared/messages";
 import { buildPromptContentBlocks } from "@/shared/promptContent";
 import type { CursorSdkSteerInput } from "./sdkSteering";
@@ -27,6 +28,8 @@ import {
   mapCursorSdkShellOutputDelta,
 } from "./sdkCanonicalToolMapping";
 import { normalizeCursorSdkUsage } from "./sdkCanonicalToolPayload";
+// ViscosityCode: account pools — an exhausted Cursor account names `usage_limited`.
+import { cursorSdkRunErrorReason } from "./sdkErrorReasons";
 import type {
   CursorSdkAssistantMessage,
   CursorSdkInteractionUpdate,
@@ -142,6 +145,11 @@ export function mapCursorSdkMessage(
           message.run_id,
           "failed",
           message.message ?? message.status,
+          // ViscosityCode: account pools — the stream's ERROR status usually arrives
+          // before the run result, so its text is classified here too.
+          message.status === "ERROR" && message.message
+            ? cursorSdkRunErrorReason({ message: message.message })
+            : undefined,
         );
       }
       return [];
@@ -269,6 +277,7 @@ export function mapCursorSdkRunResult(
         result.id,
         "failed",
         result.error?.message ?? result.error?.code ?? result.status,
+        cursorSdkRunErrorReason(result.error), // ViscosityCode: account pools
       ),
     );
   }
@@ -637,13 +646,19 @@ function finishCursorSdkRun(
   runId: string,
   turnState: "completed" | "failed" | "cancelled",
   errorMessage?: string,
+  errorReason?: RuntimeErrorReason, // ViscosityCode: account pools
 ): RuntimeEvent[] {
   if (state.terminalRunIds.has(runId)) return [];
   state.terminalRunIds.add(runId);
   const events = closeCursorSdkOpenItemsAs(state, turnState === "completed" ? "success" : "error");
   if (errorMessage && !state.emittedErrors.has(errorMessage)) {
     state.emittedErrors.add(errorMessage);
-    events.push({ type: "error", threadId: state.threadId, message: errorMessage });
+    events.push({
+      type: "error",
+      threadId: state.threadId,
+      message: errorMessage,
+      ...(errorReason ? { reason: errorReason } : {}), // ViscosityCode: account pools
+    });
   }
   events.push({
     type: "turn.completed",

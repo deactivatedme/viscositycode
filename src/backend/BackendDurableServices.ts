@@ -108,6 +108,12 @@ export interface BackendDurableServicesOptions {
   hasRendererWindow: boolean;
   openThreadInUi(threadId: string): boolean;
   notifyUser: AppControlsMcpIngressDeps["notifyUser"];
+  /**
+   * ViscosityCode: the host thread notification publisher's notice sink.
+   * Desktop and headless hosts both pass it, so account-pool failures reach
+   * remote clients (and the desktop owner once) as notifications.
+   */
+  publishThreadNotice?(notice: { threadId: string; title: string; body: string }): unknown;
   checkForUpdate: AppControlsMcpIngressDeps["checkForUpdate"];
   onPrMerged?(watch: PrWatch): void;
   onPrObserved?(watch: PrWatch, pr: PrData, details?: PrDetails): void;
@@ -219,6 +225,7 @@ export class BackendDurableServices {
           : options.sendThreadCommand(command),
       publishThreadsChanged: (threadIds) => options.publishThreadsChanged?.(threadIds),
       notifyUser: (input) => options.notifyUser(input),
+      ...(options.publishThreadNotice ? { publishThreadNotice: options.publishThreadNotice } : {}),
       failoverObserver: this.scheduleCoordinator,
       ...(options.reportError ? { reportError: options.reportError } : {}),
     });

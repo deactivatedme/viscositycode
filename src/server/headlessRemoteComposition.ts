@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomBytes } from "node:crypto";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
@@ -533,6 +534,9 @@ export async function composeHeadlessRemoteHost(
           ...notification,
         });
       },
+      // ViscosityCode: account pools hold an error notification while a failover is pending.
+      holdErrorNotification: (threadId, agentKind) =>
+        durableServices?.accountPoolFailover.holdErrorNotification(threadId, agentKind),
     });
 
     durableServices = new BackendDurableServices({
@@ -569,6 +573,8 @@ export async function composeHeadlessRemoteHost(
         delivered: false,
         note: "No Poracode desktop app is connected, so no OS notification could be shown.",
       }),
+      // ViscosityCode: account-pool failures reach remote clients as notifications.
+      publishThreadNotice: (notice) => threadNotifications?.publishThreadNotice(notice),
       checkForUpdate: async () => ({
         supported: false,
         currentVersion: options.appVersion,

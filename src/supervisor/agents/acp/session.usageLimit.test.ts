@@ -131,6 +131,49 @@ describe("ACP usage limits", () => {
     ]);
   });
 
+  it("does not name a transient Factory rate limit as usage_limited", async () => {
+    const { connection, listener, session } = makeConfigSyncSession();
+    connection.prompt.mockImplementationOnce(async () => {
+      session.handleSessionUpdate({
+        update: {
+          sessionUpdate: "agent_message_chunk",
+          content: { type: "text", text: "Error: 429 status code (no body)" },
+        },
+      });
+      throw RequestError.internalError({ details: "Internal error: Agent error" });
+    });
+
+    await session.startTurn("hello", config);
+
+    expect(errorEvents(listener)).toEqual([
+      {
+        type: "error",
+        threadId: "thread-1",
+        message: "Rate limit exceeded (HTTP 429). Wait and retry, or switch models.",
+      },
+    ]);
+    expect(listener.onRuntimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "turn.completed", state: "failed" }),
+    );
+  });
+
+  it("does not name a rejected prompt that only reports HTTP 429", async () => {
+    const { connection, listener, session } = makeConfigSyncSession();
+    connection.prompt.mockRejectedValueOnce(
+      RequestError.internalError({ details: "Rate limit exceeded (HTTP 429). Wait and retry." }),
+    );
+
+    await session.startTurn("hello", config);
+
+    expect(errorEvents(listener)).toEqual([
+      {
+        type: "error",
+        threadId: "thread-1",
+        message: "Rate limit exceeded (HTTP 429). Wait and retry.",
+      },
+    ]);
+  });
+
   it("leaves other provider failures without a reason", async () => {
     const { connection, listener, session } = makeConfigSyncSession();
     connection.prompt.mockImplementationOnce(async () => {

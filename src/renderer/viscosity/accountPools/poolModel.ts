@@ -11,8 +11,10 @@
 import {
   accountPoolSchema,
   bestPoolMember,
+  creditBalanceExhausted,
   DEFAULT_SWITCH_AT_PERCENT,
-  normalizePoolMembers,
+  MIN_POOL_MEMBERS_IN_USE,
+  poolMembersInUse,
   poolMemberStates,
   type AccountPool,
   type AccountPools,
@@ -96,30 +98,47 @@ export function reorderMember(order: readonly string[], from: number, to: number
 }
 
 /**
- * The pool for `driver` with a new member order / toggle / threshold applied.
- * The full resolved order is always written, so the host (which reads
- * `members` only) sees every account the owner sees in settings.
+ * The pool for `driver` with a new member order / toggle / threshold /
+ * exclusion list applied. The full resolved order is always written, so the
+ * host sees every account the owner sees in settings; accounts the owner left
+ * out stay in that order and are listed in `excludedMembers` (absent when
+ * none, so a pool without exclusions keeps its pre-exclusion shape).
  */
 export function updatedPool(
   current: AccountPool | undefined,
   order: readonly string[],
-  patch: Partial<Pick<AccountPool, "enabled" | "switchAtPercent">> = {},
+  patch: Partial<Pick<AccountPool, "enabled" | "switchAtPercent" | "excludedMembers">> = {},
 ): AccountPool {
   const switchAtPercent = patch.switchAtPercent ?? current?.switchAtPercent;
+  const members = order.slice(0, MAX_POOL_MEMBERS);
+  const excluded = (patch.excludedMembers ?? current?.excludedMembers ?? []).filter(
+    (kind, index, list) => members.includes(kind) && list.indexOf(kind) === index,
+  );
   return accountPoolSchema.parse({
     enabled: patch.enabled ?? current?.enabled ?? false,
-    members: order.slice(0, MAX_POOL_MEMBERS),
+    members,
     ...(switchAtPercent !== undefined && switchAtPercent !== DEFAULT_SWITCH_AT_PERCENT
       ? { switchAtPercent }
       : {}),
+    ...(excluded.length > 0 ? { excludedMembers: excluded } : {}),
   });
 }
 
+/** The exclusion list with `kind` included in (or left out of) the pool. */
+export function withMemberIncluded(
+  pool: AccountPool | undefined,
+  kind: string,
+  included: boolean,
+): string[] {
+  const excluded = (pool?.excludedMembers ?? []).filter((member) => member !== kind);
+  return included ? excluded : [...excluded, kind];
+}
+
 /**
- * An enabled pool's members as every reader (the host included) normalizes
- * them (`normalizePoolMembers`: no duplicates, no removed or foreign
- * profiles), or undefined when the pool is off or has fewer than two members:
- * a pool of one has nothing to switch to.
+ * An enabled pool's members in use as every reader (the host included)
+ * resolves them (`poolMembersInUse`: no duplicates, no removed or foreign
+ * profiles, none the owner left out), or undefined when the pool is off or
+ * has fewer than two such members: a pool of one has nothing to switch to.
  */
 export function enabledPoolMembers(
   driver: string,
@@ -127,8 +146,8 @@ export function enabledPoolMembers(
   instances: AgentInstanceConfigMap | undefined,
 ): string[] | undefined {
   if (!pool?.enabled || !isAgentProfileDriver(driver)) return undefined;
-  const members = normalizePoolMembers(driver, pool.members, instances ?? {});
-  return members.length >= 2 ? members : undefined;
+  const members = poolMembersInUse(driver, pool, instances ?? {});
+  return members.length >= MIN_POOL_MEMBERS_IN_USE ? members : undefined;
 }
 
 /**
@@ -149,16 +168,16 @@ export function activePoolFor(
 
 /**
  * Usage left on an account, in percent of its most-used live window
- * (`100 - usedPercent`), 0 when credits ran out, or undefined when the latest
- * snapshot can't say (no snapshot, a polling hiccup, no windows).
+ * (`100 - usedPercent`), 0 when a credit-only account's balance ran out
+ * (`creditBalanceExhausted`), or undefined when the latest snapshot can't say
+ * (no snapshot, a polling hiccup, no windows).
  */
 export function usagePercentLeft(
   snapshot: UsageSnapshot | undefined,
   now: number,
 ): number | undefined {
   if (!snapshot || snapshot.status !== "ok") return undefined;
-  const credits = snapshot.credits;
-  if (credits && !credits.unlimited && credits.balance <= 0) return 0;
+  if (creditBalanceExhausted(snapshot)) return 0;
   let worst: number | undefined;
   for (const window of snapshot.windows) {
     if (window.resetsAt !== undefined && window.resetsAt <= now) continue;

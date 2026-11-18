@@ -19,7 +19,24 @@ import { isAgentProfileDriver, parseAgentProfileKind } from "./contracts/agentPr
 import type { ThreadPresentationMode } from "./contracts/common";
 import { usageAccountIdForAgent, type UsageAccountIdHooks } from "./usageAccountId";
 
-export const ACCOUNT_POOLS_VERSION = 1;
+/**
+ * Pool shape version (informational; the settings document carries no per-key
+ * version). Version 2 added the optional `excludedMembers` list. Compatibility
+ * audit for that change:
+ * - Documents written before it have no `excludedMembers`; they parse
+ *   unchanged with every member in use (the key is never materialized, so a
+ *   CAS write-back of an untouched pool stays byte-identical).
+ * - An older reader's `accountPoolSchema` (a non-strict object) drops the key
+ *   when it parses, so an older build treats excluded accounts as members —
+ *   the pre-exclusion behavior. The settings authority keeps unknown nested
+ *   keys from disk (`preserveUnknownSettingsValues`), so an older writer's
+ *   edit to the same pool does not erase the exclusions.
+ * - A newer client writing `excludedMembers` to an older authority is refused
+ *   before any effect (unknown settings value field); nothing is half-written.
+ * No SETTINGS_DOCUMENT_VERSION bump is needed: the key is optional and
+ * additive. Pre-upgrade coverage: src/backend/settings/accountPoolsSettings.test.ts.
+ */
+export const ACCOUNT_POOLS_VERSION = 2;
 
 export const accountPoolSchema = z.object({
   /** Automatically switch threads to the next member when one runs out. */
@@ -31,6 +48,13 @@ export const accountPoolSchema = z.object({
    * (default 100). Lower values switch earlier, leaving headroom.
    */
   switchAtPercent: z.number().min(50).max(100).optional(),
+  /**
+   * Accounts listed in `members` that the owner left out of the pool: they
+   * keep their place in the order (so including one again restores it) but
+   * never take new threads or failover work, and their usage is not
+   * collected on the pool's behalf. Absent means every member is in use.
+   */
+  excludedMembers: z.array(z.string().min(1)).max(16).optional(),
 });
 export type AccountPool = z.infer<typeof accountPoolSchema>;
 
@@ -46,9 +70,30 @@ export type MemberAvailability =
   | { kind: "unknown" };
 
 /**
+ * True when a snapshot's credit balance is its meter and has run out. A
+ * balance meters an account only when the snapshot reports no usage windows
+ * (a credit-only account). Next to windows the windows decide: some providers
+ * report a zero balance whenever no extra credits were bought, which says
+ * nothing about the plan's own usage.
+ */
+export function creditBalanceExhausted(
+  snapshot: Pick<UsageSnapshot, "credits" | "windows">,
+): boolean {
+  const credits = snapshot.credits;
+  return (
+    credits !== undefined &&
+    credits.unlimited !== true &&
+    credits.balance <= 0 &&
+    snapshot.windows.length === 0
+  );
+}
+
+/**
  * Classify one account from its latest usage snapshot. Polling hiccups
  * (`rate-limited` means the usage *endpoint* returned 429, `error`,
- * `app-not-running`, `unsupported`) are "unknown", never "exhausted".
+ * `app-not-running`, `unsupported`) are "unknown", never "exhausted". A
+ * credit balance counts only for a credit-only account
+ * (`creditBalanceExhausted`).
  */
 export function memberAvailability(
   snapshot: UsageSnapshot | undefined,
@@ -58,8 +103,7 @@ export function memberAvailability(
   if (!snapshot) return { kind: "unknown" };
   if (snapshot.status === "quota-hit") return { kind: "exhausted" };
   if (snapshot.status !== "ok") return { kind: "unknown" };
-  const credits = snapshot.credits;
-  if (credits && !credits.unlimited && credits.balance <= 0) return { kind: "exhausted" };
+  if (creditBalanceExhausted(snapshot)) return { kind: "exhausted" };
   let worst = 0;
   let exhaustedUntil: number | undefined;
   for (const window of snapshot.windows) {
@@ -212,11 +256,43 @@ export function normalizePoolMembers(
   return out;
 }
 
+/** True when the owner left `agentKind` out of `pool` (`excludedMembers`). */
+export function isPoolMemberExcluded(pool: AccountPool, agentKind: string): boolean {
+  return pool.excludedMembers?.includes(agentKind) === true;
+}
+
 /**
- * Effective pools: only drivers that support profiles
- * (`isAgentProfileDriver`), each with its members normalized. Clients pass
- * their edits through this before writing them, so the stored value parses
- * back unchanged.
+ * The members of `driver`'s pool that take work, in the owner's order:
+ * `normalizePoolMembers` without the accounts the owner left out. Every
+ * policy reader (failover, new-thread choice, usage collection) goes through
+ * this; only the settings card reads the full stored order.
+ */
+export function poolMembersInUse(
+  driver: string,
+  pool: AccountPool,
+  agentInstances?: AgentInstanceConfigMap,
+): string[] {
+  return normalizePoolMembers(driver, pool.members, agentInstances).filter(
+    (member) => !isPoolMemberExcluded(pool, member),
+  );
+}
+
+/** `pool` with `members` replaced by its members in use and no exclusion list left to apply. */
+function poolInUse(
+  driver: string,
+  pool: AccountPool,
+  agentInstances?: AgentInstanceConfigMap,
+): AccountPool {
+  const { excludedMembers: _appliedBelow, ...rest } = pool;
+  return { ...rest, members: poolMembersInUse(driver, pool, agentInstances) };
+}
+
+/**
+ * Effective pools for policy: only drivers that support profiles
+ * (`isAgentProfileDriver`), each with only its members in use
+ * (`poolMembersInUse`: normalized, excluded accounts removed). The result is
+ * what the host and clients decide from, not a value to write back: it no
+ * longer carries the excluded accounts' places in the order.
  */
 export function normalizeAccountPools(
   pools: AccountPools | undefined,
@@ -225,15 +301,16 @@ export function normalizeAccountPools(
   const out: AccountPools = {};
   for (const [driver, pool] of Object.entries(pools ?? {})) {
     if (!isAgentProfileDriver(driver)) continue;
-    out[driver] = { ...pool, members: normalizePoolMembers(driver, pool.members, agentInstances) };
+    out[driver] = poolInUse(driver, pool, agentInstances);
   }
   return out;
 }
 
 /**
- * The pool `agentKind` belongs to, with normalized members, or undefined when
- * its driver has no pool or the account is not a member. The pool is returned
- * whether or not it is `enabled`; automatic switching checks that flag.
+ * The pool `agentKind` belongs to, with its members in use, or undefined when
+ * its driver has no pool or the account is not a member (or was left out).
+ * The pool is returned whether or not it is `enabled`; automatic switching
+ * checks that flag.
  */
 export function poolForAgentKind(
   pools: AccountPools | undefined,
@@ -242,27 +319,41 @@ export function poolForAgentKind(
 ): AccountPool | undefined {
   const driver = baseAgentKind(agentKind);
   if (!pools || !isAgentProfileDriver(driver) || !hasOwnEntry(pools, driver)) return undefined;
-  const pool = pools[driver]!;
-  const members = normalizePoolMembers(driver, pool.members, agentInstances);
-  return members.includes(agentKind) ? { ...pool, members } : undefined;
+  const pool = poolInUse(driver, pools[driver]!, agentInstances);
+  return pool.members.includes(agentKind) ? pool : undefined;
 }
 
 /** Removes `agentKind` from every pool (a deleted profile), keeping the rest as stored. */
 export function removePoolMember(pools: AccountPools | undefined, agentKind: string): AccountPools {
   return Object.fromEntries(
-    Object.entries(pools ?? {}).map(([driver, pool]) => [
-      driver,
-      pool.members.includes(agentKind)
-        ? { ...pool, members: pool.members.filter((member) => member !== agentKind) }
-        : pool,
-    ]),
+    Object.entries(pools ?? {}).map(([driver, pool]) => {
+      if (!pool.members.includes(agentKind) && !isPoolMemberExcluded(pool, agentKind)) {
+        return [driver, pool];
+      }
+      const { excludedMembers, ...rest } = pool;
+      const excluded = excludedMembers?.filter((member) => member !== agentKind);
+      return [
+        driver,
+        {
+          ...rest,
+          members: pool.members.filter((member) => member !== agentKind),
+          // Absent stays absent; an emptied list is dropped rather than stored empty.
+          ...(excluded && excluded.length > 0 ? { excludedMembers: excluded } : {}),
+        },
+      ];
+    }),
   );
 }
+
+/** Fewest members in use a pool needs before it can move work (the host's failover rule). */
+export const MIN_POOL_MEMBERS_IN_USE = 2;
 
 /**
  * Usage snapshot ids of every member of an enabled pool, deduplicated. The
  * pool policy needs these accounts' usage, so collection treats them as on
- * unless the user opted out (`usageCollectionDisabledProviders`).
+ * unless the user opted out (`usageCollectionDisabledProviders`). A pool with
+ * fewer than two members in use cannot fail over (the host ignores it), so it
+ * forces no collection.
  */
 export function poolUsageAccountIds(
   pools: AccountPools | undefined,
@@ -271,7 +362,7 @@ export function poolUsageAccountIds(
 ): string[] {
   const ids = new Set<string>();
   for (const pool of Object.values(normalizeAccountPools(pools, agentInstances))) {
-    if (!pool.enabled) continue;
+    if (!pool.enabled || pool.members.length < MIN_POOL_MEMBERS_IN_USE) continue;
     for (const member of pool.members)
       ids.add(usageAccountIdForAgent(member, undefined, agentInstances, hooks));
   }

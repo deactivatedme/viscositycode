@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useState, type FormEvent } from "react";
+// ViscosityCode: account pools — an account a pool needs stays tracked.
+import { useUsageTrackingRequiredByPool } from "@/renderer/viscosity/accountPools/usageTracking";
 import { Tooltip } from "@heroui/react";
 import { ChevronDown, ChevronRight, LogIn, LogOut, RefreshCw } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -162,6 +165,8 @@ export function UsageProviderRow(props: { id: string; label: string }) {
   const { t, i18n } = useLingui();
   const snapshot = useProviderUsage(id);
   const disabledProviders = useSharedSettings((s) => s.usage.disabledProviders);
+  // ViscosityCode: account pools — an account a pool needs stays tracked.
+  const requiredByPool = useUsageTrackingRequiredByPool(id);
   const showEstimatedCost = useSharedSettings((s) => s.usage.showEstimatedCost);
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);
   const { refreshing, refresh } = useProviderUsageRefresh(id);
@@ -315,8 +320,13 @@ export function UsageProviderRow(props: { id: string; label: string }) {
 
           <span className="pl-1">
             <ToggleSwitch
-              aria-label={t`Track ${label} usage`}
+              aria-label={
+                requiredByPool
+                  ? t`Track ${label} usage (needed by an account pool)`
+                  : t`Track ${label} usage`
+              }
               isSelected
+              isDisabled={requiredByPool}
               onChange={(selected) => {
                 if (selected) return;
                 const next = [...new Set([...disabledProviders, id])];

@@ -3,6 +3,7 @@ import type { UsageSnapshot } from "@poracode/agents-usage/types";
 import {
   accountPoolsSchema,
   bestPoolMember,
+  creditBalanceExhausted,
   memberAvailability,
   nextPoolMember,
   type PoolMemberState,
@@ -50,6 +51,53 @@ describe("memberAvailability", () => {
     expect(
       memberAvailability(snapshot({ credits: { balance: 0, unlimited: true } }), NOW).kind,
     ).toBe("available");
+  });
+
+  it("counts a credit balance only for a credit-only account", () => {
+    // Window-backed account: some providers report a zero balance whenever no
+    // extra credits were bought. The windows decide.
+    const windowed = snapshot({
+      windows: [{ id: "5h", label: "5h", usedPercent: 30, resetsAt: NOW + 60_000 }],
+      credits: { balance: 0 },
+    });
+    expect(memberAvailability(windowed, NOW)).toEqual({ kind: "available", headroomPercent: 70 });
+    expect(creditBalanceExhausted(windowed)).toBe(false);
+    // A full window still reads as out, with its reset time.
+    expect(
+      memberAvailability(
+        snapshot({
+          windows: [{ id: "5h", label: "5h", usedPercent: 100, resetsAt: NOW + 60_000 }],
+          credits: { balance: 0 },
+        }),
+        NOW,
+      ),
+    ).toEqual({ kind: "exhausted", until: NOW + 60_000 });
+    // Credit-only account: the balance is the meter.
+    const creditOnly = snapshot({ credits: { balance: 0 } });
+    expect(memberAvailability(creditOnly, NOW)).toEqual({ kind: "exhausted" });
+    expect(creditBalanceExhausted(creditOnly)).toBe(true);
+    expect(memberAvailability(snapshot({ credits: { balance: -3 } }), NOW).kind).toBe("exhausted");
+    expect(memberAvailability(snapshot({ credits: { balance: 12 } }), NOW).kind).toBe("available");
+  });
+
+  it("lets a pool fail over to a window-backed account with a zero credit balance", () => {
+    const states: PoolMemberState[] = [
+      { agentKind: "codex", ready: true, availability: { kind: "exhausted" } },
+      {
+        agentKind: "codex:work",
+        ready: true,
+        availability: memberAvailability(
+          snapshot({
+            providerId: "codex:work",
+            windows: [{ id: "5h", label: "5h", usedPercent: 10 }],
+            credits: { balance: 0 },
+          }),
+          NOW,
+        ),
+      },
+    ];
+    expect(nextPoolMember(states, "codex")).toBe("codex:work");
+    expect(bestPoolMember(states)).toBe("codex:work");
   });
 });
 

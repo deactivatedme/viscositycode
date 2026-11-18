@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, useEffect, useRef, useState } from "react";
+// ViscosityCode: account pools — pooled accounts the host collects show as tracked.
+import { selectCollectedUsageDisabledProviders } from "@/renderer/viscosity/accountPools/usageTracking";
 import { PanelActivity } from "@/renderer/components/layout/panelMotion";
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { DragDropProvider, KeyboardSensor, PointerSensor, type DragEndEvent } from "@dnd-kit/react";
@@ -136,7 +139,8 @@ function UsagePanelContent(props: {
   const { compact, remoteView, effectiveDesktopId, browserRuntime, hostView, nowTick } = props;
   const { t } = useLingui();
   const providerOrder = useSharedSettings((s) => s.usage.providerOrder);
-  const disabledProviders = useSharedSettings((s) => s.usage.disabledProviders);
+  // ViscosityCode: account pools — the list collection applies, not only the stored one.
+  const disabledProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const collapsedProviders = useSharedSettings((s) => s.usage.collapsedProviders);
   const agentInstances = useSharedSettings((s) => s.agentInstances);
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);
