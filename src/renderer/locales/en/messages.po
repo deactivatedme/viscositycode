@@ -193,6 +193,11 @@ msgstr "{0} — Composer"
 msgid "{0} — Terminal"
 msgstr "{0} — Terminal"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} · {percentLeft}% left"
+msgstr "{0} · {percentLeft}% left"
+
 #. placeholder {0}: item.name
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "{0} · Installed"
@@ -323,6 +328,21 @@ msgstr "{0} is comparing the anonymized diffs…"
 #: src/renderer/views/SettingsOverlay/parts/machineScope/MachineScopeRows.tsx
 msgid "{0} is offline. Showing last known status."
 msgstr "{0} is offline. Showing last known status."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage; it resets in {resetIn}."
+msgstr "{0} is out of usage; it resets in {resetIn}."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage."
+msgstr "{0} is out of usage."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is running low."
+msgstr "{0} is running low."
 
 #. placeholder {0}: provider?.label ?? installedAgents.find((agent) => agent.kind === agentKind)?.label ?? agentKind
 #. placeholder {0}: target?.label ?? saved.lead.agentKind
@@ -773,6 +793,10 @@ msgstr "{label} usage — open usage panel"
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 msgid "{label} usage: {used}% of the tightest limit used"
 msgstr "{label} usage: {used}% of the tightest limit used"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{label}. {details}"
+msgstr "{label}. {details}"
 
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
@@ -1526,9 +1550,30 @@ msgstr "Account label for {0}"
 msgid "Account options"
 msgstr "Account options"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolUnavailableNote.tsx
+msgid "Account pool"
+msgstr "Account pool"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Account pool settings couldn't be saved."
+msgstr "Account pool settings couldn't be saved."
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Account pool: {count, plural, one {# account} other {# accounts}}, switches at {switchAt}% used."
+msgstr "Account pool: {count, plural, one {# account} other {# accounts}}, switches at {switchAt}% used."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Account sharing and launch defaults."
 msgstr "Account sharing and launch defaults."
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label}"
+msgstr "Account: {label}"
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label} — most usage left"
+msgstr "Account: {label} — most usage left"
 
 #: src/renderer/views/ProfileOverlay/parts/CostHistory.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
@@ -1796,6 +1841,10 @@ msgstr "Add an xAI API key in Settings, or set the XAI_API_KEY environment varia
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Add another Devin account with its own sign-in."
 msgstr "Add another Devin account with its own sign-in."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Add another profile to use your accounts as a pool."
+msgstr "Add another profile to use your accounts as a pool."
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Add at least one more participant."
@@ -2414,6 +2463,10 @@ msgstr "Always excluded"
 msgid "Amber"
 msgstr "Amber"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "An account counts as out once any usage window reaches this level."
+msgstr "An account counts as out once any usage window reaches this level."
+
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatPanel.tsx
 msgid "An agent can read the description and changes and answer your questions."
 msgstr "An agent can read the description and changes and answer your questions."
@@ -2522,6 +2575,11 @@ msgstr "Antigravity ACP"
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity is up to date."
 #~ msgstr "Antigravity is up to date."
+
+#. Account pools settings: shown for Antigravity, which cannot hold several accounts on one computer
+#: src/renderer/components/providers/antigravity/accountPoolSupport.ts
+msgid "Antigravity keeps one sign-in per computer, so it can't join an account pool yet."
+msgstr "Antigravity keeps one sign-in per computer, so it can't join an account pool yet."
 
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity updated to v{version}."
@@ -2791,6 +2849,10 @@ msgstr "Associated worktrees with no remaining threads will also be removed."
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "At"
 msgstr "At"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "At {percent}% used"
+msgstr "At {percent}% used"
 
 #: src/renderer/actions/experimentActions.ts
 msgid "At least two worktrees must be created. Any partial experiment was cleaned up."
@@ -4074,6 +4136,10 @@ msgstr "Chat Commands"
 #: src/renderer/commands/registry.ts
 msgid "Chat starred"
 msgstr "Chat starred"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Chat threads continue on the next account with the conversation handed over. Terminal threads stay on their account; use Continue in another provider to move them."
+msgstr "Chat threads continue on the next account with the conversation handed over. Terminal threads stay on their account; use Continue in another provider to move them."
 
 #: src/renderer/commands/registry.ts
 msgid "Chat unstarred"
@@ -9280,6 +9346,10 @@ msgstr "Finishing your report on GitHub…"
 msgid "Finishing…"
 msgstr "Finishing…"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "First message"
+msgstr "First message"
+
 #: src/renderer/views/SettingsOverlay/parts/agentRegistryNative.ts
 #~ msgid "First-class Antigravity CLI integration using Poracode's native runtime."
 #~ msgstr "First-class Antigravity CLI integration using Poracode's native runtime."
@@ -13256,6 +13326,16 @@ msgstr "Motion"
 msgid "Move"
 msgstr "Move"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} down"
+msgstr "Move {0} down"
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} up"
+msgstr "Move {0} up"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
 msgstr "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
@@ -13764,6 +13844,10 @@ msgstr "New thread in worktree"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 msgid "New Thread in Worktree"
 msgstr "New Thread in Worktree"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
+msgstr "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
 
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 msgid "New workspace"
@@ -14544,6 +14628,10 @@ msgstr "No upcoming run"
 msgid "No usage data yet."
 msgstr "No usage data yet."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "No usage reported yet."
+msgstr "No usage reported yet."
+
 #: src/renderer/components/providers/devin/sessionSettingsControls.tsx
 #: src/renderer/components/providers/devin/sessionSettingsSearchPicker.tsx
 #~ msgid "No value"
@@ -14654,6 +14742,7 @@ msgstr "Not shared with {unlinkedNames} yet: only the project name matches."
 
 #: src/renderer/components/providers/ProviderUsageRail.tsx
 #: src/renderer/components/providers/usageFormat.ts
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Not signed in"
 msgstr "Not signed in"
 
@@ -15461,6 +15550,10 @@ msgstr "Optional: copy selected user MCP servers into this CLI's native configur
 msgid "Optional. Enabling this runs tailscale serve for the remote access port, then new pairing codes use your tailnet's HTTPS MagicDNS URL. Leave it off to use the LAN address or Public URL below."
 msgstr "Optional. Enabling this runs tailscale serve for the remote access port, then new pairing codes use your tailnet's HTTPS MagicDNS URL. Leave it off to use the LAN address or Public URL below."
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Optional. Sent as soon as the chat starts; @mention who should answer."
+msgstr "Optional. Sent as soon as the chat starts; @mention who should answer."
+
 #: src/renderer/components/common/BranchSelector/parts/BranchFooterActions.tsx
 #: src/renderer/components/common/EffortContextMenu/EffortContextMenu.tsx
 #: src/renderer/components/common/OptionMenu.tsx
@@ -15514,6 +15607,14 @@ msgstr "Other ways to connect"
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Others"
 msgstr "Others"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage"
+msgstr "Out of usage"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage · resets in {resetIn}"
+msgstr "Out of usage · resets in {resetIn}"
 
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "Outcome"
@@ -16315,6 +16416,10 @@ msgstr "Point this profile at a non-Anthropic provider (z.ai, …) with custom e
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Point your camera at the code on your desktop"
 #~ msgstr "Point your camera at the code on your desktop"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Pool order"
+msgstr "Pool order"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -18137,6 +18242,7 @@ msgstr "Reopen pull request"
 #: src/renderer/components/common/ProviderModelMenu/parts/ModelMenuRow.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/SidebarShortcutsSelector.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Reorder {0}"
 msgstr "Reorder {0}"
 
@@ -18529,6 +18635,7 @@ msgstr "Retained usage on this host only."
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostSettingsSection.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 #: src/renderer/windowApps/ThreadWindowApp.tsx
 msgid "Retry"
 msgstr "Retry"
@@ -19158,6 +19265,10 @@ msgstr "Running background tasks: {count}"
 msgid "Running for {elapsed}"
 msgstr "Running for {elapsed}"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Running low"
+msgstr "Running low"
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Running now"
 msgstr "Running now"
@@ -19390,6 +19501,10 @@ msgstr "Saved password actions"
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
 msgid "Saved shell"
 msgstr "Saved shell"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies."
+msgstr "Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/PairingChrome.tsx
 msgid "Scan pairing code"
@@ -21666,6 +21781,10 @@ msgstr "Swap notes and to-dos"
 msgid "Switch"
 msgstr "Switch"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Switch at"
+msgstr "Switch at"
+
 #: src/renderer/views/GitReviewOverlay/GitReviewOverlay.tsx
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewPanel.tsx
 msgid "Switch branch"
@@ -21734,6 +21853,10 @@ msgstr "Switched to {headBranch}"
 #: src/renderer/actions/providerSwitchActions.ts
 msgid "Switched to {targetLabel}"
 msgstr "Switched to {targetLabel}"
+
+#: src/renderer/viscosity/accountPools/handoffLabel.ts
+msgid "Switched to {toLabel} because {fromLabel} ran out of usage"
+msgstr "Switched to {toLabel} because {fromLabel} ran out of usage"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 msgid "Switching starts a new thread with the same title, because the chat can only continue in place between two chat providers."
@@ -22028,6 +22151,10 @@ msgstr "Terminal shell arguments"
 #: src/renderer/views/MainView/parts/RightPanel/parts/DevTerminalPanel/parts/RightTerminalLayout.tsx
 msgid "Terminal tabs"
 msgstr "Terminal tabs"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Terminal threads don't switch accounts automatically; use Continue in another provider."
+msgstr "Terminal threads don't switch accounts automatically; use Continue in another provider."
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Test"
@@ -23514,9 +23641,17 @@ msgstr "This request has no matching persistent approval. Choose Allow once."
 msgid "This review watch uses an unsupported source-scope version. Update the app before changing it."
 msgstr "This review watch uses an unsupported source-scope version. Update the app before changing it."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable failed. Retry it to continue."
+msgstr "This Roundtable failed. Retry it to continue."
+
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable has ended. Start a new one to continue."
 msgstr "This Roundtable has ended. Start a new one to continue."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable is finished. Start a new one to continue."
+msgstr "This Roundtable is finished. Start a new one to continue."
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
 msgid "This Roundtable is not available. It may have been deleted."
@@ -23525,6 +23660,10 @@ msgstr "This Roundtable is not available. It may have been deleted."
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable no longer exists."
 msgstr "This Roundtable no longer exists."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable was stopped. Start a new one to continue."
+msgstr "This Roundtable was stopped. Start a new one to continue."
 
 #: src/renderer/i18n/sharedMessages.ts
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
@@ -25256,6 +25395,10 @@ msgstr "Usage refresh failed"
 msgid "Usage settings"
 msgstr "Usage settings"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Usage tracking is off for this account."
+msgstr "Usage tracking is off for this account."
+
 #: src/renderer/components/thread/ThreadContextDock.tsx
 msgid "Usage unknown"
 msgstr "Usage unknown"
@@ -25416,6 +25559,10 @@ msgstr "Use the ID of a persona available in your Devin cloud organization."
 msgid "Use the microphone to try your selected engine and model."
 msgstr "Use the microphone to try your selected engine and model."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Use these accounts as a pool (switch automatically when one runs out)"
+msgstr "Use these accounts as a pool (switch automatically when one runs out)"
+
 #: src/renderer/views/MainView/parts/AppOverlays.tsx
 msgid "Use this account for usage tracking, or change users in the browser before continuing."
 msgstr "Use this account for usage tracking, or change users in the browser before continuing."
@@ -25510,8 +25657,16 @@ msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over
 msgstr "Using XAI_API_KEY from the environment ({hint}). It takes precedence over a saved key."
 
 #: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over the key saved on this device, which you can remove."
+msgstr "Using XAI_API_KEY from the environment ({hint}). It takes precedence over the key saved on this device, which you can remove."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
 msgstr "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove."
+msgstr "Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove."
 
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Using your existing Hex installation. Poracode will not modify it."
@@ -26031,6 +26186,10 @@ msgstr "What's new in Poracode, newest first."
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 msgid "When enabled, search respects <0>.gitignore</0> entries."
 msgstr "When enabled, search respects <0>.gitignore</0> entries."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "When fully used (100%)"
+msgstr "When fully used (100%)"
 
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts

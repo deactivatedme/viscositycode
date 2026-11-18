@@ -193,6 +193,11 @@ msgstr "{0} — Trình soạn thảo"
 msgid "{0} — Terminal"
 msgstr "{0} — Terminal"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} · {percentLeft}% left"
+msgstr "{0} · còn {percentLeft}%"
+
 #. placeholder {0}: item.name
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "{0} · Installed"
@@ -323,6 +328,21 @@ msgstr "{0} đang so sánh các diff đã ẩn danh…"
 #: src/renderer/views/SettingsOverlay/parts/machineScope/MachineScopeRows.tsx
 msgid "{0} is offline. Showing last known status."
 msgstr "{0} đang ngoại tuyến. Hiển thị trạng thái đã biết gần nhất."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage; it resets in {resetIn}."
+msgstr "{0} đã hết mức sử dụng; sẽ đặt lại sau {resetIn}."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage."
+msgstr "{0} đã hết mức sử dụng."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is running low."
+msgstr "{0} sắp hết mức sử dụng."
 
 #. placeholder {0}: provider?.label ?? installedAgents.find((agent) => agent.kind === agentKind)?.label ?? agentKind
 #. placeholder {0}: target?.label ?? saved.lead.agentKind
@@ -773,6 +793,10 @@ msgstr "Mức sử dụng {label} — mở bảng sử dụng"
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 msgid "{label} usage: {used}% of the tightest limit used"
 msgstr "Mức sử dụng {label}: đã dùng {used}% giới hạn chặt nhất"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{label}. {details}"
+msgstr "{label}. {details}"
 
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
@@ -1521,9 +1545,30 @@ msgstr "Nhãn tài khoản cho {0}"
 msgid "Account options"
 msgstr "Tùy chọn tài khoản"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolUnavailableNote.tsx
+msgid "Account pool"
+msgstr "Nhóm tài khoản"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Account pool settings couldn't be saved."
+msgstr "Không thể lưu cài đặt nhóm tài khoản."
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Account pool: {count, plural, one {# account} other {# accounts}}, switches at {switchAt}% used."
+msgstr "Nhóm tài khoản: {count, plural, one {# tài khoản} other {# tài khoản}}, chuyển khi đã dùng {switchAt}%."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Account sharing and launch defaults."
 msgstr "Chia sẻ tài khoản và thiết lập khởi chạy mặc định."
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label}"
+msgstr "Tài khoản: {label}"
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label} — most usage left"
+msgstr "Tài khoản: {label} — còn nhiều mức sử dụng nhất"
 
 #: src/renderer/views/ProfileOverlay/parts/CostHistory.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
@@ -1791,6 +1836,10 @@ msgstr "Hãy thêm khóa API xAI trong Cài đặt hoặc đặt biến môi tr�
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Add another Devin account with its own sign-in."
 msgstr "Thêm một tài khoản Devin khác với thông tin đăng nhập riêng."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Add another profile to use your accounts as a pool."
+msgstr "Thêm một hồ sơ khác để dùng các tài khoản của bạn như một nhóm."
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Add at least one more participant."
@@ -2409,6 +2458,10 @@ msgstr "Luôn bị loại trừ"
 msgid "Amber"
 msgstr "Hồ phách"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "An account counts as out once any usage window reaches this level."
+msgstr "Một tài khoản được coi là đã hết khi bất kỳ khung thời gian sử dụng nào đạt mức này."
+
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatPanel.tsx
 msgid "An agent can read the description and changes and answer your questions."
 msgstr "Tác nhân có thể đọc phần mô tả và các thay đổi rồi trả lời câu hỏi của bạn."
@@ -2517,6 +2570,11 @@ msgstr "Antigravity ACP"
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity is up to date."
 #~ msgstr "Antigravity đã được cập nhật."
+
+#. Account pools settings: shown for Antigravity, which cannot hold several accounts on one computer
+#: src/renderer/components/providers/antigravity/accountPoolSupport.ts
+msgid "Antigravity keeps one sign-in per computer, so it can't join an account pool yet."
+msgstr "Antigravity chỉ giữ một lần đăng nhập trên mỗi máy tính, nên chưa thể tham gia nhóm tài khoản."
 
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity updated to v{version}."
@@ -2786,6 +2844,10 @@ msgstr "Các cây làm việc liên kết không còn luồng nào cũng sẽ b�
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "At"
 msgstr "Lúc"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "At {percent}% used"
+msgstr "Khi đã dùng {percent}%"
 
 #: src/renderer/actions/experimentActions.ts
 msgid "At least two worktrees must be created. Any partial experiment was cleaned up."
@@ -4065,6 +4127,10 @@ msgstr "Lệnh trò chuyện"
 #: src/renderer/commands/registry.ts
 msgid "Chat starred"
 msgstr "Đã gắn sao cuộc trò chuyện"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Chat threads continue on the next account with the conversation handed over. Terminal threads stay on their account; use Continue in another provider to move them."
+msgstr "Các luồng trò chuyện tiếp tục trên tài khoản tiếp theo, kèm theo cuộc hội thoại được bàn giao. Các luồng terminal ở lại tài khoản của chúng; hãy dùng “Tiếp tục ở nhà cung cấp khác” để chuyển chúng."
 
 #: src/renderer/commands/registry.ts
 msgid "Chat unstarred"
@@ -9271,6 +9337,10 @@ msgstr "Đang hoàn tất báo cáo trên GitHub…"
 msgid "Finishing…"
 msgstr "Đang hoàn tất…"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "First message"
+msgstr "Tin nhắn đầu tiên"
+
 #: src/renderer/views/SettingsOverlay/parts/agentRegistryNative.ts
 #~ msgid "First-class Antigravity CLI integration using Poracode's native runtime."
 #~ msgstr "Tích hợp CLI Antigravity hạng nhất bằng thời gian chạy gốc của Poracode."
@@ -13247,6 +13317,16 @@ msgstr "Chuyển động"
 msgid "Move"
 msgstr "Di chuyển"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} down"
+msgstr "Di chuyển {0} xuống"
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} up"
+msgstr "Di chuyển {0} lên"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
 msgstr "Di chuyển kết nối SSH cục bộ trên thiết bị hiện có sang môi trường này bằng ID kết nối. Khóa không bao giờ được tải lên."
@@ -13755,6 +13835,10 @@ msgstr "Luồng mới trong worktree"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 msgid "New Thread in Worktree"
 msgstr "Luồng mới trong Worktree"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
+msgstr "Luồng mới bắt đầu trên tài khoản còn nhiều mức sử dụng nhất. Khi một tài khoản hết, công việc chuyển sang tài khoản tiếp theo theo thứ tự này."
 
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 msgid "New workspace"
@@ -14535,6 +14619,10 @@ msgstr "Không có lần chạy sắp tới"
 msgid "No usage data yet."
 msgstr "Chưa có dữ liệu sử dụng."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "No usage reported yet."
+msgstr "Chưa có mức sử dụng nào được báo cáo."
+
 #: src/renderer/components/providers/devin/sessionSettingsControls.tsx
 #: src/renderer/components/providers/devin/sessionSettingsSearchPicker.tsx
 #~ msgid "No value"
@@ -14645,6 +14733,7 @@ msgstr "Chưa dùng chung với {unlinkedNames}: chỉ có tên dự án trùng 
 
 #: src/renderer/components/providers/ProviderUsageRail.tsx
 #: src/renderer/components/providers/usageFormat.ts
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Not signed in"
 msgstr "Chưa đăng nhập"
 
@@ -15452,6 +15541,10 @@ msgstr "Tùy chọn: sao chép các máy chủ MCP của người dùng đã ch�
 msgid "Optional. Enabling this runs tailscale serve for the remote access port, then new pairing codes use your tailnet's HTTPS MagicDNS URL. Leave it off to use the LAN address or Public URL below."
 msgstr "Tùy chọn. Khi bật, tailscale serve sẽ chạy cho cổng truy cập từ xa, sau đó các mã ghép đôi mới dùng URL HTTPS MagicDNS của tailnet của bạn. Để tắt nếu muốn dùng địa chỉ LAN hoặc URL công khai bên dưới."
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Optional. Sent as soon as the chat starts; @mention who should answer."
+msgstr "Không bắt buộc. Được gửi ngay khi cuộc trò chuyện bắt đầu; @nhắc đến người cần trả lời."
+
 #: src/renderer/components/common/BranchSelector/parts/BranchFooterActions.tsx
 #: src/renderer/components/common/EffortContextMenu/EffortContextMenu.tsx
 #: src/renderer/components/common/OptionMenu.tsx
@@ -15505,6 +15598,14 @@ msgstr "Cách kết nối khác"
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Others"
 msgstr "Khác"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage"
+msgstr "Hết mức sử dụng"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage · resets in {resetIn}"
+msgstr "Hết mức sử dụng · đặt lại sau {resetIn}"
 
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "Outcome"
@@ -16306,6 +16407,10 @@ msgstr "Trỏ hồ sơ này tới nhà cung cấp ngoài Anthropic (z.ai, …) v
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Point your camera at the code on your desktop"
 #~ msgstr "Hướng camera vào mã trên máy tính của bạn"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Pool order"
+msgstr "Thứ tự trong nhóm"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -18128,6 +18233,7 @@ msgstr "Mở lại pull request"
 #: src/renderer/components/common/ProviderModelMenu/parts/ModelMenuRow.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/SidebarShortcutsSelector.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Reorder {0}"
 msgstr "Sắp xếp lại {0}"
 
@@ -18520,6 +18626,7 @@ msgstr "Chỉ mức sử dụng được lưu trên máy chủ này."
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostSettingsSection.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 #: src/renderer/windowApps/ThreadWindowApp.tsx
 msgid "Retry"
 msgstr "Thử lại"
@@ -19149,6 +19256,10 @@ msgstr "Tác vụ nền đang chạy: {count}"
 msgid "Running for {elapsed}"
 msgstr "Đã chạy được {elapsed}"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Running low"
+msgstr "Sắp hết"
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Running now"
 msgstr "Đang chạy"
@@ -19381,6 +19492,10 @@ msgstr "Thao tác với mật khẩu đã lưu"
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
 msgid "Saved shell"
 msgstr "Shell đã lưu"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies."
+msgstr "Đã xóa khóa API xAI đã lưu khỏi thiết bị này. XAI_API_KEY từ môi trường vẫn được áp dụng."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/PairingChrome.tsx
 msgid "Scan pairing code"
@@ -21657,6 +21772,10 @@ msgstr "Hoán đổi ghi chú và việc cần làm"
 msgid "Switch"
 msgstr "Chuyển"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Switch at"
+msgstr "Chuyển khi"
+
 #: src/renderer/views/GitReviewOverlay/GitReviewOverlay.tsx
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewPanel.tsx
 msgid "Switch branch"
@@ -21725,6 +21844,10 @@ msgstr "Đã chuyển sang {headBranch}"
 #: src/renderer/actions/providerSwitchActions.ts
 msgid "Switched to {targetLabel}"
 msgstr "Đã chuyển sang {targetLabel}"
+
+#: src/renderer/viscosity/accountPools/handoffLabel.ts
+msgid "Switched to {toLabel} because {fromLabel} ran out of usage"
+msgstr "Đã chuyển sang {toLabel} vì {fromLabel} đã hết mức sử dụng"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 msgid "Switching starts a new thread with the same title, because the chat can only continue in place between two chat providers."
@@ -22019,6 +22142,10 @@ msgstr "Đối số shell terminal"
 #: src/renderer/views/MainView/parts/RightPanel/parts/DevTerminalPanel/parts/RightTerminalLayout.tsx
 msgid "Terminal tabs"
 msgstr "Tab đầu cuối"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Terminal threads don't switch accounts automatically; use Continue in another provider."
+msgstr "Luồng terminal không tự động chuyển tài khoản; hãy dùng “Tiếp tục ở nhà cung cấp khác”."
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Test"
@@ -23505,9 +23632,17 @@ msgstr "Yêu cầu này không có quyền phê duyệt lâu dài phù hợp. H�
 msgid "This review watch uses an unsupported source-scope version. Update the app before changing it."
 msgstr "Theo dõi đánh giá này dùng phiên bản phạm vi nguồn không được hỗ trợ. Cập nhật ứng dụng trước khi thay đổi."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable failed. Retry it to continue."
+msgstr "Roundtable này đã thất bại. Hãy thử lại để tiếp tục."
+
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable has ended. Start a new one to continue."
 msgstr "Roundtable này đã kết thúc. Hãy bắt đầu một Roundtable mới để tiếp tục."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable is finished. Start a new one to continue."
+msgstr "Roundtable này đã hoàn thành. Hãy bắt đầu một Roundtable mới để tiếp tục."
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
 msgid "This Roundtable is not available. It may have been deleted."
@@ -23516,6 +23651,10 @@ msgstr "Roundtable này không khả dụng. Có thể nó đã bị xóa."
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable no longer exists."
 msgstr "Roundtable này không còn tồn tại."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable was stopped. Start a new one to continue."
+msgstr "Roundtable này đã bị dừng. Hãy bắt đầu một Roundtable mới để tiếp tục."
 
 #: src/renderer/i18n/sharedMessages.ts
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
@@ -25247,6 +25386,10 @@ msgstr "Không thể làm mới dữ liệu sử dụng"
 msgid "Usage settings"
 msgstr "Cài đặt sử dụng"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Usage tracking is off for this account."
+msgstr "Theo dõi mức sử dụng đang tắt cho tài khoản này."
+
 #: src/renderer/components/thread/ThreadContextDock.tsx
 msgid "Usage unknown"
 msgstr "Không rõ mức sử dụng"
@@ -25407,6 +25550,10 @@ msgstr "Dùng ID của một persona có sẵn trong tổ chức đám mây Devi
 msgid "Use the microphone to try your selected engine and model."
 msgstr "Sử dụng micrô để thử động cơ và kiểu máy bạn đã chọn."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Use these accounts as a pool (switch automatically when one runs out)"
+msgstr "Dùng các tài khoản này như một nhóm (tự động chuyển khi một tài khoản hết)"
+
 #: src/renderer/views/MainView/parts/AppOverlays.tsx
 msgid "Use this account for usage tracking, or change users in the browser before continuing."
 msgstr "Sử dụng tài khoản này để theo dõi việc sử dụng hoặc thay đổi người dùng trong trình duyệt trước khi tiếp tục."
@@ -25501,8 +25648,16 @@ msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over
 msgstr "Đang dùng XAI_API_KEY từ môi trường ({hint}). Biến này được ưu tiên hơn khóa đã lưu."
 
 #: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over the key saved on this device, which you can remove."
+msgstr "Đang dùng XAI_API_KEY từ môi trường ({hint}). Biến này được ưu tiên hơn khóa đã lưu trên thiết bị này; bạn có thể xóa khóa đó."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
 msgstr "Đang dùng XAI_API_KEY từ môi trường. Biến này được ưu tiên hơn khóa đã lưu."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove."
+msgstr "Đang dùng XAI_API_KEY từ môi trường. Biến này được ưu tiên hơn khóa đã lưu trên thiết bị này; bạn có thể xóa khóa đó."
 
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Using your existing Hex installation. Poracode will not modify it."
@@ -26022,6 +26177,10 @@ msgstr "Có gì mới trong Poracode, mới nhất trước."
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 msgid "When enabled, search respects <0>.gitignore</0> entries."
 msgstr "Khi được bật, tìm kiếm sẽ tôn trọng các mục nhập <0>.gitignore</0>."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "When fully used (100%)"
+msgstr "Khi dùng hết (100%)"
 
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts

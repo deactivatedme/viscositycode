@@ -193,6 +193,11 @@ msgstr "{0} — Yazım Alanı"
 msgid "{0} — Terminal"
 msgstr "{0} — Terminal"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} · {percentLeft}% left"
+msgstr "{0} · %{percentLeft} kaldı"
+
 #. placeholder {0}: item.name
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "{0} · Installed"
@@ -323,6 +328,21 @@ msgstr "{0} anonimleştirilmiş farkları karşılaştırıyor…"
 #: src/renderer/views/SettingsOverlay/parts/machineScope/MachineScopeRows.tsx
 msgid "{0} is offline. Showing last known status."
 msgstr "{0} çevrimdışı. Bilinen son durum gösteriliyor."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage; it resets in {resetIn}."
+msgstr "{0} hesabının kullanım hakkı bitti; {resetIn} içinde sıfırlanıyor."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage."
+msgstr "{0} hesabının kullanım hakkı bitti."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is running low."
+msgstr "{0} hesabının kullanım hakkı azalıyor."
 
 #. placeholder {0}: provider?.label ?? installedAgents.find((agent) => agent.kind === agentKind)?.label ?? agentKind
 #. placeholder {0}: target?.label ?? saved.lead.agentKind
@@ -773,6 +793,10 @@ msgstr "{label} kullanımı — kullanım panelini aç"
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 msgid "{label} usage: {used}% of the tightest limit used"
 msgstr "{label} kullanımı: en sıkı limitin %{used} kadarı kullanıldı"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{label}. {details}"
+msgstr "{label}. {details}"
 
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
@@ -1521,9 +1545,30 @@ msgstr "{0} için hesap etiketi"
 msgid "Account options"
 msgstr "Hesap seçenekleri"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolUnavailableNote.tsx
+msgid "Account pool"
+msgstr "Hesap havuzu"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Account pool settings couldn't be saved."
+msgstr "Hesap havuzu ayarları kaydedilemedi."
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Account pool: {count, plural, one {# account} other {# accounts}}, switches at {switchAt}% used."
+msgstr "Hesap havuzu: {count, plural, one {# hesap} other {# hesap}}, %{switchAt} kullanımda geçiş yapar."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Account sharing and launch defaults."
 msgstr "Hesap paylaşımı ve başlangıç varsayılanları."
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label}"
+msgstr "Hesap: {label}"
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label} — most usage left"
+msgstr "Hesap: {label} — en fazla kullanım hakkı kalan"
 
 #: src/renderer/views/ProfileOverlay/parts/CostHistory.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
@@ -1791,6 +1836,10 @@ msgstr "Ayarlar'da bir xAI API anahtarı ekleyin veya XAI_API_KEY ortam değişk
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Add another Devin account with its own sign-in."
 msgstr "Kendi oturum açma bilgilerine sahip başka bir Devin hesabı ekleyin."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Add another profile to use your accounts as a pool."
+msgstr "Hesaplarınızı havuz olarak kullanmak için başka bir profil ekleyin."
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Add at least one more participant."
@@ -2409,6 +2458,10 @@ msgstr "Her zaman hariç tutuldu"
 msgid "Amber"
 msgstr "Kehribar"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "An account counts as out once any usage window reaches this level."
+msgstr "Herhangi bir kullanım penceresi bu düzeye ulaştığında hesabın kullanım hakkı bitmiş sayılır."
+
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatPanel.tsx
 msgid "An agent can read the description and changes and answer your questions."
 msgstr "Bir temsilci açıklamayı ve değişiklikleri okuyup sorularınızı yanıtlayabilir."
@@ -2517,6 +2570,11 @@ msgstr "Antigravity ACP"
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity is up to date."
 #~ msgstr "Antigravity güncel."
+
+#. Account pools settings: shown for Antigravity, which cannot hold several accounts on one computer
+#: src/renderer/components/providers/antigravity/accountPoolSupport.ts
+msgid "Antigravity keeps one sign-in per computer, so it can't join an account pool yet."
+msgstr "Antigravity bilgisayar başına yalnızca bir oturum açma tutar, bu nedenle henüz bir hesap havuzuna katılamaz."
 
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity updated to v{version}."
@@ -2786,6 +2844,10 @@ msgstr "Kalan ileti dizisi olmayan ilişkili çalışma ağaçları da kaldırı
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "At"
 msgstr "Saat"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "At {percent}% used"
+msgstr "%{percent} kullanımda"
 
 #: src/renderer/actions/experimentActions.ts
 msgid "At least two worktrees must be created. Any partial experiment was cleaned up."
@@ -4065,6 +4127,10 @@ msgstr "Sohbet Komutları"
 #: src/renderer/commands/registry.ts
 msgid "Chat starred"
 msgstr "Sohbet yıldızlandı"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Chat threads continue on the next account with the conversation handed over. Terminal threads stay on their account; use Continue in another provider to move them."
+msgstr "Sohbet konuları, konuşma aktarılarak sonraki hesapta devam eder. Terminal konuları kendi hesaplarında kalır; taşımak için Başka bir sağlayıcıda devam et seçeneğini kullanın."
 
 #: src/renderer/commands/registry.ts
 msgid "Chat unstarred"
@@ -9271,6 +9337,10 @@ msgstr "Bildiriminiz GitHub üzerinde tamamlanıyor…"
 msgid "Finishing…"
 msgstr "Tamamlanıyor…"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "First message"
+msgstr "İlk mesaj"
+
 #: src/renderer/views/SettingsOverlay/parts/agentRegistryNative.ts
 #~ msgid "First-class Antigravity CLI integration using Poracode's native runtime."
 #~ msgstr "Poracode'un yerel çalışma zamanını kullanan birinci sınıf Antigravity CLI entegrasyonu."
@@ -13247,6 +13317,16 @@ msgstr "Hareket"
 msgid "Move"
 msgstr "Taşı"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} down"
+msgstr "{0} hesabını aşağı taşı"
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} up"
+msgstr "{0} hesabını yukarı taşı"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
 msgstr "Mevcut cihaza yerel SSH bağlantısını bağlantı kimliğiyle bu ortama taşıyın. Anahtarlar hiçbir zaman yüklenmez."
@@ -13755,6 +13835,10 @@ msgstr "Worktree'de yeni iş parçacığı"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 msgid "New Thread in Worktree"
 msgstr "Worktree'de Yeni Konu"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
+msgstr "Yeni konular en fazla kullanım hakkı kalan hesapta başlar. Bir hesabın hakkı bittiğinde iş, bu sıradaki sonraki hesaba geçer."
 
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 msgid "New workspace"
@@ -14535,6 +14619,10 @@ msgstr "Yaklaşan çalıştırma yok"
 msgid "No usage data yet."
 msgstr "Henüz kullanım verisi yok."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "No usage reported yet."
+msgstr "Henüz kullanım bildirilmedi."
+
 #: src/renderer/components/providers/devin/sessionSettingsControls.tsx
 #: src/renderer/components/providers/devin/sessionSettingsSearchPicker.tsx
 #~ msgid "No value"
@@ -14645,6 +14733,7 @@ msgstr "Henüz {unlinkedNames} ile paylaşılmıyor: yalnızca proje adı eşle�
 
 #: src/renderer/components/providers/ProviderUsageRail.tsx
 #: src/renderer/components/providers/usageFormat.ts
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Not signed in"
 msgstr "Oturum açılmadı"
 
@@ -15452,6 +15541,10 @@ msgstr "İsteğe bağlı: seçili kullanıcı MCP sunucularını bu CLI’nin t�
 msgid "Optional. Enabling this runs tailscale serve for the remote access port, then new pairing codes use your tailnet's HTTPS MagicDNS URL. Leave it off to use the LAN address or Public URL below."
 msgstr "İsteğe bağlı. Etkinleştirildiğinde uzak erişim bağlantı noktası için tailscale serve çalıştırılır; ardından yeni eşleştirme kodları tailnet'inizin HTTPS MagicDNS URL'sini kullanır. LAN adresini veya aşağıdaki Genel URL'yi kullanmak için kapalı bırakın."
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Optional. Sent as soon as the chat starts; @mention who should answer."
+msgstr "İsteğe bağlı. Sohbet başlar başlamaz gönderilir; kimin yanıt vereceğini @ ile belirtin."
+
 #: src/renderer/components/common/BranchSelector/parts/BranchFooterActions.tsx
 #: src/renderer/components/common/EffortContextMenu/EffortContextMenu.tsx
 #: src/renderer/components/common/OptionMenu.tsx
@@ -15505,6 +15598,14 @@ msgstr "Diğer bağlantı yolları"
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Others"
 msgstr "Diğerleri"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage"
+msgstr "Kullanım hakkı bitti"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage · resets in {resetIn}"
+msgstr "Kullanım hakkı bitti · {resetIn} içinde sıfırlanıyor"
 
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "Outcome"
@@ -16306,6 +16407,10 @@ msgstr "Bu profili özel ortam değişkenleri, model adları ve efor düzeyleriy
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Point your camera at the code on your desktop"
 #~ msgstr "Kameranızı masaüstünüzdeki koda doğrultun"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Pool order"
+msgstr "Havuz sırası"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -18128,6 +18233,7 @@ msgstr "Çekme isteğini yeniden aç"
 #: src/renderer/components/common/ProviderModelMenu/parts/ModelMenuRow.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/SidebarShortcutsSelector.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Reorder {0}"
 msgstr "{0} öğesini yeniden sırala"
 
@@ -18520,6 +18626,7 @@ msgstr "Yalnızca bu sunucuda saklanan kullanım."
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostSettingsSection.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 #: src/renderer/windowApps/ThreadWindowApp.tsx
 msgid "Retry"
 msgstr "Tekrar dene"
@@ -19149,6 +19256,10 @@ msgstr "Çalışan arka plan görevleri: {count}"
 msgid "Running for {elapsed}"
 msgstr "{elapsed} süredir çalışıyor"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Running low"
+msgstr "Azalıyor"
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Running now"
 msgstr "Şimdi çalışıyor"
@@ -19381,6 +19492,10 @@ msgstr "Kayıtlı parola işlemleri"
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
 msgid "Saved shell"
 msgstr "Kaydedilmiş kabuk"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies."
+msgstr "Kayıtlı xAI API anahtarı bu cihazdan kaldırıldı. Ortamdaki XAI_API_KEY geçerli olmaya devam ediyor."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/PairingChrome.tsx
 msgid "Scan pairing code"
@@ -21657,6 +21772,10 @@ msgstr "Notları ve yapılacak işleri değiştir"
 msgid "Switch"
 msgstr "Geç"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Switch at"
+msgstr "Geçiş noktası"
+
 #: src/renderer/views/GitReviewOverlay/GitReviewOverlay.tsx
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewPanel.tsx
 msgid "Switch branch"
@@ -21725,6 +21844,10 @@ msgstr "{headBranch} dalına geçildi"
 #: src/renderer/actions/providerSwitchActions.ts
 msgid "Switched to {targetLabel}"
 msgstr "{targetLabel} sağlayıcısına geçildi"
+
+#: src/renderer/viscosity/accountPools/handoffLabel.ts
+msgid "Switched to {toLabel} because {fromLabel} ran out of usage"
+msgstr "{fromLabel} hesabının kullanım hakkı bittiği için {toLabel} hesabına geçildi"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 msgid "Switching starts a new thread with the same title, because the chat can only continue in place between two chat providers."
@@ -22019,6 +22142,10 @@ msgstr "Terminal kabuğu bağımsız değişkenleri"
 #: src/renderer/views/MainView/parts/RightPanel/parts/DevTerminalPanel/parts/RightTerminalLayout.tsx
 msgid "Terminal tabs"
 msgstr "Terminal sekmeleri"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Terminal threads don't switch accounts automatically; use Continue in another provider."
+msgstr "Terminal konuları hesapları otomatik olarak değiştirmez; Başka bir sağlayıcıda devam et seçeneğini kullanın."
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Test"
@@ -23505,9 +23632,17 @@ msgstr "Bu istek için eşleşen kalıcı bir onay yok. “Bir kez izin ver” s
 msgid "This review watch uses an unsupported source-scope version. Update the app before changing it."
 msgstr "Bu inceleme izlemesi desteklenmeyen bir kaynak kapsamı sürümü kullanıyor. Değiştirmeden önce uygulamayı güncelleyin."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable failed. Retry it to continue."
+msgstr "Bu Yuvarlak Masa başarısız oldu. Devam etmek için yeniden deneyin."
+
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable has ended. Start a new one to continue."
 msgstr "Bu Yuvarlak Masa sona erdi. Devam etmek için yeni bir tane başlatın."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable is finished. Start a new one to continue."
+msgstr "Bu Yuvarlak Masa tamamlandı. Devam etmek için yeni bir tane başlatın."
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
 msgid "This Roundtable is not available. It may have been deleted."
@@ -23516,6 +23651,10 @@ msgstr "Bu Yuvarlak Masa kullanılamıyor. Silinmiş olabilir."
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable no longer exists."
 msgstr "Bu Yuvarlak Masa artık mevcut değil."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable was stopped. Start a new one to continue."
+msgstr "Bu Yuvarlak Masa durduruldu. Devam etmek için yeni bir tane başlatın."
 
 #: src/renderer/i18n/sharedMessages.ts
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
@@ -25247,6 +25386,10 @@ msgstr "Kullanım yenilenemedi"
 msgid "Usage settings"
 msgstr "Kullanım ayarları"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Usage tracking is off for this account."
+msgstr "Bu hesap için kullanım takibi kapalı."
+
 #: src/renderer/components/thread/ThreadContextDock.tsx
 msgid "Usage unknown"
 msgstr "Bilinmeyen kullanım"
@@ -25407,6 +25550,10 @@ msgstr "Devin bulut organizasyonunuzda kullanılabilen bir personasının kimli�
 msgid "Use the microphone to try your selected engine and model."
 msgstr "Seçtiğiniz motoru ve modeli denemek için mikrofonu kullanın."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Use these accounts as a pool (switch automatically when one runs out)"
+msgstr "Bu hesapları havuz olarak kullan (birinin kullanım hakkı bittiğinde otomatik olarak geçiş yap)"
+
 #: src/renderer/views/MainView/parts/AppOverlays.tsx
 msgid "Use this account for usage tracking, or change users in the browser before continuing."
 msgstr "Kullanım takibi için bu hesabı kullanın veya devam etmeden önce tarayıcıdaki kullanıcıları değiştirin."
@@ -25501,8 +25648,16 @@ msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over
 msgstr "Ortamdaki XAI_API_KEY kullanılıyor ({hint}). Kayıtlı anahtara göre önceliklidir."
 
 #: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over the key saved on this device, which you can remove."
+msgstr "Ortamdaki XAI_API_KEY kullanılıyor ({hint}). Bu cihaza kaydedilmiş anahtara göre önceliklidir; o anahtarı kaldırabilirsiniz."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
 msgstr "Ortamdaki XAI_API_KEY kullanılıyor. Kayıtlı anahtara göre önceliklidir."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove."
+msgstr "Ortamdaki XAI_API_KEY kullanılıyor. Bu cihaza kaydedilmiş anahtara göre önceliklidir; o anahtarı kaldırabilirsiniz."
 
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Using your existing Hex installation. Poracode will not modify it."
@@ -26022,6 +26177,10 @@ msgstr "Poracode'daki yenilikler, en yeniden başlayarak."
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 msgid "When enabled, search respects <0>.gitignore</0> entries."
 msgstr "Etkinleştirildiğinde, arama <0>.gitignore</0> girişlerine saygı duyar."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "When fully used (100%)"
+msgstr "Tamamen kullanıldığında (%100)"
 
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts

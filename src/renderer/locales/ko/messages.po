@@ -193,6 +193,11 @@ msgstr "{0} — 작성기"
 msgid "{0} — Terminal"
 msgstr "{0} — 터미널"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} · {percentLeft}% left"
+msgstr "{0} · {percentLeft}% 남음"
+
 #. placeholder {0}: item.name
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "{0} · Installed"
@@ -323,6 +328,21 @@ msgstr "{0}이(가) 익명화된 diff를 비교하고 있습니다…"
 #: src/renderer/views/SettingsOverlay/parts/machineScope/MachineScopeRows.tsx
 msgid "{0} is offline. Showing last known status."
 msgstr "{0}이(가) 오프라인입니다. 마지막으로 확인된 상태를 표시합니다."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage; it resets in {resetIn}."
+msgstr "{0}의 사용량이 소진되었습니다. {resetIn} 후 초기화됩니다."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is out of usage."
+msgstr "{0}의 사용량이 소진되었습니다."
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{0} is running low."
+msgstr "{0}의 사용량이 얼마 남지 않았습니다."
 
 #. placeholder {0}: provider?.label ?? installedAgents.find((agent) => agent.kind === agentKind)?.label ?? agentKind
 #. placeholder {0}: target?.label ?? saved.lead.agentKind
@@ -773,6 +793,10 @@ msgstr "{label} 사용량 — 사용량 패널 열기"
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 msgid "{label} usage: {used}% of the tightest limit used"
 msgstr "{label} 사용량: 가장 엄격한 한도의 {used}% 사용됨"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "{label}. {details}"
+msgstr "{label}. {details}"
 
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
@@ -1521,9 +1545,30 @@ msgstr "{0}의 계정 이름"
 msgid "Account options"
 msgstr "계정 옵션"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolUnavailableNote.tsx
+msgid "Account pool"
+msgstr "계정 풀"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Account pool settings couldn't be saved."
+msgstr "계정 풀 설정을 저장하지 못했습니다."
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Account pool: {count, plural, one {# account} other {# accounts}}, switches at {switchAt}% used."
+msgstr "계정 풀: {count, plural, one {계정 #개} other {계정 #개}}, 사용량이 {switchAt}%에 도달하면 전환합니다."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Account sharing and launch defaults."
 msgstr "계정 공유 및 시작 기본 설정입니다."
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label}"
+msgstr "계정: {label}"
+
+#: src/renderer/viscosity/accountPools/composerPool.tsx
+msgid "Account: {label} — most usage left"
+msgstr "계정: {label} — 남은 사용량이 가장 많음"
 
 #: src/renderer/views/ProfileOverlay/parts/CostHistory.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
@@ -1791,6 +1836,10 @@ msgstr "설정에서 xAI API 키를 추가하거나 XAI_API_KEY 환경 변수를
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Add another Devin account with its own sign-in."
 msgstr "별도로 로그인하는 Devin 계정을 추가합니다."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Add another profile to use your accounts as a pool."
+msgstr "계정을 풀로 사용하려면 프로필을 하나 더 추가하세요."
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Add at least one more participant."
@@ -2409,6 +2458,10 @@ msgstr "항상 제외됨"
 msgid "Amber"
 msgstr "앨버"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "An account counts as out once any usage window reaches this level."
+msgstr "사용량 기간 중 하나라도 이 수준에 도달하면 해당 계정은 소진된 것으로 간주됩니다."
+
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatPanel.tsx
 msgid "An agent can read the description and changes and answer your questions."
 msgstr "에이전트가 설명과 변경 사항을 읽고 질문에 답변할 수 있습니다."
@@ -2517,6 +2570,11 @@ msgstr "Antigravity ACP"
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity is up to date."
 #~ msgstr "Antigravity가 최신 상태입니다."
+
+#. Account pools settings: shown for Antigravity, which cannot hold several accounts on one computer
+#: src/renderer/components/providers/antigravity/accountPoolSupport.ts
+msgid "Antigravity keeps one sign-in per computer, so it can't join an account pool yet."
+msgstr "Antigravity는 컴퓨터당 하나의 로그인만 유지하므로 아직 계정 풀에 참여할 수 없습니다."
 
 #: src/renderer/views/SettingsOverlay/parts/antigravityRuntimeInstall.ts
 #~ msgid "Antigravity updated to v{version}."
@@ -2786,6 +2844,10 @@ msgstr "남은 스레드가 없는 연결된 작업 트리도 삭제됩니다."
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "At"
 msgstr "시간"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "At {percent}% used"
+msgstr "{percent}% 사용 시"
 
 #: src/renderer/actions/experimentActions.ts
 msgid "At least two worktrees must be created. Any partial experiment was cleaned up."
@@ -4065,6 +4127,10 @@ msgstr "채팅 명령"
 #: src/renderer/commands/registry.ts
 msgid "Chat starred"
 msgstr "채팅에 별표 추가됨"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Chat threads continue on the next account with the conversation handed over. Terminal threads stay on their account; use Continue in another provider to move them."
+msgstr "채팅 스레드는 대화를 넘겨받아 다음 계정에서 계속됩니다. 터미널 스레드는 기존 계정에 유지되며, 옮기려면 ‘다른 제공업체에서 계속’을 사용하세요."
 
 #: src/renderer/commands/registry.ts
 msgid "Chat unstarred"
@@ -9271,6 +9337,10 @@ msgstr "GitHub에서 보고서를 마무리하는 중…"
 msgid "Finishing…"
 msgstr "마무리하는 중…"
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "First message"
+msgstr "첫 메시지"
+
 #: src/renderer/views/SettingsOverlay/parts/agentRegistryNative.ts
 #~ msgid "First-class Antigravity CLI integration using Poracode's native runtime."
 #~ msgstr "Poracode의 네이티브 런타임을 사용한 최고 수준의 Antigravity CLI 통합."
@@ -13247,6 +13317,16 @@ msgstr "동작"
 msgid "Move"
 msgstr "이동"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} down"
+msgstr "{0} 아래로 이동"
+
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Move {0} up"
+msgstr "{0} 위로 이동"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
 msgstr "연결 ID로 기존 장치 로컬 SSH 연결을 이 환경으로 이동합니다. 키는 업로드되지 않습니다."
@@ -13755,6 +13835,10 @@ msgstr "worktree에서 새 스레드"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 msgid "New Thread in Worktree"
 msgstr "작업 트리의 새 스레드"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
+msgstr "새 스레드는 남은 사용량이 가장 많은 계정에서 시작됩니다. 한 계정이 소진되면 이 순서에 따라 다음 계정으로 작업이 넘어갑니다."
 
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 msgid "New workspace"
@@ -14535,6 +14619,10 @@ msgstr "예정된 실행 없음"
 msgid "No usage data yet."
 msgstr "아직 사용량 데이터가 없습니다."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "No usage reported yet."
+msgstr "아직 보고된 사용량이 없습니다."
+
 #: src/renderer/components/providers/devin/sessionSettingsControls.tsx
 #: src/renderer/components/providers/devin/sessionSettingsSearchPicker.tsx
 #~ msgid "No value"
@@ -14645,6 +14733,7 @@ msgstr "아직 {unlinkedNames}와(과) 공유되지 않습니다. 프로젝트 �
 
 #: src/renderer/components/providers/ProviderUsageRail.tsx
 #: src/renderer/components/providers/usageFormat.ts
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Not signed in"
 msgstr "로그인되지 않음"
 
@@ -15452,6 +15541,10 @@ msgstr "선택 사항: 선택한 사용자 MCP 서버를 이 CLI의 모든 세�
 msgid "Optional. Enabling this runs tailscale serve for the remote access port, then new pairing codes use your tailnet's HTTPS MagicDNS URL. Leave it off to use the LAN address or Public URL below."
 msgstr "선택 사항입니다. 이 옵션을 켜면 원격 액세스 포트에 대해 tailscale serve를 실행하고, 이후 새 페어링 코드는 tailnet의 HTTPS MagicDNS URL을 사용합니다. LAN 주소나 아래 공개 URL을 사용하려면 꺼 둡니다."
 
+#: src/renderer/viscosity/bots/ui/BotGroupChatDialog.tsx
+msgid "Optional. Sent as soon as the chat starts; @mention who should answer."
+msgstr "선택 사항입니다. 채팅이 시작되면 바로 전송됩니다. 답할 사람을 @멘션하세요."
+
 #: src/renderer/components/common/BranchSelector/parts/BranchFooterActions.tsx
 #: src/renderer/components/common/EffortContextMenu/EffortContextMenu.tsx
 #: src/renderer/components/common/OptionMenu.tsx
@@ -15505,6 +15598,14 @@ msgstr "다른 연결 방법"
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
 msgid "Others"
 msgstr "기타"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage"
+msgstr "사용량 소진"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Out of usage · resets in {resetIn}"
+msgstr "사용량 소진 · {resetIn} 후 초기화"
 
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "Outcome"
@@ -16306,6 +16407,10 @@ msgstr "사용자 지정 환경 변수, 모델 이름, 추론 강도 단계로 �
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Point your camera at the code on your desktop"
 #~ msgstr "데스크톱의 코드에 카메라를 대세요"
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Pool order"
+msgstr "풀 순서"
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -18128,6 +18233,7 @@ msgstr "풀 리퀘스트 다시 열기"
 #: src/renderer/components/common/ProviderModelMenu/parts/ModelMenuRow.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/SidebarShortcutsSelector.tsx
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Reorder {0}"
 msgstr "{0} 재정렬"
 
@@ -18520,6 +18626,7 @@ msgstr "이 호스트에 보관된 사용량만 포함합니다."
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostSettingsSection.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 #: src/renderer/windowApps/ThreadWindowApp.tsx
 msgid "Retry"
 msgstr "다시 시도"
@@ -19149,6 +19256,10 @@ msgstr "실행 중인 백그라운드 작업: {count}"
 msgid "Running for {elapsed}"
 msgstr "{elapsed} 동안 실행 중"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Running low"
+msgstr "얼마 남지 않음"
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Running now"
 msgstr "지금 실행 중"
@@ -19381,6 +19492,10 @@ msgstr "저장된 비밀번호 작업"
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
 msgid "Saved shell"
 msgstr "저장된 셸"
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies."
+msgstr "이 기기에서 저장된 xAI API 키를 제거했습니다. 환경의 XAI_API_KEY는 계속 적용됩니다."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/PairingChrome.tsx
 msgid "Scan pairing code"
@@ -21657,6 +21772,10 @@ msgstr "메모와 할 일 바꾸기"
 msgid "Switch"
 msgstr "전환"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Switch at"
+msgstr "전환 시점"
+
 #: src/renderer/views/GitReviewOverlay/GitReviewOverlay.tsx
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewPanel.tsx
 msgid "Switch branch"
@@ -21725,6 +21844,10 @@ msgstr "{headBranch}(으)로 전환했습니다"
 #: src/renderer/actions/providerSwitchActions.ts
 msgid "Switched to {targetLabel}"
 msgstr "{targetLabel}(으)로 전환했습니다."
+
+#: src/renderer/viscosity/accountPools/handoffLabel.ts
+msgid "Switched to {toLabel} because {fromLabel} ran out of usage"
+msgstr "{fromLabel}의 사용량이 소진되어 {toLabel}(으)로 전환했습니다"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 msgid "Switching starts a new thread with the same title, because the chat can only continue in place between two chat providers."
@@ -22019,6 +22142,10 @@ msgstr "터미널 셸 인수"
 #: src/renderer/views/MainView/parts/RightPanel/parts/DevTerminalPanel/parts/RightTerminalLayout.tsx
 msgid "Terminal tabs"
 msgstr "터미널 탭"
+
+#: src/renderer/viscosity/accountPools/AccountPoolStatusItem.tsx
+msgid "Terminal threads don't switch accounts automatically; use Continue in another provider."
+msgstr "터미널 스레드는 계정을 자동으로 전환하지 않습니다. ‘다른 제공업체에서 계속’을 사용하세요."
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Test"
@@ -23505,9 +23632,17 @@ msgstr "이 요청에 해당하는 영구 승인이 없습니다. ‘한 번 허
 msgid "This review watch uses an unsupported source-scope version. Update the app before changing it."
 msgstr "이 리뷰 감시는 지원하지 않는 소스 범위 버전을 사용합니다. 변경하기 전에 앱을 업데이트하세요."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable failed. Retry it to continue."
+msgstr "이 Roundtable이 실패했습니다. 계속하려면 다시 시도하세요."
+
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable has ended. Start a new one to continue."
 msgstr "이 Roundtable은 종료되었습니다. 계속하려면 새 Roundtable을 시작하세요."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable is finished. Start a new one to continue."
+msgstr "이 Roundtable은 완료되었습니다. 계속하려면 새 Roundtable을 시작하세요."
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableView.tsx
 msgid "This Roundtable is not available. It may have been deleted."
@@ -23516,6 +23651,10 @@ msgstr "이 Roundtable을 사용할 수 없습니다. 삭제되었을 수 있습
 #: src/renderer/viscosity/roundtable/api.ts
 msgid "This Roundtable no longer exists."
 msgstr "이 Roundtable은 더 이상 존재하지 않습니다."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
+msgid "This Roundtable was stopped. Start a new one to continue."
+msgstr "이 Roundtable은 중지되었습니다. 계속하려면 새 Roundtable을 시작하세요."
 
 #: src/renderer/i18n/sharedMessages.ts
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
@@ -25247,6 +25386,10 @@ msgstr "사용량 새로 고침 실패"
 msgid "Usage settings"
 msgstr "사용 설정"
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Usage tracking is off for this account."
+msgstr "이 계정의 사용량 추적이 꺼져 있습니다."
+
 #: src/renderer/components/thread/ThreadContextDock.tsx
 msgid "Usage unknown"
 msgstr "사용량을 알 수 없음"
@@ -25407,6 +25550,10 @@ msgstr "Devin 클라우드 조직에서 사용할 수 있는 페르소나의 ID�
 msgid "Use the microphone to try your selected engine and model."
 msgstr "마이크를 사용하여 선택한 엔진과 모델을 시험해 보세요."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Use these accounts as a pool (switch automatically when one runs out)"
+msgstr "이 계정들을 풀로 사용(하나가 소진되면 자동 전환)"
+
 #: src/renderer/views/MainView/parts/AppOverlays.tsx
 msgid "Use this account for usage tracking, or change users in the browser before continuing."
 msgstr "사용 추적을 위해 이 계정을 사용하거나 계속하기 전에 브라우저에서 사용자를 변경하세요."
@@ -25501,8 +25648,16 @@ msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over
 msgstr "환경의 XAI_API_KEY를 사용 중입니다({hint}). 저장된 키보다 우선합니다."
 
 #: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment ({hint}). It takes precedence over the key saved on this device, which you can remove."
+msgstr "환경의 XAI_API_KEY를 사용 중입니다({hint}). 이 기기에 저장된 키보다 우선하며, 저장된 키는 제거할 수 있습니다."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 msgid "Using XAI_API_KEY from the environment. It takes precedence over a saved key."
 msgstr "환경의 XAI_API_KEY를 사용 중입니다. 저장된 키보다 우선합니다."
+
+#: src/renderer/viscosity/bots/settings/BotsSettings.tsx
+msgid "Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove."
+msgstr "환경의 XAI_API_KEY를 사용 중입니다. 이 기기에 저장된 키보다 우선하며, 저장된 키는 제거할 수 있습니다."
 
 #: src/renderer/views/SettingsOverlay/parts/HexSetupDialog.tsx
 msgid "Using your existing Hex installation. Poracode will not modify it."
@@ -26022,6 +26177,10 @@ msgstr "Poracode의 새 소식, 최신순."
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 msgid "When enabled, search respects <0>.gitignore</0> entries."
 msgstr "활성화되면 검색은 <0>.gitignore</0> 항목을 존중합니다."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "When fully used (100%)"
+msgstr "모두 사용했을 때(100%)"
 
 #: src/renderer/views/SettingsOverlay/parts/BrowserSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
