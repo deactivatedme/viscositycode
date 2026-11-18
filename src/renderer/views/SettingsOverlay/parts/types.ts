@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /** Every fixed Settings section id; provider pages add `agents:<kind>` at runtime. */
 export const SETTINGS_SECTIONS = [
   "profile",
@@ -5,6 +6,7 @@ export const SETTINGS_SECTIONS = [
   "general",
   "audio",
   "appearance",
+  "effects", // ViscosityCode: animated background + agent effects (src/renderer/fx/settings)
   "terminal",
   "threads",
   "git",

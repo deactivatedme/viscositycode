@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { remoteConnectionKey } from "@/renderer/state/remoteServers/types";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLingui } from "@lingui/react/macro";
@@ -16,6 +17,8 @@ import { getSettingsInstalledAgents } from "@/shared/agentStatus";
 import { normalizeAnalyticsProvider } from "@/shared/analytics/posthogPrivacy";
 import { ProfileSettings } from "./parts/ProfileSettings";
 import { AppearanceSettings } from "./parts/AppearanceSettings";
+// ViscosityCode: Settings → Effects lives with the fork effects it configures.
+import { EffectsSettings } from "@/renderer/fx/settings/EffectsSettings";
 import { BrowserSettings } from "./parts/BrowserSettings";
 import { ImportSettings } from "./parts/ImportSettings";
 import { UsageSettings } from "./parts/UsageSettings";
@@ -75,6 +78,7 @@ const SECTION_VIEWS: Partial<Record<SettingsSection, () => ReactNode>> = {
   general: () => <GeneralSettings />,
   audio: () => <AudioSettings />,
   appearance: () => <AppearanceSettings />,
+  effects: () => <EffectsSettings />, // ViscosityCode
   terminal: () => <TerminalSettings />,
   threads: () => <ThreadSettings />,
   git: () => <GitSettings />,

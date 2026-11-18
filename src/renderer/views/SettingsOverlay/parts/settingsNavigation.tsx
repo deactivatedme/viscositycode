@@ -28,6 +28,7 @@ import {
   TerminalSquare,
   UserRound,
   UsersRound,
+  WandSparkles,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useLingui } from "@lingui/react/macro";
@@ -93,6 +94,15 @@ export function useSettingsNavigation() {
         { id: "workspaces", icon: <Layers className="size-4" />, label: t`Workspaces` },
         { id: "general", icon: <Settings2 className="size-4" />, label: t`General` },
         { id: "appearance", icon: <Palette className="size-4" />, label: t`Appearance` },
+        // ViscosityCode: animated background and agent effects (client preference).
+        {
+          id: "effects",
+          icon: <WandSparkles className="size-4" />,
+          label: t({
+            message: "Effects",
+            comment: "Settings section: animated background and live agent effects",
+          }),
+        },
         { id: "audio", icon: <Mic className="size-4" />, label: t`Audio` },
         { id: "notifications", icon: <Bell className="size-4" />, label: t`Notifications` },
         { id: "shortcuts", icon: <Keyboard className="size-4" />, label: t`Shortcuts` },

@@ -3,6 +3,8 @@ import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { SettingsSection } from "./types";
 import { createSearchQuery, scoreSearchFields } from "@/shared/searchMatching";
+// ViscosityCode: Settings → Effects rows live beside the section in src/renderer/fx/settings.
+import { EFFECTS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/fx/settings/effectsSettingsSearch";
 
 /**
  * Static index of individual settings, powering the sidebar's "Search settings"
@@ -261,6 +263,9 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     desktopOnly: true,
     conditional: true,
   },
+
+  // ViscosityCode: Effects (animated background + agent effects)
+  ...EFFECTS_SETTINGS_SEARCH_ENTRIES,
 
   // Terminal
   {
