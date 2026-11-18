@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState, type ReactNode } from "react";
 import {
   Cable,
@@ -12,6 +13,7 @@ import {
   MessagesSquare,
   Server,
   SlidersHorizontal,
+  UsersRound, // ViscosityCode: Roundtable toggle.
 } from "lucide-react";
 import type { Selection } from "@heroui/react";
 import { Dropdown, Label, Separator } from "@heroui/react";
@@ -88,6 +90,12 @@ export function ComposerAddMenu(props: {
     disabled: boolean;
     onToggle: (next: boolean) => void;
   };
+  // ViscosityCode: Roundtable mode for the new-thread composer (same shape as `experiment`).
+  roundtable?: {
+    enabled: boolean;
+    disabled: boolean;
+    onToggle: (next: boolean) => void;
+  };
   /**
    * Display-only mode for an active thread: MCP bindings were fixed when the
    * session launched, so the lists show what this run has without switches
@@ -104,6 +112,7 @@ export function ComposerAddMenu(props: {
   sessionActions?: readonly ProviderSessionMenuAction[];
 }) {
   const { mcpServers, showFileOption = true, onPickFiles, computerUse, experiment } = props;
+  const roundtable = props.roundtable; // ViscosityCode:
   const customMcpServers = props.customMcpServers ?? [];
   const sessionActions = props.sessionActions ?? [];
   // Both draft and existing-thread composers share this menu. The focused
@@ -129,6 +138,8 @@ export function ComposerAddMenu(props: {
     ? t`Drives apps on the paired desktop in the background; takes over that desktop only when the agent asks for the foreground or its system-approved portal requires it`
     : t`Drives desktop apps in the background; takes over the desktop only when the agent asks for the foreground or a system-approved portal requires it`;
   const experimentHint = t`Run one prompt with multiple agents, then compare their work.`;
+  // ViscosityCode:
+  const roundtableHint = t`Seat several models on one task and let them take turns.`;
 
   // Counts every enabled row the Plugins submenu shows, Computer Use included —
   // it is not a registry entry but it renders as one of the switches, so
@@ -143,6 +154,7 @@ export function ComposerAddMenu(props: {
     !hasPluginsMenu &&
     !hasMcpServersMenu &&
     !experiment &&
+    !roundtable && // ViscosityCode:
     !props.planControl &&
     !sessionActions.length &&
     !props.onOpenSideChat
@@ -272,6 +284,23 @@ export function ComposerAddMenu(props: {
           </span>
           <InfoHint text={experimentHint} />
           <MenuSwitch checked={experiment.enabled} />
+        </button>
+      ) : null}
+      {/* ViscosityCode: Roundtable toggle. */}
+      {roundtable ? (
+        <button
+          type="button"
+          className="m-sheet-action"
+          aria-pressed={roundtable.enabled}
+          disabled={roundtable.disabled}
+          onClick={() => roundtable.onToggle(!roundtable.enabled)}
+        >
+          <UsersRound className="size-4 text-muted" />
+          <span className="flex-1 truncate">
+            <Trans>Roundtable</Trans>
+          </span>
+          <InfoHint text={roundtableHint} />
+          <MenuSwitch checked={roundtable.enabled} />
         </button>
       ) : null}
       {hasPluginsMenu ? (
@@ -439,6 +468,8 @@ export function ComposerAddMenu(props: {
             if (key === "experiment" && experiment) {
               experiment.onToggle(!experiment.enabled);
             }
+            // ViscosityCode:
+            if (key === "roundtable" && roundtable) roundtable.onToggle(!roundtable.enabled);
           }}
           className="poracode-menu min-w-52"
         >
@@ -497,7 +528,22 @@ export function ComposerAddMenu(props: {
               <MenuSwitch checked={experiment.enabled} />
             </Dropdown.Item>
           ) : null}
-          {(showFileOption || props.planControl || experiment) &&
+          {/* ViscosityCode: Roundtable toggle. */}
+          {roundtable ? (
+            <Dropdown.Item
+              id="roundtable"
+              textValue={t`Roundtable`}
+              isDisabled={roundtable.disabled}
+            >
+              <UsersRound className="size-4 text-muted" />
+              <Label className="flex-1 truncate">
+                <Trans>Roundtable</Trans>
+              </Label>
+              <InfoHint text={roundtableHint} />
+              <MenuSwitch checked={roundtable.enabled} />
+            </Dropdown.Item>
+          ) : null}
+          {(showFileOption || props.planControl || experiment || roundtable) && // ViscosityCode: roundtable
           (hasPluginsMenu || hasMcpServersMenu) ? (
             <Separator />
           ) : null}

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { RemoteClientError } from "@/shared/remote/clientErrors";
 import { DraftRecoveryNotice } from "@/renderer/components/composer/DraftRecoveryNotice";
 import { mergeDraftContent, composerSeedQueue } from "@/renderer/state/projectReferences";
@@ -143,6 +144,14 @@ import {
   qualifiedRemoteName,
   resolveWorktreeOriginRef,
 } from "@/renderer/components/common/BranchSelector/parts/worktreeBaseRef";
+// ViscosityCode: Roundtable from the new-thread composer (toggle, `/roundtable`).
+import {
+  RoundtableDraftPanel,
+  startDraftRoundtable,
+  useRoundtableDraft,
+  type RoundtableDraftPrimary,
+} from "@/renderer/viscosity/roundtable/chat";
+import { parseRoundtableCommand } from "@/renderer/viscosity/roundtable/chat/slashCommand";
 
 const EMPTY_BRANCHES: GitBranchInfo[] = [];
 
@@ -288,6 +297,12 @@ function DraftComposerAfterControls(props: {
     disabled: boolean;
     onToggle: (next: boolean) => void;
   };
+  // ViscosityCode: Roundtable toggle.
+  roundtable?: {
+    enabled: boolean;
+    disabled: boolean;
+    onToggle: (next: boolean) => void;
+  };
   mentionRef: RefObject<MentionInputHandle | null>;
   voiceInputRef: RefObject<VoiceInputHandle | null>;
   computerUse: {
@@ -314,6 +329,7 @@ function DraftComposerAfterControls(props: {
         onPickFiles={props.onPickFiles}
         computerUse={props.computerUse}
         {...(props.experiment ? { experiment: props.experiment } : {})}
+        {...(props.roundtable ? { roundtable: props.roundtable } : {})} // ViscosityCode:
       />
       <ComposerVoiceInput
         show={props.showVoiceInputButton}
@@ -396,6 +412,21 @@ export function ThreadDraftComposerArea(props: {
   const { importFiles } = props;
   const autoFocus = props.autoFocus ?? ((props.paneCount ?? 1) === 1 && !isBrowserClient);
   const isQuickComposer = hasAnyClientBridge() ? isQuickComposerWindow() : false;
+  // ViscosityCode: Roundtable mode (desktop shell; not side-chat drafts, home scope, quick composer).
+  const roundtable = useRoundtableDraft({
+    canHost:
+      !props.isolatedDraft &&
+      !props.hideWorkspaceControls &&
+      !isHomeProject(props.project) &&
+      !isQuickComposer,
+  });
+  const roundtablePrimary: RoundtableDraftPrimary = {
+    agentKind: props.selectedAgent.kind,
+    agentLabel: props.selectedAgent.label,
+    model: props.config.model,
+    modelLabel: resolveModelLabel(props.selectedAgent, props.config.model) ?? "",
+    presentationMode: props.presentationMode,
+  };
   const voiceInputEnabled = useSharedSettings((s) => s.audio.showVoiceInputButton);
   const showVoiceInputButton = voiceInputEnabled;
   // Persistent (standing-default) composer MCP enablement, keyed by MCP id.
@@ -495,6 +526,7 @@ export function ThreadDraftComposerArea(props: {
     agentKind: props.selectedAgent.kind,
     presentationMode: props.presentationMode,
     runtimeLabel: props.selectedAgent.capabilities.runtimeLabel,
+    supportsRoundtable: roundtable.available, // ViscosityCode:
   };
   const availableCommands = resolveAvailableSlashCommands(
     undefined,
@@ -928,6 +960,11 @@ export function ThreadDraftComposerArea(props: {
       void runExperiment(allSegments, fallbackPrompt);
       return;
     }
+    // ViscosityCode: Roundtable mode starts a Roundtable instead of one thread.
+    if (roundtable.enabled && !voiceThreadId) {
+      void runRoundtable(allSegments, fallbackPrompt);
+      return;
+    }
     const boundSegments = bindLeadingSkillUnlessLocalAction(
       allSegments,
       availableCommands,
@@ -947,6 +984,11 @@ export function ThreadDraftComposerArea(props: {
       flatPrompt,
       slashLookupContext,
     );
+    // ViscosityCode: `/roundtable [task]` switches this draft into Roundtable mode.
+    if (localAction?.kind === "open-roundtable") {
+      enterRoundtableMode(localAction.task);
+      return;
+    }
     if (localAction?.kind === "set-mode") {
       props.onConfigChange({ mode: localAction.mode });
       mentionRef.current?.clear();
@@ -1200,6 +1242,58 @@ export function ThreadDraftComposerArea(props: {
         preserveUnacceptedProjectDraft(submission, content);
         if (submission) await retireFailedDraftSubmission(submission.id);
       }
+      toast.danger(friendlyError(error));
+    } finally {
+      submissionInFlightRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  // ViscosityCode: Roundtable mode helpers (mutually exclusive with Experiment).
+  function enterRoundtableMode(task: string) {
+    setExperimentMode(false);
+    setExperimentCandidates([]);
+    setExperimentBaseBranch(null);
+    roundtable.setEnabled(true);
+    setFallbackPrompt(task);
+    mentionRef.current?.restoreFromSegments(task ? [{ kind: "text", content: task }] : [], {
+      undoable: true,
+    });
+    mentionRef.current?.placeCaret("end");
+  }
+
+  // ViscosityCode: the composer's model takes seat 0; the dock lists the others.
+  async function runRoundtable(allSegments: PromptSegment[], fallbackPrompt = "") {
+    const input = resolveExperimentInput(allSegments, fallbackPrompt);
+    const task = input ? (parseRoundtableCommand(input.prompt)?.task ?? input.prompt) : "";
+    if (!task || !roundtable.canStart || !props.config.model || authRequired) return;
+    // ViscosityCode: the task is text only; never start and then discard the user's attachments.
+    if (attachments.attachments.length > 0) {
+      toast.warning(t`A Roundtable takes a text task only. Remove the attachments to start it.`);
+      return;
+    }
+    if (submissionInFlightRef.current) return;
+    submissionInFlightRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await startDraftRoundtable({
+        projectId: props.project.id,
+        task,
+        pattern: roundtable.pattern,
+        primary: roundtablePrimary,
+        seats: roundtable.seats,
+        newWorktree:
+          (branchSelection?.isWorktree ?? props.worktreeMode) && !branchSelection?.worktreePath,
+      });
+      roundtable.reset();
+      mentionRef.current?.clear();
+      attachments.clearAll();
+      setFallbackPrompt("");
+      setHasContent(false);
+      resetDraftRefs();
+      clearDraftContent(props.project.id);
+      toast.success(t`Roundtable started`);
+    } catch (error) {
       toast.danger(friendlyError(error));
     } finally {
       submissionInFlightRef.current = false;
@@ -1525,6 +1619,15 @@ export function ThreadDraftComposerArea(props: {
                 onAdd={addExperimentCandidate}
               />
             ) : null}
+            {/* ViscosityCode: Roundtable participants and pattern. */}
+            {roundtable.enabled ? (
+              <RoundtableDraftPanel
+                projectId={props.project.id}
+                primary={roundtablePrimary}
+                draft={roundtable}
+                isSubmitting={isSubmitting}
+              />
+            ) : null}
           </>
         }
         attachmentBar={
@@ -1652,12 +1755,14 @@ export function ThreadDraftComposerArea(props: {
           attachments.isUploading ||
           (!experimentMode && !props.config.model) ||
           !(hasContent || attachments.attachments.length > 0) ||
-          (experimentMode && experimentCandidates.length < 2)
+          (experimentMode && experimentCandidates.length < 2) ||
+          (roundtable.enabled && !roundtable.canStart) // ViscosityCode:
         }
         submitPending={isSubmitting}
         {...(!hasContent &&
         attachments.attachments.length === 0 &&
         !experimentMode &&
+        !roundtable.enabled && // ViscosityCode:
         // The host reports voice-session end and error frames only to the
         // co-located desktop, so a session on another host (or in a browser)
         // could never be torn down by them.
@@ -1691,7 +1796,14 @@ export function ThreadDraftComposerArea(props: {
               ),
             }
           : {})}
-        submitLabel={props.submitLabel ?? (experimentMode ? t`Run experiment` : t`Launch thread`)}
+        submitLabel={
+          props.submitLabel ??
+          (roundtable.enabled // ViscosityCode:
+            ? roundtable.submitLabel
+            : experimentMode
+              ? t`Run experiment`
+              : t`Launch thread`)
+        }
         onPromptChange={handleFallbackPromptChange}
         // Dropped files are paths on this machine; only a host that runs here
         // can read them.
@@ -1749,6 +1861,7 @@ export function ThreadDraftComposerArea(props: {
                     disabled: authRequired || agentUpdating || isSubmitting,
                     onToggle: (next: boolean) => {
                       setExperimentMode(next);
+                      if (next) roundtable.setEnabled(false); // ViscosityCode:
                       if (next) {
                         // The worktree default (pin or remote HEAD) may be a
                         // remote ref; experiments keep their checkout default.
@@ -1762,6 +1875,22 @@ export function ThreadDraftComposerArea(props: {
                         setExperimentCandidates([]);
                         setExperimentBaseBranch(null);
                       }
+                    },
+                  },
+                }
+              : {})}
+            // ViscosityCode: Roundtable toggle (mutually exclusive with Experiment).
+            {...(roundtable.available
+              ? {
+                  roundtable: {
+                    enabled: roundtable.enabled,
+                    disabled: authRequired || agentUpdating || isSubmitting,
+                    onToggle: (next: boolean) => {
+                      roundtable.setEnabled(next);
+                      if (!next) return;
+                      setExperimentMode(false);
+                      setExperimentCandidates([]);
+                      setExperimentBaseBranch(null);
                     },
                   },
                 }

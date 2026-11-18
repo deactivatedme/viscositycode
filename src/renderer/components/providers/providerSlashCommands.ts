@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { AgentSlashCommand } from "@/shared/contracts";
 import { lookupProviderRegistration } from "./providerRegistry";
 
@@ -15,7 +16,9 @@ export type LocalSlashCommandAction =
   | { kind: "open-side-chat"; prompt: string }
   | { kind: "set-mode"; mode: "agent" | "plan" }
   | { kind: "open-control"; target: "model" | "effort" | "crew" }
-  | { kind: "toggle-fast" };
+  | { kind: "toggle-fast" }
+  // ViscosityCode: app-owned `/roundtable` (see viscosity/roundtable/chat/slashCommand.ts).
+  | { kind: "open-roundtable"; task: string };
 
 export interface GuiSlashCommandRegistration {
   /**

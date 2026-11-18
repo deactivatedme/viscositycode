@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { captureTurnClientContext } from "@/renderer/components/composer/turnClientContext";
 import {
   preserveDraftSubmission,
@@ -55,6 +56,12 @@ import {
   resolveLocalSlashCommandAction,
   SIDE_CHAT_COMMAND_PREFIX,
 } from "./threadSlashCommands";
+// ViscosityCode: Roundtable from inside a chat (`/roundtable`, `@model` / `@bot` mentions).
+import {
+  openRoundtableFromComposer,
+  routeComposerRoundtableMentions,
+} from "@/renderer/viscosity/roundtable/chat/composerHooks";
+import type { RoundtableMentionTarget } from "@/renderer/viscosity/roundtable/chat/mentions";
 
 /**
  * Everything the composer submit path reads from the section component,
@@ -98,6 +105,8 @@ export interface ComposerSubmitContext {
   onSubmitSuccess?: (() => void) | undefined;
   /** Surface-provided per-turn context, captured when the user submits. */
   captureClientContext?: TurnClientContextCapture | undefined;
+  // ViscosityCode: bots / ready models offered as `@` mentions; a mention routes to a Roundtable.
+  roundtableMentionTargets?: readonly RoundtableMentionTarget[] | undefined;
 }
 
 /**
@@ -147,6 +156,9 @@ export function submitComposerPrompt(
     !ctx.resumesInterruptedTurn && leadingSegment?.kind === "text"
       ? resolveLocalSlashCommandAction(flattenSegments(boundSegments), slashLookupContext)
       : null;
+  // ViscosityCode: `/roundtable [task]` opens the invite dialog; nothing is sent to this chat.
+  if (sideAction?.kind === "open-roundtable")
+    return openRoundtableFromComposer(ctx, sideAction.task);
   if (sideAction?.kind === "open-side-chat") {
     if (sideAction.prompt && attachments.hasPendingUploads()) return;
     const draftAtSubmit = JSON.stringify(ctx.latestSegmentsRef.current);
@@ -325,6 +337,9 @@ export function submitComposerPrompt(
     clearComposerText();
     return;
   }
+  // ViscosityCode: a message that @mentions bots or models goes to this chat's open Roundtable.
+  const roundtableSend = routeComposerRoundtableMentions(flat, ctx);
+  if (roundtableSend) return roundtableSend;
   if (attachments.hasPendingUploads()) return;
   const submittedInputSegments = segments;
   const submittedAttachments = currentAttachments;

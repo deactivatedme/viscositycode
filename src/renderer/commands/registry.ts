@@ -55,6 +55,8 @@ import { openFindForActiveSurface } from "@/renderer/components/find/findControl
 // ViscosityCode: the general command group shows the product name.
 import { BRAND_NAME } from "@/shared/brand";
 import { hasChangelogSource } from "@/shared/changelog";
+// ViscosityCode: "New Roundtable…" / "Invite another model into this chat…".
+import { roundtableChatCommands } from "@/renderer/viscosity/roundtable/chat/paletteCommands";
 import {
   isEditorFocusElement,
   isTerminalFocusElement,
@@ -151,7 +153,12 @@ export function isCommandAvailable(command: AppCommand, context: CommandWhenCont
 }
 
 export function buildCommandRegistry(): AppCommand[] {
-  return [...baseCommands(), ...projectScriptCommands(), ...activeChatCommands()];
+  return [
+    ...baseCommands(),
+    ...projectScriptCommands(),
+    ...activeChatCommands(),
+    ...roundtableChatCommands(), // ViscosityCode:
+  ];
 }
 
 function baseCommands(): AppCommand[] {

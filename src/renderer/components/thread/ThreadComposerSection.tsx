@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   isClientDraftAsset,
   retainClientDraftAsset,
@@ -62,6 +63,8 @@ import {
 } from "../composer/MentionInput";
 import { useThreadMentionItems } from "../composer/useThreadMentionItems";
 import { useCrewMentionItems } from "../crew/useCrewMentionItems";
+// ViscosityCode: bots and ready models as `@` mentions (Roundtable from inside a chat).
+import { useRoundtableMentionItems } from "@/renderer/viscosity/roundtable/chat";
 import { attachmentsFromPaths, useAttachments } from "../composer/useAttachments";
 import type { VoiceInputHandle } from "../composer/VoiceInputButton";
 import { isCompactClientSurface, isRemoteSession, readBridge } from "@/renderer/bridge";
@@ -537,6 +540,10 @@ function ThreadComposerSectionInner(props: ThreadComposerSectionProps & { thread
     threadMentionToolsAvailable,
   );
   const crewMentions = useCrewMentionItems(thread.config);
+  // ViscosityCode: surfaces with their own send action (props.onSubmitInput) keep plain crew items.
+  const roundtableMentions = useRoundtableMentionItems(thread.projectId, crewMentions, {
+    enabled: props.onSubmitInput === undefined,
+  });
   const composerModelId = canonicalProviderModelId(
     thread.agentKind,
     thread.config?.model ?? "",
@@ -996,6 +1003,7 @@ function ThreadComposerSectionInner(props: ThreadComposerSectionProps & { thread
       requestOpenControl: (target) => requestOpenControl(thread.id, target),
       onSubmitInput: props.onSubmitInput,
       captureClientContext,
+      roundtableMentionTargets: roundtableMentions.targets, // ViscosityCode:
       onSubmitSuccess: () => {
         props.onSubmitSuccess?.();
         if (!compactLayout) return;
@@ -1495,7 +1503,7 @@ function ThreadComposerSectionInner(props: ThreadComposerSectionProps & { thread
                         mcpMentions={composerMcpMentions}
                         pluginMentions={composerPluginMentions}
                         threadMentions={threadMentions}
-                        crewMentions={crewMentions}
+                        crewMentions={roundtableMentions.items} // ViscosityCode:
                         onTextChange={(hasText) => {
                           setHasContent(hasText);
                           latestSegmentsRef.current = mentionRef.current?.serializeSegments() ?? [];

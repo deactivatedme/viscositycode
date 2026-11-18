@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { KeyboardEvent, RefObject } from "react";
 import { msg } from "@lingui/core/macro";
 import { i18n } from "@/renderer/i18n/i18n";
@@ -22,6 +23,12 @@ import {
   slashCommandMatch,
   type SlashCommandMatchTier,
 } from "./slashCommandMatching";
+// ViscosityCode: app-owned `/roundtable` (Roundtable from inside a chat).
+import {
+  resolveRoundtableSlashAction,
+  roundtableSlashAvailable,
+  roundtableSlashCommand,
+} from "@/renderer/viscosity/roundtable/chat/slashCommand";
 
 export type { LocalSlashCommandAction };
 
@@ -32,6 +39,8 @@ export type SlashCommandLookupContext = {
   runtimeLabel?: string | undefined;
   /** Existing GUI conversations can open an independent side conversation. */
   supportsSideChat?: boolean | undefined;
+  // ViscosityCode: whether `/roundtable` applies; omitted = wherever the desktop shell is active.
+  supportsRoundtable?: boolean | undefined;
 };
 
 /**
@@ -224,10 +233,13 @@ export function resolveAvailableSlashCommands(
     providerSkillsAuthoritative,
     context?.disabledSkillNames ?? [],
   );
-  const sideCommands =
-    context?.presentationMode === "gui" && context.supportsSideChat
+  const sideCommands = [
+    ...(context?.presentationMode === "gui" && context.supportsSideChat
       ? [guiSlashCommand("btw", i18n._(msg`Ask a question in a separate side chat`))]
-      : [];
+      : []),
+    // ViscosityCode: `/roundtable` is app-owned like `/btw` (GUI, desktop shell).
+    ...(roundtableSlashAvailable(context) ? [roundtableSlashCommand()] : []),
+  ];
   const reserved = new Set(sideCommands.map((command) => command.id.toLowerCase()));
   const isUnreserved = (command: AgentSlashCommand) =>
     !reserved.has((command.skillName ?? command.id).toLowerCase());
@@ -267,6 +279,8 @@ export function resolveLocalSlashCommandAction(
     const match = SIDE_CHAT_COMMAND_PREFIX.exec(input);
     if (match) return { kind: "open-side-chat", prompt: input.slice(match[0].length).trim() };
   }
+  const roundtableAction = resolveRoundtableSlashAction(input, context); // ViscosityCode:
+  if (roundtableAction) return roundtableAction; // ViscosityCode:
   const registration = activeGuiSlashCommands(context);
   return registration ? registration.resolveLocalAction(input) : null;
 }
