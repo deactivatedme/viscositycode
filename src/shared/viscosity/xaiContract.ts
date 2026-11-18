@@ -49,6 +49,45 @@ export interface XaiResponseRequest {
   tools: { webSearch: boolean; xSearch: boolean };
 }
 
+/**
+ * Machine-readable failure reasons (additive extension, task X1). Main sends
+ * English text in `message`; the renderer localizes from `code`.
+ */
+export type XaiErrorCode =
+  /** Not the desktop app, or the main process has no xAI handlers. */
+  | "unavailable"
+  | "no-key"
+  | "invalid-key-format"
+  /** OS-encrypted storage (Electron safeStorage) is unavailable; nothing was stored. */
+  | "storage-unavailable"
+  | "storage-failed"
+  /** The US regional endpoint serves only XAI_US_TEXT_MODELS. */
+  | "region-model"
+  | "invalid-request"
+  | "busy"
+  | "auth"
+  | "forbidden"
+  | "not-found"
+  | "bad-request"
+  | "rate-limited"
+  | "server"
+  | "timeout"
+  | "network"
+  /** The stream ended without a completed response. */
+  | "stream"
+  /** The API reported a failed response or an `error` stream event. */
+  | "response-failed"
+  | "cancelled"
+  | "unknown";
+
+/**
+ * Rejections from `ViscosityXaiBridge` methods carry their code in the message
+ * as `${XAI_BRIDGE_ERROR_PREFIX}{"code","message","detail?"}` (Electron's
+ * context bridge keeps only an Error's message). Read errors through the
+ * renderer's xAI bridge accessor, which decodes and localizes them.
+ */
+export const XAI_BRIDGE_ERROR_PREFIX = "xai-error:";
+
 export type XaiStreamEvent =
   | { requestId: string; type: "delta"; text: string }
   | {
@@ -57,7 +96,16 @@ export type XaiStreamEvent =
       text: string;
       usage?: { inputTokens?: number; outputTokens?: number };
     }
-  | { requestId: string; type: "error"; message: string; status?: number };
+  | {
+      requestId: string;
+      type: "error";
+      message: string;
+      status?: number;
+      /** Additive (X1): machine-readable reason for localization. */
+      code?: XaiErrorCode;
+      /** Additive (X1): the API's own message, redacted and truncated. */
+      detail?: string;
+    };
 
 export interface XaiImageRequest {
   requestId: string;

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { join } from "node:path";
 // Managed desktop IPC registration: local handlers, quick-composer window
 // channels, tracked renderer reload, and the dev-only smoke controls. Split
@@ -12,6 +13,8 @@ import { notifyRendererStartupReady } from "./window/deferredDevTools";
 import { requestTrackedRendererReload } from "./window/windowHardening";
 import { registerSideChatWindowIpc } from "./window/sideChatWindows";
 import { registerThreadWindowIpc } from "./window/threadWindows";
+// ViscosityCode: fork-owned xAI (Grok API) channels, main process only.
+import { registerViscosityXaiIpc } from "./viscosity/xai/registerXaiIpc";
 import { QuickComposerShortcutManager } from "./quickComposerShortcut";
 import type { AutoUpdaterController } from "./updates/autoUpdater";
 import type { BackendHostClient } from "./backend/BackendHostClient";
@@ -70,6 +73,8 @@ export function registerDesktopIpc(deps: DesktopIpcDeps): void {
     }),
     callSupervisor: (name, payload) => deps.backendHost.call(name, payload),
   });
+  // ViscosityCode: xAI client channels (viscosity:xai:*), outside the procedure map.
+  registerViscosityXaiIpc();
 
   registerSideChatWindowIpc({
     getMainWindow: () => desktopApp.mainWindow,

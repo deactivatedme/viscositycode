@@ -1,5 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { installSmokeNativePreload } from "./testing/smokeNativeControls";
+// ViscosityCode: fork-owned `window.viscosityHost` namespace (xAI client bridge).
+import { createViscosityXaiPreloadBridge } from "./viscosity/xai/xaiPreloadBridge";
 import { type PoracodeChannel, normalizeChannel } from "@/shared/channel";
 import type { RemoteThreadCommand } from "@/shared/contracts";
 import type { RemoteAccessPairingInfo } from "@/shared/remote";
@@ -356,6 +359,10 @@ const bridge: ElectronHostBridge = {
 };
 
 contextBridge.exposeInMainWorld("poracodeHost", bridge);
+// ViscosityCode: separate namespace for fork-owned channels; upstream exposures are unchanged.
+contextBridge.exposeInMainWorld("viscosityHost", {
+  xai: createViscosityXaiPreloadBridge(ipcRenderer),
+});
 // Facade 11: forward each per-request bridge port into the main world via the
 // documented preload -> main-world port pattern. The isolated world never sees
 // body bytes; only the port handle crosses. Unknown/malformed envelopes are

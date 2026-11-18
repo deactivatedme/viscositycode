@@ -1,0 +1,6 @@
+data: {"type":"response.output_text.delta","sequence_number":0,"item_id":"msg_5","output_index":0,"content_index":0,"delta":"Short "}
+
+data: {"type":"response.output_text.delta","sequence_number":1,"item_id":"msg_5","output_index":0,"content_index":0,"delta":"answer."}
+
+data: [DONE]
+
