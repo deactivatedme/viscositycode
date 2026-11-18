@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
@@ -6,6 +7,7 @@ import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
 import { ChildProcessLifetime } from "@/shared/childProcessLifetime";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import type { AgentKind } from "@/shared/contracts";
 import { defaultSharedSettings } from "@/shared/settings";
 
@@ -495,7 +497,7 @@ describe("authenticateAcpAgent", () => {
         methodId: "browser-login",
       }),
     ).rejects.toThrow(
-      "My ACP reported authentication success, but Poracode could not verify it. Configure My ACP directly, then try again.",
+      `My ACP reported authentication success, but ${BRAND_NAME} could not verify it. Configure My ACP directly, then try again.`,
     );
 
     const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {

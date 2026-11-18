@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import {
@@ -15,6 +16,7 @@ import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { BRAND_NAME } from "./brand";
 import { PORACODE_REMOTE_PROTOCOL_VERSION } from "./remote/protocol";
 import { SSH_FIXTURE_SERVER_SOURCE } from "@/host/ssh/sshBootstrapFixtureServer";
 import { INSTALL_REMOTE_RUNTIME_SCRIPT, LAUNCH_REMOTE_SERVER_SCRIPT } from "./sshRemoteScripts";
@@ -423,7 +425,7 @@ describe("SSH launch outcome protocol", () => {
       parseRemoteLaunchOutcome(
         '{"poracodeLaunchProtocol":99,"outcome":"ready","remotePort":1,"ownerRuntimeHash":"a"}\n',
       ),
-    ).toThrow("Poracode Helper returned an invalid response");
+    ).toThrow(`${BRAND_NAME} Helper returned an invalid response`);
   });
 
   it("parses a refusal into a typed error", () => {

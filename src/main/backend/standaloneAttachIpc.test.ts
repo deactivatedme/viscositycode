@@ -1,13 +1,14 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Focused regression for the attach-mode device-only IPC: the allowlist serves
 // real device implementations (keybindings file, window focus, update status,
 // event-interest no-op), server-owned procedures loud-reject with no local
 // backend side effects, unknown senders are refused, and the
 // quick-composer/renderer-reload window channels resolve instead of crashing.
 import { EventEmitter } from "node:events";
-import { mkdtempSync, readdirSync, realpathSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const electron = vi.hoisted(() => {
   const handlers = new Map<string, (event: unknown, ...args: unknown[]) => unknown>();
@@ -85,6 +86,32 @@ describe("standalone attach device IPC", () => {
   let main: { window: FakeWindow; sender: { id: number } };
   let composer: { window: FakeWindow; sender: { id: number } };
   const markQuitting = vi.fn<() => void>();
+
+  // ViscosityCode: the fork's auto-update controller only runs for a build that
+  // has an update feed (a packaged app-update.yml or UPDATE_SERVER_URL) and
+  // otherwise reports a quiet "update-not-available" without touching the
+  // updater (covered in autoUpdater.test.ts). The attach path itself is
+  // unchanged, so model a packaged build that shipped app-update.yml to keep
+  // proving the upstream status and delegation behavior here.
+  let packagedResources = "";
+  const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
+  beforeAll(() => {
+    packagedResources = realpathSync.native(
+      mkdtempSync(join(tmpdir(), "viscositycode-attach-updater-resources-")),
+    );
+    writeFileSync(join(packagedResources, "app-update.yml"), "provider: github\n");
+    Object.defineProperty(process, "resourcesPath", {
+      value: packagedResources,
+      configurable: true,
+      writable: true,
+    });
+  });
+  afterAll(() => {
+    if (originalResourcesPath)
+      Object.defineProperty(process, "resourcesPath", originalResourcesPath);
+    else Reflect.deleteProperty(process, "resourcesPath");
+    rmSync(packagedResources, { recursive: true, force: true });
+  });
 
   function attachLifecycle(getMainWindow: () => FakeWindow | null) {
     return new QuickComposerLifecycle({

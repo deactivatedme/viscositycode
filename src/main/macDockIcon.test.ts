@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolve } from "node:path";
 import sharp from "sharp";
@@ -56,6 +57,10 @@ describe("refreshMacDockIcon", () => {
   });
 
   it("ships a centered stable runtime icon inside the macOS optical safe area", async () => {
+    // ViscosityCode: the Dock PNG is a transparent V mark, trimmed and fitted
+    // (`contain`) into the 824px optical safe area, so it spans the safe area
+    // along its longer side and is centred on the other (branding/assets/iconCheck.mjs).
+    const safe = { minX: 100, minY: 100, maxX: 923, maxY: 923 };
     const { data, info } = await sharp(resolve("build/icon-mac.png"))
       .ensureAlpha()
       .raw()
@@ -75,6 +80,15 @@ describe("refreshMacDockIcon", () => {
     }
 
     expect(info).toMatchObject({ width: 1024, height: 1024 });
-    expect({ minX, minY, maxX, maxY }).toEqual({ minX: 100, minY: 100, maxX: 923, maxY: 923 });
+    expect(maxX).toBeGreaterThanOrEqual(0);
+    expect(minX).toBeGreaterThanOrEqual(safe.minX);
+    expect(minY).toBeGreaterThanOrEqual(safe.minY);
+    expect(maxX).toBeLessThanOrEqual(safe.maxX);
+    expect(maxY).toBeLessThanOrEqual(safe.maxY);
+    // Centred in the safe area (an odd padding leaves at most half a pixel of offset).
+    expect(Math.abs(minX + maxX - (safe.minX + safe.maxX))).toBeLessThanOrEqual(1);
+    expect(Math.abs(minY + maxY - (safe.minY + safe.maxY))).toBeLessThanOrEqual(1);
+    // Fitted to the safe area, not shrunk: the longer side spans it edge to edge.
+    expect(Math.max(maxX - minX, maxY - minY)).toBe(safe.maxX - safe.minX);
   });
 });

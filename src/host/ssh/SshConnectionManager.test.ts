@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
@@ -13,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import { PORACODE_REMOTE_PROTOCOL_VERSION } from "@/shared/remote";
 import {
   sshRuntimeManifestFileName,
@@ -581,6 +583,6 @@ describe("SSH helper readiness", () => {
   it("does not mistake a desktop-hosted server for the SSH helper", async () => {
     await expect(
       waitForRemoteEndpoint(endpoint("desktop"), "http://127.0.0.1:49152/", 1),
-    ).rejects.toThrow("Timed out waiting for Poracode Helper");
+    ).rejects.toThrow(`Timed out waiting for ${BRAND_NAME} Helper`);
   });
 });

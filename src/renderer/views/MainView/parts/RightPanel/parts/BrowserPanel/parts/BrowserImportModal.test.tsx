@@ -1,7 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useBrowserImportStore } from "@/renderer/state/browserImportStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
+import { BRAND_NAME } from "@/shared/brand";
 import type { BrowserImportResult, BrowserImportSourceInfo } from "@/shared/ipc";
 import { BrowserImportModal } from "./BrowserImportModal";
 
@@ -50,7 +52,9 @@ describe("BrowserImportModal", () => {
     render(<BrowserImportModal />);
 
     expect(await screen.findByText("Protected browser data")).toBeInTheDocument();
-    expect(screen.getByText(/Poracode does not bypass that protection/)).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`${BRAND_NAME} does not bypass that protection`)),
+    ).toBeInTheDocument();
 
     const importButton = screen.getByRole("button", { name: "Import" });
     expect(importButton).toBeDisabled();

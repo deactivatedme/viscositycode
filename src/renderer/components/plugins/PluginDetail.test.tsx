@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -7,6 +8,7 @@ import type { ComposerSeedOptions } from "@/renderer/state/slices/draftSlice";
 import { pluginFixture, seedBuiltInPlugins } from "@/renderer/testUtils/plugins";
 import { PluginDetail } from "./PluginDetail";
 import { useLocalizedPluginCatalog } from "./pluginCopy";
+import { BRAND_NAME } from "@/shared/brand";
 
 const actionMocks = vi.hoisted(() => ({
   browser: false,
@@ -151,7 +153,7 @@ describe("PluginDetail", () => {
       return <PluginDetail plugin={plugin} hostPlatform="win32" onBack={() => undefined} />;
     }
     render(<AppControlsDetail />);
-    for (const name of ["Commit", "Create PR", "Finalize", "Poracode"]) {
+    for (const name of ["Commit", "Create PR", "Finalize", BRAND_NAME]) {
       expect(screen.getByText(name, { selector: "span[id*='-skill-']" })).toBeInTheDocument();
     }
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();

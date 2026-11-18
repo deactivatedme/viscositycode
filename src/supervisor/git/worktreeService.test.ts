@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BRAND_NAME } from "@/shared/brand";
 import type { ProjectLocation } from "@/shared/contracts";
 
 const mocks = vi.hoisted(() => ({
@@ -95,7 +97,7 @@ describe("GitWorktreeService pull", () => {
     });
 
     await expect(new GitWorktreeService().pull(location, "origin", true)).rejects.toThrow(
-      "Pull did not complete. Your local changes remain in a Poracode stash.",
+      `Pull did not complete. Your local changes remain in a ${BRAND_NAME} stash.`,
     );
     expect(commands).not.toContain("stash apply --index stash-sha");
     expect(commands).not.toContain("stash drop stash@{0}");
