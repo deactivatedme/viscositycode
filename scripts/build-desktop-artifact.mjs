@@ -71,6 +71,19 @@ export function resolveUpdateRepository(env = process.env) {
   return { owner: match[1], repo: match[2] };
 }
 
+/**
+ * ViscosityCode: an unsigned macOS build (certificate discovery turned off and
+ * no certificate given) is ad-hoc signed as a whole instead of shipping the
+ * Electron binaries' leftover linker signatures, which macOS reports as a
+ * "damaged" app once the DMG is downloaded. The entitlements already carry
+ * disable-library-validation, which ad-hoc signing with the hardened runtime
+ * needs.
+ */
+export function wantsMacAdhocSigning(env = process.env) {
+  const hasCertificate = [env.CSC_LINK, env.CSC_NAME].some((value) => value?.trim());
+  return !hasCertificate && env.CSC_IDENTITY_AUTO_DISCOVERY?.trim().toLowerCase() === "false";
+}
+
 /** The fork's repository URL for package metadata, or undefined when none exists yet. */
 function forkPackageRepositoryUrl(env = process.env) {
   const fromConstant = forkRepositoryUrl();
@@ -624,6 +637,8 @@ export function buildElectronBuilderConfig(
         .join("")
     : "";
   const macEntitlements = "build/entitlements.mac.plist";
+  // ViscosityCode: quoted, because a bare "-" is a YAML list item.
+  const macAdhocIdentity = wantsMacAdhocSigning() ? '\n  identity: "-"' : "";
   const macEntitlementsInherit = "build/entitlements.mac.plist";
   const electronLanguages = [
     ...new Set(
@@ -782,7 +797,7 @@ mac:
   extendInfo:
     NSMicrophoneUsageDescription: ${JSON.stringify(`${productName} uses the microphone for local voice input in the composer.`)}
   entitlements: ${macEntitlements}
-  entitlementsInherit: ${macEntitlementsInherit}${lockedComputerUseBinaries}
+  entitlementsInherit: ${macEntitlementsInherit}${lockedComputerUseBinaries}${macAdhocIdentity}
   notarize: true
 
 npmRebuild: false

@@ -8,6 +8,7 @@ import { parse } from "yaml";
 import { SUPPORTED_LOCALES } from "../src/shared/locale.ts";
 import {
   buildElectronBuilderConfig,
+  wantsMacAdhocSigning,
   buildStagePackageJson,
   resolveUpdateRepository,
   verifyLockedComputerUseResources,
@@ -161,6 +162,29 @@ void test("ViscosityCode packaging identity never names the upstream product or 
     parse(buildElectronBuilderConfig("updater", "mac")),
   );
   assert.equal(updater.mac.executableName, "ViscosityCode");
+});
+
+void test("ad-hoc signs unsigned macOS builds as a whole", () => {
+  const unsigned = {
+    CSC_IDENTITY_AUTO_DISCOVERY: "false",
+    CSC_LINK: undefined,
+    CSC_NAME: undefined,
+  };
+  assert.equal(wantsMacAdhocSigning(unsigned), true);
+  assert.equal(wantsMacAdhocSigning({ ...unsigned, CSC_LINK: "base64-p12" }), false);
+  assert.equal(
+    wantsMacAdhocSigning({ ...unsigned, CSC_NAME: "Developer ID Application: X" }),
+    false,
+  );
+  assert.equal(wantsMacAdhocSigning({}), false, "default discovery keeps normal signing");
+  const adhoc = withPackagingEnv(unsigned, () =>
+    parse(buildElectronBuilderConfig("branded", "mac")),
+  );
+  assert.equal(adhoc.mac.identity, "-");
+  const signed = withPackagingEnv({ ...unsigned, CSC_LINK: "base64-p12" }, () =>
+    parse(buildElectronBuilderConfig("branded", "mac")),
+  );
+  assert.equal(signed.mac.identity, undefined);
 });
 
 void test("emits a GitHub update feed only for VISCOSITYCODE_UPDATE_REPO", () => {

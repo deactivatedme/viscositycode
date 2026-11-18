@@ -58,10 +58,13 @@ This applies to macOS builds only. Packaging stops when a native helper is missi
 PORACODE_ALLOW_MISSING_COMPUTER_USE_HELPER=1 \
 PORACODE_ALLOW_MISSING_MCP_RELAY=1 \
 PORACODE_ALLOW_MISSING_GIT_HELPER=1 \
+CSC_IDENTITY_AUTO_DISCOVERY=false \
 bun run dist:mac:arm
 ```
 
 What changes: computer use falls back to the older foreground driver, MCP servers launch through the JavaScript relay, and Git status and project search use the TypeScript code path. Everything still works; it's a little slower. Release builds should include the helpers.
+
+`dist:mac*` also skips the prebuilt SSH runtime archive that release builds ship; without it the app assembles the runtime itself the first time you connect to an SSH host. To include it, run `bun run build`, `bun run prepare:package-assets` and `node scripts/build-ssh-runtime-archive.mjs`, then package with `node scripts/build-desktop-artifact.mjs --platform mac --target dmg --skip-build`.
 
 ## Signing and notarisation
 
@@ -80,7 +83,7 @@ Unsigned installers run, but macOS and Windows warn people first. To sign, set t
 
 If the certificate is already in your login keychain, electron-builder finds it without `CSC_LINK`. Notarisation runs only when the three `APPLE_*` values are set. Instead of an Apple ID you can use an App Store Connect API key (`APPLE_API_KEY`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`).
 
-To build unsigned on a Mac that has a certificate installed, set `CSC_IDENTITY_AUTO_DISCOVERY=false`.
+**Unsigned macOS builds:** set `CSC_IDENTITY_AUTO_DISCOVERY=false` and leave `CSC_LINK`/`CSC_NAME` unset. The app is then ad-hoc signed as a whole, so a downloaded copy opens with right-click → Open instead of being reported as "damaged". Without that variable, a Mac with no certificate ships the Electron binaries' leftover signatures, which macOS rejects once the DMG has been downloaded. The GitHub workflow does this for you when no certificate secret is set.
 
 ### Windows
 
@@ -101,7 +104,7 @@ base64 -i certificate.p12 | pbcopy            # macOS
 
 ### Opening an unsigned build
 
-- **macOS:** right-click the app in Applications → **Open** → **Open**. Or run `xattr -dr com.apple.quarantine /Applications/ViscosityCode.app`.
+- **macOS:** right-click the app in Applications → **Open** → **Open** (on newer macOS: try to open it once, then System Settings → Privacy & Security → **Open Anyway**). Or run `xattr -dr com.apple.quarantine /Applications/ViscosityCode.app`.
 - **Windows:** on the SmartScreen prompt, click **More info** → **Run anyway**.
 
 ## GitHub Actions
@@ -131,5 +134,5 @@ The `PORACODE_*` names come from the upstream build scripts and are kept as-is s
 
 - **"requires the staged locked computer use plug-in"** (macOS): run `node scripts/prepare-locked-computer-use.mjs`, or use `bun run dist:mac*`, which does it for you.
 - **"Windows packaging requires a runtime built with the prepared PTY job owner"**: rebuild on Windows (`bun run build`) before packaging; the helper is compiled during the build.
-- **"is damaged and can't be opened"** on macOS: the download was quarantined and the build is unsigned; see [Opening an unsigned build](#opening-an-unsigned-build).
+- **"is damaged and can't be opened"** on macOS: the build was packaged without a signature at all. Rebuild with `CSC_IDENTITY_AUTO_DISCOVERY=false` (see [Signing and notarisation](#signing-and-notarisation)) or, for a copy you trust, run `xattr -dr com.apple.quarantine /Applications/ViscosityCode.app`.
 - **Out-of-date native modules after switching Node versions:** `bun install --force`.
