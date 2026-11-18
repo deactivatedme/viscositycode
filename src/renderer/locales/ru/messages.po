@@ -231,6 +231,11 @@ msgstr "{0} (развилка)"
 #~ msgid "{0} {env}"
 #~ msgstr "{0} {env}"
 
+#. placeholder {0}: provider.label
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionProviderSection.tsx
+msgid "{0} accounts"
+msgstr ""
+
 #. placeholder {0}: details.additions
 #. placeholder {0}: summary.additions
 #. placeholder {1}: details.deletions
@@ -568,6 +573,11 @@ msgstr "{0}% быстр."
 #~ msgid "{0}% Full"
 #~ msgstr "{0}% заполнено"
 
+#. placeholder {0}: entry.percentLeft
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "{0}% left"
+msgstr ""
+
 #. placeholder {0}: Math.floor(days / 30)
 #: src/renderer/views/ProfileOverlay/parts/ProfileHeader.tsx
 msgid "{0}mo ago"
@@ -592,6 +602,10 @@ msgstr "{agentLabel}: {statusLabel}. Наведите для подробнос�
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/ThreadRuntimeRequestPanel.tsx
 msgid "{agentLead} needs your input to continue."
 msgstr "{agentLead} требуется ваш ввод, чтобы продолжить."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "{answered} of {total} answered"
+msgstr ""
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
 msgid "{base} ({detail})"
@@ -622,9 +636,17 @@ msgstr "{conflicts} конфликт."
 #~ msgid "{conversationCount, plural, one {# comment or review} other {# comments & reviews}}"
 #~ msgstr "{conversationCount, plural, one {# комментарий или ревью} few {# комментария и ревью} many {# комментариев и ревью} other {# комментария и ревью}}"
 
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionProviderSection.tsx
+msgid "{count, plural, one {# account} other {# accounts}}"
+msgstr ""
+
 #: src/renderer/components/thread/AgentDiscoveryOverlay.tsx
 #~ msgid "{count, plural, one {# agent found} other {# agents found}}"
 #~ msgstr "{count, plural, one {Найден # агент} few {Найдено # агента} many {Найдено # агентов} other {Найдено # агентов}}"
+
+#: src/renderer/viscosity/missionControl/ui/MissionControlStatusItem.tsx
+msgid "{count, plural, one {# needs you} other {# need you}}"
+msgstr ""
 
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "{count, plural, one {# subagent run} other {# subagent runs}} this week"
@@ -666,6 +688,7 @@ msgstr "{days} дн."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/UsagePanel.tsx
 #: src/renderer/views/ProfileOverlay/parts/ProfileHeader.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "{days}d ago"
 msgstr "{days}д назад"
 
@@ -724,6 +747,7 @@ msgid "{hook} hook failed"
 msgstr "Сбой хука {hook}"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/UsagePanel.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "{hours}h ago"
 msgstr "{hours}ч назад"
 
@@ -798,6 +822,10 @@ msgstr "Использование {label}: израсходовано {used}% �
 msgid "{label}. {details}"
 msgstr "{label}. {details}"
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "{left}% left"
+msgstr ""
+
 #. placeholder {0}: method.name
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 #~ msgid "{loginLabel} {0}"
@@ -829,6 +857,7 @@ msgid "{minute} minutes past the hour"
 msgstr "{minute} мин. после начала часа"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/UsagePanel.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "{minutes}m ago"
 msgstr "{minutes}м назад"
 
@@ -843,6 +872,10 @@ msgstr "{moved} · продолжено с {agentLabel}"
 #: src/renderer/actions/workspaceActions.ts
 msgid "{movedCount, plural, one {Moved # project to {target}.} other {Moved # projects to {target}.}}"
 msgstr "{movedCount, plural, one {# проект перемещён в {target}.} few {# проекта перемещены в {target}.} many {# проектов перемещены в {target}.} other {# проекта перемещены в {target}.}}"
+
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "{name} · {percent}% left"
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "{name} building"
@@ -1340,6 +1373,22 @@ msgstr "Цепочка этапов (план, реализация, тести�
 msgid "A Cursor profile with this name already exists."
 msgstr "Профиль Cursor с таким именем уже существует."
 
+#: src/renderer/viscosity/roundtable/api.ts
+msgid "A debate from this comparison is already running."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "A debate from this comparison is running."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "A debate needs at least two answers to start from."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "A debate needs at least two answers."
+msgstr ""
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "A device failed to start."
 msgstr "Не удалось запустить устройство."
@@ -1355,6 +1404,11 @@ msgstr "Свободный групповой чат: упомяните чер�
 #: src/renderer/i18n/sharedMessages.ts
 msgid "A frozen worktree source requires a full commit hash"
 msgstr "Для замороженного источника worktree требуется полный хеш коммита"
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "A gentle double tap when an agent waits for your approval or reply."
+msgstr ""
 
 #: src/renderer/viscosity/bots/botActions.ts
 msgid "A group chat needs 2 to 5 bots."
@@ -1455,6 +1509,11 @@ msgstr "Короткая анимация, когда агент заверша�
 msgid "A soft pulse while an agent is reasoning."
 msgstr "Мягкая пульсация, пока агент рассуждает."
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "A soft rising chime when an agent finishes its turn."
+msgstr ""
+
 #: src/renderer/components/thread/threadDraftViewHelpers.ts
 msgid "a supported coding agent"
 msgstr "поддерживаемый агент кодирования"
@@ -1466,6 +1525,11 @@ msgstr "Тестировщик пишет и запускает падающие
 #: src/renderer/components/crew/crewTemplates.ts
 #~ msgid "A tester writes failing tests; a builder makes them pass."
 #~ msgstr "Тестировщик пишет падающие тесты, разработчик добивается их прохождения."
+
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "A thin line in the agent's colour on its pane header, its tab, and its threads in the sidebar."
+msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "A voice conversation is already active."
@@ -1528,6 +1592,14 @@ msgstr "Инспектор доступности"
 msgid "Account"
 msgstr "Аккаунт"
 
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Account {name}"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Account {name}, {percent}% of usage left"
+msgstr ""
+
 #: src/renderer/components/plugins/PluginServiceAccounts.tsx
 msgid "Account changes apply to new threads."
 msgstr "Изменения аккаунтов применяются к новым тредам."
@@ -1580,6 +1652,14 @@ msgstr "Аккаунты"
 #: src/renderer/components/plugins/PluginServiceAccounts.tsx
 msgid "Accounts belong to this plugin and service. Account labels are yours; the service may not report a verified identity. Provider logins are separate."
 msgstr "Аккаунты относятся к этому плагину и сервису. Названия задаёте вы; сервис может не сообщать подтверждённые данные личности. Вход в аккаунты провайдеров выполняется отдельно."
+
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "Accounts by usage left"
+msgstr ""
+
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "Accounts out of usage"
+msgstr ""
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/views/SettingsOverlay/parts/AcpRegistrySettings.tsx
@@ -1675,6 +1755,10 @@ msgstr "Активность {activeDays} из последних {totalDays} д
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/PortsPanel.tsx
 msgid "Active forwards"
 msgstr "Активные перенаправления"
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Active just now"
+msgstr ""
 
 #: src/renderer/views/ProfileOverlay/parts/ProfileHeader.tsx
 msgid "Active today"
@@ -2084,6 +2168,7 @@ msgstr "Укажите собственный базовый URL, наприме
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Agent"
 msgstr "Агент"
 
@@ -2103,6 +2188,11 @@ msgstr "Агент и модель для этого бота"
 msgid "Agent chat (ACP / markdown). Command rows use this size minus 1 px; tool and plan lines minus 2 px."
 msgstr "Чат агента (ACP / markdown). Строки команд используют этот размер минус 1 px; строки инструментов и планов — минус 2 px."
 
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Agent colours"
+msgstr ""
+
 #: src/renderer/fx/settings/AgentEffectsSettings.tsx
 #: src/renderer/fx/settings/effectsSettingsSearch.ts
 msgid "Agent effects"
@@ -2112,6 +2202,16 @@ msgstr "Эффекты агентов"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Agent encountered an error."
 msgstr "Агент столкнулся с ошибкой."
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Agent error"
+msgstr ""
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Agent finished"
+msgstr ""
 
 #. placeholder {0}: index + 1
 #: src/renderer/components/experiment/NewExperimentModal.tsx
@@ -2201,6 +2301,8 @@ msgstr "Экран агента"
 #: src/renderer/views/SettingsOverlay/SettingsOverlay.tsx
 #: src/renderer/viscosity/layout/activityBar/ActivitySidebarViews.tsx
 #: src/renderer/viscosity/layout/activityBar/builtinActivityItems.ts
+#: src/renderer/viscosity/missionControl/registerMissionControl.ts
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
 msgid "Agents"
 msgstr "Агенты"
 
@@ -2222,9 +2324,17 @@ msgstr "Агенты классифицируют делегированную �
 #~ msgid "Agents classify delegated work with task tags. Matching learned routes rank first, followed by global Crossagents usage, favorites, normal agent usage, and built-in order."
 #~ msgstr "Агенты классифицируют делегированную работу с помощью тегов задач. Сначала ранжируются подходящие изученные маршруты, затем глобальная статистика Crossagents, избранное, обычная статистика агентов и встроенный порядок."
 
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Agents in the middle of a turn show here."
+msgstr ""
+
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "Agents shipped {summary} this week"
 msgstr "За неделю агенты выполнили: {summary}"
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Agents that stopped with an error show here."
+msgstr ""
 
 #: src/renderer/components/providers/antigravity/index.tsx
 msgid "agy CLI"
@@ -2286,6 +2396,7 @@ msgstr "Оповещения, когда потокам нужно ваше вн
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 #: src/renderer/views/SettingsOverlay/parts/ProfileSettings.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "All"
 msgstr "Всё"
 
@@ -2439,6 +2550,11 @@ msgstr "Уже импортирован"
 msgid "Already used by {conflict}"
 msgstr "Уже используется командой {conflict}"
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Also when the app is in front"
+msgstr ""
+
 #. Notification filter: always notify
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
@@ -2454,6 +2570,7 @@ msgid "Always excluded"
 msgstr "Всегда исключено"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Amber"
 msgstr "Янтарный"
@@ -2482,6 +2599,10 @@ msgstr "Анимированный фон позади приложения, о�
 msgid "An expected worktree owner requires a branch"
 msgstr "Для ожидаемого владельца worktree требуется ветка"
 
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "An https link to a version 1 theme JSON file, up to 32 KB. You can review the theme before it is saved."
+msgstr ""
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/GeneralSection.tsx
 msgid "An image from the project folder applies on {iconMachine} only."
 msgstr "Изображение из папки проекта применяется только на {iconMachine}."
@@ -2502,6 +2623,10 @@ msgstr "Сервер MCP с таким именем уже существует.
 #: src/renderer/fx/settings/effectsSettingsSearch.ts
 msgid "Animated background"
 msgstr "Анимированный фон"
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Animated background and agent effects"
+msgstr ""
 
 #: src/renderer/fx/settings/EffectsSettings.tsx
 msgid "Animated background and live agent effects. Saved on this device."
@@ -2543,13 +2668,25 @@ msgstr "Другой владелец Poracode уже занимает коре�
 msgid "Another Poracode process is updating these credentials. Wait and try again."
 msgstr "Другой процесс Poracode обновляет эти учётные данные. Подождите и повторите попытку."
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Answer"
+msgstr ""
+
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/QuestionFormActions.tsx
 msgid "Answer every question to submit"
 msgstr "Ответьте на все вопросы, чтобы отправить"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Answer from {name}"
+msgstr ""
+
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/QuestionFormActions.tsx
 msgid "Answer this question to continue"
 msgstr "Ответьте на этот вопрос, чтобы продолжить"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Answers"
+msgstr ""
 
 #: src/renderer/components/providers/antigravity/manifest.ts
 msgid "Antigravity"
@@ -2660,6 +2797,10 @@ msgstr "Применить пресет провайдера"
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Approval or reply required from you."
 msgstr "Требуется ваше подтверждение или ответ."
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Approvals and questions from your agents show here."
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/parts/SubmitReviewPopover.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
@@ -2813,6 +2954,14 @@ msgstr "Спросить об этом pull request"
 msgid "Ask agent"
 msgstr "Спросить агента"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Ask all (compare)"
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/ui/compareCommands.ts
+msgid "Ask all models…"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "Ask each time"
 msgstr "Спрашивать каждый раз"
@@ -2919,6 +3068,8 @@ msgid "Audio settings"
 msgstr "Настройки звука"
 
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+#: src/renderer/viscosity/commands/effectsCommands.ts
 msgid "Aurora grid"
 msgstr "Сетка полярного сияния"
 
@@ -2969,6 +3120,8 @@ msgstr "Authorization: Bearer token"
 
 #: src/renderer/components/common/effortLabel.ts
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+#: src/renderer/viscosity/smartStart/useSmartStartDraft.tsx
 #: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "Auto"
 msgstr "Авто"
@@ -3005,6 +3158,11 @@ msgstr "Автослияние"
 #: src/renderer/components/providers/deepseek/index.tsx
 msgid "Auto Review"
 msgstr "Автоматическая проверка"
+
+#: src/renderer/viscosity/settings/SmartStartSettings.tsx
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Auto starts new threads on the ready account with the most usage left. These lists break close calls by what the prompt looks like."
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
@@ -3053,6 +3211,7 @@ msgstr "Автопоказ панели терминала"
 
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectIconPicker.tsx
 #: src/renderer/views/SettingsOverlay/parts/CustomThemeColorField.tsx
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
 msgid "Automatic"
 msgstr "Автоматически"
 
@@ -3123,6 +3282,10 @@ msgstr "Доступные модели появятся после устано
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Available models will appear after the engine is installed."
 #~ msgstr "Доступные модели появятся после установки движка."
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Available once every model has answered."
+msgstr ""
 
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectEnvironmentScope.tsx
 msgid "Available when {names} is back online."
@@ -3207,6 +3370,10 @@ msgstr "Вернуться к последнему тексту"
 msgid "Back to plugins"
 msgstr "Назад к плагинам"
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Back to the automatic pick"
+msgstr ""
+
 #: src/renderer/components/layout/UnifiedRightPanel.tsx
 msgid "Back to Thread Info"
 msgstr "Назад к информации о треде"
@@ -3225,6 +3392,10 @@ msgstr "Фон"
 msgid "Background intensity"
 msgstr "Интенсивность фона"
 
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Background intensity for {name}"
+msgstr ""
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Background process exited unexpectedly"
 msgstr "Фоновый процесс завершился неожиданно"
@@ -3240,6 +3411,10 @@ msgstr "Фоновый процесс перезапущен"
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
 msgid "Background style"
 msgstr "Стиль фона"
+
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Background style for {name}"
+msgstr ""
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Background task"
@@ -3356,6 +3531,7 @@ msgid "blocked:"
 msgstr "заблокировано:"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Blue"
 msgstr "Синий"
@@ -3378,10 +3554,15 @@ msgid "Border"
 msgstr "Граница"
 
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/chat/ParticipantControls.tsx
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Bot"
 msgstr "Бот"
+
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Bot · {agentName}"
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/chat/useRoundtableMentionItems.ts
 msgid "Bot · Roundtable"
@@ -3829,6 +4010,7 @@ msgstr "Этот выбор модели нельзя использовать �
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/PlanCommentCard.tsx
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 #: src/renderer/pwa/push/WebPushPermissionPrompt.tsx
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeDialog.tsx
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeRunDialog.tsx
 #: src/renderer/views/ExperimentView/parts/ExperimentWinnerCrewActions.tsx
@@ -3979,6 +4161,7 @@ msgid "Category"
 msgstr "Категория"
 
 #: src/renderer/components/common/EffortContextMenu/ContextSizeReloadPopover.tsx
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
 msgid "Change"
 msgstr "Изменить"
 
@@ -4695,6 +4878,7 @@ msgstr "Клонирование…"
 #: src/renderer/components/providers/settings/ModelProvidersSettings.tsx
 #: src/renderer/components/skills/SkillViewModal.tsx
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/PlanReviewModal.tsx
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeRunDialog.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/BrowserPanel.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/DevTerminalPanel/parts/MobileTerminalLayout.tsx
@@ -4833,6 +5017,10 @@ msgstr "Закрыть меню"
 #: src/mobile/views/pr/PrOverviewPage.tsx
 #~ msgid "Close merge options"
 #~ msgstr "Закрыть параметры слияния"
+
+#: src/renderer/viscosity/missionControl/ui/MissionControlPanel.tsx
+msgid "Close Mission Control"
+msgstr ""
 
 #: src/renderer/commands/shortcutCatalog.ts
 msgid "Close overlay"
@@ -5052,6 +5240,10 @@ msgstr "Имя профиля Codex"
 msgid "Codex runs this profile with CODEX_HOME set to the directory below. Use Login above to sign this profile in to its own account."
 msgstr "Codex запускает этот профиль с CODEX_HOME, указывающим на каталог ниже. Нажмите «Войти» выше, чтобы войти в отдельный аккаунт этого профиля."
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Coding task"
+msgstr ""
+
 #: src/renderer/components/thread/ThreadDockUI.tsx
 msgid "Collapse"
 msgstr "Свернуть"
@@ -5156,6 +5348,19 @@ msgstr "Свернуть предупреждение"
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Colour"
 msgstr "Цвет"
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Colour for {agent}"
+msgstr ""
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Colour for {agent}: {current}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Colour panes and tabs by agent"
+msgstr ""
 
 #: src/renderer/views/MainView/parts/Sidebar/parts/useProjectEnvironmentMenuItems.tsx
 msgid "Combine with {name} ({machines})"
@@ -5818,6 +6023,10 @@ msgstr "Продолжи с того места, где остановился."
 msgid "Continue with incomplete history"
 msgstr "Продолжить с неполной историей"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Continue with this one"
+msgstr ""
+
 #: src/renderer/components/thread/ThreadHistoryNoticeDock.tsx
 msgid "Continuing will keep the remaining history and mark this episode acknowledged; it does not restore the missing content."
 msgstr "Продолжение сохранит оставшуюся историю и отметит этот эпизод как подтверждённый; отсутствующее содержимое не будет восстановлено."
@@ -5895,6 +6104,10 @@ msgstr "Скопировано"
 msgid "Copied raw TCP address + connect ticket (LAN only) — send the ticket as the first line."
 msgstr "Скопирован прямой TCP-адрес + тикет подключения (только локальная сеть) — отправьте тикет первой строкой."
 
+#: src/renderer/theme/viscosity/ThemeShareMenu.tsx
+msgid "Copied the {label} theme JSON"
+msgstr ""
+
 #: src/renderer/views/ProfileOverlay/parts/ShareDialog.tsx
 msgid "Copied to clipboard"
 msgstr "Скопировано в буфер обмена"
@@ -5956,6 +6169,10 @@ msgstr "Копировать игнорируемые файлы"
 #: src/renderer/views/ProfileOverlay/parts/ShareDialog.tsx
 msgid "Copy image"
 msgstr "Копировать изображение"
+
+#: src/renderer/theme/viscosity/ThemeShareMenu.tsx
+msgid "Copy JSON"
+msgstr ""
 
 #: src/renderer/components/common/EditContextMenuHost.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/LocalPortsPanel.tsx
@@ -6072,6 +6289,7 @@ msgstr "Не удалось завершить слияние"
 msgid "Could not confirm that the Auto Fix thread \"{id}\" was stopped. Poracode keeps it recorded and will retry stopping it."
 msgstr "Не удалось подтвердить, что поток автоисправления \"{id}\" остановлен. Poracode сохраняет запись о нём и повторит попытку остановки."
 
+#: src/renderer/theme/viscosity/ThemeShareMenu.tsx
 #: src/renderer/views/PullRequestsOverlay/detail/header/usePrLinkActions.ts
 msgid "Could not copy to the clipboard."
 msgstr "Не удалось скопировать в буфер обмена."
@@ -6079,6 +6297,10 @@ msgstr "Не удалось скопировать в буфер обмена."
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Could not create the project folder."
 msgstr "Не удалось создать папку проекта."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Could not download the file. Check the link and your connection."
+msgstr ""
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 msgid "Could not extract context."
@@ -6285,6 +6507,10 @@ msgstr "Охват по всем указанным валютам"
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
 msgid "Create"
 msgstr "Создать"
+
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "Create a named AI teammate"
+msgstr ""
 
 #. placeholder {0}: props.candidateNumber
 #: src/renderer/views/ExperimentView/parts/ExperimentCandidateCard.tsx
@@ -6685,6 +6911,10 @@ msgstr "текущая серия"
 msgid "Current streak"
 msgstr "Текущая серия"
 
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Current theme"
+msgstr ""
+
 #. placeholder {0}: setting.currentValue
 #: src/renderer/components/providers/devin/sessionSettingsControls.tsx
 #~ msgid "Current value: {0}"
@@ -6834,6 +7064,14 @@ msgstr "Своя тема"
 msgid "Cut"
 msgstr "Вырезать"
 
+#: src/renderer/viscosity/agentColors/palette.ts
+msgid "Cyan"
+msgstr ""
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Cycle background style"
+msgstr ""
+
 #: src/renderer/commands/composerCommands.ts
 msgid "Cycle permission mode"
 msgstr "Переключить режим разрешений"
@@ -6899,6 +7137,14 @@ msgstr "Дни"
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Debate → decide"
 msgstr "Дебаты → решение"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Debate started"
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/api.ts
+msgid "Debate: {title}"
+msgstr ""
 
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "Debug crew"
@@ -7608,6 +7854,7 @@ msgstr "Отключите уровни, которые внешний пров�
 #: src/renderer/components/mcp/McpServersManager.tsx
 #: src/renderer/components/skills/SkillsManager.tsx
 #: src/renderer/views/SettingsOverlay/parts/AISettings.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Disabled"
 msgstr "Отключено"
 
@@ -7815,7 +8062,9 @@ msgstr "готово"
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
 msgid "Done"
 msgstr "Готово"
 
@@ -7899,6 +8148,10 @@ msgstr "Загрузка"
 #: src/renderer/views/MainView/parts/CreateProject/CloneProjectModal.tsx
 msgid "Downloading into “{0}”. This can take a moment for large repositories."
 msgstr "Загрузка в «{0}». Для больших репозиториев это может занять некоторое время."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Downloading theme…"
+msgstr ""
 
 #: src/renderer/components/startup/StartupRecoveryScreen.tsx
 #: src/renderer/views/MainView/parts/CheckForUpdatesButton.tsx
@@ -8038,6 +8291,15 @@ msgstr "напр., Codex GPT-5.5 fast для быстрых запросов, Op
 #: src/renderer/views/SettingsOverlay/parts/AgentProfileList.tsx
 msgid "e.g. Work"
 msgstr "напр. Работа"
+
+#: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Each agent has its own colour, so you can tell its panes, tabs, and threads apart at a glance."
+msgstr ""
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Each agent has its own colour. The markers show when this device uses the desktop layout."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Each participant builds on its own new worktree."
@@ -8526,6 +8788,7 @@ msgstr "ошибка"
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "Error"
 msgstr "Ошибка"
 
@@ -8539,6 +8802,7 @@ msgid "Error flash"
 msgstr "Вспышка ошибки"
 
 #: src/renderer/components/mobileComposer/ComposerInfoChips.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "Errors"
 msgstr "Ошибки"
 
@@ -8590,6 +8854,10 @@ msgstr "Каждые {every} ч."
 msgid "Every {every} minutes"
 msgstr "Каждые {every} мин."
 
+#: src/renderer/viscosity/missionControl/paletteCommands.ts
+msgid "Every agent, Roundtable and bot at a glance"
+msgstr ""
+
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Every day at {time}"
 msgstr "Каждый день в {time}"
@@ -8597,6 +8865,10 @@ msgstr "Каждый день в {time}"
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Every day at 1:00 PM"
 msgstr "Каждый день в 13:00"
+
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Every debater must have answered in the comparison."
+msgstr ""
 
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 msgid "Every hour"
@@ -8616,9 +8888,25 @@ msgstr "У каждого участника должен быть свой ид
 msgid "Every racer must be an installed agent."
 msgstr "Каждый участник гонки должен быть установленным агентом."
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Every ready account is out of usage. Pick one in the model picker."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/ui/compareCommands.ts
+msgid "Every ready model answers the same task, side by side"
+msgstr ""
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Every stage finished."
 msgstr "Все этапы завершены."
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
+msgid "Every subscription and account, with the usage each one has left."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "Everyone answers once, side by side. No critique rounds, no verdict."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Everyone builds on their own worktree, reviews the others, and the best is picked."
@@ -8631,6 +8919,10 @@ msgstr "Все предлагают решения и критикуют дру�
 #: src/renderer/viscosity/roundtable/chat/patterns.ts
 msgid "Everyone proposes and critiques, then a decision is made"
 msgstr "Все предлагают и критикуют, затем принимается решение"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "Everyone reads the current checkout and changes no files."
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServerProjectList.tsx
@@ -8666,6 +8958,14 @@ msgstr "Код выхода {0}"
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Exit plan mode"
 msgstr "Выйти из режима плана"
+
+#: src/renderer/viscosity/zen/ZenModeHost.tsx
+msgid "Exit Zen"
+msgstr ""
+
+#: src/renderer/viscosity/zen/ZenModeHost.tsx
+msgid "Exit Zen mode"
+msgstr ""
 
 #: src/mobile/views/TerminalView.tsx
 #~ msgid "exited"
@@ -8898,8 +9198,8 @@ msgid "Exponential backoff"
 msgstr "Экспоненциальная задержка"
 
 #: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
-msgid "Export as JSON"
-msgstr "Экспортировать в JSON"
+#~ msgid "Export as JSON"
+#~ msgstr "Экспортировать в JSON"
 
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "Export MCP servers"
@@ -9329,6 +9629,14 @@ msgstr "Завершено"
 msgid "Finished · Waiting for your input"
 msgstr "Завершено · Ожидается ваш ввод"
 
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Finished {age} ago"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Finished just now"
+msgstr ""
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 msgid "Finishing your report on GitHub…"
 msgstr "Завершаем создание обращения на GitHub…"
@@ -9537,6 +9845,14 @@ msgstr "Поведение последующих сообщений"
 msgid "Follow-up in the same session"
 msgstr "Продолжение в том же сеансе"
 
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Following your last-used order"
+msgstr ""
+
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Follows the global background."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Font for agent terminals and the terminal panel. Missing fonts use the default."
 msgstr "Шрифт терминалов агентов и панели терминала. Если шрифт отсутствует, используется шрифт по умолчанию."
@@ -9694,6 +10010,10 @@ msgstr "Матовость боковой панели в режиме {appearan
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Frozen worktree source is not a local branch: {branch}"
 msgstr "Замороженный источник worktree не является локальной веткой: {branch}"
+
+#: src/renderer/viscosity/agentColors/palette.ts
+msgid "Fuchsia"
+msgstr ""
 
 #: src/renderer/components/providers/codex/index.tsx
 #: src/renderer/components/providers/composerControlBuilders.tsx
@@ -9914,6 +10234,11 @@ msgstr "Звёзды GitHub"
 msgid "Gitignored files to copy from the main project into each new worktree. Gitignore-style patterns, one per line (e.g., <0>.env.*</0>)."
 msgstr "Игнорируемые Git файлы для копирования из основного проекта в каждый новый worktree. Шаблоны в стиле gitignore, по одному на строку (напр., <0>.env.*</0>)."
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Give a project its own background style or intensity. It applies while that project's thread or draft is in focus; other projects use the settings above."
+msgstr ""
+
 #: src/renderer/components/newsLine/featureCatalog.ts
 msgid "Give each thread its own worktree so agents never collide"
 msgstr "Дайте каждому треду свой worktree, чтобы агенты не мешали друг другу"
@@ -9941,6 +10266,16 @@ msgstr "глобально"
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Global"
 msgstr "Глобальные"
+
+#. Per-project background intensity that follows the global setting
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Global · {value}%"
+msgstr ""
+
+#. Per-project background style: follow the global style, named in parentheses
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Global ({globalLabel})"
+msgstr ""
 
 #: src/renderer/viscosity/bots/settings/BotsSettings.tsx
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
@@ -10019,6 +10354,8 @@ msgid "Grade {0}"
 msgstr "Оценка {0}"
 
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+#: src/renderer/viscosity/commands/effectsCommands.ts
 msgid "Gradient mesh"
 msgstr "Градиентная сетка"
 
@@ -10035,6 +10372,7 @@ msgid "Granted scopes"
 msgstr "Предоставленные разрешения"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Green"
 msgstr "Зелёный"
@@ -10171,6 +10509,10 @@ msgstr "Есть неотправленный черновик"
 #: src/renderer/components/newsLine/featureCatalog.ts
 msgid "Have one agent hand work to another with Crossagents"
 msgstr "Пусть один агент передаёт работу другому с Crossagents"
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "head start"
+msgstr ""
 
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "Headers"
@@ -10386,6 +10728,10 @@ msgstr "Скрыть задачи; они продолжат выполнять�
 msgid "Hide terminal"
 msgstr "Скрыть терминал"
 
+#: src/renderer/viscosity/zen/zenCommands.ts
+msgid "Hide the bars and panels and center the focused pane"
+msgstr ""
+
 #: src/renderer/components/newsLine/NewsLine.tsx
 msgid "Hide this"
 msgstr "Скрыть"
@@ -10523,6 +10869,11 @@ msgstr "Ежечасно"
 msgid "Hours"
 msgstr "Часы"
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "How loud the sound cues play."
+msgstr ""
+
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "How moving works"
 msgstr "Как работает перенос"
@@ -10613,6 +10964,7 @@ msgstr "Путь к файлу идентификации"
 #. Microphone input level when not testing
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "Idle"
 msgstr "Ожидание"
 
@@ -10671,6 +11023,7 @@ msgstr "Выполняет задачу основной модели целик
 
 #. Settings section: import existing CLI sessions as threads
 #: src/renderer/components/newsLine/featureCatalog.ts
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserImportModal.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
 msgid "Import"
@@ -10710,6 +11063,10 @@ msgstr "Импортировать навыки внешних агентов"
 msgid "Import external skills"
 msgstr "Импортировать внешние навыки"
 
+#: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
+msgid "Import from URL…"
+msgstr ""
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserImportModal.tsx
 msgid "Import from your browser"
 msgstr "Импортировать из вашего браузера"
@@ -10741,6 +11098,10 @@ msgstr "Источник импорта"
 #: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
 msgid "Import theme"
 msgstr "Импортировать тему"
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Import theme from URL"
+msgstr ""
 
 #: src/renderer/components/mcp/McpExternalImportModal.tsx
 msgid "Import to {destinationProjectName}"
@@ -10800,6 +11161,10 @@ msgstr "Импортированная сессия"
 msgid "Imported sessions contribute only recorded usage. Deleted threads keep their ledger history. Account dashboard snapshots and external log estimates are not added, preventing overlapping totals across hosts or accounts."
 msgstr "Импортированные сеансы учитывают только записанное использование. Удалённые треды сохраняют историю использования. Снимки панелей аккаунтов и оценки из внешних журналов не суммируются, чтобы избежать пересечения итогов между хостами или аккаунтами."
 
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link is only available in the desktop app."
+msgstr ""
+
 #: src/renderer/components/changelog/ChangelogView.tsx
 msgid "Improved"
 msgstr "Улучшено"
@@ -10833,6 +11198,15 @@ msgstr "Сканирование камерой внутри приложени�
 msgid "Inactive"
 msgstr "Неактивно"
 
+#. placeholder {0}: view.label
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Include {0} in the pool"
+msgstr ""
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Include at least two accounts so work has somewhere to move."
+msgstr ""
+
 #: src/renderer/components/common/FeedbackDialog.tsx
 #~ msgid "Include basic diagnostics"
 #~ msgstr "Включить базовую диагностику"
@@ -10862,6 +11236,10 @@ msgstr "Блок визуализации не завершён. Показан 
 #: src/renderer/commands/CommandPalette.tsx
 msgid "Indexing saved messages…"
 msgstr "Индексация сохранённых сообщений…"
+
+#: src/renderer/viscosity/agentColors/palette.ts
+msgid "Indigo"
+msgstr ""
 
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 msgid "Info"
@@ -11285,6 +11663,10 @@ msgstr "Установлено"
 msgid "Installed {0}."
 msgstr "Установлено: {0}."
 
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Installed agents"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/TerminalFontSetting.tsx
 msgid "Installed-font selection is unavailable in this client."
 msgstr "Выбор установленных шрифтов недоступен в этом клиенте."
@@ -11457,6 +11839,7 @@ msgid "Jump to section"
 msgstr "Перейти к разделу"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/UsagePanel.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "just now"
 msgstr "только что"
 
@@ -11636,6 +12019,10 @@ msgstr "Последние 30 дней"
 msgid "Last 7 days"
 msgstr "Последние 7 дней"
 
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Last active {age} ago"
+msgstr ""
+
 #. placeholder {0}: formatSessionTime(session.lastConnectedAt)
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Last connected: {0}"
@@ -11772,6 +12159,10 @@ msgstr "Выйти из режима Круглого стола"
 msgid "Leave the credential reference empty to keep the current one."
 msgstr "Оставьте ссылку на учётные данные пустой, чтобы сохранить текущую."
 
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "Left out of the pool"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Legacy connection id"
 msgstr "Идентификатор устаревшего подключения"
@@ -11779,6 +12170,10 @@ msgstr "Идентификатор устаревшего подключения
 #: src/renderer/views/ProfileOverlay/parts/ActivityHeatmap.tsx
 msgid "Less"
 msgstr "Меньше"
+
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Let {brand} pick"
+msgstr ""
 
 #: src/renderer/components/newsLine/featureCatalog.ts
 msgid "Let agents use desktop apps in the background with Computer Use"
@@ -11825,6 +12220,10 @@ msgstr "Токенов за всё время"
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "Light"
 msgstr "Светлая"
+
+#: src/renderer/viscosity/agentColors/palette.ts
+msgid "Lime"
+msgstr ""
 
 #. placeholder {0}: r.startLine
 #: src/renderer/components/thread/ThreadRuntimeRequestPanel/parts/PlanReviewModal.tsx
@@ -12365,6 +12764,15 @@ msgstr "Управление паролями"
 #: src/renderer/components/providers/opencode2/OpenCode2PluginsSettings.tsx
 msgid "Manage plugins"
 msgstr "Управление плагинами"
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionProviderSection.tsx
+msgid "Manage pool"
+msgstr ""
+
+#. placeholder {0}: provider.label
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionProviderSection.tsx
+msgid "Manage pool for {0}"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Manage projects"
@@ -13093,6 +13501,21 @@ msgstr "Минуты"
 msgid "Missed runs"
 msgstr "Пропущенные запуски"
 
+#: src/renderer/viscosity/missionControl/paletteCommands.ts
+#: src/renderer/viscosity/missionControl/registerMissionControl.ts
+#: src/renderer/viscosity/missionControl/ui/MissionControlPanel.tsx
+#: src/renderer/viscosity/subscriptions/paletteCommands.ts
+msgid "Mission Control"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/missionControlViewStore.ts
+msgid "Mission Control is available in the desktop app."
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/ui/MissionControlPanel.tsx
+msgid "Mission Control sections"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Mobile push notifications"
 msgstr "Мобильные push-уведомления"
@@ -13327,6 +13750,14 @@ msgstr "Переместить {0} вниз"
 msgid "Move {0} up"
 msgstr "Переместить {0} вверх"
 
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Move {label} down"
+msgstr ""
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Move {label} up"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Move an existing device-local SSH connection onto this environment by its connection id. Keys are never uploaded."
 msgstr "Перенесите существующее локальное SSH-подключение на эту среду по идентификатору подключения. Ключи никогда не загружаются."
@@ -13556,6 +13987,7 @@ msgid "Navigation controls"
 msgstr "Элементы управления навигацией"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "Needs approval"
 msgstr "Требует подтверждения"
 
@@ -13590,6 +14022,23 @@ msgstr "Требуется восстановление"
 msgid "Needs reply"
 msgstr "Требует ответа"
 
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "Needs sign-in"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Needs you"
+msgstr ""
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Needs your approval"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Needs your reply"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 #~ msgid "Network access"
 #~ msgstr "Доступ по сети"
@@ -13623,6 +14072,10 @@ msgstr "Новое имя действия"
 #: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
 msgid "New bot"
 msgstr "Новый бот"
+
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "New bot…"
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "New branch"
@@ -13837,8 +14290,12 @@ msgid "New Thread in Worktree"
 msgstr "Новый тред в worktree"
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
-msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
-msgstr "Новые треды запускаются на аккаунте с наибольшим остатком лимита. Когда лимит одного аккаунта исчерпан, работа переходит на следующий аккаунт в этом порядке."
+#~ msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order."
+#~ msgstr "Новые треды запускаются на аккаунте с наибольшим остатком лимита. Когда лимит одного аккаунта исчерпан, работа переходит на следующий аккаунт в этом порядке."
+
+#: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+msgid "New threads start on the account with the most usage left. When one runs out, work moves to the next account in this order. Turn an account off to leave it out."
+msgstr ""
 
 #: src/renderer/components/workspace/WorkspaceNameDialog.tsx
 msgid "New workspace"
@@ -13970,6 +14427,14 @@ msgstr "Дополнительных профилей нет."
 msgid "No agent available to generate PR summary"
 msgstr "Нет доступного агента для генерации сводки PR"
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "No agent is ready to pick from. Pick one in the model picker."
+msgstr ""
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "No agents are installed yet."
+msgstr ""
+
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "No agents in this phase."
 msgstr "В этой фазе нет агентов."
@@ -13981,6 +14446,14 @@ msgstr "Агенты ещё не установлены"
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 msgid "No agents installed."
 msgstr "Нет установленных агентов."
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "No agents running"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "No agents working"
+msgstr ""
 
 #: src/renderer/views/ProfileOverlay/parts/AiActions.tsx
 msgid "No AI commits, PRs, or conflict resolutions tracked yet."
@@ -14134,6 +14607,10 @@ msgstr "Нет загрузок, соответствующих поиску"
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "No eligible conversations in this project."
 msgstr "В этом проекте нет подходящих диалогов."
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "No errors"
+msgstr ""
 
 #: src/renderer/components/skills/SkillImportModal.tsx
 msgid "No external skills were found in this scope."
@@ -14397,6 +14874,7 @@ msgstr "На этом сервере нет проектов."
 #~ msgid "No projects yet"
 #~ msgstr "Пока нет проектов"
 
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/WorkspacesSettings.tsx
 msgid "No projects yet."
 msgstr "Проектов пока нет."
@@ -14416,6 +14894,10 @@ msgstr "Провайдеры не отслеживаются."
 #: src/renderer/views/SettingsOverlay/parts/UsageSettings.tsx
 msgid "No providers are being tracked. Enable providers below to monitor quotas and cost."
 msgstr "Провайдеры не отслеживаются. Включите провайдеров ниже, чтобы следить за квотами и расходами."
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "No providers are installed yet."
+msgstr ""
 
 #: src/renderer/components/providers/settings/ModelProviderManager.tsx
 #: src/renderer/components/providers/settings/ProviderAccountsSection.tsx
@@ -14523,6 +15005,10 @@ msgstr "Нет сессий, соответствующих текущим фи�
 msgid "No shortcuts found"
 msgstr "Сочетания клавиш не найдены"
 
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "No signed-in account reports usage left right now."
+msgstr ""
+
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "No signed-in agent can run in this project. Install or sign in to an agent, or use Grok over the xAI API."
 msgstr "Ни один агент с выполненным входом не может работать в этом проекте. Установите агента или войдите в него либо используйте Grok через xAI API."
@@ -14566,6 +15052,10 @@ msgstr "Этот компьютер ещё не сообщил статус."
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #~ msgid "No steps reported"
 #~ msgstr "Нет данных о шагах"
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
+msgid "No subscriptions yet. Install or sign in to an agent to see its usage here."
+msgstr ""
 
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
@@ -14615,11 +15105,16 @@ msgstr "Тредов пока нет."
 msgid "No upcoming run"
 msgstr "Предстоящих запусков нет"
 
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "No usage data"
+msgstr ""
+
 #: src/renderer/components/providers/HostUsageView.tsx
 msgid "No usage data yet."
 msgstr "Данных использования пока нет."
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "No usage reported yet."
 msgstr "Данных об использовании пока нет."
 
@@ -14708,6 +15203,7 @@ msgstr "не установлено"
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/HookPluginSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/NativeMcpSettings.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Not installed"
 msgstr "Не установлено"
 
@@ -14762,10 +15258,18 @@ msgstr "Заметки и задачи"
 msgid "Notes the bot keeps between chats"
 msgstr "Заметки, которые бот сохраняет между чатами"
 
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Nothing finished recently"
+msgstr ""
+
 #: src/renderer/views/PullRequestsOverlay/summary/ActivityFeed.tsx
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineTab.tsx
 msgid "Nothing matches this filter."
 msgstr "Ничего не соответствует этому фильтру."
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Nothing needs you"
+msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Nothing to compact yet — the conversation is still small."
@@ -14890,6 +15394,10 @@ msgstr "В начале часа"
 msgid "Once on {0}"
 msgstr "Один раз: {0}"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
+msgid "One answer from each participant."
+msgstr ""
+
 #: src/renderer/viscosity/roundtable/chat/patterns.ts
 msgid "One builds, the others review until they approve"
 msgstr "Один разрабатывает, остальные проверяют до одобрения"
@@ -14926,6 +15434,14 @@ msgstr "Одноразовый токен сопряжения"
 msgid "Online"
 msgstr "Онлайн"
 
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Only a comparison can seed a debate."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Only a debate can start from a comparison."
+msgstr ""
+
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Only chat threads can move to another machine."
@@ -14934,6 +15450,10 @@ msgstr "На другой компьютер можно переносить т�
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Only one candidate finished."
 msgstr "Завершил работу только один кандидат."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Only secure https:// links can be imported."
+msgstr ""
 
 #: src/renderer/components/thread/MoveThreadDialog.tsx
 msgid "Only the conversation moves: this folder isn't a Git repository."
@@ -14972,6 +15492,7 @@ msgstr "В этом пул-реквесте можно редактироват�
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrSection.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Open"
 msgstr "Открыть"
 
@@ -14998,6 +15519,10 @@ msgstr "Открыть {location} в изменениях"
 msgid "Open {name} thread"
 msgstr "Открыть тред {name}"
 
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Open {title}"
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 msgid "Open a new browser tab"
 msgstr "Открыть новую вкладку браузера"
@@ -15018,6 +15543,10 @@ msgstr "Открыть терминал"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/hooks/useElementPicker.ts
 msgid "Open a thread first to attach to it."
 msgstr "Сначала откройте тред, чтобы прикрепить к нему."
+
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "Open Agents settings"
+msgstr ""
 
 #: src/renderer/views/ExperimentView/ExperimentView.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/ExperimentGroupHeader.tsx
@@ -15046,6 +15575,10 @@ msgstr "Открыть как панель"
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskPageHeaderActions.tsx
 msgid "Open as thread"
 msgstr "Открыть как тред"
+
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "Open Bots"
+msgstr ""
 
 #: src/renderer/views/MainView/parts/SidebarHeaderControls.tsx
 msgid "Open browser"
@@ -15108,6 +15641,10 @@ msgstr "Открыть Crossagent: {0}"
 msgid "Open Crossagent: {task}"
 msgstr "Открыть Crossagent: {task}"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Open debate"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
 msgid "Open dialog"
 msgstr "Открывать диалог"
@@ -15115,6 +15652,10 @@ msgstr "Открывать диалог"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 msgid "Open downloaded file"
 msgstr "Открыть скачанный файл"
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Open Effects settings"
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "Open existing worktree"
@@ -15241,6 +15782,14 @@ msgstr "Открывать ссылки в"
 #: src/renderer/components/skills/SkillMarketplaceModal.tsx
 #~ msgid "Open MCP Market to browse purchases and downloads without bypassing its account or licensing flow."
 #~ msgstr "Откройте MCP Market, чтобы просматривать покупки и загрузки, не обходя процедуры учётной записи и лицензирования."
+
+#: src/renderer/viscosity/missionControl/paletteCommands.ts
+msgid "Open Mission Control"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/ui/MissionControlStatusItem.tsx
+msgid "Open Mission Control: {text}"
+msgstr ""
 
 #: src/renderer/commands/composerCommands.ts
 msgid "Open model picker"
@@ -15387,10 +15936,19 @@ msgstr "Откройте «Настройки → Удалённый досту�
 msgid "Open Settings → Remote Access on your desktop to show the code."
 msgstr "Откройте «Настройки → Удалённый доступ» на компьютере, чтобы показать код сопряжения."
 
+#. placeholder {0}: account.label
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "Open sign-in settings for {0}"
+msgstr ""
+
 #. placeholder {0}: display.title
 #: src/renderer/components/thread/ChatPane/parts/items/SubAgentToolCall.tsx
 msgid "Open subagent: {0}"
 msgstr "Открыть субагента: {0}"
+
+#: src/renderer/viscosity/subscriptions/paletteCommands.ts
+msgid "Open Subscriptions"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/RemoteAccessSettings.tsx
 msgid "Open Tailscale"
@@ -15425,6 +15983,10 @@ msgstr "Открыть состав команды"
 #: src/renderer/components/providers/standardGuiSlashCommands.ts
 msgid "Open the effort picker"
 msgstr "Открыть выбор усилия"
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Open the in-app browser panel"
+msgstr ""
 
 #: src/renderer/components/providers/standardGuiSlashCommands.ts
 msgid "Open the model picker"
@@ -15562,6 +16124,7 @@ msgstr "или"
 #~ msgstr "Или напишите свой ответ"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Orange"
 msgstr "Оранжевый"
@@ -15587,6 +16150,10 @@ msgstr "Прочие"
 msgid "Other agents"
 msgstr "Другие агенты"
 
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Other theme downloads are still running. Try again in a moment."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/PairingChrome.tsx
 msgid "Other ways to connect"
 msgstr "Другие способы подключения"
@@ -15599,13 +16166,29 @@ msgstr "Другие способы подключения"
 msgid "Others"
 msgstr "Остальные"
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Otherwise cues play only while the app is in the background or the thread is not on screen."
+msgstr ""
+
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "out of usage"
+msgstr ""
+
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Out of usage"
 msgstr "Лимит исчерпан"
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Out of usage · resets in {resetIn}"
 msgstr "Лимит исчерпан · сброс через {resetIn}"
+
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "Out of usage:"
+msgstr ""
 
 #: src/renderer/components/thread/ChatPane/parts/items/WorkflowOverlayBody.tsx
 msgid "Outcome"
@@ -15885,6 +16468,8 @@ msgid "Participants ({seatCount}/{MAX_PARTICIPANTS})"
 msgstr "Участники ({seatCount}/{MAX_PARTICIPANTS})"
 
 #: src/renderer/fx/settings/BackgroundEffectsSettings.tsx
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+#: src/renderer/viscosity/commands/effectsCommands.ts
 msgid "Particle field"
 msgstr "Поле частиц"
 
@@ -15952,6 +16537,10 @@ msgstr "Вставьте API-ключ {label}"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/BrowserPanel.tsx
 msgid "Paste <0>{0}</0> here. Click to copy."
 msgstr "Вставьте <0>{0}</0> сюда. Нажмите, чтобы скопировать."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Paste a link to a theme JSON file."
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/CursorProfileSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/CursorSdkRuntimeSetup.tsx
@@ -16050,6 +16639,7 @@ msgstr "на паузе"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
 #: src/renderer/viscosity/bots/ui/BotsSidebarView.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Paused"
 msgstr "Приостановлено"
@@ -16108,6 +16698,11 @@ msgstr "Ожидает ревью"
 #: src/renderer/components/thread/ThreadPendingSteerStrip.tsx
 msgid "Pending steer"
 msgstr "Ожидающее направление"
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Per-project backgrounds"
+msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentVisionDock.tsx
 msgid "Perform actions"
@@ -16261,6 +16856,7 @@ msgid "Pin workflow"
 msgstr "Закрепить рабочий процесс"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Pink"
 msgstr "Розовый"
@@ -16315,9 +16911,18 @@ msgstr "Планируйте, спрашивайте, создавайте…"
 msgid "Planner"
 msgstr "Планировщик"
 
+#: src/renderer/viscosity/subscriptions/paletteCommands.ts
+msgid "Plans, usage left and account pools for every provider"
+msgstr ""
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "Platform (optional)"
 msgstr "Платформа (необязательно)"
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Play a short sound when an agent finishes, hits an error, or needs your approval. While on, these replace the notification sound."
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -16328,6 +16933,18 @@ msgstr "Воспроизводить звук при показе уведомл
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Play notification sound"
 msgstr "Звук уведомления"
+
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Play the approval sound"
+msgstr ""
+
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Play the error sound"
+msgstr ""
+
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Play the finished sound"
+msgstr ""
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "Plugin"
@@ -16408,9 +17025,17 @@ msgstr "Направьте этот профиль на провайдера, о
 #~ msgid "Point your camera at the code on your desktop"
 #~ msgstr "Наведите камеру на код на компьютере"
 
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionProviderSection.tsx
+msgid "Pool on · switches at {switchAtPercent}% used"
+msgstr ""
+
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Pool order"
 msgstr "Порядок в пуле"
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "Pooled · {position} of {size} · switches at {switchAtPercent}% used"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/AppearanceSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -16648,6 +17273,14 @@ msgstr "Заголовок PR (оставьте пустым для автоге
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Pre-commit hook failed"
 msgstr "Сбой хука pre-commit"
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Preferred for coding"
+msgstr ""
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Preferred for quick questions"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/CrossagentRoutingSection.tsx
 #~ msgid "Preferred routing order"
@@ -16896,6 +17529,10 @@ msgstr "Вкладки профиля"
 msgid "Profiles"
 msgstr "Профили"
 
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "Profiles and account pools for each provider"
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -16916,6 +17553,10 @@ msgstr "Проект"
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarProjectFilter.tsx
 msgid "Project actions for {0}"
 msgstr "Действия проекта для {0}"
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Project files in the sidebar"
+msgstr ""
 
 #: src/renderer/views/ProjectSettingsOverlay/parts/GeneralSection.tsx
 msgid "Project folder"
@@ -17001,6 +17642,10 @@ msgstr "Переопределения для конкретного проек�
 #: src/renderer/views/SettingsOverlay/parts/WorkspacesSettings.tsx
 msgid "Projects"
 msgstr "Проекты"
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Projects and threads in the sidebar"
+msgstr ""
 
 #. placeholder {0}: deleting.name
 #. placeholder {1}: deleteFallback.name
@@ -17353,6 +17998,10 @@ msgstr "Сообщения в очереди поддерживаются тол
 msgid "Queued for v{0}"
 msgstr "В очереди на обновление до v{0}"
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Quick question"
+msgstr ""
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Quit"
 msgstr "Выйти"
@@ -17487,6 +18136,7 @@ msgstr "Читает весь diff и затронутый код, запуск�
 
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 #: src/renderer/components/thread/AgentDiscoveryScreen.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Ready"
 msgstr "Готово"
 
@@ -17633,6 +18283,7 @@ msgid "Recordings are processed on {hostName}, not on this device."
 msgstr "Записи обрабатываются на {hostName}, а не на этом устройстве."
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Red"
 msgstr "Красный"
@@ -17671,6 +18322,7 @@ msgstr "Ссылка на версию"
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/NativeMcpSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/UsageSettings.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "Refresh"
 msgstr "Обновить"
 
@@ -17725,6 +18377,10 @@ msgstr "Обновить запуск"
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "Refresh skills"
 msgstr "Обновить навыки"
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
+msgid "Refresh usage"
+msgstr ""
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsView.tsx
 msgid "Refresh workflow runs"
@@ -18377,6 +19033,10 @@ msgstr "Сбросить дополнительные настройки"
 msgid "Reset checklist"
 msgstr "Сбросить список"
 
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Reset colour for {agent}"
+msgstr ""
+
 #: src/renderer/components/providers/settings/ProviderContextWindowSettings.tsx
 msgid "Reset context windows"
 msgstr "Сбросить контекстные окна"
@@ -18398,6 +19058,10 @@ msgstr "Сбросить порядок моделей"
 msgid "Reset sidebar frosting to default"
 msgstr "Сбросить матовость боковой панели к значению по умолчанию"
 
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "Reset the background for {name}"
+msgstr ""
+
 #. placeholder {0}: savedCrew.name
 #: src/renderer/components/crew/CrewRosterPanel.tsx
 msgid "Reset to {0}"
@@ -18416,6 +19080,14 @@ msgstr "Сбросить масштаб"
 #: src/renderer/components/newsLine/useNewsLineItems.tsx
 msgid "resets in {countdown}"
 msgstr "сброс через {countdown}"
+
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "resets in {resetIn}"
+msgstr ""
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "Resets in {sharedResetIn}"
+msgstr ""
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/BrowserHost.tsx
 msgid "Resize browser drawer"
@@ -18820,6 +19492,10 @@ msgstr "Просмотреть изменения"
 msgid "Review Changes"
 msgstr "Просмотреть изменения"
 
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Review changes in the focused project"
+msgstr ""
+
 #: src/renderer/views/GitReviewOverlay/parts/DiffAnnotationView.tsx
 #: src/renderer/views/PullRequestsOverlay/changes/inlineComments.tsx
 #: src/renderer/views/PullRequestsOverlay/parts/SubmitReviewPopover.tsx
@@ -18880,6 +19556,14 @@ msgstr "Отображение ревью"
 #: src/renderer/components/thread/ThreadHistoryNoticeDock.tsx
 msgid "Review recovery"
 msgstr "Просмотреть восстановление"
+
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Review request"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
+msgid "Review request: {title}"
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/list/PrListMenuSections.tsx
 msgid "Review required"
@@ -19023,9 +19707,11 @@ msgstr "Число раундов должно быть от 1 до {MAX_ROUNDS_
 
 #: src/renderer/components/composer/ComposerAddMenu.tsx
 #: src/renderer/viscosity/layout/tabs/RoundtableTab.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/chat/paletteCommands.ts
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 #: src/renderer/viscosity/roundtable/engine/session.ts
+#: src/renderer/viscosity/roundtable/ui/compareCommands.ts
 #: src/renderer/viscosity/roundtable/ui/registerRoundtableChrome.ts
 #: src/renderer/viscosity/roundtable/ui/RoundtableStatusItem.tsx
 msgid "Roundtable"
@@ -19248,15 +19934,25 @@ msgstr "выполняется"
 msgid "Running"
 msgstr "Выполняется"
 
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Running {age}"
+msgstr ""
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Running a tool"
+msgstr ""
+
 #: src/renderer/views/MainView/parts/Sidebar/parts/SortableThreadItem/parts/ThreadBackgroundTaskIndicator.tsx
 msgid "Running background tasks: {count}"
 msgstr "Выполняется фоновых задач: {count}"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
 msgid "Running for {elapsed}"
 msgstr "Выполняется {elapsed}"
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Running low"
 msgstr "Почти исчерпан"
 
@@ -19312,6 +20008,10 @@ msgstr "Параметры среды выполнения"
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Runtime target"
 msgstr "Среда выполнения"
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Same as {driver}"
+msgstr ""
 
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Same login as Devin"
@@ -19381,6 +20081,10 @@ msgstr "Сохранить как Crew:"
 #: src/renderer/views/ExperimentView/parts/ExperimentWinnerCrewActions.tsx
 msgid "Save as crew…"
 msgstr "Сохранить как команду…"
+
+#: src/renderer/theme/viscosity/ThemeShareMenu.tsx
+msgid "Save as file"
+msgstr ""
 
 #: src/renderer/components/crew/CrewRosterPanel.tsx
 msgid "Save as new crew:"
@@ -20330,6 +21034,10 @@ msgstr "Поделиться"
 #~ msgid "Share another profile's isolated login"
 #~ msgstr "Использовать изолированный вход другого профиля"
 
+#: src/renderer/theme/viscosity/ThemeShareMenu.tsx
+msgid "Share theme"
+msgstr ""
+
 #: src/renderer/views/ProfileOverlay/parts/ShareDialog.tsx
 msgid "Share your activity"
 msgstr "Поделитесь своей активностью"
@@ -20369,6 +21077,10 @@ msgstr "Использует отсутствующего владельца {0}
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "Ship crew"
 msgstr "Команда доставки"
+
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Short synthesized sounds for agent events. Off by default."
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/settingsNavigation.tsx
 #: src/renderer/views/SettingsOverlay/parts/ShortcutsSettings.tsx
@@ -20415,6 +21127,14 @@ msgstr "Показывать домашнюю область без проект
 msgid "Show agent discovery"
 msgstr "Показать поиск агентов"
 
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Show agents"
+msgstr ""
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Show Agents"
+msgstr ""
+
 #: src/renderer/components/thread/ChatPane/parts/items/ToolCallGroup.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelVisibilityPopover.tsx
 #: src/renderer/views/SettingsOverlay/parts/ProviderModelVisibilityPopover.tsx
@@ -20435,6 +21155,10 @@ msgstr "Показать панель закладок"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Show Bookmark Bar"
 msgstr "Показать панель закладок"
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Show Browser"
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/timeline/TimelineEntryRow.tsx
 msgid "Show changes of commit {sha}"
@@ -20492,6 +21216,10 @@ msgstr "Показать редактор"
 #: src/renderer/views/SettingsOverlay/parts/UsageDisplaySettings.tsx
 msgid "Show estimated cost"
 msgstr "Показывать оценочную стоимость"
+
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Show Explorer"
+msgstr ""
 
 #: src/renderer/components/thread/ThreadArtifactsDock.tsx
 #: src/renderer/views/PullRequestsOverlay/summary/RailChecks.tsx
@@ -20628,6 +21356,10 @@ msgstr "Показать навыки из {0}"
 msgid "Show source"
 msgstr "Показать источник"
 
+#: src/renderer/viscosity/commands/layoutCommands.ts
+msgid "Show Source Control"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Show the microphone button in the composer."
@@ -20731,6 +21463,7 @@ msgstr "Вспомогательная модель"
 #: src/renderer/components/providers/devin/profileSettings.tsx
 #: src/renderer/components/providers/settings/UsageProviderRow.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/parts/UsageProviderCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Sign in"
 msgstr "Войти"
 
@@ -20753,10 +21486,12 @@ msgstr "Войдите на сопряжённом рабочем столе, з
 msgid "Sign in required"
 msgstr "Требуется вход"
 
+#. placeholder {0}: account.label
 #. placeholder {0}: signIn.name
 #. placeholder {0}: status.label
 #: src/renderer/components/composer/ComposerMcpServersMenu.tsx
 #: src/renderer/components/providers/devin/profileSettings.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Sign in to {0}"
 msgstr "Войти в {0}"
 
@@ -20806,7 +21541,12 @@ msgstr "Способы входа"
 #~ msgid "sign-in required"
 #~ msgstr "требуется вход"
 
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "Sign-in settings"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/authHelpers.ts
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Signed in"
 msgstr "Вход выполнен"
 
@@ -20966,6 +21706,15 @@ msgstr "Маленький"
 msgid "Smallest"
 msgstr "Наименьшие"
 
+#: src/renderer/viscosity/settings/SmartStartSettings.tsx
+msgid "Smart start"
+msgstr ""
+
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Smart start preferences"
+msgstr ""
+
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Snapshots"
 msgstr "Снимки"
@@ -21075,6 +21824,20 @@ msgstr "Сортировка pull request"
 #: src/renderer/views/MainView/parts/SidebarHeaderControls.tsx
 #~ msgid "Sort threads"
 #~ msgstr "Сортировать треды"
+
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Sound cue volume"
+msgstr ""
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Sound cues"
+msgstr ""
+
+#. Settings → Effects group heading
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Sounds"
+msgstr ""
 
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 #: src/renderer/components/thread/ChatPane/parts/items/NativeVisual.tsx
@@ -21245,6 +22008,10 @@ msgstr "Начать"
 msgid "Start {appName} to see usage"
 msgstr "Запустите {appName}, чтобы увидеть статистику использования"
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Start a debate from here"
+msgstr ""
+
 #: src/renderer/views/MainView/parts/RightPanel/parts/PortsPanel/PortsPanel.tsx
 msgid "Start a dev server on your desktop, then tap refresh."
 msgstr "Запустите сервер разработки на десктопе, затем нажмите «Обновить»."
@@ -21319,6 +22086,10 @@ msgstr "Начать голосовой чат"
 msgid "Start minimized"
 msgstr "Запускать свёрнутым"
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Start on another account"
+msgstr ""
+
 #: src/renderer/sidebar/ChatSidebarView.tsx
 msgid "Start Poracode to chat in your browser."
 msgstr "Запустите Poracode, чтобы общаться в браузере."
@@ -21364,6 +22135,10 @@ msgstr "Запустить без контекста"
 #: src/renderer/views/GitHubActionsView/GitHubActionsView.tsx
 #~ msgid "Start workflows and monitor their runs."
 #~ msgstr "Запускайте рабочие процессы и отслеживайте их выполнение."
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Started {age} ago"
+msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Started {targetLabel} thread"
@@ -21486,14 +22261,17 @@ msgstr "Ещё обрабатывается. Отправьте снова, чт
 
 #. Button: stop the microphone level test
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Stop"
 msgstr "Остановить"
 
 #. placeholder {0}: action.name
+#. placeholder {0}: props.title
 #: src/renderer/views/MainView/parts/Sidebar/parts/SidebarWorktreeGroup.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/MainView/parts/Sidebar/parts/useProjectMenu.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Stop {0}"
 msgstr "Остановить {0}"
 
@@ -21695,6 +22473,11 @@ msgstr "Отправить проверку"
 msgid "Subscription bill"
 msgstr "Счёт за подписку"
 
+#: src/renderer/viscosity/subscriptions/registerSubscriptions.ts
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
+msgid "Subscriptions"
+msgstr ""
+
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 msgid "Succeeded"
@@ -21797,6 +22580,10 @@ msgstr "Переключить проект"
 msgid "Switch the active Markdown file between source and preview"
 msgstr "Переключает активный Markdown-файл между исходным кодом и предпросмотром"
 
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Switch the color theme"
+msgstr ""
+
 #: src/renderer/components/providers/standardGuiSlashCommands.ts
 msgid "Switch this chat to agent mode"
 msgstr "Переключить этот чат в режим агента"
@@ -21805,9 +22592,25 @@ msgstr "Переключить этот чат в режим агента"
 msgid "Switch this chat to plan mode"
 msgstr "Переключить этот чат в режим плана"
 
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Switch this project to {nextStyle}"
+msgstr ""
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Switch to {nextStyle}"
+msgstr ""
+
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Switch to dark mode"
+msgstr ""
+
 #: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
 msgid "Switch to dark theme"
 msgstr "Переключить на тёмную тему"
+
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Switch to light mode"
+msgstr ""
 
 #: src/renderer/viscosity/layout/statusBar/builtinStatusBarItems.tsx
 msgid "Switch to light theme"
@@ -21983,6 +22786,7 @@ msgstr "Целевая ветка"
 
 #: src/renderer/components/providers/qwen/index.tsx
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Task"
@@ -22026,6 +22830,7 @@ msgid "Teach your agents reusable procedures with skills"
 msgstr "Научите агентов повторяемым процедурам с помощью навыков"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Teal"
 msgstr "Бирюзовый"
@@ -22383,6 +23188,15 @@ msgstr "Не удалось восстановить контрольную то
 msgid "the chosen folder"
 msgstr "выбранная папка"
 
+#: src/renderer/viscosity/roundtable/ui/patterns.ts
+msgid "The comparison is complete."
+msgstr ""
+
+#: src/renderer/viscosity/roundtable/api.ts
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "The comparison to start from is no longer available."
+msgstr ""
+
 #: src/renderer/views/SchedulesView/parts/ScheduleRunDetails.tsx
 msgid "The completion check failed; the schedule was paused."
 msgstr "Проверка завершения не удалась; расписание приостановлено."
@@ -22499,6 +23313,10 @@ msgstr "Не удалось проверить состояние экспери
 #: src/renderer/state/managedRootCatalog/rootExperimentAuthority.ts
 msgid "The experiment state is too large to load or change safely."
 msgstr "Состояние эксперимента слишком велико для безопасной загрузки или изменения."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The file is larger than 32 KB."
+msgstr ""
 
 #: src/renderer/components/media/fileMediaSource.ts
 msgid "The file path is outside the project."
@@ -22634,6 +23452,14 @@ msgstr "Основная модель планирует и проверяет �
 #: src/renderer/components/crew/crewTemplates.ts
 msgid "The lead splits the work; up to three builders implement and verify independent tasks at once."
 msgstr "Основная модель делит работу; до трёх разработчиков одновременно реализуют и проверяют независимые задачи."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The link does not point to a version 1 theme JSON file with a name and valid light and dark palettes."
+msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The link redirects too many times or to an address that is not https."
+msgstr ""
 
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "the Linux user"
@@ -22901,6 +23727,14 @@ msgstr "Выбранный аккаунт источника не соответ
 msgid "The selected turn still contains active work."
 msgstr "Выбранный ход ещё содержит активные задачи."
 
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The server answered with an error (HTTP {status})."
+msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The server answered with an error."
+msgstr ""
+
 #: src/renderer/components/mcp/McpServersManager.tsx
 msgid "The server configuration is invalid."
 msgstr "Конфигурация сервера некорректна."
@@ -22908,6 +23742,10 @@ msgstr "Конфигурация сервера некорректна."
 #: src/renderer/components/thread/ThreadHistoryNoticeDock.tsx
 msgid "The server could not confirm the acknowledgement. Retry to continue."
 msgstr "Сервер не подтвердил подтверждение. Повторите попытку, чтобы продолжить."
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "The server did not respond within 10 seconds."
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/detail/header/PrCheckoutMenu.tsx
 msgid "The server hosting this project is unreachable"
@@ -23124,6 +23962,7 @@ msgstr "Ответ xAI неожиданно оборвался."
 msgid "Theme"
 msgstr "Тема"
 
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Theme accent"
 msgstr "Акцент темы"
@@ -23131,6 +23970,10 @@ msgstr "Акцент темы"
 #: src/renderer/views/SettingsOverlay/parts/MobileSettingsIndex.tsx
 msgid "Theme and chat font size"
 msgstr "Тема и размер шрифта чата"
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Theme link"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/CustomThemeEditor.tsx
 msgid "Theme name"
@@ -23172,6 +24015,7 @@ msgstr "Эти серверы поступают из плагинов. Вклю
 #: src/renderer/components/thread/ChatPane/parts/items/Reasoning.tsx
 #: src/renderer/components/thread/ChatPane/parts/items/ReasoningInline.tsx
 #: src/renderer/components/thread/ThreadComposer.tsx
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 msgid "Thinking"
 msgstr "Размышление"
 
@@ -23179,6 +24023,10 @@ msgstr "Размышление"
 #: src/renderer/fx/settings/effectsSettingsSearch.ts
 msgid "Thinking glow"
 msgstr "Свечение при размышлении"
+
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
+msgid "This account doesn't report usage."
+msgstr ""
 
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
 msgid "This agent cannot run completion checks. Choose another agent or remove the stop condition."
@@ -23398,6 +24246,10 @@ msgstr "Этот блок HTML слишком велик для предпрос
 msgid "This is a large diff, so it has not been loaded."
 msgstr "Это большой diff, поэтому он не загружен."
 
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "This is not a valid link. Paste a full address such as https://example.com/theme.json."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CursorProviderSettings.tsx
 #~ msgid "This key is used by Cursor CLI, ACP, and SDK for this profile."
 #~ msgstr "Этот ключ используется Cursor CLI, ACP и SDK для данного профиля."
@@ -23538,6 +24390,10 @@ msgstr "Настройки этого профиля записаны более
 #: src/renderer/components/skills/SkillsManager.tsx
 msgid "this project"
 msgstr "этот проект"
+
+#: src/renderer/fx/settings/ProjectBackgroundSettings.tsx
+msgid "This project has its own background."
+msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "This project has no supported source-host remote."
@@ -23722,6 +24578,10 @@ msgstr "Это общесистемное сочетание клавиш нед
 #: src/renderer/viscosity/xai/xaiErrorText.ts
 msgid "This system's secure credential storage isn't available, so the key can't be saved. Set the XAI_API_KEY environment variable instead."
 msgstr "Защищённое хранилище учётных данных этой системы недоступно, поэтому ключ нельзя сохранить. Вместо этого задайте переменную окружения XAI_API_KEY."
+
+#: src/renderer/views/SettingsOverlay/parts/CustomThemes.tsx
+msgid "This theme is already installed as “{installedNotice}”, so that theme was applied instead of adding a copy."
+msgstr ""
 
 #: src/renderer/components/thread/ThreadComposerSection.tsx
 msgid "This thread cannot be resumed. Start a new thread to continue."
@@ -23975,6 +24835,10 @@ msgstr "Треды из WSL-проектов пока нельзя перено�
 msgid "Threads marked done that have not been touched for this many days are archived automatically on app launch. Set to 0 to disable."
 msgstr "Треды, помеченные как завершённые и не затронутые указанное число дней, автоматически архивируются при запуске приложения. Установите 0, чтобы отключить."
 
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Threads, Roundtables and bots show here while they work, wait for you or just finished."
+msgstr ""
+
 #: src/renderer/views/PullRequestsOverlay/parts/PrReactions.tsx
 msgid "Thumbs down"
 msgstr "Палец вниз"
@@ -24048,6 +24912,14 @@ msgstr "для {to}"
 msgid "To-dos"
 msgstr "Задачи"
 
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Toggle agent effects"
+msgstr ""
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Toggle animated background"
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 msgid "Toggle browser panel"
 msgstr "Переключить панель браузера"
@@ -24060,6 +24932,10 @@ msgstr "Переключить быстрый режим"
 #: src/renderer/commands/registry.ts
 msgid "Toggle File Tree"
 msgstr "Переключить дерево файлов"
+
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Toggle light/dark mode"
+msgstr ""
 
 #: src/renderer/commands/registry.ts
 msgid "Toggle Markdown Preview"
@@ -24096,6 +24972,10 @@ msgstr "Переключить панель дерева файлов"
 #: src/renderer/commands/composerCommands.ts
 msgid "Toggle Work or Plan"
 msgstr "Переключить Работа или План"
+
+#: src/renderer/viscosity/zen/zenCommands.ts
+msgid "Toggle Zen mode"
+msgstr ""
 
 #: src/renderer/components/newsLine/insightContent.tsx
 msgid "Token usage is down {percent}% this week ({compact})"
@@ -24152,6 +25032,10 @@ msgstr "В этом сообщении слишком много визуали�
 msgid "Too many xAI requests are running at once. Wait for one to finish."
 msgstr "Одновременно выполняется слишком много запросов к xAI. Дождитесь завершения одного из них."
 
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Took {elapsed}"
+msgstr ""
+
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Tool"
 msgstr "Инструмент"
@@ -24201,6 +25085,10 @@ msgstr "Токенов всего"
 #: src/renderer/views/SettingsOverlay/parts/UsageSettings.tsx
 msgid "Track {label} usage"
 msgstr "Отслеживать использование {label}"
+
+#: src/renderer/components/providers/settings/UsageProviderRow.tsx
+msgid "Track {label} usage (needed by an account pool)"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/UsageSettings.tsx
 msgid "Track per-provider session, weekly, and monthly usage. Windows are reported by each provider; estimated cost is reconstructed from local logs."
@@ -24285,9 +25173,21 @@ msgstr "Попробовать"
 msgid "Try now"
 msgstr "Попробовать"
 
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Turn agent effects off"
+msgstr ""
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Turn agent effects on"
+msgstr ""
+
 #: src/renderer/views/ProjectSettingsOverlay/parts/PluginsSection.tsx
 msgid "Turn installed plugins on or off for threads in this project. A thread's own plugin choices still win; running threads apply changes on their next launch."
 msgstr "Включайте или отключайте установленные плагины для потоков этого проекта. Собственный выбор плагинов в потоке по-прежнему имеет приоритет; запущенные потоки применят изменения при следующем запуске."
+
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Turn off Auto"
+msgstr ""
 
 #: src/renderer/views/SettingsOverlay/parts/GitSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
@@ -24311,6 +25211,14 @@ msgstr "Включите параметр «Полупрозрачная бок�
 #~ msgid "Turn on Watch PR automatically for pull requests you create in Poracode."
 #~ msgstr "Автоматически включать наблюдение за PR для pull request, созданных в Poracode."
 
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Turn the animated background off"
+msgstr ""
+
+#: src/renderer/viscosity/commands/effectsCommands.ts
+msgid "Turn the animated background on"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/UsageSettings.tsx
 msgid "Turn tracking on or off per provider. Disabled providers are skipped by the auto-refresh."
 msgstr "Включайте или выключайте отслеживание для каждого провайдера. Отключённые провайдеры пропускаются при автообновлении."
@@ -24322,6 +25230,11 @@ msgstr "Две независимые проверки изменения тол
 #: src/renderer/components/crew/crewTemplates.ts
 #~ msgid "Two independent read-only reviews of a change."
 #~ msgstr "Две независимые проверки изменения только для чтения."
+
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Two low, falling notes when an agent hits an error."
+msgstr ""
 
 #: src/renderer/components/common/FeedbackDialog.tsx
 #: src/renderer/components/mcp/McpServerEditor.tsx
@@ -25034,6 +25947,7 @@ msgid "Unsupported visual format. Showing source only."
 msgstr "Неподдерживаемый формат визуализации. Показан только исходный код."
 
 #: src/renderer/sidebar/ChatSidebarHeader.tsx
+#: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Untitled"
 msgstr "Без названия"
 
@@ -25236,8 +26150,10 @@ msgstr "Обновить через rebase"
 msgid "Updated"
 msgstr "Обновлено"
 
+#. placeholder {0}: formatUpdatedAgo(lastUpdated, now, t)
 #. placeholder {0}: formatUpdatedAgo(lastUpdated, nowTick, t)
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/UsagePanel.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionsDashboard.tsx
 msgid "Updated {0}"
 msgstr "Обновлено {0}"
 
@@ -25373,6 +26289,10 @@ msgstr "Данные использования собираются на выб
 #~ msgid "Usage is stale. Refresh to update."
 #~ msgstr "Данные использования устарели. Обновите их."
 
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "usage not reported"
+msgstr ""
+
 #: src/renderer/components/providers/usageFormat.ts
 msgid "Usage not supported"
 msgstr "Использование не поддерживается"
@@ -25387,6 +26307,7 @@ msgid "Usage settings"
 msgstr "Настройки использования"
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
+#: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Usage tracking is off for this account."
 msgstr "Отслеживание использования для этого аккаунта отключено."
 
@@ -25496,6 +26417,10 @@ msgstr "Использовать файлы ignore"
 msgid "Use in this browser"
 msgstr "Использовать в этом браузере"
 
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "Use last-used order"
+msgstr ""
+
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "Use letters, numbers, dots, dashes, or underscores without spaces."
 msgstr "Используйте буквы, цифры, точки, дефисы и подчёркивания без пробелов."
@@ -25549,6 +26474,14 @@ msgstr "Используйте ID персоны, доступной в ваше
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Use the microphone to try your selected engine and model."
 msgstr "Используйте микрофон, чтобы проверить выбранный движок и модель."
+
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Use the Viscosity Showcase theme"
+msgstr ""
+
+#: src/renderer/viscosity/commands/themeCommands.ts
+msgid "Use the Viscosity theme"
+msgstr ""
 
 #: src/renderer/viscosity/accountPools/AccountPoolCard.tsx
 msgid "Use these accounts as a pool (switch automatically when one runs out)"
@@ -25737,6 +26670,7 @@ msgstr "Предпросмотр видео"
 
 #: src/renderer/components/thread/ChatPane/parts/items/commandSummary.ts
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
+#: src/renderer/viscosity/zen/zenCommands.ts
 msgid "View"
 msgstr "Просмотр"
 
@@ -25839,9 +26773,14 @@ msgid "Viewport width"
 msgstr "Ширина области просмотра"
 
 #: src/renderer/utils/projectIconColors.ts
+#: src/renderer/viscosity/agentColors/palette.ts
 #: src/renderer/viscosity/bots/ui/BotEditorDialog.tsx
 msgid "Violet"
 msgstr "Фиолетовый"
+
+#: src/renderer/viscosity/commands/commandSupport.ts
+msgid "ViscosityCode"
+msgstr ""
 
 #. placeholder {0}: props.surfaceLabel
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/ModelVisibilityDropdown.tsx
@@ -25903,6 +26842,11 @@ msgstr "Голосовая модель"
 msgid "Voice transcription cancelled."
 msgstr "Распознавание речи отменено."
 
+#: src/renderer/fx/settings/effectsSettingsSearch.ts
+#: src/renderer/fx/settings/SoundEffectsSettings.tsx
+msgid "Volume"
+msgstr ""
+
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrWatchControls.tsx
 #~ msgid "Wait for checks, then fix failures, unresolved conversations, and branch blockers."
 #~ msgstr "Дождаться завершения проверок, затем исправить ошибки, нерешённые обсуждения и блокировки ветки."
@@ -25938,6 +26882,10 @@ msgstr "Дождитесь, пока агент закончит, прежде �
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #~ msgid "Wait for the agent to finish."
 #~ msgstr "Дождитесь, пока агент закончит."
+
+#: src/renderer/viscosity/roundtable/engine/session.ts
+msgid "Wait for the comparison to finish before starting a debate from it."
+msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Wait for the source conversation to finish before forking."
@@ -26007,9 +26955,17 @@ msgstr "Ожидание устройства…"
 msgid "Waiting for workflow to spawn agents…"
 msgstr "Ожидание создания агентов рабочим процессом…"
 
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Waiting for you"
+msgstr ""
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Waiting for your approval"
 msgstr "Ожидает вашего подтверждения"
+
+#: src/renderer/viscosity/roundtable/ui/RoundtableCompareView.tsx
+msgid "Waiting to start…"
+msgstr ""
 
 #: src/renderer/components/thread/ChatPane/parts/items/toolDisplay.ts
 msgid "Wake up"
@@ -26174,6 +27130,14 @@ msgstr "Что нового"
 msgid "What's new in Poracode, newest first."
 msgstr "Что нового в Poracode, сначала новые."
 
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "When a prompt looks like a quick question, Auto gives the first providers here a small head start. Usage left still matters most."
+msgstr ""
+
+#: src/renderer/viscosity/smartStart/SmartStartPreferences.tsx
+msgid "When a prompt looks like coding work, Auto gives the first providers here a small head start. Usage left still matters most."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/SearchSettings.tsx
 msgid "When enabled, search respects <0>.gitignore</0> entries."
 msgstr "Если включено, поиск учитывает записи <0>.gitignore</0>."
@@ -26245,9 +27209,18 @@ msgstr "Где появляется панель терминала."
 msgid "Whisper with broad multilingual support."
 msgstr "Whisper с широкой многоязычной поддержкой."
 
+#: src/renderer/viscosity/subscriptions/ui/RoomStrip.tsx
+msgid "Who has room right now"
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/parts/AgentEnvironmentRow.tsx
 msgid "Will run in this environment:"
 msgstr "Будет выполнено в этом окружении:"
+
+#. placeholder {0}: nameOf(shown)
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Will use: {0}"
+msgstr ""
 
 #: src/renderer/viscosity/windowMaterial/WindowMaterialSetting.tsx
 msgid "Window material"
@@ -26297,6 +27270,10 @@ msgstr "Работать в текущем checkout"
 #: src/renderer/views/ProfileOverlay/parts/ActivityInsights.tsx
 msgid "Work rhythm"
 msgstr "Ритм работы"
+
+#: src/renderer/viscosity/missionControl/ui/AgentsTab.tsx
+msgid "Work that finished in the last two hours shows here."
+msgstr ""
 
 #: src/renderer/components/plugins/pluginCopy.ts
 msgid "Work with the pages and signed-in sessions already open in Chrome."
@@ -26374,6 +27351,7 @@ msgstr "Workflow, добавленные в .github/workflows, появятся 
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsOptions.ts
+#: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Working"
 msgstr "Работает"
@@ -26530,6 +27508,10 @@ msgstr "Напишите заметки для этого проекта…"
 #: src/renderer/components/crew/crewRoleTemplates.ts
 msgid "Writes and runs the tests for the change, reproduces reported bugs, and reports each failure with the exact command and failing assertion."
 msgstr "Пишет и запускает тесты для изменения, воспроизводит ошибки из отчётов и сообщает о каждом сбое с точной командой и упавшей проверкой."
+
+#: src/renderer/viscosity/missionControl/missionLabels.ts
+msgid "Writing"
+msgstr ""
 
 #: src/renderer/views/PullRequestsOverlay/guide/PrReviewGuideTab.tsx
 msgid "Writing guide. You can leave this review and return when it is ready."
@@ -26706,6 +27688,14 @@ msgstr "У вас установлена последняя версия"
 msgid "your bots"
 msgstr "ваши боты"
 
+#: src/renderer/viscosity/commands/botsCommands.ts
+msgid "Your bots and group chats in the sidebar"
+msgstr ""
+
+#: src/renderer/viscosity/agentColors/AgentColorsSettings.tsx
+msgid "Your colour"
+msgstr ""
+
 #: src/renderer/views/PullRequestsOverlay/detail/header/usePrCheckout.ts
 #~ msgid "Your local branch {branch} cannot be fast-forwarded to this pull request's head, so no worktree was created and nothing was changed. To keep its commits and start over, run \"git branch -m {branch} {branch}-old\", then try again."
 #~ msgstr "Вашу локальную ветку {branch} нельзя перемотать (fast-forward) до head этого pull request, поэтому worktree не был создан и ничего не изменено. Чтобы сохранить её коммиты и начать заново, выполните \"git branch -m {branch} {branch}-old\" и повторите попытку."
@@ -26761,6 +27751,11 @@ msgstr "Ваш пиковый час сместился с {fromLabel} на {toL
 #: src/renderer/views/ExperimentView/parts/ExperimentCandidateCard.tsx
 #~ msgid "Your pick"
 #~ msgstr "Ваш выбор"
+
+#. placeholder {0}: nameOf(shown)
+#: src/renderer/viscosity/smartStart/SmartStartPanel.tsx
+msgid "Your pick: {0}"
+msgstr ""
 
 #: src/renderer/components/plugins/PluginMarketplace.tsx
 msgid "Your plugins"
