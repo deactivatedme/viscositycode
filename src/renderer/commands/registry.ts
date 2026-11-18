@@ -57,6 +57,7 @@ import { BRAND_NAME } from "@/shared/brand";
 import { hasChangelogSource } from "@/shared/changelog";
 // ViscosityCode: "New Roundtable…" / "Invite another model into this chat…".
 import { roundtableChatCommands } from "@/renderer/viscosity/roundtable/chat/paletteCommands";
+import { viscosityCommands } from "@/renderer/viscosity/commands"; // ViscosityCode: fork commands (registers built-ins)
 import {
   isEditorFocusElement,
   isTerminalFocusElement,
@@ -158,6 +159,7 @@ export function buildCommandRegistry(): AppCommand[] {
     ...projectScriptCommands(),
     ...activeChatCommands(),
     ...roundtableChatCommands(), // ViscosityCode:
+    ...viscosityCommands(), // ViscosityCode: effects, themes, Bots, layout + feature commands
   ];
 }
 

@@ -8,8 +8,10 @@
  * Other features import ONLY from this module. Signatures are the contract.
  */
 import type { ParticipantProfile } from "../roundtable/types";
+import { isViscosityShellActive } from "../shellFlag";
 import { openBotChat, startGroupChat } from "./botActions";
 import { selectBotList, useBotsStore } from "./botStore";
+import { openBotEditor } from "./ui/botsDialogStore";
 
 export interface BotProfile extends ParticipantProfile {
   projectId: string;
@@ -41,4 +43,13 @@ export function startBotGroupChat(
   title?: string,
 ): Promise<string> {
   return startGroupChat(botIds, projectId, title);
+}
+
+/**
+ * Open the "New bot" editor in place (no view switch). Bot dialogs render only
+ * in the desktop shell, so this does nothing anywhere else.
+ */
+export function openNewBotEditor(): void {
+  if (!isViscosityShellActive()) return;
+  openBotEditor();
 }
