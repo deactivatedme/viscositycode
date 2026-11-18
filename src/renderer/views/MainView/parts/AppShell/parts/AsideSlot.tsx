@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   useEffect,
   useState,
@@ -28,6 +29,12 @@ export function AsideSlot(props: {
   /** Overlay slide-in state: false = off-screen right, true = on-screen. */
   overlayReady?: boolean;
   overlayTop?: string;
+  /**
+   * ViscosityCode: stable hook for fork styles (zen mode). Sets
+   * `data-vc-panel-slot` on the <aside> and `data-vc-panel-handle` on its
+   * resize handle; no effect on behaviour.
+   */
+  vcSlot?: "right" | "git";
 }) {
   const {
     children,
@@ -43,6 +50,7 @@ export function AsideSlot(props: {
     overlay = false,
     overlayReady = false,
     overlayTop = "0px",
+    vcSlot, // ViscosityCode: stable style hook (see the prop).
   } = props;
 
   const isHorizontal = orientation === "horizontal";
@@ -164,6 +172,8 @@ export function AsideSlot(props: {
         <div
           key="handle"
           className={isHorizontal ? "poracode-resize-handle-horizontal" : "poracode-resize-handle"}
+          // ViscosityCode: stable style hook (zen mode).
+          data-vc-panel-handle={vcSlot}
           onMouseDown={onResizeStart}
           onKeyDown={onResizeKeyDown}
           role="separator"
@@ -176,6 +186,8 @@ export function AsideSlot(props: {
         key="aside"
         ref={panelRef}
         className={asideClassName}
+        // ViscosityCode: stable style hook (zen mode).
+        data-vc-panel-slot={vcSlot}
         style={asideStyle}
         onTransitionEnd={onSizeTransitionEnd}
         inert={!isOpen}

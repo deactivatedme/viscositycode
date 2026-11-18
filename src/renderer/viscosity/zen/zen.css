@@ -1,0 +1,242 @@
+/* ViscosityCode: Zen mode (fork of Poracode). See FORK_CHANGES.md.
+ *
+ * Active while <html> carries data-vc-zen (zenModeStore.ts); every rule also
+ * requires data-vc-shell, so the phone/PWA compact layout, the extension side
+ * panel and secondary windows never change. Zen hides the activity bar,
+ * sidebar, tab strip, status bar and right/git panels, centres the focused
+ * pane at a comfortable width and dims the animated background. The tab strip
+ * fades back in while the pointer is in the band at the top of the window
+ * (data-vc-zen-reveal, zenReveal.ts).
+ *
+ * The shell's chrome is found through stable hooks only: fork classes and the
+ * marked data attributes AppShell / AsideSlot render (data-vc-sidebar-handle,
+ * data-vc-sidebar-backdrop, data-vc-content-header, data-vc-panel-slot,
+ * data-vc-panel-handle, data-vc-panel-backdrop), never DOM position or
+ * Tailwind classes.
+ */
+
+html[data-vc-shell][data-vc-zen] {
+  /* Width of the centred pane. */
+  --vc-zen-content-width: 1120px;
+  /* Band kept free at the top of the window: the reveal zone for the tab
+     strip, and room for the macOS traffic lights / Windows caption buttons. */
+  --vc-zen-top-band: max(var(--vc-tabstrip-height), env(titlebar-area-height, 0px));
+  --vc-zen-pill-height: 24px;
+  /* The pill's distance from the right edge, clear of the Windows caption
+     buttons (titleBarOverlay), if any. */
+  --vc-zen-pill-right: max(
+    var(--vc-space-4),
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + var(--vc-space-3))
+  );
+  /* Room the revealed tab strip leaves free at its right end for the pill.
+     ZenModeHost measures the pill into --vc-zen-pill-width (the label is
+     localized); the fallback fits the English label. */
+  --vc-zen-pill-reserve: calc(
+    var(--vc-zen-pill-right) + var(--vc-zen-pill-width, 7.5rem) + var(--vc-space-2)
+  );
+  /* Strength of the animated background while zen is on (1 = unchanged). */
+  --vc-zen-background-opacity: 0.4;
+  /* Content fill floor over the background while zen is on. */
+  --vc-zen-panel-fill-floor: 0.86;
+  /* Stacking (root context): above the shell's own layers (activity bar z-40,
+     right-panel overlays z-45), below full-window overlays (z-50). */
+  --vc-zen-hotzone-z: 44;
+  --vc-zen-pill-z: 46;
+}
+
+/* === Hidden chrome ======================================================= */
+
+/* Gone from the layout. AppShell measures none of these. */
+html[data-vc-shell][data-vc-zen] .vc-statusbar,
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] .poracode-sidebar-spacer,
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-sidebar-handle],
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-sidebar-backdrop],
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-content-header],
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-panel-slot],
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-panel-handle],
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-panel-backdrop] {
+  display: none;
+}
+
+/* The activity bar and the sidebar leave the row and disappear, but their
+   boxes keep their size. AppShell measures both (useActivityBarWidth and the
+   sidebar's ResizeObserver) to decide when the sidebar and the right/git
+   panels must float over the content; display: none would measure 0 px, so a
+   floating panel would count as docked during zen and be auto-dismissed on
+   the way out, and the sidebar's auto-collapse would flip back and forth.
+   content-visibility: hidden also skips their contents' layout and paint
+   while zen is on, and keeps them out of focus and the accessibility tree. */
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] .vc-activitybar,
+html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] .poracode-sidebar-aside {
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  visibility: hidden;
+  content-visibility: hidden;
+  pointer-events: none;
+}
+
+/* === Center column ======================================================= */
+
+html[data-vc-shell][data-vc-zen] [data-vc-center] {
+  position: relative;
+  padding-top: var(--vc-zen-top-band);
+}
+
+html[data-vc-shell][data-vc-zen] [data-vc-center] > [data-vc-center-body] {
+  width: min(100%, var(--vc-zen-content-width));
+  margin-inline: auto;
+  box-shadow:
+    -1px 0 0 var(--vc-border-subtle),
+    1px 0 0 var(--vc-border-subtle);
+}
+
+/* Split view: only the focused pane (zenFocusPane.ts), at full size. The other
+   panes keep their layout and scroll state but are neither drawn nor hit. */
+html[data-vc-shell][data-vc-zen] [data-vc-zen-split] > [data-vc-zen-pane] {
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+html[data-vc-shell][data-vc-zen] [data-vc-zen-split] > :not([data-vc-zen-pane]) {
+  visibility: hidden;
+  content-visibility: hidden;
+  pointer-events: none;
+}
+
+/* === Tab strip: hidden in the top band, fades in on hover ================= */
+
+html[data-vc-shell][data-vc-zen] [data-vc-center] > .vc-tabstrip {
+  position: absolute;
+  z-index: 30;
+  inset: 0 0 auto;
+  /* Keeps the strip's own controls (the trailing "+" once the tabs overflow)
+     out from under the Exit Zen pill. */
+  padding-right: var(--vc-zen-pill-reserve);
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--vc-motion-base) var(--vc-ease-standard),
+    visibility 0s linear var(--vc-motion-base);
+}
+
+html[data-vc-shell][data-vc-zen][data-vc-zen-reveal] [data-vc-center] > .vc-tabstrip {
+  visibility: visible;
+  opacity: 1;
+  box-shadow:
+    inset 0 -1px 0 var(--vc-border-subtle),
+    var(--vc-shadow-md);
+  transition:
+    opacity var(--vc-motion-base) var(--vc-ease-standard),
+    visibility 0s;
+}
+
+/* macOS: the strip now starts at the window's left edge, under the traffic
+   lights; clear them the way upstream's collapsed header does. */
+html[data-vc-shell][data-vc-zen][data-platform="darwin"][data-client-host="electron"]
+  [data-vc-center]
+  > .vc-tabstrip.poracode-mac-traffic-light-pad {
+  padding-left: calc(var(--vc-traffic-light-reach) + var(--vc-space-5));
+}
+
+/* === Dimmed background =================================================== */
+
+html[data-vc-shell][data-vc-zen] .vc-bg-layer > .vc-bg-canvas {
+  opacity: var(--vc-zen-background-opacity);
+  transition: opacity var(--vc-motion-slow) var(--vc-ease-standard);
+}
+
+/* Panels turn (nearly) opaque. Important: themes such as Viscosity Showcase
+   cap the fill with a more specific rule (fx/background/background.css). */
+html[data-vc-shell][data-vc-zen][data-vc-bg="on"] {
+  --vc-panel-fill-alpha: clamp(var(--vc-zen-panel-fill-floor), var(--vc-panel-alpha), 1) !important;
+}
+
+/* === Reveal band and "Exit Zen" pill (portalled into <body>) ============== */
+
+html[data-vc-shell][data-vc-zen] .vc-zen-hotzone {
+  position: fixed;
+  z-index: var(--vc-zen-hotzone-z);
+  inset: 0 0 auto;
+  height: var(--vc-zen-top-band);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* While the strip shows, the band steps aside entirely: the pointer must reach
+   the strip, and a merely click-through band (pointer-events: none) would still
+   punch its no-drag hole through the strip's macOS window-drag region.
+   zenReveal.ts does not need the band again until the strip hides. */
+html[data-vc-shell][data-vc-zen][data-vc-zen-reveal] .vc-zen-hotzone {
+  display: none;
+}
+
+html[data-vc-shell][data-vc-zen] .vc-zen-exit {
+  position: fixed;
+  z-index: var(--vc-zen-pill-z);
+  top: calc((var(--vc-zen-top-band) - var(--vc-zen-pill-height)) / 2);
+  right: var(--vc-zen-pill-right);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vc-space-2);
+  height: var(--vc-zen-pill-height);
+  min-height: 0;
+  min-width: 0;
+  padding: 0 var(--vc-space-2) 0 var(--vc-space-3);
+  border: 1px solid var(--vc-border-subtle);
+  border-radius: var(--vc-radius-pill);
+  background: color-mix(in oklab, var(--vc-surface) 88%, transparent);
+  box-shadow: var(--vc-shadow-md);
+  color: var(--vc-text-muted);
+  font-family: var(--vc-font-ui);
+  font-size: var(--vc-font-size-sm);
+  font-weight: 500;
+  opacity: 0.75;
+  animation: vc-zen-pill-in var(--vc-motion-slow) var(--vc-ease-out);
+  transition:
+    opacity var(--vc-motion-fast) var(--vc-ease-standard),
+    color var(--vc-motion-fast) var(--vc-ease-standard),
+    border-color var(--vc-motion-fast) var(--vc-ease-standard);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+html[data-vc-shell][data-vc-zen] .vc-zen-exit:hover,
+html[data-vc-shell][data-vc-zen] .vc-zen-exit[data-hovered],
+html[data-vc-shell][data-vc-zen] .vc-zen-exit:focus-visible,
+html[data-vc-shell][data-vc-zen] .vc-zen-exit[data-focus-visible] {
+  border-color: var(--vc-border);
+  color: var(--vc-text);
+  opacity: 1;
+}
+
+html[data-vc-shell][data-vc-zen] .vc-zen-exit:focus-visible,
+html[data-vc-shell][data-vc-zen] .vc-zen-exit[data-focus-visible] {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--vc-focus-ring),
+    var(--vc-shadow-md);
+}
+
+html[data-vc-shell][data-vc-zen] .vc-zen-exit__icon {
+  flex: none;
+  width: var(--vc-font-size-sm);
+  height: var(--vc-font-size-sm);
+}
+
+html[data-vc-shell][data-vc-zen] .vc-zen-exit__key {
+  padding: 0 var(--vc-space-1);
+  border: 1px solid var(--vc-border-subtle);
+  border-radius: var(--vc-radius-xs);
+  color: var(--vc-text-muted);
+  font-family: var(--vc-font-mono);
+  font-size: var(--vc-font-size-2xs);
+  line-height: calc(var(--vc-font-size-2xs) + var(--vc-space-1));
+}
+
+@keyframes vc-zen-pill-in {
+  from {
+    opacity: 0;
+  }
+}

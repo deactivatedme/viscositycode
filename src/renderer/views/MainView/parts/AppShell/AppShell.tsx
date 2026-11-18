@@ -216,6 +216,8 @@ function ShellSidebarBackdrop(props: { forceSidebarExpanded: boolean }) {
   if (!isOverlay) return null;
   return (
     <div
+      // ViscosityCode: stable style hook (zen mode).
+      data-vc-sidebar-backdrop=""
       className={`fixed inset-0 z-30 bg-black/50 transition-opacity duration-200 ${
         closingOverlay ? "opacity-0" : "opacity-100"
       }`}
@@ -362,6 +364,8 @@ function ShellSidebarResizeHandle(props: {
   if (props.compactLayout || effectiveIsCollapsed || effectiveIsOverlay) return null;
   return (
     <div
+      // ViscosityCode: stable style hook (zen mode).
+      data-vc-sidebar-handle=""
       className={`poracode-resize-handle ${!props.hasHeaders ? "-mt-5 h-[calc(100%+0.75rem)]" : ""}`}
       style={
         props.hasHeaders
@@ -714,6 +718,8 @@ export function AppShell(props: {
       >
         {contentHeader && (
           <div
+            // ViscosityCode: stable style hook (zen mode).
+            data-vc-content-header=""
             className={`poracode-overlay-header ${macosTrafficLightPadClass} flex shrink-0 items-center gap-3 bg-[var(--content-background)] px-2`}
             style={
               hasNativeWindowChrome()
@@ -739,6 +745,8 @@ export function AppShell(props: {
         >
           {rightOverlayDisplayed && onDismissRightOverlay && (
             <div
+              // ViscosityCode: stable style hook (zen mode).
+              data-vc-panel-backdrop=""
               className={`fixed inset-0 z-[45] bg-black/50 transition-opacity duration-200 ${
                 rightOverlayReadyForDisplay ? "opacity-100" : "opacity-0"
               }`}
@@ -773,6 +781,7 @@ export function AppShell(props: {
                 overlay={rightPanelAsOverlay}
                 overlayReady={rightOverlayReadyForDisplay}
                 overlayTop={rightOverlayTop}
+                vcSlot="right" // ViscosityCode: stable style hook (zen mode).
               >
                 {rightPanel}
               </AsideSlot>
@@ -792,6 +801,7 @@ export function AppShell(props: {
               overlay={gitPanelAsOverlay}
               overlayReady={rightOverlayReadyForDisplay}
               overlayTop={rightOverlayTop}
+              vcSlot="git" // ViscosityCode: stable style hook (zen mode).
             >
               {gitPanel}
             </AsideSlot>

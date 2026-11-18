@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { lazy, Suspense } from "react";
 import { X } from "lucide-react";
 import { toast } from "@heroui/react";
@@ -401,6 +402,8 @@ export function AppContent() {
         <div
           className="h-full outline-none"
           tabIndex={-1}
+          // ViscosityCode: stable pane id so Zen mode can find the focused pane (drafts included).
+          data-vc-pane-id={paneId}
           onFocusCapture={() => useAppStore.getState().setFocusedPane(paneId)}
         >
           {paneContent}
