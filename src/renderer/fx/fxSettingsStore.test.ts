@@ -20,6 +20,14 @@ describe("fx settings", () => {
     expect(DEFAULT_FX_SETTINGS.background.fpsCap).toBe(30);
   });
 
+  it("defaults show the background clearly through readable panels", () => {
+    expect(DEFAULT_FX_SETTINGS.background.intensity).toBe(0.7);
+    expect(DEFAULT_FX_SETTINGS.background.panelOpacity).toBe(0.78);
+    expect(DEFAULT_FX_SETTINGS.background.panelBlur).toBe(20);
+    // Never below the readability floor the settings clamp enforces.
+    expect(normalizeFxSettings(undefined).background.panelOpacity).toBeGreaterThanOrEqual(0.4);
+  });
+
   it("clamps and repairs malformed documents field by field", () => {
     const repaired = normalizeFxSettings({
       background: { intensity: 4, preset: "lava", fpsCap: 120, panelBlur: -3, enabled: "yes" },

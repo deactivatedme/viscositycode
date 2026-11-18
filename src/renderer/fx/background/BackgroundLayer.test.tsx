@@ -53,8 +53,8 @@ describe("BackgroundLayer", () => {
     expect(layer?.getAttribute("aria-hidden")).toBe("true");
     expect(layer?.querySelectorAll("canvas")).toHaveLength(1);
     expect(root.getAttribute(BACKGROUND_ATTRIBUTE)).toBe("on");
-    expect(root.style.getPropertyValue(PANEL_ALPHA_VAR)).toBe("0.86");
-    expect(root.style.getPropertyValue(PANEL_BLUR_VAR)).toBe("18px");
+    expect(root.style.getPropertyValue(PANEL_ALPHA_VAR)).toBe("0.78");
+    expect(root.style.getPropertyValue(PANEL_BLUR_VAR)).toBe("20px");
   });
 
   it("follows panel opacity and blur changes", () => {

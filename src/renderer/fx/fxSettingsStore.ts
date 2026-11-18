@@ -64,10 +64,10 @@ export const DEFAULT_FX_SETTINGS: FxSettings = {
   background: {
     enabled: true,
     preset: "mesh",
-    intensity: 0.55,
+    intensity: 0.7,
     fpsCap: 30,
-    panelOpacity: 0.86,
-    panelBlur: 18,
+    panelOpacity: 0.78,
+    panelBlur: 20,
     pauseWhenUnfocused: true,
     respectReducedMotion: false,
     batterySaver: true,

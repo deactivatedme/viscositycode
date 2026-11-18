@@ -65,7 +65,7 @@ describe("background.css", () => {
       'html[data-vc-shell][data-vc-bg="on"] .poracode-shell[data-vc-activitybar] > .poracode-sidebar-aside:not(.poracode-sidebar-aside--overlay)::before',
     ]) {
       const fill = declarations(selector);
-      expect(fill.get("background")).toContain("var(--vc-panel-alpha)");
+      expect(fill.get("background")).toContain("calc(var(--vc-panel-fill-alpha) * 100%)");
       expect(fill.get("background")).toMatch(/^color-mix\(in oklab,/);
       expect(fill.get("backdrop-filter")).toBe("var(--vc-panel-backdrop)");
       expect(fill.get("pointer-events")).toBe("none");
@@ -73,6 +73,28 @@ describe("background.css", () => {
     const root = declarations('html[data-vc-shell][data-vc-bg="on"]');
     expect(root.get("--vc-panel-backdrop")).toBe("blur(var(--vc-panel-blur)) saturate(1.1)");
     expect(root.get("--vc-chrome-alpha")).toBe("clamp(0.4, var(--vc-panel-alpha), 1)");
+    // The fill follows the user's opacity, floored at 0.4.
+    expect(root.get("--vc-panel-fill-alpha")).toBe("clamp(0.4, var(--vc-panel-alpha), 1)");
+  });
+
+  it("lets the Showcase theme show more background, only while the blur runs", () => {
+    const showcase = rules()
+      .flatMap(selectorsOf)
+      .filter((selector) => selector.includes('[data-theme-preset="viscosity-showcase"]'));
+    expect(showcase).toHaveLength(1);
+    expect(showcase[0]).toMatch(
+      /^html\[data-vc-shell\]\[data-vc-bg="on"\]\[data-theme-preset="viscosity-showcase"\]:not\(\s*\[data-vc-bg-blur="off"\]\s*\)$/,
+    );
+    const fill = declarations(showcase[0]!);
+    expect([...fill.keys()]).toEqual(["--vc-panel-fill-alpha"]);
+    const parts = (fill.get("--vc-panel-fill-alpha") ?? "").match(
+      /^clamp\(([\d.]+), (.+), ([\d.]+)\)$/,
+    );
+    expect(parts).not.toBeNull();
+    // Never below the 0.4 readability floor; capped around 0.62.
+    expect(Number(parts?.[1])).toBe(0.4);
+    expect(parts?.[2]).toBe("var(--vc-panel-alpha)");
+    expect(Number(parts?.[3])).toBe(0.62);
   });
 
   it("never applies backdrop-filter to <main> itself (fixed descendants keep the viewport)", () => {

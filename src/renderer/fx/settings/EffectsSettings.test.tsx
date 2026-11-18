@@ -78,9 +78,10 @@ describe("EffectsSettings", () => {
       screen.getByRole("switch", { name: "Pause when the system asks to reduce motion" }),
     ).not.toBeChecked();
     expect(screen.getByRole("switch", { name: "Agent effects" })).toBeChecked();
-    expect(slider("Background intensity").value).toBe("55");
-    expect(slider("Panel opacity").value).toBe("86");
-    expect(slider("Panel blur").value).toBe("18");
+    // The 0.7 default sits on the slider's 5% grid.
+    expect(slider("Background intensity").value).toBe("70");
+    expect(slider("Panel opacity").value).toBe("78");
+    expect(slider("Panel blur").value).toBe("20");
   });
 
   it("writes background switches, selects and sliders to the fx store", async () => {

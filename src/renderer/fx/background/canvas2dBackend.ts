@@ -143,8 +143,9 @@ export class Canvas2dBackend implements BackgroundBackend {
   }
 
   private strength(frame: BackgroundFrame): number {
-    const s = (0.22 + 0.58 * clamp01(frame.intensity)) * (1 + 0.6 * clamp01(frame.energy));
-    return this.colors.isDark ? s : s * 0.55;
+    // Same mapping as the WebGL shaders (shaders.ts effectStrength) so both renderers match.
+    const s = (0.24 + 0.64 * clamp01(frame.intensity)) * (1 + 0.6 * clamp01(frame.energy));
+    return this.colors.isDark ? s : s * 0.72;
   }
 
   private glow(color: Rgb01): Rgb01 {

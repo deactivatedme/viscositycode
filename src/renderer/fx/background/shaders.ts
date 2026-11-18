@@ -71,9 +71,11 @@ vec2 hash22(vec2 p) {
 bool isDark() { return uIsDark > 0.5; }
 
 // Overall effect strength: intensity, +60% at most from energy, gentler on light themes.
+// Tuned to read through ~0.6-0.8 opaque panels; light themes need more gain
+// because near-white panels swallow a pale tint.
 float strength() {
-  float s = mix(0.22, 0.8, uIntensity) * (1.0 + 0.6 * uEnergy);
-  return isDark() ? s : s * 0.55;
+  float s = mix(0.24, 0.88, uIntensity) * (1.0 + 0.6 * uEnergy);
+  return isDark() ? s : s * 0.72;
 }
 
 // A colour as it should glow: itself on dark themes, a lighter tint on light ones.

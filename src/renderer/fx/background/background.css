@@ -40,12 +40,26 @@ html[data-vc-shell][data-vc-bg="on"] {
   /* Activity bar, tab strip and status bar already mix their chrome colour
      with --vc-chrome-alpha (layout CSS); follow the panel opacity. */
   --vc-chrome-alpha: clamp(0.4, var(--vc-panel-alpha), 1);
+  /* Fill of the main content and docked sidebar panels, never below the 0.4
+     readability floor. Themes may lower it (see the showcase rule below). */
+  --vc-panel-fill-alpha: clamp(0.4, var(--vc-panel-alpha), 1);
   --vc-panel-backdrop: blur(var(--vc-panel-blur)) saturate(1.1);
 }
 
 /* 0 px blur or opaque panels: skip the backdrop pass entirely. */
 html[data-vc-shell][data-vc-bg="on"][data-vc-bg-blur="off"] {
   --vc-panel-backdrop: none;
+}
+
+/* Viscosity Showcase is made to show the background off: its content and
+   sidebar panels stay at most 62% opaque (still no lower than the 0.4 floor).
+   Only while the backdrop blur runs; opaque panels or 0 px blur (blur "off")
+   keep the user's own opacity, so text never sits over an unblurred scene.
+   The thin chrome bars keep the user's opacity for their small text. */
+html[data-vc-shell][data-vc-bg="on"][data-theme-preset="viscosity-showcase"]:not(
+    [data-vc-bg-blur="off"]
+  ) {
+  --vc-panel-fill-alpha: clamp(0.4, var(--vc-panel-alpha), 0.62);
 }
 
 /* The window layers under the shell stop painting so the canvas shows. */
@@ -68,7 +82,7 @@ html[data-vc-shell][data-vc-bg="on"] .poracode-shell[data-vc-activitybar] main::
   inset: 0;
   background: color-mix(
     in oklab,
-    var(--vc-panel-bg) calc(clamp(0.4, var(--vc-panel-alpha), 1) * 100%),
+    var(--vc-panel-bg) calc(var(--vc-panel-fill-alpha) * 100%),
     transparent
   );
   backdrop-filter: var(--vc-panel-backdrop);
@@ -94,8 +108,7 @@ html[data-vc-shell][data-vc-bg="on"]
   inset: 0;
   background: color-mix(
     in oklab,
-    var(--sidebar-panel-background, var(--vc-chrome-bg))
-      calc(clamp(0.4, var(--vc-panel-alpha), 1) * 100%),
+    var(--sidebar-panel-background, var(--vc-chrome-bg)) calc(var(--vc-panel-fill-alpha) * 100%),
     transparent
   );
   backdrop-filter: var(--vc-panel-backdrop);
