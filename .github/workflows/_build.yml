@@ -1,3 +1,4 @@
+# Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 name: Build (reusable)
 
 on:
@@ -77,7 +78,7 @@ jobs:
             artifact: dist-mac-updater
             platform: mac
             target: zip
-            app_pattern: Lightcode
+            app_pattern: ViscosityCode
             expected_zips: 2
             rust-version: 1.98.1
             helper-targets: darwin-universal
@@ -87,7 +88,7 @@ jobs:
             artifact: dist-mac-dmg
             platform: mac
             target: dmg
-            app_pattern: Poracode
+            app_pattern: ViscosityCode
             expected_zips: 0
             rust-version: 1.98.1
             helper-targets: darwin-universal
@@ -429,7 +430,7 @@ jobs:
             verify_app "$app"
           done
 
-          zips=(release/Poracode-*.zip)
+          zips=(release/ViscosityCode-*.zip)
           if [ "${#zips[@]}" -ne "${{ matrix.expected_zips }}" ]; then
             echo "::error::Expected ${{ matrix.expected_zips }} updater ZIPs for ${{ matrix.target }}, found ${#zips[@]}."
             exit 1
@@ -460,11 +461,11 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
-            release/Poracode-*.exe
-            release/Poracode-*.dmg
-            release/Poracode-*.zip
-            release/Poracode-*.AppImage
-            release/Poracode-*.deb
+            release/ViscosityCode-*.exe
+            release/ViscosityCode-*.dmg
+            release/ViscosityCode-*.zip
+            release/ViscosityCode-*.AppImage
+            release/ViscosityCode-*.deb
             release/latest*.yml
             release/nightly*.yml
             release/*.blockmap
@@ -476,6 +477,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
-          path: release/Poracode-*.dmg
+          path: release/ViscosityCode-*.dmg
           if-no-files-found: error
           retention-days: 7

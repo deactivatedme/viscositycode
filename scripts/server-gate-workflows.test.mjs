@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
@@ -661,7 +662,7 @@ void test("macOS updater and DMG packaging run as independent release legs", asy
   assert.equal(upload.if, "matrix.target != 'dmg'");
   const dmgUpload = steps.find((step) => step.name === "Upload macOS DMG artifacts");
   assert.equal(dmgUpload.if, "matrix.target == 'dmg'");
-  assert.match(dmgUpload.with.path, /Poracode-\*\.dmg/u);
+  assert.match(dmgUpload.with.path, /ViscosityCode-\*\.dmg/u);
   assert.doesNotMatch(dmgUpload.with.path, /latest\*\.yml|nightly\*\.yml/u);
 });
 

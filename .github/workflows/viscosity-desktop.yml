@@ -1,0 +1,233 @@
+# ViscosityCode: desktop installers for the fork.
+#
+# Builds the macOS DMGs (Apple silicon + Intel) and the Windows NSIS installers
+# (x64 + ARM64). Signing and notarisation are optional: each runs only when its
+# repository secrets are set, so a fork without certificates still gets
+# working (unsigned) installers. See BUILDING.md for the secret names.
+#
+# Triggers: run it by hand (Actions → "ViscosityCode desktop" → Run workflow),
+# or push a tag like `v1.2.3` to also attach the installers to a draft release.
+# Untrusted values never appear inside `run:` scripts; they pass through env.
+
+name: ViscosityCode desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to stamp into the app (empty = keep package.json)"
+        required: false
+        type: string
+        default: ""
+      channel:
+        description: "Release channel"
+        required: false
+        type: choice
+        options: [stable, nightly]
+        default: stable
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: viscosity-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUN_INSTALL_GLOBAL_STORE: "0"
+  RUST_VERSION: 1.98.1
+  PORACODE_CHANNEL: ${{ inputs.channel || 'stable' }}
+  # The fork ships no telemetry or crash reporting keys.
+  POSTHOG_ENABLED: "0"
+
+jobs:
+  # Windows installers embed a Linux MCP relay for WSL projects; build it once
+  # on Linux and hand it to the Windows job.
+  wsl-relay:
+    name: Linux MCP relay (for WSL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - run: sudo apt-get update && sudo apt-get install --yes musl-tools
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: native/mcp-relay
+          prefix: mcp-relay-rust
+      - uses: ./.github/actions/setup-bun
+      - run: bun install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - run: node scripts/prepare-mcp-relay.mjs --platform linux --require
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-relay-linux-x64
+          path: resources/wsl-helpers/mcp-relay/linux-x64/
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    name: build (${{ matrix.name }})
+    needs: wsl-relay
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS DMG (arm64 + x64)
+            os: macos-15
+            platform: mac
+            target: dmg
+            rust-targets: x86_64-apple-darwin,aarch64-apple-darwin
+            artifact: viscositycode-macos
+          - name: Windows NSIS (x64 + arm64)
+            os: windows-latest
+            platform: win
+            target: nsis
+            rust-targets: x86_64-pc-windows-msvc,aarch64-pc-windows-msvc
+            artifact: viscositycode-windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    env:
+      TARGET_PLATFORM: ${{ matrix.platform }}
+      TARGET_KIND: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: ${{ matrix.rust-targets }}
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: |
+            native/computer-use-helper
+            native/mcp-relay
+            native/git-helper
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          registry-cache: ${{ runner.os == 'Windows' && 'none' || 'all' }}
+
+      - name: Set package version
+        if: inputs.version != '' || startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+        run: node scripts/set-release-version.mjs "${RELEASE_VERSION#v}"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+      - name: Build app
+        run: bun run build
+        shell: bash
+
+      - name: Prepare native helpers
+        shell: bash
+        run: |
+          node scripts/prepare-computer-use-helper.mjs --platform "$TARGET_PLATFORM" --require
+          node scripts/prepare-git-helper.mjs --platform "$TARGET_PLATFORM" --require
+          if [ "$TARGET_PLATFORM" != "win" ]; then
+            node scripts/prepare-mcp-relay.mjs --platform "$TARGET_PLATFORM" --require
+          fi
+
+      - name: Download the Linux MCP relay
+        if: matrix.platform == 'win'
+        uses: actions/download-artifact@v7
+        with:
+          name: mcp-relay-linux-x64
+          path: resources/wsl-helpers/mcp-relay/linux-x64
+
+      - name: Prepare the Windows MCP relay
+        if: matrix.platform == 'win'
+        shell: bash
+        run: node scripts/prepare-mcp-relay.mjs --platform win --require
+
+      - name: Prepare locked computer use plug-in
+        if: matrix.platform == 'mac'
+        shell: bash
+        # Without a team id the plug-in builds but always denies; signed
+        # builds pin it to the Developer ID team.
+        run: node scripts/prepare-locked-computer-use.mjs
+        env:
+          PORACODE_LCU_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Prepare packaged assets
+        shell: bash
+        run: |
+          bun run prepare:package-assets
+          node scripts/build-ssh-runtime-archive.mjs
+          bun run clean:sourcemaps
+
+      - name: Package
+        shell: bash
+        run: |
+          # Turn off certificate discovery when no certificate is configured so
+          # electron-builder makes an unsigned build instead of failing.
+          if [ "$TARGET_PLATFORM" = "mac" ] && [ -z "${CSC_LINK:-}" ]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "::notice::No macOS certificate configured; building an unsigned DMG."
+          fi
+          if [ "$TARGET_PLATFORM" = "win" ] && [ -z "${WIN_CSC_LINK:-}" ]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "::notice::No Windows certificate configured; building an unsigned installer."
+          fi
+          node scripts/build-desktop-artifact.mjs --platform "$TARGET_PLATFORM" --target "$TARGET_KIND" --skip-build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS: Developer ID Application certificate (base64 .p12) + password.
+          CSC_LINK: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+          # macOS notarisation (Apple ID + app-specific password + team).
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Windows: code-signing certificate (base64 .pfx) + password.
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            release/ViscosityCode*.dmg
+            release/ViscosityCode*.exe
+            release/*.blockmap
+            release/latest*.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  draft-release:
+    name: Draft GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Create a draft release with the installers
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          files=(installers/*)
+          gh release create "$TAG" "${files[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "ViscosityCode $TAG" \
+            --notes "Desktop installers for ViscosityCode $TAG."

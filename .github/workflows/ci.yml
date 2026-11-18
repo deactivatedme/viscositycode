@@ -1,3 +1,4 @@
+# Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 name: CI
 
 on:
@@ -84,7 +85,7 @@ jobs:
         run: node --test scripts/resolve-release-version.test.mjs
 
       - name: Desktop packaging regression tests
-        run: node --test scripts/build-desktop-artifact.test.mjs scripts/mac-notarization-dependency.test.mjs
+        run: node --test scripts/build-desktop-artifact.test.mjs scripts/mac-notarization-dependency.test.mjs scripts/viscosity/desktop-workflow.test.mjs
 
       - name: Electron development regression tests
         run: node --test scripts/dev-runtime-watch.test.mjs scripts/dev-launch.test.mjs scripts/vite-lingui-macro-worker.test.mjs
