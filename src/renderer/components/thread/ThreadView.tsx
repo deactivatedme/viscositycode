@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { memo, useEffect, useRef, useState } from "react";
 import { Tooltip } from "@heroui/react";
 import { ArrowRightLeft, Bug, CircleCheck, PictureInPicture2, X } from "lucide-react";
@@ -364,6 +365,8 @@ export const ThreadView = memo(function ThreadView(props: ThreadViewProps) {
       <div
         ref={droppableRef}
         data-poracode-thread-pane=""
+        // ViscosityCode: lets agent-state effects find this pane (terminal panes have no inner thread id).
+        data-vc-thread-id={thread.id}
         data-poracode-attachment-drop-target=""
         data-poracode-pane-hidden={hidden || undefined}
         className={`${usesTerminalPresentation ? "m-thread m-thread--terminal" : "m-thread"} group/pane relative flex h-full min-h-0 flex-col ${isDragging ? "opacity-50" : ""}`}

@@ -78,6 +78,8 @@ vi.mock("@/renderer/diagnostics/runtimeContext", () => ({
 }));
 // The built-in items read app state this test does not set up.
 vi.mock("./builtinStatusBarItems", () => ({ registerBuiltinStatusBarItems: () => {} }));
+// The fx layer subscribes to the real app store, which this test replaces.
+vi.mock("@/renderer/fx/FxRoot", () => ({ FxRoot: () => null }));
 
 beforeEach(() => {
   document.documentElement.dataset.windowKind = "main";

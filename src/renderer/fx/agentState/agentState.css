@@ -1,1 +1,423 @@
-/* ViscosityCode: agent-state effects on panes, tabs and the composer. Scoped to html[data-vc-shell]. */
+/* ViscosityCode: agent-state effects on panes, tabs and the composer. Scoped to html[data-vc-shell].
+ *
+ * Written by src/renderer/fx/agentState (monitor + rAF applicator):
+ *   [data-poracode-thread-pane][data-vc-fx-state]  thinking | tool | streaming | attention | error | working | idle
+ *   [data-poracode-thread-pane][data-vc-fx-flash]  error | done (one-shot, removed after ~1.2 / 1.4 s)
+ *   [data-poracode-thread-pane] style --vc-fx-energy (0..1, streaming only)
+ *   [data-vc-tab-id][data-vc-fx-state|flash]       same values on the tab buttons
+ *   .poracode-composer-shell[data-vc-typing]       ~700 ms after each keystroke
+ *   .vc-fx-caret-ripple                            one element moved to the caret
+ *
+ * Panes: ::after is the edge glow, ::before the top-edge bar, and the pane
+ * header's ::after the tool spinner. Only transform, opacity and box-shadow
+ * change, and continuous animations pause while the window is hidden or
+ * unfocused (html[data-app-hidden|data-app-unfocused], uiAnimationActivity.ts).
+ * Reduced motion keeps every colour indicator and drops the motion.
+ */
+
+/* Not inherited: moving it on a pane restyles the pane and its pseudo-elements,
+   not the whole transcript below it. */
+@property --vc-fx-energy {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* === Pane edge glow ====================================================== */
+html[data-vc-shell]
+  [data-poracode-thread-pane]:is(
+    [data-vc-fx-state]:not([data-vc-fx-state="idle"]),
+    [data-vc-fx-flash]
+  )::after {
+  --vc-fx-edge: var(--vc-state-working);
+  --vc-fx-energy: inherit;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 21;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px var(--vc-fx-edge),
+    inset 0 0 18px -6px var(--vc-fx-edge);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--vc-motion-slow) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="working"]::after {
+  opacity: 0.28;
+}
+
+/* Brightens with the measured output rate. */
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="streaming"]::after {
+  opacity: calc(0.22 + 0.6 * var(--vc-fx-energy));
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="thinking"]::after {
+  --vc-fx-edge: var(--vc-state-thinking);
+  opacity: 0.7;
+  animation: vc-fx-breathe var(--vc-motion-pulse) var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="tool"]::after {
+  --vc-fx-edge: var(--vc-state-tool);
+  opacity: 0.5;
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="attention"]::after {
+  --vc-fx-edge: var(--vc-state-attention);
+  box-shadow:
+    inset 0 0 0 2px var(--vc-fx-edge),
+    inset 0 0 22px -6px var(--vc-fx-edge);
+  opacity: 0.9;
+  animation: vc-fx-attention calc(var(--vc-motion-pulse) * 1.6) var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="error"]::after {
+  --vc-fx-edge: var(--vc-state-error);
+  opacity: 0.45;
+}
+
+/* One-shot flashes win over the steady state underneath. The error flash
+   settles on the steady error edge. */
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="error"]::after {
+  --vc-fx-edge: var(--vc-state-error);
+  animation: vc-fx-flash-error 1.2s var(--vc-ease-out) 1 both;
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="done"]::after {
+  --vc-fx-edge: var(--vc-state-success);
+  animation: vc-fx-flash-done 1.4s var(--vc-ease-out) 1 both;
+}
+
+/* === Pane top edge: tool shimmer and completion sweep ===================== */
+html[data-vc-shell]
+  [data-poracode-thread-pane]:is([data-vc-fx-state="tool"], [data-vc-fx-flash="done"])::before {
+  --vc-fx-bar: var(--vc-state-tool);
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 22;
+  width: 40%;
+  height: 2px;
+  border-radius: var(--vc-radius-pill);
+  background: linear-gradient(90deg, transparent, var(--vc-fx-bar), transparent);
+  pointer-events: none;
+  /* 40% wide, moved by 150% of itself: it never leaves the pane, so it never
+     adds scrollable overflow to the split container. */
+  animation: vc-fx-shimmer 1.6s var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="done"]::before {
+  --vc-fx-bar: var(--vc-state-success);
+  width: 60%;
+  animation: vc-fx-sweep 1.4s var(--vc-ease-emphasized) 1 both;
+}
+
+/* Tool spinner in the pane's top-right corner (the header has no position, so
+   this resolves against the pane root). */
+html[data-vc-shell]
+  [data-poracode-thread-pane][data-vc-fx-state="tool"]
+  > [data-poracode-thread-header]::after {
+  content: "";
+  position: absolute;
+  top: var(--vc-space-1);
+  right: var(--vc-space-1);
+  z-index: 22;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid color-mix(in oklab, var(--vc-state-tool) 28%, transparent);
+  border-top-color: var(--vc-state-tool);
+  border-radius: var(--vc-radius-pill);
+  pointer-events: none;
+  animation: vc-fx-rotate 0.9s linear infinite;
+}
+
+/* === Tabs: one animated dot per state ===================================== */
+html[data-vc-shell]
+  [data-vc-tab-id]:is([data-vc-fx-state]:not([data-vc-fx-state="idle"]), [data-vc-fx-flash])
+  .vc-tab__dot {
+  display: block;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="working"] .vc-tab__dot {
+  background: var(--vc-state-working);
+  animation: vc-fx-dot-pulse calc(var(--vc-motion-pulse) * 1.2) var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="streaming"] .vc-tab__dot {
+  background: var(--vc-state-working);
+  animation: vc-fx-dot-pulse 0.7s var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="thinking"] .vc-tab__dot {
+  background: var(--vc-state-thinking);
+  animation: vc-fx-dot-pulse var(--vc-motion-pulse) var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="tool"] .vc-tab__dot {
+  background: var(--vc-state-tool);
+  animation: vc-fx-dot-pulse 0.9s var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="attention"] .vc-tab__dot {
+  background: var(--vc-state-attention);
+  animation: vc-fx-dot-pulse calc(var(--vc-motion-pulse) * 1.6) var(--vc-ease-standard) infinite;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state="error"] .vc-tab__dot {
+  background: var(--vc-state-error);
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-flash="error"] .vc-tab__dot {
+  background: var(--vc-state-error);
+  animation: vc-fx-dot-pop 1.2s var(--vc-ease-out) 1 both;
+}
+
+html[data-vc-shell] [data-vc-tab-id][data-vc-fx-flash="done"] .vc-tab__dot {
+  background: var(--vc-state-success);
+  animation: vc-fx-dot-pop 1.4s var(--vc-ease-out) 1 both;
+}
+
+/* === Composer typing glow and caret ripple ================================ */
+/* Doubled attribute: one step above shell.css's focus halo, which also uses
+   !important on box-shadow. */
+html[data-vc-shell] .poracode-composer-shell[data-vc-typing][data-vc-typing]:focus-within {
+  border-color: color-mix(in oklab, var(--vc-accent) 80%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--vc-accent) 30%, transparent),
+    0 0 22px -8px color-mix(in oklab, var(--vc-accent) 75%, transparent) !important;
+}
+
+html[data-vc-shell] .vc-fx-caret-ripple {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: var(--vc-radius-pill);
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--vc-accent) 55%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Two identical keyframe names: switching between them restarts the ripple
+   without a forced reflow. `scale` composes with the inline translate. */
+html[data-vc-shell] .vc-fx-caret-ripple[data-vc-ripple="a"] {
+  animation: vc-fx-ripple-a 520ms var(--vc-ease-out) 1 both;
+}
+
+html[data-vc-shell] .vc-fx-caret-ripple[data-vc-ripple="b"] {
+  animation: vc-fx-ripple-b 520ms var(--vc-ease-out) 1 both;
+}
+
+/* === Status bar ========================================================== */
+html[data-vc-shell] .vc-statusbar .vc-statusbar__item[data-tone="tool"] {
+  color: var(--vc-state-tool);
+}
+
+html[data-vc-shell] .vc-fx-spin {
+  animation: vc-fx-rotate 0.9s linear infinite;
+}
+
+/* === Keyframes =========================================================== */
+@keyframes vc-fx-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes vc-fx-attention {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes vc-fx-flash-error {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.55;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes vc-fx-flash-done {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vc-fx-shimmer {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(150%, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes vc-fx-sweep {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(66.667%, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes vc-fx-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vc-fx-dot-pulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes vc-fx-dot-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  25% {
+    transform: scale(1.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes vc-fx-ripple-a {
+  from {
+    scale: 0.3;
+    opacity: 0.7;
+  }
+  to {
+    scale: 1.6;
+    opacity: 0;
+  }
+}
+
+@keyframes vc-fx-ripple-b {
+  from {
+    scale: 0.3;
+    opacity: 0.7;
+  }
+  to {
+    scale: 1.6;
+    opacity: 0;
+  }
+}
+
+/* === Background window: hold continuous motion =========================== */
+/* One-shot flashes run out on their own and are left alone. */
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused])
+  [data-poracode-thread-pane][data-vc-fx-state]:not([data-vc-fx-flash])::before,
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused])
+  [data-poracode-thread-pane][data-vc-fx-state]:not([data-vc-fx-flash])::after,
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused])
+  [data-poracode-thread-pane][data-vc-fx-state]
+  > [data-poracode-thread-header]::after,
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused])
+  [data-vc-tab-id][data-vc-fx-state]:not([data-vc-fx-flash])
+  .vc-tab__dot,
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-fx-spin {
+  animation-play-state: paused;
+}
+
+/* === Reduced motion: colour only ========================================= */
+/* The background ignores reduced motion by default (owner's choice); these
+   effects do not. Last in the file so equal-specificity rules above lose. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state]::before,
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash]::before,
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state]::after,
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash]::after,
+  html[data-vc-shell] [data-vc-tab-id][data-vc-fx-state] .vc-tab__dot,
+  html[data-vc-shell] [data-vc-tab-id][data-vc-fx-flash] .vc-tab__dot {
+    animation: none;
+    transition: none;
+  }
+
+  html[data-vc-shell]
+    [data-poracode-thread-pane][data-vc-fx-state="tool"]
+    > [data-poracode-thread-header]::after,
+  html[data-vc-shell] .vc-fx-spin {
+    animation: none;
+  }
+
+  /* Static stand-ins for the moving parts. */
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-state="tool"]::before,
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="done"]::before {
+    width: 100%;
+    opacity: 0.6;
+  }
+
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="error"]::after {
+    opacity: 0.9;
+  }
+
+  html[data-vc-shell] [data-poracode-thread-pane][data-vc-fx-flash="done"]::after {
+    opacity: 0.5;
+  }
+
+  html[data-vc-shell] .poracode-composer-shell[data-vc-typing][data-vc-typing]:focus-within {
+    transition: none;
+  }
+
+  html[data-vc-shell] .vc-fx-caret-ripple {
+    display: none;
+  }
+}
