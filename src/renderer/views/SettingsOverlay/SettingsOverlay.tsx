@@ -19,6 +19,8 @@ import { ProfileSettings } from "./parts/ProfileSettings";
 import { AppearanceSettings } from "./parts/AppearanceSettings";
 // ViscosityCode: Settings → Effects lives with the fork effects it configures.
 import { EffectsSettings } from "@/renderer/fx/settings/EffectsSettings";
+// ViscosityCode: Settings → Bots lives with the Bots feature.
+import { BotsSettings } from "@/renderer/viscosity/bots/settings/BotsSettings";
 import { BrowserSettings } from "./parts/BrowserSettings";
 import { ImportSettings } from "./parts/ImportSettings";
 import { UsageSettings } from "./parts/UsageSettings";
@@ -95,6 +97,7 @@ const SECTION_VIEWS: Partial<Record<SettingsSection, () => ReactNode>> = {
   mcpServers: () => <McpServersSettings />,
   plugins: () => <PluginsSettings />,
   crews: () => <CrewsSettings />,
+  bots: () => <BotsSettings />, // ViscosityCode
   browser: () => <BrowserSettings />,
   usage: () => <UsageSettings />,
   import: () => <ImportSettings />,

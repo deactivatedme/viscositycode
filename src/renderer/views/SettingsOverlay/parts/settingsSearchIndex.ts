@@ -5,6 +5,8 @@ import type { SettingsSection } from "./types";
 import { createSearchQuery, scoreSearchFields } from "@/shared/searchMatching";
 // ViscosityCode: Settings → Effects rows live beside the section in src/renderer/fx/settings.
 import { EFFECTS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/fx/settings/effectsSettingsSearch";
+// ViscosityCode: Settings → Bots rows live beside the section in src/renderer/viscosity/bots/settings.
+import { BOTS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/viscosity/bots/settings/botsSettingsSearch";
 
 /**
  * Static index of individual settings, powering the sidebar's "Search settings"
@@ -632,6 +634,9 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     keywords:
       "crews crew lead roles sidekick builder reviewer scout helpers crossagents fusion team",
   },
+
+  // ViscosityCode: Bots (xAI key and Grok defaults)
+  ...BOTS_SETTINGS_SEARCH_ENTRIES,
 
   // Browser
   {

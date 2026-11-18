@@ -24,6 +24,7 @@ export const SETTINGS_SECTIONS = [
   "mcpServers",
   "plugins",
   "crews",
+  "bots", // ViscosityCode: named AI teammates + xAI key (src/renderer/viscosity/bots/settings)
   "browser",
   "usage",
   "import",

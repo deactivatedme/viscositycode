@@ -10,8 +10,12 @@ import { SETTINGS_SEARCH_INDEX, searchSettings } from "./settingsSearchIndex";
 
 /** Anchor literals wired onto rows across the section components. */
 function anchorsDeclaredInComponents(): Set<string> {
-  // ViscosityCode: Settings → Effects rows live beside the fork effects they configure.
-  const dirs = [import.meta.dirname, join(import.meta.dirname, "../../../fx/settings")];
+  // ViscosityCode: Settings → Effects and Bots rows live beside the fork features they configure.
+  const dirs = [
+    import.meta.dirname,
+    join(import.meta.dirname, "../../../fx/settings"),
+    join(import.meta.dirname, "../../../viscosity/bots/settings"),
+  ];
   const anchorAttr =
     /(?:anchorId|data-settings-anchor|useIgnoreFilesAnchorId|excludePatternsAnchorId)(?:=|:\s*)"([^"]+)"/g;
   const anchors = new Set<string>();

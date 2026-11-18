@@ -3,6 +3,7 @@ import {
   Archive,
   Bell,
   Bot,
+  BotMessageSquare,
   Boxes,
   Box,
   Cable,
@@ -62,6 +63,7 @@ const DESKTOP_ONLY_SECTIONS = new Set<SettingsSection>([
   "browser",
   "archived",
   "about",
+  "bots", // ViscosityCode: the xAI key lives in the desktop main process
 ]);
 
 /** Whether this client shows `id`; the sidebar and every settings search share it. */
@@ -138,6 +140,12 @@ export function useSettingsNavigation() {
         { id: "mcpServers", icon: <Cable className="size-4" />, label: t`MCP Servers` },
         { id: "plugins", icon: <Puzzle className="size-4" />, label: t`Plugins` },
         { id: "crews", icon: <UsersRound className="size-4" />, label: t`Crews` },
+        // ViscosityCode: Codync-style bots (xAI key, Grok defaults).
+        {
+          id: "bots",
+          icon: <BotMessageSquare className="size-4" />,
+          label: t({ message: "Bots", comment: "Settings section: named AI teammates (bots)" }),
+        },
         {
           id: "usage",
           icon: <Gauge className="size-4" />,

@@ -5,10 +5,11 @@
  * xAI API, workspace project, short memory) with one ongoing chat. Bot group
  * chats are Roundtables in the "open" pattern.
  *
- * Other features import ONLY from this module; the Bots agent replaces these
- * placeholders. Signatures are the contract.
+ * Other features import ONLY from this module. Signatures are the contract.
  */
 import type { ParticipantProfile } from "../roundtable/types";
+import { openBotChat, startGroupChat } from "./botActions";
+import { selectBotList, useBotsStore } from "./botStore";
 
 export interface BotProfile extends ParticipantProfile {
   projectId: string;
@@ -19,21 +20,25 @@ export interface BotProfile extends ParticipantProfile {
   createdAt: number;
 }
 
+/** The user's bots in display order (stable until a bot changes). */
 export function useBots(): BotProfile[] {
-  return [];
+  return useBotsStore(selectBotList);
 }
-export function useBot(_botId: string | undefined): BotProfile | undefined {
-  return undefined;
+
+export function useBot(botId: string | undefined): BotProfile | undefined {
+  return useBotsStore((state) => (botId ? state.bots[botId] : undefined));
 }
+
 /** Open the bot's ongoing chat (agent brain → its thread in a pane; API brain → native chat panel). */
-export function openBot(_botId: string): Promise<void> {
-  return Promise.reject(new Error("Bots not available yet"));
+export function openBot(botId: string): Promise<void> {
+  return openBotChat(botId);
 }
+
 /** Start (or reopen) a group chat with these bots; returns the Roundtable session id. */
 export function startBotGroupChat(
-  _botIds: string[],
-  _projectId: string,
-  _title?: string,
+  botIds: string[],
+  projectId: string,
+  title?: string,
 ): Promise<string> {
-  return Promise.reject(new Error("Bots not available yet"));
+  return startGroupChat(botIds, projectId, title);
 }

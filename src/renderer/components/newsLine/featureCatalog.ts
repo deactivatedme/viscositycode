@@ -256,6 +256,8 @@ export const NOT_PROMOTED: Readonly<Partial<Record<CoverageKey, string>>> = {
   "settings:notifications": "Preferences, not a feature",
   // ViscosityCode: effects are on by default in the desktop layout, so people already see them.
   "settings:effects": "Visual preferences that are on by default, not a feature to discover",
+  // ViscosityCode: Bots are discovered from their activity bar item; Settings only holds the xAI key.
+  "settings:bots": "Reached from the Bots activity bar view; the section only holds the xAI key",
   "settings:ai": "AI helper preferences, not a feature",
   "settings:acpRegistry": "Reached while adding agents",
   "settings:agentsGeneral": "Agent preferences, not a feature",

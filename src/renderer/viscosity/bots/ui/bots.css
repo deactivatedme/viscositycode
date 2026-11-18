@@ -1,0 +1,211 @@
+/*
+ * ViscosityCode Bots (fork of Poracode): avatars, live-state dots, the API
+ * bot chat panel. Reads only --vc-* tokens (theme/viscosity/tokens.css) and
+ * the theme's palette variables, so every preset recolours it.
+ */
+
+.vc-bot-avatar {
+  --vc-bot-avatar-size: 22px;
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--vc-bot-avatar-size);
+  height: var(--vc-bot-avatar-size);
+  border-radius: var(--vc-radius-pill);
+  background: color-mix(in oklab, var(--vc-bot-color, var(--vc-accent)) 24%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--vc-bot-color, var(--vc-accent)) 48%, transparent);
+  color: color-mix(in oklab, var(--vc-bot-color, var(--vc-accent)) 70%, var(--vc-text));
+  font-family: var(--vc-font-ui);
+  font-size: var(--vc-font-size-2xs);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.vc-bot-avatar[data-size="md"] {
+  --vc-bot-avatar-size: 28px;
+  font-size: var(--vc-font-size-sm);
+}
+
+.vc-bot-avatar[data-size="lg"] {
+  --vc-bot-avatar-size: 40px;
+  font-size: var(--vc-font-size-lg);
+}
+
+.vc-bot-avatar__glyph {
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+/* Live state: a small dot on the avatar's corner. */
+.vc-bot-avatar__dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--vc-radius-pill);
+  box-shadow: 0 0 0 1.5px var(--vc-chrome-bg);
+  background: transparent;
+}
+
+.vc-bot-avatar__dot[data-state="working"] {
+  background: var(--vc-state-working);
+  animation: vc-bot-pulse var(--vc-motion-pulse) var(--vc-ease-standard) infinite;
+}
+
+.vc-bot-avatar__dot[data-state="attention"] {
+  background: var(--vc-state-attention);
+}
+
+.vc-bot-avatar__dot[data-state="error"] {
+  background: var(--vc-state-error);
+}
+
+@keyframes vc-bot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-bot-avatar__dot[data-state="working"] {
+    animation: none;
+  }
+}
+
+/* Sidebar view ------------------------------------------------------------ */
+
+.vc-bots-list__section {
+  padding: var(--vc-space-3) var(--vc-space-2) var(--vc-space-1);
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vc-bots-list__title {
+  display: block;
+  overflow: hidden;
+  color: var(--vc-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-bots-list__meta {
+  display: block;
+  overflow: hidden;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-bots-group-chats:not(:has([data-vc-bot-group-chat])) {
+  display: none;
+}
+
+.vc-bots-avatar-stack {
+  display: inline-flex;
+  flex: none;
+}
+
+.vc-bots-avatar-stack > .vc-bot-avatar + .vc-bot-avatar {
+  margin-left: -6px;
+}
+
+/* API bot chat panel (center column) -------------------------------------- */
+
+.vc-bot-chat {
+  position: absolute;
+  inset: 0;
+  /* Same layer as the Roundtable panel: above the panes' own overlays and the
+     inline editor panel (z-20), which share the center body's stacking context. */
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: color-mix(
+    in oklab,
+    var(--vc-panel-bg) calc(var(--vc-panel-alpha) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(var(--vc-panel-blur));
+  color: var(--vc-text);
+}
+
+.vc-bot-chat__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-3);
+  min-height: var(--vc-tabstrip-height);
+  padding: 0 var(--vc-space-4);
+  border-bottom: 1px solid var(--vc-border-subtle);
+}
+
+.vc-bot-chat__transcript {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--vc-space-5) var(--vc-space-5) var(--vc-space-3);
+}
+
+.vc-bot-chat__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vc-space-4);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.vc-bot-chat__message {
+  display: flex;
+  gap: var(--vc-space-3);
+  min-width: 0;
+}
+
+.vc-bot-chat__message[data-role="user"] {
+  justify-content: flex-end;
+}
+
+.vc-bot-chat__bubble {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vc-bot-chat__message[data-role="user"] .vc-bot-chat__bubble {
+  max-width: 80%;
+  padding: var(--vc-space-2) var(--vc-space-4);
+  border-radius: var(--vc-radius-lg);
+  background: var(--vc-hover);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.vc-bot-chat__note {
+  margin-top: var(--vc-space-1);
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-xs);
+}
+
+.vc-bot-chat__note[data-tone="error"] {
+  color: var(--vc-state-error);
+}
+
+.vc-bot-chat__composer {
+  flex: none;
+  width: 100%;
+  max-width: 792px;
+  margin: 0 auto;
+  padding: 0 var(--vc-space-5) var(--vc-space-3);
+}
