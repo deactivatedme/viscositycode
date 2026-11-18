@@ -2,6 +2,8 @@
 
 Where the project stands, how to work on it, and what is left. Read this first, then [ARCHITECTURE_NOTES.md](ARCHITECTURE_NOTES.md) (how the app is put together and every fork decision) and [AGENTS.md](AGENTS.md) (the upstream project rules, which still apply except where this file says otherwise).
 
+Parts of ARCHITECTURE_NOTES.md §8 are older than the code. Its "Still open when Step 5 was written" list is done: English strings are extracted (translations were dropped on purpose), Smart start preferences are in Settings → Agents, Agent colours have settings-search entries, FORK_CHANGES.md and the `excludedMembers` versioning line are in place. The Mission Control and Subscriptions commands are now `viscosity.missionControl.open` and `viscosity.subscriptions.open`. When the two files disagree, trust this file and the code.
+
 ## What this is
 
 ViscosityCode is a rebranded fork of [Poracode](https://github.com/Porabuild/Poracode) (Apache-2.0): an Electron + React + TypeScript desktop app that runs AI coding agents (Claude Code, Codex, Gemini CLI, Cursor, ACP agents, …) side by side. The fork keeps Poracode's backend, agent runtime, ACP/MCP, git/worktree and session-persistence code and replaces the look with a Cursor-inspired UI. It adds features for someone paying for several AI subscriptions.
@@ -41,7 +43,7 @@ Last full unit suite: 36,009 tests passed. The only failures are the two that al
 
 ## Machine setup (the owner's Mac)
 
-- Node 26.13.0 is in `~/.local/node-v26.13.0`, the pinned Bun in `~/.local/bin`. Rust and Java are **not** installed. The GitHub CLI (`gh`) is installed and logged in.
+- Node 26.13.0 is in `~/.local/node-v26.13.0`, the pinned Bun in `~/.local/bin`. Rust and Java are **not** installed. The GitHub CLI (`gh`) is installed and logged in. **Bare `gh` commands in this checkout act on Porabuild/Poracode, not the fork** (gh prefers the `upstream` remote and no default repo is set): this checkout now has `gh repo set-default deactivatedme/viscositycode` set; in a fresh clone run it once (or pass `-R deactivatedme/viscositycode`).
 - Prefix every command:
 
   ```sh
@@ -51,12 +53,15 @@ Last full unit suite: 36,009 tests passed. The only failures are the two that al
   The `TMPDIR` realpath fix matters: macOS's `/var` → `/private/var` link otherwise breaks about a dozen path tests.
 
 - 8 GB RAM: run focused tests (`bun run vitest run <paths> --maxWorkers=1`); the full suite takes about 20 minutes and must not run twice at once. Heavy commands queue on `scripts/heavy-run-gate.mjs`; that is normal.
+- **Dev app:** `bun run dev` (works without Rust; it falls back to JavaScript helpers). It uses its own data folder `~/.viscositycode-dev` (`PORACODE_BASE_DIR` overrides it), separate from the installed app's `~/.viscositycode`. It shows a real window on start, so check with the owner first if they are working (see Never steal focus).
+- **Where settings live:** host settings (themes, account pools) are `settings.json`, and shortcuts `keybindings.json`, in that data folder; the fork's view preferences (effects, agent colours, Smart start, Mission Control) are localStorage keys `viscosity:*:v1`.
 
 ## How the fork is organised
 
 - **Fork-owned code:** `src/renderer/viscosity/**`, `src/renderer/fx/**`, `src/renderer/theme/viscosity/**`, `src/main/viscosity/**`, `src/shared/brand.ts`, `src/shared/viscosityRelease.ts`, `src/shared/viscosity/**`, `src/host/accountPools/**`, `src/shared/accountPools*.ts`, `scripts/viscosity/**`, `branding/**`.
 - **Upstream files the fork touches** start with `// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.` (`#` in YAML), and each hook line carries `// ViscosityCode:`. Run `node scripts/viscosity/mark-modified-files.mjs` before committing: it adds missing notices and regenerates [FORK_CHANGES.md](FORK_CHANGES.md) (never edit that file by hand).
 - **Branding:** `brandText()` rewrites "Poracode" → "ViscosityCode" in loaded catalogs, shared messages and displayed errors. Identity: app ID `com.viscositycode.app`, data folder `~/.viscositycode` (`-nightly`, `-dev`), CLI `viscositycode` / `viscositycode-next`. In-app updates are off unless `VISCOSITYCODE_UPDATE_REPO=owner/repo` is set at build time.
+- **Names that stay "poracode" on purpose:** `PORACODE_*` environment variables, `poracode-*` CSS classes and storage keys, IPC channel names, protocol schemas, project `.poracode/` folders and hook file names are compatibility boundaries (ARCHITECTURE_NOTES §8, decision 2). Do not rename them to finish the rebrand. Likewise never change a command id or a `viscosity:*:v1` storage key once released.
 - **Desktop-shell gate:** fork chrome is scoped to `html[data-vc-shell]` (desktop main window, not compact). Compact/PWA, the extension and the native iOS/Android apps keep upstream behaviour.
 - **Design tokens:** `--vc-*` in `src/renderer/theme/viscosity/tokens.css`.
 - **Extension points (use these instead of editing upstream):**
@@ -66,6 +71,7 @@ Last full unit suite: 36,009 tests passed. The only failures are the two that al
   - Mission Control tabs: `registerMissionControlTab` in `src/renderer/viscosity/missionControl/tabs.ts`.
   - Agent colours: spread `agentKindAttribute(kind)` on any per-agent element and style with `AGENT_ACCENT_CSS`.
   - Roundtable: `src/renderer/viscosity/roundtable/api.ts`; Bots: `src/renderer/viscosity/bots/api.ts`.
+  - **Register on import:** a feature's `index.ts` registers its activity/status bar items, Mission Control tabs and commands when it is imported, so a new feature does nothing until a file loaded at startup imports it (for example `ViscosityCenterFrame.tsx` or `src/renderer/commands/registry.ts`).
 - **Provider isolation (upstream invariant):** no provider names or `kind === "<provider>"` branches in shared code; provider differences go through capabilities in the provider folder.
 
 ## Feature map
@@ -112,13 +118,13 @@ This produced `release/ViscosityCode-2.0.0-arm64.dmg` (about 183 MB). It is unsi
 node .agents/skills/interactive-testing/scripts/poracode-cdp.mjs launch --new --mode mock --root "$HOME/.poracode-smoke/<name>"
 ```
 
-Then use `eval` / `shot` / `click` / `stop` with `--session "$HOME/.poracode-smoke/<name>/session.json"`. `window.__poracodeDev.stores` exposes the main stores for seeding mock data; click with DOM `.click()` in `eval` (pointer clicks can report "occluded"). **The launcher refuses to start while the Mac is locked.** Stop the session and delete its folder afterwards (each one is about 2.6 GB). Earlier helper scripts live in `tmp/` (gitignored: `shoot-final.sh`, `shoot-rt.sh`, `fx-demo.mjs`).
+Then use `eval` / `shot` / `click` / `stop` with `--session "$HOME/.poracode-smoke/<name>/session.json"`. `window.__poracodeDev.stores` exposes the main stores for seeding mock data; click with DOM `.click()` in `eval` (pointer clicks can report "occluded"). **The launcher refuses to start while the Mac is locked.** Stop the session and delete its folder afterwards (each one is about 2.6 GB). Earlier helper scripts live in `tmp/` (gitignored: `shoot-final.sh`, `shoot-rt.sh`, `fx-demo.mjs`), and earlier screenshots in `tmp/shots/<step>/`. The `tmp/viscosity-*-workflow.js` files are build workflows that already finished and were committed; nothing is running in the background, so do not re-run them.
 
 ## Open items
 
 1. **Screenshots still owed:** account-pool screens (pool card in Settings → the provider's profiles, usage settings) and every Step 5 feature. Seeding notes per feature: Mission Control opens with `useMissionControlViewStore.setState({ shown: true })`; Subscriptions needs seeded `agentStatuses`, `agentInstances`, `accountPools` and `providerUsage` snapshots; Ask all uses `__viscosityRoundtable.simulate("demo-compare", "compare")`; theme import needs a fake `window.viscosityHost.themes` bridge in mock mode.
 2. **The packaged app has not been launched yet**; only its bundle, identity and signature were checked.
-3. **Scheduled upstream workflows will run weekly on `main`** now that the repo is on GitHub: `dependency-audit.yml`, `quality-kpis.yml`, `windows-wsl-qualification.yml`, `v2-perf-qualification.yml`. They are Poracode's and will likely fail without its secrets; consider disabling them (`gh workflow disable <file>`). `ci.yml` only runs on `master`, so nothing checks pushes to `main`; consider adding `main` to its branch filters.
+3. **Scheduled upstream workflows will run weekly on `main`** now that the repo is on GitHub: `dependency-audit.yml`, `quality-kpis.yml`, `windows-wsl-qualification.yml`, `v2-perf-qualification.yml`. They are Poracode's and will likely fail without its secrets; consider disabling them (`gh workflow disable <file> -R deactivatedme/viscositycode`). `ci.yml` only runs on `master`, so nothing checks pushes to `main`; consider adding `main` to its branch filters.
 4. **Windows builds are untested**; the workflow has never run.
 5. **Minor known limitations** from the Step 5 reviews (none blocking):
    - phone/PWA push alerts are not held during an account switch (desktop and remote-client notifications are);
@@ -132,4 +138,4 @@ Then use `eval` / `shot` / `click` / `stop` with `--session "$HOME/.poracode-smo
 
 ## Commit and PR rules
 
-`type(scope): subject`, imperative, ≤ 72 characters; the body explains why; stage explicit paths; never use `--no-verify`. One feature per commit. Push only to `origin`.
+`type(scope): subject`, imperative, ≤ 72 characters; the body explains why; stage explicit paths; never use `--no-verify`. One feature per commit. Push only to `origin`. Commit straight to `main` (every fork commit so far went there; the fork has no PRs). `master` only mirrors upstream: never commit to it, and ignore the AGENTS.md / `pull-request` skill rule that PRs target `master` (a bare `gh pr create` here would open on Porabuild/Poracode). The fork repo is public, so every push is visible.
