@@ -132,6 +132,8 @@ bun run dist         # package an installer into release/
 
 Packaged builds have no update feed unless you set `VISCOSITYCODE_UPDATE_REPO=owner/repo` (your own GitHub repository) when running `bun run dist`; without it the app never checks for updates.
 
+[BUILDING.md](BUILDING.md) covers each installer, signing and notarisation, building without Rust, and the GitHub Actions workflow that builds the macOS and Windows installers for you.
+
 ### Command line
 
 Packaged desktop builds register a `viscositycode` command (`viscositycode-next` for Nightly builds) that runs the server bundled with the app, for example:
