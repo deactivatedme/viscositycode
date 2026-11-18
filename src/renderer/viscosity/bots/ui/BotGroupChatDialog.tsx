@@ -1,8 +1,10 @@
 /**
  * ViscosityCode Bots UI: start a group chat (fork of Poracode). Picks 2–5
- * bots, the workspace project and an optional title, then starts a Roundtable
- * in the "open" pattern through the Bots API and shows it in the Roundtable
- * panel, where the user @mentions who should reply.
+ * bots, the workspace project, an optional title and an optional first
+ * message, then starts a Roundtable in the "open" pattern through the Bots
+ * API. The first message is posted right after the start so the bots answer
+ * at once; later messages go through the Roundtable panel, where the user
+ * @mentions who should reply.
  */
 import { useState } from "react";
 import { Checkbox, Input, Label, Modal, TextField, toast } from "@heroui/react";
@@ -11,7 +13,9 @@ import { isHomeProject } from "@/shared/homeScope";
 import { friendlyError } from "@/shared/messages";
 import { Button } from "@/renderer/components/common/Button";
 import { Select } from "@/renderer/components/common/Select";
+import { TextArea } from "@/renderer/components/common/TextArea";
 import { useAppStore } from "@/renderer/state/appStore";
+import { postOpeningMessage } from "../../roundtable/ui/openingMessage";
 import { startBotGroupChat, useBots } from "../api";
 import { BOT_GROUP_CHAT_MAX_BOTS, BOT_GROUP_CHAT_MIN_BOTS, botGroupChatTitle } from "../botActions";
 import { BotAvatar } from "./BotAvatar";
@@ -57,6 +61,7 @@ export function BotGroupChatDialog(props: { botIds?: string[]; onClose: () => vo
     () => firstSelected?.projectId ?? bots[0]?.projectId ?? "",
   );
   const [title, setTitle] = useState("");
+  const [firstMessage, setFirstMessage] = useState("");
   const [starting, setStarting] = useState(false);
 
   const count = selected.length;
@@ -86,16 +91,25 @@ export function BotGroupChatDialog(props: { botIds?: string[]; onClose: () => vo
   async function start() {
     if (!canStart) return;
     setStarting(true);
+    // The bots in the order they are seated (the session keeps it), so the
+    // first message's @mentions resolve like the Roundtable composer's.
+    const seated = selected.flatMap((id) => bots.filter((bot) => bot.id === id));
+    let sessionId: string;
     try {
-      await startBotGroupChat(selected, projectId, title.trim() || undefined);
-      props.onClose();
-      // The view does not switch: say where the group chat went.
-      toast.success(t`Roundtable started`);
+      sessionId = await startBotGroupChat(selected, projectId, title.trim() || undefined);
     } catch (error) {
       toast.danger(friendlyError(error));
-    } finally {
       setStarting(false);
+      return;
     }
+    // The chat has started either way; a message that could not be posted is only reported.
+    await postOpeningMessage(sessionId, firstMessage, seated).catch((error: unknown) =>
+      toast.danger(friendlyError(error)),
+    );
+    setStarting(false);
+    props.onClose();
+    // The view does not switch: say where the group chat went.
+    toast.success(t`Roundtable started`);
   }
 
   return (
@@ -154,6 +168,16 @@ export function BotGroupChatDialog(props: { botIds?: string[]; onClose: () => vo
                   <Trans>Title</Trans>
                 </Label>
                 <Input placeholder={botGroupChatTitle(names.length > 0 ? names : [t`your bots`])} />
+              </TextField>
+              <TextField className="gap-1.5" value={firstMessage} onChange={setFirstMessage}>
+                <Label className="text-xs font-medium text-foreground">
+                  <Trans>First message</Trans>
+                </Label>
+                <TextArea
+                  rows={3}
+                  className="resize-y"
+                  placeholder={t`Optional. Sent as soon as the chat starts; @mention who should answer.`}
+                />
               </TextField>
               <p role="status" className="min-h-4 text-[11px] text-muted">
                 {reason}

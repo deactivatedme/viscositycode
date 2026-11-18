@@ -5,7 +5,8 @@
  *
  * The transcript renders with the app's chat markdown renderer. Only the live
  * reply row re-renders while a reply streams (throttled to 8 Hz by the
- * driver); the composer is the app's own thread composer.
+ * driver); the composer is the app's own thread composer. While the panel is
+ * open the panes underneath are inert and focus moves into it.
  */
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Tooltip, toast } from "@heroui/react";
@@ -28,6 +29,7 @@ import {
 } from "../botApiChat";
 import { closeBotChatPanel } from "../botChatPanelStore";
 import { refreshXaiKeyStatus, useXaiKeyStatus } from "@/renderer/viscosity/xai/useXaiKeyStatus";
+import { useCoverSplitView } from "../../roundtable/ui/coverSplitView";
 import { BotAvatar } from "./BotAvatar";
 import { useBotLiveState } from "./botLiveState";
 import { openBotEditor } from "./botsDialogStore";
@@ -202,13 +204,22 @@ function BotChatPanelContent(props: { bot: BotProfile }) {
   const { bot } = props;
   const state = useBotLiveState(bot);
   const brain = useBrainLabel(bot.brain, bot.projectId);
+  const panelRef = useRef<HTMLElement>(null);
+  useCoverSplitView(panelRef);
 
   useEffect(() => {
     void refreshXaiKeyStatus();
   }, []);
 
   return (
-    <section className="vc-bot-chat" aria-label={bot.label} data-vc-bot-chat={bot.id}>
+    <section
+      ref={panelRef}
+      tabIndex={-1}
+      className="vc-bot-chat outline-none"
+      aria-label={bot.label}
+      data-vc-bot-chat={bot.id}
+      data-vc-cover-panel=""
+    >
       <header className="vc-bot-chat__header">
         <BotAvatar bot={bot} size="md" state={state} />
         <div className="flex min-w-0 flex-1 flex-col">

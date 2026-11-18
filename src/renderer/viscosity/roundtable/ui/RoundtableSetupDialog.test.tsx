@@ -14,12 +14,15 @@ import { useRoundtableViewStore } from "./roundtableViewStore";
 const api = vi.hoisted(() => ({
   ready: [] as ReadyAgentBrain[],
   startRoundtable: vi.fn<(input: StartRoundtableInput) => Promise<string>>(),
+  postToRoundtable:
+    vi.fn<(id: string, text: string, options?: { mentions?: string[] }) => Promise<void>>(),
 }));
 const xai = vi.hoisted(() => ({ configured: false }));
 
 vi.mock("../api", () => ({
   useReadyAgentBrains: () => api.ready,
   startRoundtable: api.startRoundtable,
+  postToRoundtable: api.postToRoundtable,
 }));
 
 vi.mock("@/renderer/viscosity/xai/useXaiKeyStatus", () => ({
@@ -66,6 +69,7 @@ function typeTask(text: string) {
 beforeEach(() => {
   api.ready = [readyBrain("alpha"), readyBrain("beta")];
   api.startRoundtable.mockReset().mockResolvedValue("rt-new");
+  api.postToRoundtable.mockReset().mockResolvedValue(undefined);
   xai.configured = false;
   useAppStore.setState({
     projects: [{ id: "p1", name: "Web app", location: { kind: "local" } } as unknown as Project],
@@ -192,6 +196,73 @@ describe("RoundtableSetupDialog", () => {
     expect(useRoundtableViewStore.getState()).toMatchObject({
       openSessionId: "rt-new",
       shown: false,
+      setup: null,
+    });
+  });
+
+  it("posts an open chat's task as its first message so the participants answer", async () => {
+    useRoundtableViewStore.setState({ setup: { nonce: 2, request: {} } });
+    renderDialog({ projectId: "p1", pattern: "open" });
+    typeTask("  What should we name the release?  ");
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    expect(api.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(api.postToRoundtable).toHaveBeenCalledTimes(1);
+    expect(api.postToRoundtable).toHaveBeenCalledWith(
+      "rt-new",
+      "What should we name the release?",
+      undefined,
+    );
+    // Posted after the start resolved, then the dialog closed as usual.
+    expect(api.startRoundtable.mock.invocationCallOrder[0]).toBeLessThan(
+      api.postToRoundtable.mock.invocationCallOrder[0]!,
+    );
+    expect(useRoundtableViewStore.getState()).toMatchObject({
+      openSessionId: "rt-new",
+      shown: false,
+      setup: null,
+    });
+  });
+
+  it("routes an @mention in an open chat's task to that participant", async () => {
+    renderDialog({ projectId: "p1", pattern: "open" });
+    typeTask("@provider-beta-beta-one start with a plan");
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    const seats = api.startRoundtable.mock.calls[0]![0].participants;
+    expect(seats.map((seat) => seat.label)).toEqual([
+      "Provider alpha · alpha One",
+      "Provider beta · beta One",
+    ]);
+    expect(api.postToRoundtable).toHaveBeenCalledWith(
+      "rt-new",
+      "@provider-beta-beta-one start with a plan",
+      { mentions: [seats[1]!.id] },
+    );
+  });
+
+  it("does not post the task of a pattern that runs on its own", async () => {
+    renderDialog({ projectId: "p1", task: "Fix it", pattern: "relay" });
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    expect(api.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(api.postToRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("still closes after an open chat started but its first message was refused", async () => {
+    api.postToRoundtable.mockRejectedValueOnce(new Error("This Roundtable has ended."));
+    useRoundtableViewStore.setState({ setup: { nonce: 4, request: {} } });
+    renderDialog({ projectId: "p1", task: "Say hello", pattern: "open" });
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    expect(api.postToRoundtable).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("This Roundtable has ended.")).toBeNull();
+    expect(useRoundtableViewStore.getState()).toMatchObject({
+      openSessionId: "rt-new",
       setup: null,
     });
   });

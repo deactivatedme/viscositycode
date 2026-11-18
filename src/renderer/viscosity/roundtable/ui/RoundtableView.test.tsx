@@ -149,6 +149,26 @@ describe("RoundtableView controls", () => {
     );
   });
 
+  it("offers Retry on a failed session instead of Pause", () => {
+    renderSession(session({ status: "failed", error: "A participant's turn failed." }));
+    const toolbar = screen.getByRole("toolbar", { name: "Roundtable controls" });
+    expect(within(toolbar).queryByRole("button", { name: "Pause" })).toBeNull();
+    expect(within(toolbar).getByRole("button", { name: "Stop" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    fireEvent.click(within(toolbar).getByRole("button", { name: "Retry" }));
+    expect(api.resumeRoundtable).toHaveBeenCalledWith("rt1");
+    expect(api.pauseRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("offers no Retry while a session can still run", () => {
+    for (const status of ["running", "paused", "done", "stopped"] as const) {
+      const { unmount } = renderSession(session({ status }));
+      expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+      unmount();
+    }
+  });
+
   it("opens a participant's thread", () => {
     renderSession(session({ threadIds: { b: "thread-b" } }));
     const toolbar = screen.getByRole("toolbar", { name: "Roundtable controls" });
@@ -189,6 +209,38 @@ describe("RoundtableView composer", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send" }));
     });
     expect(api.postToRoundtable).toHaveBeenCalledWith("rt1", "Focus on the tests", undefined);
+  });
+
+  it.each([
+    ["done", "This Roundtable is finished. Start a new one to continue."],
+    ["stopped", "This Roundtable was stopped. Start a new one to continue."],
+    ["failed", "This Roundtable failed. Retry it to continue."],
+  ] as const)("disables the composer of a %s session with a hint", async (status, hint) => {
+    renderSession(session({ status, pattern: "open" }));
+    const input = screen.getByRole("textbox", { name: "Message the Roundtable" });
+    expect(input.hasAttribute("disabled")).toBe(true);
+    const hintLine = screen.getByText(hint);
+    expect(hintLine.getAttribute("role")).toBe("status");
+    expect(input.getAttribute("aria-describedby")).toBe(hintLine.id);
+    expect(screen.getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Mention Agent B" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
+    expect(api.postToRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("keeps the composer open with no hint while the session runs or is paused", () => {
+    for (const status of ["running", "paused"] as const) {
+      const { unmount } = renderSession(session({ status }));
+      const input = screen.getByRole("textbox", { name: "Message the Roundtable" });
+      expect(input.hasAttribute("disabled")).toBe(false);
+      expect(input.hasAttribute("aria-describedby")).toBe(false);
+      expect(screen.queryByText(/Start a new one to continue|Retry it to continue/)).toBeNull();
+      unmount();
+    }
   });
 
   it("keeps the draft when posting fails", async () => {

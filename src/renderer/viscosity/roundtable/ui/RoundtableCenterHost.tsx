@@ -2,9 +2,11 @@
  * ViscosityCode Roundtable UI: the center-panel mount. Rendered by the fork's
  * center frame inside the desktop shell only; it draws the open Roundtable
  * over the split view (like the inline file editor) and the setup dialog.
- * Both surfaces load lazily on first use.
+ * Both surfaces load lazily on first use. While the panel is shown the panes
+ * underneath are inert and focus moves into the panel (`coverSplitView`).
  */
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { useCoverSplitView } from "./coverSplitView";
 import {
   isRoundtablePanelShown,
   startRoundtableViewSync,
@@ -20,6 +22,25 @@ const RoundtableSetupDialog = lazy(() =>
   })),
 );
 
+/** The panel over the split view; it keeps the panes underneath inert while mounted. */
+function RoundtablePanel(props: { sessionId: string }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useCoverSplitView(panelRef);
+  return (
+    <div
+      ref={panelRef}
+      tabIndex={-1}
+      data-vc-roundtable-panel=""
+      data-vc-cover-panel=""
+      className="vc-rt-panel absolute inset-0 z-[21] flex outline-none"
+    >
+      <Suspense fallback={null}>
+        <RoundtableView key={props.sessionId} sessionId={props.sessionId} />
+      </Suspense>
+    </div>
+  );
+}
+
 export function RoundtableCenterHost() {
   const sessionId = useRoundtableViewStore((state) =>
     isRoundtablePanelShown(state) ? state.openSessionId : null,
@@ -30,13 +51,7 @@ export function RoundtableCenterHost() {
 
   return (
     <>
-      {sessionId ? (
-        <div data-vc-roundtable-panel="" className="vc-rt-panel absolute inset-0 z-[21] flex">
-          <Suspense fallback={null}>
-            <RoundtableView key={sessionId} sessionId={sessionId} />
-          </Suspense>
-        </div>
-      ) : null}
+      {sessionId ? <RoundtablePanel sessionId={sessionId} /> : null}
       {setup ? (
         <Suspense fallback={null}>
           <RoundtableSetupDialog key={setup.nonce} request={setup.request} />

@@ -5,6 +5,8 @@
  * from the XAI_API_KEY environment variable or stored on this device, with
  * the last four characters), the defaults new Grok bots start with, and a
  * short note that bots on agent brains use the user's existing subscriptions.
+ * A key saved on this device can be removed even while XAI_API_KEY wins over
+ * it; the status says which one is in use.
  *
  * The key goes straight to the desktop main process, which encrypts it with
  * the OS (Electron safeStorage); this page never holds it after Save and
@@ -25,13 +27,30 @@ import {
 import { useBotsStore } from "../botStore";
 import { ToolCheckbox } from "../ui/ToolCheckbox";
 
-function useKeyStatusText(status: XaiKeyStatus | undefined): string {
+/**
+ * The key status, with the additive `hasStoredKey` flag: main sets it when a
+ * key is saved on this device, including while XAI_API_KEY takes precedence
+ * (then `source` is "env" and the saved key is otherwise invisible here).
+ */
+type XaiKeyStatusWithStore = XaiKeyStatus & { hasStoredKey?: boolean };
+
+/** Whether a key is saved on this device, so Remove has something to delete. */
+function hasStoredXaiKey(status: XaiKeyStatusWithStore | undefined): boolean {
+  return status?.source === "stored" || status?.hasStoredKey === true;
+}
+
+function useKeyStatusText(status: XaiKeyStatusWithStore | undefined): string {
   const { t } = useLingui();
   if (!status) return t`Checking…`;
   // Main sends no hint for very short keys; never render an empty "()".
   const hint = status.hint ? `…${status.hint}` : undefined;
   switch (status.source) {
     case "env":
+      if (status.hasStoredKey === true) {
+        return hint
+          ? t`Using XAI_API_KEY from the environment (${hint}). It takes precedence over the key saved on this device, which you can remove.`
+          : t`Using XAI_API_KEY from the environment. It takes precedence over the key saved on this device, which you can remove.`;
+      }
       return hint
         ? t`Using XAI_API_KEY from the environment (${hint}). It takes precedence over a saved key.`
         : t`Using XAI_API_KEY from the environment. It takes precedence over a saved key.`;
@@ -46,11 +65,12 @@ function useKeyStatusText(status: XaiKeyStatus | undefined): string {
 
 function XaiKeyRow() {
   const { t } = useLingui();
-  const { available, status, loading, error } = useXaiKeyStatus();
+  const { available, status: keyStatus, loading, error } = useXaiKeyStatus();
+  const status: XaiKeyStatusWithStore | undefined = keyStatus;
   const [draft, setDraft] = useState("");
   const statusText = useKeyStatusText(status);
   const canSave = available && !loading && draft.trim().length > 0;
-  const canRemove = available && !loading && status?.source === "stored";
+  const canRemove = available && !loading && hasStoredXaiKey(status);
 
   async function save() {
     if (!canSave) return;
@@ -67,8 +87,12 @@ function XaiKeyRow() {
   async function remove() {
     if (!canRemove) return;
     try {
-      await removeXaiKey();
-      toast.success(t`xAI API key removed from this device.`);
+      const next = await removeXaiKey();
+      toast.success(
+        next.source === "env"
+          ? t`Saved xAI API key removed from this device. XAI_API_KEY from the environment still applies.`
+          : t`xAI API key removed from this device.`,
+      );
     } catch (failure) {
       toast.danger(failure instanceof Error ? failure.message : String(failure));
     }

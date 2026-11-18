@@ -10,6 +10,7 @@ vi.mock("@/renderer/state/dbStorage", () => ({
   }),
 }));
 
+import type { XaiKeyStatus } from "@/shared/viscosity/xaiContract";
 import { i18n } from "@/renderer/i18n/i18n";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import {
@@ -119,6 +120,40 @@ describe("Settings → Bots", () => {
     expect(statusLine().textContent).toContain("XAI_API_KEY");
     expect(statusLine().textContent).toContain("…ABCD");
     expect(screen.getByRole("button", { name: "Remove" })).toBeDisabled();
+  });
+
+  it("still removes a stored key while XAI_API_KEY takes precedence over it", async () => {
+    // Additive status field: main reports a key saved on this device even when env wins.
+    const envAndStored: XaiKeyStatus & { hasStoredKey?: boolean } = {
+      configured: true,
+      source: "env",
+      hint: "ABCD",
+      hasStoredKey: true,
+    };
+    bridge.keyStatusValue = envAndStored;
+    vi.mocked(bridge.clearKey).mockResolvedValueOnce({
+      configured: true,
+      source: "env",
+      hint: "ABCD",
+    });
+    render(<BotsSettings />);
+    await waitFor(() => expect(statusLine().dataset.vcXaiKeyStatus).toBe("env"));
+    expect(statusLine().textContent).toContain("XAI_API_KEY");
+    expect(statusLine().textContent).toContain("…ABCD");
+    expect(statusLine().textContent).toContain(
+      "takes precedence over the key saved on this device",
+    );
+    const remove = screen.getByRole("button", { name: "Remove" });
+    expect(remove).not.toBeDisabled();
+
+    await act(async () => {
+      fireEvent.click(remove);
+    });
+    expect(bridge.clearKey).toHaveBeenCalledTimes(1);
+    // The environment key still applies; nothing is left to remove.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Remove" })).toBeDisabled());
+    expect(statusLine().dataset.vcXaiKeyStatus).toBe("env");
+    expect(statusLine().textContent).toContain("It takes precedence over a saved key.");
   });
 
   it("says the key is desktop-only where there is no xAI bridge", () => {

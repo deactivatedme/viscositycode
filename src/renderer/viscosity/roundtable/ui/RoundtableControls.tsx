@@ -1,12 +1,14 @@
 /**
- * ViscosityCode Roundtable UI: the bottom bar — Stop, Pause/Resume, one
- * "Open <participant> thread" button per agent seat — and the composer that
- * posts a message (with @participant mentions) through `postToRoundtable`.
+ * ViscosityCode Roundtable UI: the bottom bar — Stop, Pause/Resume (Retry on
+ * a failed session), one "Open <participant> thread" button per agent seat —
+ * and the composer that posts a message (with @participant mentions) through
+ * `postToRoundtable`. Once a session has ended the composer is disabled with a
+ * short hint, since the engine would reject the message anyway.
  */
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useId, useState } from "react";
 import { Button, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowUp, Pause, Play, Square } from "lucide-react";
+import { ArrowUp, Pause, Play, RotateCcw, Square } from "lucide-react";
 import { TextArea } from "@/renderer/components/common/TextArea";
 import { activateThreadTab } from "@/renderer/viscosity/layout/tabs/tabActions";
 import { pauseRoundtable, postToRoundtable, resumeRoundtable, stopRoundtable } from "../api";
@@ -23,6 +25,7 @@ export function RoundtableControls(props: { session: RoundtableSession }) {
   const { t } = useLingui();
   const [stopping, setStopping] = useState(false);
   const active = session.status === "running" || session.status === "paused";
+  const failed = session.status === "failed";
 
   async function stop() {
     setStopping(true);
@@ -39,6 +42,15 @@ export function RoundtableControls(props: { session: RoundtableSession }) {
     try {
       if (session.status === "paused") resumeRoundtable(session.id);
       else pauseRoundtable(session.id);
+    } catch (error) {
+      toast.danger(errorText(error));
+    }
+  }
+
+  /** A failed session re-runs its failed turns (the engine's resume). */
+  function retry() {
+    try {
+      resumeRoundtable(session.id);
     } catch (error) {
       toast.danger(errorText(error));
     }
@@ -61,19 +73,26 @@ export function RoundtableControls(props: { session: RoundtableSession }) {
         <Square aria-hidden="true" className="size-3.5" />
         <Trans>Stop</Trans>
       </Button>
-      <Button size="sm" variant="secondary" isDisabled={!active} onPress={togglePause}>
-        {session.status === "paused" ? (
-          <>
-            <Play aria-hidden="true" className="size-3.5" />
-            <Trans>Resume</Trans>
-          </>
-        ) : (
-          <>
-            <Pause aria-hidden="true" className="size-3.5" />
-            <Trans>Pause</Trans>
-          </>
-        )}
-      </Button>
+      {failed ? (
+        <Button size="sm" variant="secondary" onPress={retry}>
+          <RotateCcw aria-hidden="true" className="size-3.5" />
+          <Trans>Retry</Trans>
+        </Button>
+      ) : (
+        <Button size="sm" variant="secondary" isDisabled={!active} onPress={togglePause}>
+          {session.status === "paused" ? (
+            <>
+              <Play aria-hidden="true" className="size-3.5" />
+              <Trans>Resume</Trans>
+            </>
+          ) : (
+            <>
+              <Pause aria-hidden="true" className="size-3.5" />
+              <Trans>Pause</Trans>
+            </>
+          )}
+        </Button>
+      )}
       {seatsWithThreads.length > 0 ? (
         <span aria-hidden="true" className="vc-rt-controls__divider" />
       ) : null}
@@ -99,11 +118,22 @@ export function RoundtableControls(props: { session: RoundtableSession }) {
 export function RoundtableComposer(props: { session: RoundtableSession }) {
   const { session } = props;
   const { t } = useLingui();
+  const hintId = useId();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const handles = mentionHandles(session.participants);
   const mentioned = extractMentions(text, handles);
-  const canSend = text.trim().length > 0 && !sending;
+  // An ended session takes no messages (nobody would answer): say why instead.
+  const endedHint =
+    session.status === "failed"
+      ? t`This Roundtable failed. Retry it to continue.`
+      : session.status === "stopped"
+        ? t`This Roundtable was stopped. Start a new one to continue.`
+        : session.status === "done"
+          ? t`This Roundtable is finished. Start a new one to continue.`
+          : null;
+  const ended = endedHint !== null;
+  const canSend = !ended && text.trim().length > 0 && !sending;
 
   async function send() {
     if (!canSend) return;
@@ -127,7 +157,12 @@ export function RoundtableComposer(props: { session: RoundtableSession }) {
   }
 
   return (
-    <div className="vc-rt-composer">
+    <div className="vc-rt-composer" data-ended={ended || undefined}>
+      {endedHint ? (
+        <p id={hintId} role="status" className="vc-rt-composer__hint">
+          {endedHint}
+        </p>
+      ) : null}
       <div className="vc-rt-composer__mentions" role="group" aria-label={t`Mention a participant`}>
         {session.participants.map((participant) => {
           const handle = handles.get(participant.id) ?? participant.id;
@@ -142,6 +177,7 @@ export function RoundtableComposer(props: { session: RoundtableSession }) {
               aria-label={t`Mention ${name}`}
               data-selected={selected || undefined}
               className="vc-rt-mention"
+              isDisabled={ended}
               onPress={() =>
                 setText((current) =>
                   selected ? removeMention(current, handle) : insertMention(current, handle),
@@ -162,6 +198,8 @@ export function RoundtableComposer(props: { session: RoundtableSession }) {
           aria-label={t`Message the Roundtable`}
           placeholder={t`Message the Roundtable. @mention who should answer.`}
           className="vc-rt-composer__input min-w-0 flex-1"
+          disabled={ended}
+          {...(ended ? { "aria-describedby": hintId } : {})}
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={onKeyDown}

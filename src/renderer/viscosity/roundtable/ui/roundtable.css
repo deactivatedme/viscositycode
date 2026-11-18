@@ -610,6 +610,18 @@ html[data-vc-shell] .vc-rt-composer:focus-within {
   border-color: var(--vc-focus-ring);
 }
 
+/* An ended session: the composer stays visible but takes no input. */
+html[data-vc-shell] .vc-rt-composer__hint {
+  margin: 0;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+}
+
+html[data-vc-shell] .vc-rt-composer[data-ended] .vc-rt-composer__mentions,
+html[data-vc-shell] .vc-rt-composer[data-ended] .vc-rt-composer__row {
+  opacity: 0.6;
+}
+
 html[data-vc-shell] .vc-rt-composer__mentions {
   display: flex;
   flex-wrap: wrap;

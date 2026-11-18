@@ -41,6 +41,7 @@ import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useXaiKeyStatus } from "@/renderer/viscosity/xai/useXaiKeyStatus";
 import { type ReadyAgentBrain, startRoundtable, useReadyAgentBrains } from "../api";
 import type { ParticipantBrain, ParticipantRole, RoundtablePattern } from "../types";
+import { postOpeningMessage } from "./openingMessage";
 import { ParticipantAvatar } from "./ParticipantAvatar";
 import {
   defaultMaxRounds,
@@ -375,20 +376,31 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
     setStarting(true);
     setStartError(null);
     const opening = useRoundtableViewStore.getState().setup;
+    const input = buildStartInput(draft, ready);
+    let sessionId: string;
     try {
-      const sessionId = await startRoundtable(buildStartInput(draft, ready));
-      // Dismissed while starting: the session runs and is listed, but the
-      // window does not jump to it.
-      if (useRoundtableViewStore.getState().setup !== opening) return;
-      closeRoundtableSetup();
-      // Never switch to the Roundtable by itself: its tab appears in the
-      // background and the user opens it when they want to.
-      openRoundtableTab(sessionId);
-      toast.success(t`Roundtable started`);
+      sessionId = await startRoundtable(input);
     } catch (error) {
       setStarting(false);
       setStartError(error instanceof Error ? error.message : String(error));
+      return;
     }
+    // An open chat waits for messages: its task is the first one, so the
+    // participants answer right away. The session has started either way, so
+    // a failed post is only reported.
+    if (input.pattern === "open") {
+      await postOpeningMessage(sessionId, input.task, input.participants).catch((error: unknown) =>
+        toast.danger(error instanceof Error ? error.message : String(error)),
+      );
+    }
+    // Dismissed while starting: the session runs and is listed, but the
+    // window does not jump to it.
+    if (useRoundtableViewStore.getState().setup !== opening) return;
+    closeRoundtableSetup();
+    // Never switch to the Roundtable by itself: its tab appears in the
+    // background and the user opens it when they want to.
+    openRoundtableTab(sessionId);
+    toast.success(t`Roundtable started`);
   }
 
   const footerMessage = startError ?? blockerMessage;
