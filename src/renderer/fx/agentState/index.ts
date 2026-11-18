@@ -2,19 +2,28 @@
  * ViscosityCode: agent-state effects (Step 4). `AgentStateEffects` is mounted
  * once by `FxRoot`; it installs a read-only store subscription outside React
  * and drives data attributes / CSS variables on panes, tabs and the composer.
- * It renders nothing and never re-renders on agent activity.
+ * It renders nothing and never re-renders on agent activity. Step 5: the
+ * monitor also publishes turn transitions (`onAgentFxTransition`), and the
+ * sound pack that listens to them starts and stops with these effects.
  */
 import { useEffect } from "react";
 import { setFxEnergy } from "@/renderer/fx/energyBus";
 import { useFxSettings } from "@/renderer/fx/fxSettingsStore";
 import { useAppStore } from "@/renderer/state/appStore";
+import { startSoundPack } from "@/renderer/fx/sounds";
 import { useOpenTabsStore } from "@/renderer/viscosity/layout/tabs/openTabsStore";
 import { installAgentStateDevHook } from "./devHook";
 import { createAgentStateMonitor } from "./monitor";
 import { registerToolsRunningStatusItem } from "./ToolsRunningStatusItem";
 import { setToolsRunningCount } from "./toolsRunningStore";
+import { emitAgentFxTransition } from "./transitions";
 
 export type { FxAgentState, FxFlash } from "./derive";
+export {
+  onAgentFxTransition,
+  type AgentFxTransition,
+  type AgentFxTransitionKind,
+} from "./transitions";
 
 /** Start the monitor, the status bar item and the DEV hook; returns the teardown. */
 export function startAgentStateEffects(doc: Document = document): () => void {
@@ -40,7 +49,10 @@ export function startAgentStateEffects(doc: Document = document): () => void {
     },
     setEnergy: setFxEnergy,
     setToolsRunning: setToolsRunningCount,
+    onTransition: emitAgentFxTransition,
   });
+  // Subscribed before the monitor starts; it stays silent until switched on.
+  const stopSoundPack = startSoundPack();
   monitor.start();
   const unregisterStatusItem = registerToolsRunningStatusItem();
   const uninstallDevHook = installAgentStateDevHook({
@@ -51,6 +63,7 @@ export function startAgentStateEffects(doc: Document = document): () => void {
     uninstallDevHook();
     unregisterStatusItem();
     monitor.stop();
+    stopSoundPack();
   };
 }
 

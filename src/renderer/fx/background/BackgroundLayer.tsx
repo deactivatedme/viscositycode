@@ -10,13 +10,15 @@
  *
  * React only re-renders for the switch and the two panel values; every other
  * setting reaches the controller through a store subscription, and frames
- * never touch React.
+ * never touch React. Style and intensity follow the focused project's
+ * override when it has one (Step 5, ./projectBackground.ts).
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFxSettings } from "../fxSettingsStore";
 import { BackgroundController } from "./backgroundController";
 import { applyBackgroundDom, clearBackgroundDom } from "./backgroundDom";
+import { createEffectiveBackgroundSource } from "./projectBackground";
 import {
   debugRendererPreference,
   installBackgroundDebugHook,
@@ -37,12 +39,11 @@ export function BackgroundLayer() {
   // when the panels turn translucent (both run in the same task).
   useEffect(() => {
     if (!host) return;
-    const controller = new BackgroundController(host, useFxSettings.getState().background, {
+    const source = createEffectiveBackgroundSource();
+    const controller = new BackgroundController(host, source.get(), {
       rendererPreference: debugRendererPreference(),
     });
-    const unsubscribe = useFxSettings.subscribe((state, previous) => {
-      if (state.background !== previous.background) controller.update(state.background);
-    });
+    const unsubscribe = source.subscribe((next) => controller.update(next));
     const unregisterDebug = registerBackgroundDebug(controller);
     return () => {
       unsubscribe();

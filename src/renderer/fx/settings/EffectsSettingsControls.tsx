@@ -13,10 +13,16 @@ export function EffectsSettingsGroup(props: {
   disabled?: boolean;
   /** Rows that stay fully visible above the dimmed ones (the master switch). */
   lead?: ReactNode;
+  /** Makes the whole group a settings-search target (its rows have no anchors of their own). */
+  anchorId?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4" aria-label={props.title}>
+    <section
+      {...(props.anchorId ? { id: props.anchorId, "data-settings-anchor": props.anchorId } : {})}
+      className={`space-y-4 ${props.anchorId ? "scroll-mt-4" : ""}`}
+      aria-label={props.title}
+    >
       <div className="border-b border-border pb-3">
         <h2 className="text-sm font-semibold text-foreground">{props.title}</h2>
         <p className="mt-1 text-xs text-muted">{props.description}</p>
@@ -39,11 +45,13 @@ export function EffectsSlider(props: {
   isDisabled: boolean;
   formatValue: (value: number) => string;
   onChange: (value: number) => void;
+  /** Width override; defaults to the settings-row width. */
+  className?: string;
 }) {
   return (
     <Slider
       aria-label={props["aria-label"]}
-      className="w-[220px] shrink-0"
+      className={`${props.className ?? "w-[220px]"} shrink-0`}
       minValue={props.minValue}
       maxValue={props.maxValue}
       step={props.step}

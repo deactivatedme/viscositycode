@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { toast } from "@heroui/react";
 import { msg } from "@lingui/core/macro";
 import type { ThreadStatus } from "@/shared/contracts";
@@ -15,6 +16,8 @@ import {
 } from "@/renderer/browserNotificationPermission";
 import { i18n } from "@/renderer/i18n/i18n";
 import type { UserNotification, UserNotificationCategory } from "@/shared/threadNotification";
+// ViscosityCode: the fork's sound pack replaces this sound while it is on.
+import { isSoundPackHandlingSounds } from "@/renderer/fx/sounds/soundPackState";
 
 type NotificationCategory = UserNotificationCategory;
 
@@ -80,6 +83,7 @@ function getStatusDetail(category: NotificationCategory, status: ThreadStatus): 
 function playSound(): void {
   const settings = useSharedSettings.getState();
   if (!settings.notificationSound) return;
+  if (isSoundPackHandlingSounds()) return; // ViscosityCode: no double sounds with the sound pack on
 
   try {
     void getNotificationAudio().play();

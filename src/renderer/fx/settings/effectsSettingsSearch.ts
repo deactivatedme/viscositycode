@@ -79,6 +79,15 @@ export const EFFECTS_SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     keywords: "battery power laptop energy saver low pause background",
   },
 
+  // Per-project backgrounds
+  {
+    section: "effects",
+    anchor: "effects.projectBackgrounds",
+    title: msg`Per-project backgrounds`,
+    description: msg`Give a project its own background style or intensity. It applies while that project's thread or draft is in focus; other projects use the settings above.`,
+    keywords: "project background override style preset intensity per project workspace repo",
+  },
+
   // Agent effects
   {
     section: "effects",
@@ -135,6 +144,50 @@ export const EFFECTS_SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     title: msg`Typing glow`,
     description: msg`The composer glows softly while you type.`,
     keywords: "typing composer input glow keyboard",
+  },
+
+  // Sounds
+  {
+    section: "effects",
+    anchor: "effects.sounds",
+    title: msg`Sound cues`,
+    description: msg`Play a short sound when an agent finishes, hits an error, or needs your approval. While on, these replace the notification sound.`,
+    keywords: "sound sounds audio chime beep cue pack notification alert agent",
+  },
+  {
+    section: "effects",
+    anchor: "effects.soundVolume",
+    title: msg`Volume`,
+    description: msg`How loud the sound cues play.`,
+    keywords: "sound volume loud quiet audio level cue",
+  },
+  {
+    section: "effects",
+    anchor: "effects.soundAlsoInFront",
+    title: msg`Also when the app is in front`,
+    description: msg`Otherwise cues play only while the app is in the background or the thread is not on screen.`,
+    keywords: "sound focused foreground visible window front always play cue",
+  },
+  {
+    section: "effects",
+    anchor: "effects.soundDone",
+    title: msg`Agent finished`,
+    description: msg`A soft rising chime when an agent finishes its turn.`,
+    keywords: "sound done finished complete chime turn cue",
+  },
+  {
+    section: "effects",
+    anchor: "effects.soundError",
+    title: msg`Agent error`,
+    description: msg`Two low, falling notes when an agent hits an error.`,
+    keywords: "sound error failure tone cue",
+  },
+  {
+    section: "effects",
+    anchor: "effects.soundAttention",
+    title: msg`Needs your approval`,
+    description: msg`A gentle double tap when an agent waits for your approval or reply.`,
+    keywords: "sound approval attention reply waiting needs input cue",
   },
 
   // Notifications and reset

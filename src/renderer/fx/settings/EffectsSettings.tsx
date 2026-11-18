@@ -1,8 +1,9 @@
 /**
  * ViscosityCode: Settings → Effects (Personal group, after Appearance).
  *
- * Configures the animated background (Step 3) and agent-state effects
- * (Step 4) through `useFxSettings`, a per-device view preference
+ * Configures the animated background (Step 3), agent-state effects (Step 4),
+ * per-project backgrounds and the sound pack (Step 5) through `useFxSettings`,
+ * a per-device view preference
  * (ARCHITECTURE_NOTES.md §8.6). Effects only render in the fork's desktop
  * shell (`html[data-vc-shell]`), so elsewhere the page says so instead of
  * hiding: the choices still apply when this device shows the desktop layout.
@@ -22,6 +23,8 @@ import { shouldEnableViscosityShell } from "@/renderer/viscosity/shellFlag";
 import { SettingRow, SettingsPage } from "@/renderer/views/SettingsOverlay/parts/SettingsForm";
 import { AgentEffectsSettings } from "./AgentEffectsSettings";
 import { BackgroundEffectsSettings } from "./BackgroundEffectsSettings";
+import { ProjectBackgroundSettings } from "./ProjectBackgroundSettings";
+import { SoundEffectsSettings } from "./SoundEffectsSettings";
 
 /** Whether this window shows effects: the same rule that sets `html[data-vc-shell]`. */
 function useEffectsShownInThisWindow(): boolean {
@@ -38,7 +41,9 @@ function matchesDefaults(settings: FxSettings): boolean {
     (Object.keys(fallback) as (keyof T)[]).every((key) => value[key] === fallback[key]);
   return (
     sameGroup(settings.background, DEFAULT_FX_SETTINGS.background) &&
-    sameGroup(settings.effects, DEFAULT_FX_SETTINGS.effects)
+    sameGroup(settings.effects, DEFAULT_FX_SETTINGS.effects) &&
+    sameGroup(settings.sounds, DEFAULT_FX_SETTINGS.sounds) &&
+    Object.keys(settings.projectBackgrounds).length === 0
   );
 }
 
@@ -47,13 +52,15 @@ export function EffectsSettings() {
   const shownHere = useEffectsShownInThisWindow();
   const background = useFxSettings((state) => state.background);
   const effects = useFxSettings((state) => state.effects);
+  const sounds = useFxSettings((state) => state.sounds);
+  const projectBackgrounds = useFxSettings((state) => state.projectBackgrounds);
   const reset = useFxSettings((state) => state.reset);
   const openSettingsSection = usePanelStore((state) => state.openSettingsSection);
   // Mirrors what `showUserNotification` checks before alerting from the background.
   const approvalAlertsOn = useSharedSettings(
     (state) => state.notificationsEnabled && state.notificationStatuses.needsAttention !== false,
   );
-  const atDefaults = matchesDefaults({ background, effects });
+  const atDefaults = matchesDefaults({ background, effects, sounds, projectBackgrounds });
 
   return (
     <SettingsPage
@@ -72,7 +79,11 @@ export function EffectsSettings() {
 
       <BackgroundEffectsSettings />
 
+      <ProjectBackgroundSettings />
+
       <AgentEffectsSettings />
+
+      <SoundEffectsSettings />
 
       <div className="space-y-4 border-t border-border pt-4">
         <SettingRow

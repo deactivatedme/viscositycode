@@ -168,9 +168,25 @@ describe("EffectsSettings", () => {
 
     fireEvent.click(resetButton);
 
-    const { background, effects } = useFxSettings.getState();
-    expect({ background, effects }).toEqual(DEFAULT_FX_SETTINGS);
+    const { background, effects, sounds, projectBackgrounds } = useFxSettings.getState();
+    expect({ background, effects, sounds, projectBackgrounds }).toEqual(DEFAULT_FX_SETTINGS);
     expect(screen.getByRole("switch", { name: "Agent effects" })).toBeChecked();
+    expect(resetButton).toBeDisabled();
+  });
+
+  it("offers reset once only the sound pack or a project override has changed", () => {
+    render(<EffectsSettings />);
+    const resetButton = screen.getByRole("button", { name: /^Reset$/ });
+
+    act(() => useFxSettings.getState().setSounds({ enabled: true }));
+    expect(resetButton).not.toBeDisabled();
+    fireEvent.click(resetButton);
+    expect(useFxSettings.getState().sounds.enabled).toBe(false);
+
+    act(() => useFxSettings.getState().setProjectBackground("p1", { preset: "aurora" }));
+    expect(resetButton).not.toBeDisabled();
+    fireEvent.click(resetButton);
+    expect(useFxSettings.getState().projectBackgrounds).toEqual({});
     expect(resetButton).toBeDisabled();
   });
 

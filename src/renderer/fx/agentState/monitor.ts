@@ -7,6 +7,8 @@
  * per-thread signature; a thread is re-derived only when its signature moves.
  * Streaming is measured by a 4 Hz sampler that runs only while a visible chat
  * thread is mid-turn. Results reach the DOM through one rAF-batched applicator.
+ * Turn transitions (done / error / attention) are also published through the
+ * optional `onTransition` hook (Step 5, see ./transitions.ts).
  */
 import { isThreadTurnActive } from "@/shared/contracts";
 import type { EffectsSettings } from "@/renderer/fx/fxSettingsStore";
@@ -38,6 +40,7 @@ import {
   STREAMING_MIN_RATE,
   streamEnergyFromRate,
 } from "./streamSampler";
+import { type AgentFxTransition, type AgentFxTransitionKind, isWaitingOnUser } from "./transitions";
 import { installTypingGlow } from "./typingGlow";
 
 export const ERROR_FLASH_MS = 1200;
@@ -79,6 +82,11 @@ export interface AgentStateMonitorOptions {
   clearRepeating?: (handle: IntervalHandle) => void;
   /** Installs the composer typing glow; returns its uninstall. */
   installTyping?: (doc: Document) => () => void;
+  /**
+   * ViscosityCode (Step 5): receives one-shot turn transitions of every
+   * tracked thread, visible or not. Independent of the effect switches.
+   */
+  onTransition?: (transition: AgentFxTransition) => void;
 }
 
 export interface AgentStateSnapshotEntry {
@@ -129,6 +137,8 @@ interface TrackedThread {
   state: FxAgentState;
   flash: FxFlash | null;
   flashTimer: Timer | null;
+  /** Not derived yet, and its first state is where it already was, not a transition. */
+  fresh: boolean;
 }
 
 interface Override {
@@ -266,10 +276,24 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
     return changed;
   }
 
+  /**
+   * Whether a newly tracked thread's first state is simply where it already
+   * was. Outside panes and tabs, a known thread that was not waiting on the
+   * user has just started a turn, so going straight to an approval is news.
+   * Opened panes/tabs, start-up and threads new to the store stay quiet.
+   */
+  function isFirstSight(before: TurnSnapshot | undefined, shown: boolean): boolean {
+    return shown || !before || isWaitingOnUser(before);
+  }
+
+  function emitTransition(threadId: string, kind: AgentFxTransition["kind"]): void {
+    options.onTransition?.({ threadId, kind });
+  }
+
   function computeStates(): boolean {
     let changed = false;
     let tools = 0;
-    for (const entry of tracked.values()) {
+    for (const [id, entry] of tracked) {
       const state = deriveFxState({
         status: entry.snapshot.status,
         attention: entry.snapshot.attention,
@@ -279,9 +303,11 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
         streaming: entry.streaming,
       });
       if (state !== entry.state) {
+        if (state === "attention" && !entry.fresh) emitTransition(id, "attention");
         entry.state = state;
         changed = true;
       }
+      entry.fresh = false;
       if (entry.turnActive) tools += entry.activity.runningTools;
     }
     options.setToolsRunning(tools);
@@ -346,6 +372,7 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
 
   function sync(): void {
     const state = options.store.getState();
+    const previousState = lastState;
     lastState = state;
     const nextPaneIds = selectPaneThreadIds(state.view);
     const nextTabIds = options.tabs.getIds();
@@ -357,6 +384,8 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
     const ids = collectTrackedThreadIds(paneIds, tabIds, getTurnActiveThreadIds(state.threads));
     const keep = new Set<string>();
     const threadMap = getThreadMap(state.threads);
+    // Cached per array by getThreadMap, so this lookup is free on later syncs.
+    const previousThreadMap = previousState ? getThreadMap(previousState.threads) : null;
     for (const id of ids) {
       const thread = threadMap.get(id);
       if (!thread) continue;
@@ -411,6 +440,7 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
         state: "idle",
         flash: null,
         flashTimer: null,
+        fresh: isFirstSight(previousThreadMap?.get(id), inPane || inTab),
       };
       entry.signature = signature;
       entry.snapshot = snapshot;
@@ -426,12 +456,30 @@ export function createAgentStateMonitor(options: AgentStateMonitorOptions): Agen
       entry.inPane = inPane;
       entry.inTab = inTab;
       tracked.set(id, entry);
-      if (flash) startFlash(entry, flash);
+      if (flash) {
+        startFlash(entry, flash);
+        // Settled but still waiting on the user: computeStates reports the attention.
+        if (flash !== "done" || !isWaitingOnUser(snapshot)) emitTransition(id, flash);
+      }
     }
     for (const [id, entry] of tracked) {
       if (!keep.has(id)) {
+        // A background thread leaves tracking when its turn ends: report how it ended.
+        const thread = options.onTransition ? threadMap.get(id) : undefined;
+        let ended: AgentFxTransitionKind | null = thread
+          ? detectTurnTransition(entry.snapshot, {
+              status: thread.status,
+              attention: thread.attention,
+              interruptedTurn: thread.interruptedTurn,
+            })
+          : null;
+        // Settled with an open question or approval: attention, unless already announced.
+        if (ended === "done" && thread && isWaitingOnUser(thread)) {
+          ended = entry.state === "attention" ? null : "attention";
+        }
         forget(id, entry);
         changed = true;
+        if (ended) emitTransition(id, ended);
       }
     }
     if (refreshStates()) changed = true;
