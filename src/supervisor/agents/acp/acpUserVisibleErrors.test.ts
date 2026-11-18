@@ -1,5 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
-import { isFatalAcpQuotaError, parseAcpAgentMessageApiError } from "./acpUserVisibleErrors";
+import type { RuntimeEvent } from "@/shared/contracts";
+import {
+  isAcpUsageLimitMessage,
+  isFatalAcpQuotaError,
+  parseAcpAgentMessageApiError,
+  resolveAcpUsageLimitReason,
+  withAcpUsageLimitReasons,
+} from "./acpUserVisibleErrors";
 
 describe("parseAcpAgentMessageApiError", () => {
   it("extracts detail from Factory Droid usage-limit payloads", () => {
@@ -27,5 +35,67 @@ describe("parseAcpAgentMessageApiError", () => {
     const message = parseAcpAgentMessageApiError(text);
     expect(message).toContain("Individual quota reached");
     expect(isFatalAcpQuotaError(message ?? "")).toBe(true);
+  });
+});
+
+// ViscosityCode: the account running out is named on turn-ending provider failures.
+describe("isAcpUsageLimitMessage", () => {
+  it.each([
+    "Individual quota reached. Please upgrade your subscription to increase your limits.",
+    "Rate limit exceeded (HTTP 429). Wait and retry, or switch models.",
+    "Payment or usage limit reached (HTTP 402). Check your Factory account billing or usage.",
+    "You've reached your 5-hour Droid Core usage limit (resets in 0h 3min).",
+    "You've reached your weekly standard usage limit (resets in 2 days).",
+    "Usage limit reached.",
+    "You are out of credits.",
+    "Your credit balance is too low to access the API.",
+    "insufficient_quota: You exceeded your current quota",
+    "Quota exceeded for quota metric 'Requests' per day",
+    "RESOURCE_EXHAUSTED",
+    "Payment Required",
+  ])("recognizes %j", (message) => {
+    expect(isAcpUsageLimitMessage(message)).toBe(true);
+    expect(resolveAcpUsageLimitReason(message)).toBe("usage_limited");
+  });
+
+  it.each([
+    "Access denied (HTTP 403). Your Factory account may lack permission for this model or workspace.",
+    "Authentication failed (HTTP 401). Sign in to Factory or refresh your credentials.",
+    "Request failed (HTTP 500).",
+    "transport exploded",
+    "Context window limit reached",
+  ])("ignores %j", (message) => {
+    expect(isAcpUsageLimitMessage(message)).toBe(false);
+    expect(resolveAcpUsageLimitReason(message)).toBeUndefined();
+  });
+
+  it("recognizes every message the parser builds for a Factory 402", () => {
+    expect(
+      isAcpUsageLimitMessage(
+        parseAcpAgentMessageApiError("Error: 402 status code (no body)") ?? "",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("withAcpUsageLimitReasons", () => {
+  it("tags only reasonless usage-limit errors and keeps their message", () => {
+    const events: RuntimeEvent[] = [
+      { type: "error", threadId: "t", message: "Usage limit reached." },
+      { type: "error", threadId: "t", message: "Usage limit reached.", reason: "auth_required" },
+      { type: "error", threadId: "t", message: "boom" },
+      { type: "warning", threadId: "t", message: "Usage limit reached." },
+    ];
+    expect(withAcpUsageLimitReasons(events)).toEqual([
+      { type: "error", threadId: "t", message: "Usage limit reached.", reason: "usage_limited" },
+      { type: "error", threadId: "t", message: "Usage limit reached.", reason: "auth_required" },
+      { type: "error", threadId: "t", message: "boom" },
+      { type: "warning", threadId: "t", message: "Usage limit reached." },
+    ]);
+  });
+
+  it("returns a batch without errors unchanged", () => {
+    const events: RuntimeEvent[] = [{ type: "warning", threadId: "t", message: "quota reached" }];
+    expect(withAcpUsageLimitReasons(events)).toBe(events);
   });
 });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { usageMoneySchema, usageTokenCategoriesSchema } from "./costHistory";
 
@@ -415,9 +416,17 @@ export type WebSearchPayload = z.infer<typeof webSearchPayloadSchema>;
  * it and fall back to recognizing the message text. The wire value is an open
  * string so a reader skips a reason it does not know instead of rejecting the
  * event.
+ *
+ * `"usage_limited"`: the provider ended the turn because the signed-in ACCOUNT
+ * ran out of usage (plan or quota limit reached, credits used up), not because
+ * of a transient rate limit the provider retries by itself. Each provider sets
+ * it at its own boundary; the message stays the provider's user-visible text.
+ * Added without a version bump: the wire schema was already an open string, so
+ * older readers keep the error and ignore the reason.
  */
 export const runtimeErrorReasonSchema = z.string().min(1);
-export type RuntimeErrorReason = "auth_required";
+// ViscosityCode: `"usage_limited"` lets host policy (account pools) react to an out-of-usage turn.
+export type RuntimeErrorReason = "auth_required" | "usage_limited";
 
 export const errorItemPayloadSchema = z.object({
   message: z.string(),

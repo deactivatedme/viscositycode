@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { createCodexMapperState, mapCodexNotification } from "../canonicalMapping";
 
@@ -80,7 +81,7 @@ describe("Codex sign-in failures", () => {
   it.each<[string, unknown]>([
     ["no error code", undefined],
     ["a null error code", null],
-    ["usage limits", "usageLimitExceeded"],
+    // ViscosityCode: usage limits now carry `usage_limited` (see usageLimitErrors.test.ts).
     ["server errors", "internalServerError"],
     ["a non-auth HTTP status", { httpConnectionFailed: { httpStatusCode: 503 } }],
     ["an unknown HTTP status", { httpConnectionFailed: { httpStatusCode: null } }],

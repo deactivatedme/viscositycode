@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { captureAcpConfigApplicationOwner } from "./sessionConfigOwnership";
 /**
  * ACP (Agent Client Protocol) structured session.
@@ -158,7 +159,12 @@ import {
   shouldEmitAcpPromptRpcErrorItem,
   type AcpPromptErrorReasonResolver,
 } from "./sessionErrors";
-import { isFatalAcpQuotaError } from "./acpUserVisibleErrors";
+// ViscosityCode: usage-limit reasons on turn-ending provider failures.
+import {
+  isFatalAcpQuotaError,
+  resolveAcpUsageLimitReason,
+  withAcpUsageLimitReasons,
+} from "./acpUserVisibleErrors";
 import { AcpSessionRequests } from "./sessionRequests";
 import { AcpExtensionRequests } from "./sessionExtensionRequests";
 import { AcpSessionActionError, AcpSessionActionRegistry } from "./sessionActions";
@@ -2838,9 +2844,12 @@ export class AcpStructuredSession implements StructuredSessionHandle {
       if (detachedParentToolCallId) {
         this.startDetachedTurn(detachedParentToolCallId);
       }
-      const events = mapAcpSessionUpdate(params, mapperState, {
-        ...(suppressInterruptedOutput ? { suppressAgentOutput: true } : {}),
-      });
+      // ViscosityCode: an agent-surfaced failure that says the account ran out names it.
+      const events = withAcpUsageLimitReasons(
+        mapAcpSessionUpdate(params, mapperState, {
+          ...(suppressInterruptedOutput ? { suppressAgentOutput: true } : {}),
+        }),
+      );
       if (
         this.behavior?.unreferencedTerminalCorrelation === "attribute-on-create" &&
         (update.sessionUpdate === "tool_call" || update.sessionUpdate === "tool_call_update")
@@ -3283,7 +3292,11 @@ export class AcpStructuredSession implements StructuredSessionHandle {
     const mapperState = this.ensureMapperState();
     const events: RuntimeEvent[] = [...closeOpenTurnItems(mapperState)];
     if (shouldEmitAcpPromptRpcErrorItem(error, this.agentSurfacedErrorMessage)) {
-      const reason = resolveAcpPromptErrorReason(error, this.promptErrorReason);
+      // ViscosityCode: fall back to the shared usage-limit wording when the
+      // structured error and the provider's resolver name no reason.
+      const reason =
+        resolveAcpPromptErrorReason(error, this.promptErrorReason) ??
+        resolveAcpUsageLimitReason(rpcMessage);
       events.push({
         type: "error",
         threadId: this.threadId,

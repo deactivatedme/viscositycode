@@ -1,3 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import type { RuntimeErrorReason, RuntimeEvent } from "@/shared/contracts";
+
 /**
  * Parse API failures Factory Droid surfaces as `agent_message_chunk` text before
  * `session/prompt` rejects with a generic JSON-RPC error.
@@ -48,6 +51,42 @@ export function parseAcpAgentMessageApiError(text: string): string | undefined {
  */
 export function isFatalAcpQuotaError(message: string): boolean {
   return /quota reached|rate limit exceeded \(http 429\)|http 429/i.test(message);
+}
+
+// ViscosityCode: name an ACCOUNT running out of usage so host policy (account
+// pools) can move the thread to another account. Provider-agnostic wording of
+// plan, quota, credit, and payment limits, as these failures reach the chat.
+const ACP_USAGE_LIMIT_RE =
+  /\bquota (?:reached|exceeded|exhausted)\b|\b(?:usage|quota|credit|spend(?:ing)?|billing) limits?\b|\bout of (?:credits|usage|quota)\b|\binsufficient[ _](?:credits?|quota|balance|funds)\b|\bcredit balance (?:is )?too low\b|\bcredits? (?:are |is |have been )?(?:exhausted|depleted|used up)\b|\bpayment required\b|\(http 402\)|\bresource[ _]exhausted\b/i;
+
+/**
+ * True when a provider failure that ends the turn says the account ran out of
+ * usage: the fatal quota errors above (a 429 the agent would otherwise retry
+ * forever), or plan / quota / credit / payment-limit wording such as Factory's
+ * HTTP 402 usage-limit detail. Only read for messages already surfaced as a
+ * turn-ending error, never for ordinary assistant text.
+ */
+export function isAcpUsageLimitMessage(message: string): boolean {
+  return isFatalAcpQuotaError(message) || ACP_USAGE_LIMIT_RE.test(message);
+}
+
+/** The shared reason for a turn-ending provider failure, when its message names one. */
+export function resolveAcpUsageLimitReason(message: string): RuntimeErrorReason | undefined {
+  return isAcpUsageLimitMessage(message) ? "usage_limited" : undefined;
+}
+
+/**
+ * Adds `"usage_limited"` to the agent-surfaced error events whose message says
+ * the account ran out. The message is kept as surfaced; an error that already
+ * names a reason keeps it.
+ */
+export function withAcpUsageLimitReasons(events: RuntimeEvent[]): RuntimeEvent[] {
+  if (!events.some((event) => event.type === "error")) return events;
+  return events.map((event) => {
+    if (event.type !== "error" || event.reason !== undefined) return event;
+    const reason = resolveAcpUsageLimitReason(event.message);
+    return reason ? { ...event, reason } : event;
+  });
 }
 
 /** Pull a user-facing message out of Antigravity/provider failure blobs. */

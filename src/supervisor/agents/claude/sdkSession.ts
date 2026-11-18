@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import { claudeContextWindowEnv, resolveClaudeContextWindowTokens } from "./contextWindow";
 import { spawn as spawnChild, type ChildProcess } from "node:child_process";
@@ -83,6 +84,14 @@ import {
   steerClaudeTurn,
   type ClaudeMapperState,
 } from "./sdkCanonicalMapping";
+// ViscosityCode: structured usage-limit signals for the turn's failure reason.
+import {
+  readClaudeAssistantError,
+  readClaudeRateLimitRejected,
+  readClaudeResultErrorReason,
+  withRuntimeErrorReason,
+  type ClaudeTurnUsageSignals,
+} from "./canonicalMapping/result";
 import { mapClaudeSlashCommands } from "./probe";
 import { ClaudeContextSteer } from "./contextSteer";
 import { AsyncPromptQueue } from "./promptQueue";
@@ -188,6 +197,8 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
   private pendingRequests = new Map<ThreadServerRequestId, PendingRequest>();
   private completedTurns: CompletedClaudeTurn[] = [];
   private currentTurnAssistantUuid: string | undefined;
+  // ViscosityCode: what the turn saw before its result, to name a usage-limit failure.
+  private turnUsageSignals: ClaudeTurnUsageSignals = {};
   private currentTurnInFlight = false;
   /** Resume point the live query was opened at (revert-anchor idempotence). */
   private activeResumeAt: string | undefined;
@@ -464,6 +475,7 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     this.currentConfig = config;
     const turnId = `turn-${randomUUID()}`;
     this.currentTurnAssistantUuid = undefined;
+    this.turnUsageSignals = {}; // ViscosityCode: a new turn starts without usage signals.
     this.currentTurnInFlight = true;
     this.deferredCompletion.clear();
     this.clearDeferredFlushTimer();
@@ -1730,7 +1742,14 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
       // uuid (parent_tool_use_id set) must never become a rollback resume point.
       this.currentTurnAssistantUuid = message.uuid;
       this.contextSteer?.observeAssistantMessage(message);
+      // ViscosityCode: the SDK's classification of the turn's API failure, if any.
+      const assistantError = readClaudeAssistantError(message);
+      if (assistantError) this.turnUsageSignals.assistantError = assistantError;
     }
+    // ViscosityCode: the subscription rate limit's latest state during the turn.
+    const rateLimitRejected = readClaudeRateLimitRejected(message);
+    if (rateLimitRejected !== undefined)
+      this.turnUsageSignals.rateLimitRejected = rateLimitRejected;
 
     let wasInterrupted = false;
     let failed = false;
@@ -1769,10 +1788,14 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
       }
     }
     const backgroundTaskDetailsChanged = this.backgroundTaskControls.observe(message);
-    const events = mapClaudeSdkMessage(
-      message,
-      this.mapperState,
-      resultState ? { resultState } : undefined,
+    // ViscosityCode: a turn that failed because the account ran out names it.
+    const failureReason =
+      message.type === "result" && failed && this.steerError === undefined
+        ? readClaudeResultErrorReason(message, this.turnUsageSignals)
+        : undefined;
+    const events = withRuntimeErrorReason(
+      mapClaudeSdkMessage(message, this.mapperState, resultState ? { resultState } : undefined),
+      failureReason,
     );
     if (
       backgroundTaskDetailsChanged &&
@@ -1797,6 +1820,7 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
         this.completedTurns.push({ resumeSessionAt: this.currentTurnAssistantUuid });
       }
       this.currentTurnAssistantUuid = undefined;
+      this.turnUsageSignals = {}; // ViscosityCode: the turn's signals end with its result.
       this.currentTurnInFlight = false;
       // A later batch belongs to another turn: the caller falls back instead.
       this.contextSteer?.cancel("The Claude turn ended before the context reached it.");

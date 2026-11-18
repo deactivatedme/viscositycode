@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Leaf param/item extractors for the Codex canonical mapper.
  *
@@ -152,13 +153,21 @@ export function readCodexErrorMessage(
  * `RefreshTokenFailed` error), with a message such as "Your access token could
  * not be refreshed because your refresh token has expired". A 401 can also
  * arrive on the variants that carry an upstream HTTP status.
+ *
+ * `"usageLimitExceeded"` is the account's plan usage running out, so it maps
+ * to `"usage_limited"`. `"rateLimitExceeded"` (a transient limit) and
+ * `"sessionBudgetExceeded"` (a per-session budget, not the account) stay plain
+ * errors, and a retrying `error` notification never reaches this reader.
  */
 export function readCodexErrorReason(
   params: Record<string, unknown> | undefined,
 ): RuntimeErrorReason | undefined {
   const turn = readRecord(params?.turn);
   const info = readRecord(params?.error)?.codexErrorInfo ?? readRecord(turn?.error)?.codexErrorInfo;
-  return isCodexAuthErrorInfo(info) ? "auth_required" : undefined;
+  if (isCodexAuthErrorInfo(info)) return "auth_required";
+  // ViscosityCode: name the account running out so host policy can move the thread.
+  if (info === ("usageLimitExceeded" satisfies CodexErrorInfo)) return "usage_limited";
+  return undefined;
 }
 
 const CODEX_HTTP_STATUS_ERROR_INFO_KEYS = [

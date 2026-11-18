@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import {
   asPermissionRequestDetails,
@@ -8,9 +9,11 @@ import {
   messageItemPayloadSchema,
   planItemPayloadSchema,
   questionAnswerItemPayloadSchema,
+  runtimeErrorReasonSchema,
   runtimeEventSchema,
   toolCallPayloadSchema,
   webSearchPayloadSchema,
+  type RuntimeEvent,
 } from "./runtimeEvent";
 import { promptSegmentSchema } from "./thread";
 
@@ -281,6 +284,25 @@ describe("runtimeEventSchema discriminated union", () => {
     // host cannot make an older reader drop the error.
     expect(runtimeEventSchema.safeParse({ ...authError, reason: "quota" }).success).toBe(true);
     expect(runtimeEventSchema.safeParse({ ...authError, reason: "" }).success).toBe(false);
+  });
+
+  // ViscosityCode: the usage-limit reason is additive on the existing open-string field.
+  it("round-trips a usage_limited error and its persisted item without a schema change", () => {
+    const usageError: RuntimeEvent = {
+      type: "error",
+      threadId: "t",
+      message: "You've hit your usage limit.",
+      reason: "usage_limited",
+    };
+    expect(runtimeEventSchema.parse(roundTrip(usageError))).toEqual(usageError);
+    expect(
+      errorItemPayloadSchema.parse(
+        roundTrip({ message: "You've hit your usage limit.", reason: "usage_limited" }),
+      ),
+    ).toEqual({ message: "You've hit your usage limit.", reason: "usage_limited" });
+    // A pre-upgrade build parsed the same field with the same open-string
+    // schema, so an older reader keeps this error (it only ignores the reason).
+    expect(runtimeErrorReasonSchema.safeParse("usage_limited").success).toBe(true);
   });
 
   it("rejects an event without a discriminator", () => {

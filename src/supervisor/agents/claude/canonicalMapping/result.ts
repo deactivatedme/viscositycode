@@ -1,5 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { SDKControlGetContextUsageResponse, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import type { RuntimeEvent, TurnState } from "@/shared/contracts";
+import type { RuntimeErrorReason, RuntimeEvent, TurnState } from "@/shared/contracts";
 import { createContextUsageEvent, readNonNegativeInteger } from "../../contextUsage";
 
 /**
@@ -45,6 +46,80 @@ export function isApiErrorResult(message: SDKMessage): boolean {
   const m = message as { is_error?: unknown; api_error_status?: unknown; subtype?: unknown };
   if (typeof m.api_error_status === "number" && m.api_error_status >= 400) return true;
   return m.is_error === true && m.subtype === "success";
+}
+
+// ViscosityCode: structured "the account ran out" signals for account-pool failover.
+/**
+ * The SDK's classification of the API failure behind a turn's synthetic
+ * assistant error message that means the account itself ran out: `rate_limit`
+ * (the plan's usage limit or a rate limit the CLI stopped retrying) and
+ * `billing_error` (credit balance too low, spend limit reached). Transient
+ * failures the CLI retries by itself arrive as `system/api_retry` instead and
+ * never end the turn, so they are not read here.
+ */
+const CLAUDE_USAGE_LIMIT_ASSISTANT_ERRORS: ReadonlySet<string> = new Set([
+  "rate_limit",
+  "billing_error",
+]);
+
+/** What the session saw during the turn, before its `result` arrived. */
+export interface ClaudeTurnUsageSignals {
+  /** `error` of the turn's main-thread assistant message, when the SDK set one. */
+  assistantError?: string;
+  /** The last `rate_limit_event` of the turn said the subscription is `rejected`. */
+  rateLimitRejected?: boolean;
+}
+
+/** The `error` classification a main-thread assistant message carries, if any. */
+export function readClaudeAssistantError(message: SDKMessage): string | undefined {
+  if (message.type !== "assistant") return undefined;
+  const error = (message as { error?: unknown }).error;
+  return typeof error === "string" && error.length > 0 ? error : undefined;
+}
+
+/**
+ * Whether a `rate_limit_event` reports the subscription as rejected (`true`),
+ * allowed again (`false`), or says nothing about it (`undefined`).
+ */
+export function readClaudeRateLimitRejected(message: SDKMessage): boolean | undefined {
+  if (message.type !== "rate_limit_event") return undefined;
+  const status = (message as { rate_limit_info?: { status?: unknown } }).rate_limit_info?.status;
+  if (status === "rejected") return true;
+  if (status === "allowed" || status === "allowed_warning") return false;
+  return undefined;
+}
+
+/**
+ * Why a turn's `result` failed, from structured fields only: an upstream API
+ * failure (see {@link isApiErrorResult}) that ended the turn because the
+ * account ran out — HTTP 429 after the CLI stopped retrying, the SDK's
+ * `rate_limit` / `billing_error` classification, or a rejected subscription
+ * rate limit — is `"usage_limited"`. Interrupts, tool errors, and other API
+ * failures carry no reason.
+ */
+export function readClaudeResultErrorReason(
+  message: SDKMessage,
+  signals: ClaudeTurnUsageSignals = {},
+): RuntimeErrorReason | undefined {
+  if (!isApiErrorResult(message)) return undefined;
+  const status = (message as { api_error_status?: unknown }).api_error_status;
+  if (status === 429) return "usage_limited";
+  if (signals.assistantError && CLAUDE_USAGE_LIMIT_ASSISTANT_ERRORS.has(signals.assistantError)) {
+    return "usage_limited";
+  }
+  if (signals.rateLimitRejected === true) return "usage_limited";
+  return undefined;
+}
+
+/** Adds `reason` to the error events that do not name a reason yet. */
+export function withRuntimeErrorReason(
+  events: RuntimeEvent[],
+  reason: RuntimeErrorReason | undefined,
+): RuntimeEvent[] {
+  if (!reason) return events;
+  return events.map((event) =>
+    event.type === "error" && event.reason === undefined ? { ...event, reason } : event,
+  );
 }
 
 export function extractResultErrorMessage(message: SDKMessage): string | undefined {
