@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { composerDraftStorage } from "@/renderer/state/composerDraftStorage";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@heroui/react";
@@ -21,6 +22,11 @@ import { PixelLoader } from "@/renderer/components/common/PixelLoader";
 import { modelVisibilityKey } from "@/renderer/components/common/ProviderModelMenu/parts/providerIdentity";
 import type { ProviderModelSelectionIntent } from "@/renderer/components/common/ProviderModelMenu/parts/types";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+// ViscosityCode: account pools — start new threads on the pooled account with the most usage left.
+import {
+  useAccountPoolDraftSelection,
+  withAccountPoolControl,
+} from "@/renderer/viscosity/accountPools/composerPool";
 import type { DraftContent } from "@/renderer/state/slices/types";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
@@ -396,7 +402,13 @@ export function ThreadDraftView(props: {
       ),
     [agentStatuses, disabledAgents, props.chatOnly],
   );
-  const preferredAgentKind = resolvePreferredAgentKind(installedAgents, lastDraftConfig);
+  // ViscosityCode: account pools — a pooled provider starts on its best account.
+  const accountPoolDraft = useAccountPoolDraftSelection({
+    preferred: resolvePreferredAgentKind(installedAgents, lastDraftConfig),
+    candidates: installedAgents,
+    enabled: !isIsolatedSelection && !project.remoteServerId,
+  });
+  const preferredAgentKind = accountPoolDraft.agentKind;
   const [agentKind, setAgentKind] = useState<AgentStatus["kind"] | undefined>(preferredAgentKind);
   const effectiveAgentKind = installedAgents.some((status) => status.kind === agentKind)
     ? agentKind
@@ -1747,8 +1759,13 @@ export function ThreadDraftView(props: {
       isDisabled: false,
       onConfigChange: (patch, origin) => latestConfigPatchRef.current(patch, origin),
     });
-    if (!crewSection) return composed;
-    return applyCrewComposerControls(composed, {
+    // ViscosityCode: account pools — name the pooled account next to the model picker.
+    const pooled = withAccountPoolControl(
+      composed,
+      accountPoolDraft.controlFor(selectedAgent.kind),
+    );
+    if (!crewSection) return pooled;
+    return applyCrewComposerControls(pooled, {
       crewSection,
       ...(crewRoster ? { roster: crewRoster } : {}),
       openSignal: crewOpenSignal,

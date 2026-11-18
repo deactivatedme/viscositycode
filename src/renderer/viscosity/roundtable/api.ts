@@ -18,6 +18,8 @@ import { useDraftEnvironment } from "@/renderer/hooks/uiSelectors";
 import { i18n } from "@/renderer/i18n/i18n";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useProject } from "@/renderer/state/useThread";
+// ViscosityCode: account pools — seats prefer the pooled account with the most usage left.
+import { useAccountPoolPreferredOrder } from "@/renderer/viscosity/accountPools/poolHooks";
 import { selectReadyAgentBrains } from "./engine/agentBrains";
 import { registerDriverFactory } from "./engine/driverRegistry";
 import { clearSessionLiveText, liveTurnKey, useRoundtableLiveText } from "./engine/liveText";
@@ -159,13 +161,18 @@ export function useReadyAgentBrains(projectId: string | undefined): ReadyAgentBr
   const disabledAgents = useSharedSettings((state) => state.disabledAgents);
   const providerConfigs = useSharedSettings((state) => state.providerConfigs);
   const providerModelPreferences = useSharedSettings((state) => state.providerModelPreferences);
-  return selectReadyAgentBrains({
-    agents: environment.agentStatuses,
-    disabledAgents,
-    lastDraftConfig: project?.lastDraftConfig,
-    providerConfigs,
-    providerModelPreferences,
-  });
+  // ViscosityCode: account pools — seats default to the pooled account with the most usage left.
+  return useAccountPoolPreferredOrder(
+    selectReadyAgentBrains({
+      agents: environment.agentStatuses,
+      disabledAgents,
+      lastDraftConfig: project?.lastDraftConfig,
+      providerConfigs,
+      providerModelPreferences,
+    }),
+    environment.agentStatuses,
+    !project?.remoteServerId,
+  );
 }
 
 /** Registers the driver for a brain kind ("agent" is built in; Bots registers "xai"). */

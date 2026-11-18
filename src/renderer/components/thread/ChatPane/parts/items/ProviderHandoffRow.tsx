@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Surface } from "@heroui/react";
 import { ArrowRightLeft } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
@@ -9,6 +10,8 @@ import {
 import { useAppStore } from "@/renderer/state/appStore";
 import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
 import { chatMessageSurfaceClass } from "./chatMessageSurface";
+// ViscosityCode: account pools — out-of-usage switches say why they happened.
+import { useUsageLimitedHandoffText } from "@/renderer/viscosity/accountPools/handoffLabel";
 
 /**
  * Divider marking where the thread changed provider in place. Everything above
@@ -29,20 +32,28 @@ export function ProviderHandoffRow({
   // back to the bare kind ("copilot") for those threads.
   const pools = useHostAgentStatusPools(thread?.remoteServerId);
   const payload = getRuntimeItemPayload<ProviderHandoffItemPayload>(item, "provider_handoff");
-  if (!payload) return null;
-
   const labelStatuses = [...pools.windows, ...pools.wsl];
   const labelFor = (kind: string) =>
     labelStatuses.find((status) => status.kind === kind)?.label ?? kind;
-  const fromLabel = labelFor(payload.fromAgentKind);
-  const toLabel = labelFor(payload.toAgentKind);
+  const fromLabel = payload ? labelFor(payload.fromAgentKind) : "";
+  const toLabel = payload ? labelFor(payload.toAgentKind) : "";
+  // ViscosityCode: account pools (hook runs before the early return below).
+  const usageLimitedText = useUsageLimitedHandoffText({
+    threadId,
+    itemId: item.id,
+    payload: payload ?? {},
+    fromLabel,
+    toLabel,
+  });
+  if (!payload) return null;
 
   return (
     <Surface variant="transparent" className={chatMessageSurfaceClass}>
       <div className="flex min-w-0 flex-col items-stretch justify-center text-[length:var(--lc-chat-font-size-meta)] text-foreground-muted">
         <span className="inline-flex min-w-0 items-center gap-1.5 self-start leading-none italic opacity-80">
           <ArrowRightLeft className="size-3 shrink-0" />
-          {t`Switched from ${fromLabel} to ${toLabel}`}
+          {/* ViscosityCode: account pools. */}
+          {usageLimitedText ?? t`Switched from ${fromLabel} to ${toLabel}`}
         </span>
       </div>
     </Surface>

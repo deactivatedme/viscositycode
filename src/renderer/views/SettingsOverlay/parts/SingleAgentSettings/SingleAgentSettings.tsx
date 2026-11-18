@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { NativeMcpSettings } from "./parts/NativeMcpSettings";
 import { useEffect, useState } from "react";
 import { Button, toast } from "@heroui/react";
@@ -66,6 +67,8 @@ import {
   type AgentEnvironmentRuntimes,
 } from "./parts/AgentEnvironmentRow";
 import { HookPluginSettings } from "./parts/HookPluginSettings";
+// ViscosityCode: account pools — a provider that cannot pool says why.
+import { AccountPoolUnavailableNote } from "@/renderer/viscosity/accountPools/AccountPoolUnavailableNote";
 import {
   MachineAttentionHint,
   NoMachineStatusRow,
@@ -1088,6 +1091,11 @@ export function SingleAgentSettings(props: {
             onOpenProfile={props.onOpenProfile}
             {...(panelOwnsInstallRows ? { installRows: environmentRows } : {})}
           />
+        ) : null}
+
+        {/* ViscosityCode: account pools — a provider that cannot pool says why. */}
+        {providerEntry?.accountPoolUnavailableReason && !isRemoteMachine ? (
+          <AccountPoolUnavailableNote reason={providerEntry.accountPoolUnavailableReason} />
         ) : null}
 
         {/* Panels that own auth UI (e.g. OpenCode's per-AI-provider sign-in)

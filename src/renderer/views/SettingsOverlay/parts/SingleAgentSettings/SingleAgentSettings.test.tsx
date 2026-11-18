@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -2752,5 +2753,19 @@ describe("SingleAgentSettings", () => {
       }),
     );
     expect(refreshAgentStatusesMock).not.toHaveBeenCalled();
+  });
+
+  // ViscosityCode: account pools — a single-account provider explains why it cannot pool.
+  it("explains on the Antigravity page why it cannot join an account pool", () => {
+    const note =
+      "Antigravity keeps one sign-in per computer, so it can't join an account pool yet.";
+    statusesState.agentStatuses = [makeAntigravityStatus("1.2.0", "1.0.0")];
+    const { unmount } = render(<SingleAgentSettings agentKind="antigravity" />);
+    expect(screen.getByText(note)).toBeInTheDocument();
+    unmount();
+
+    statusesState.agentStatuses = [makeStatus("codex", { label: "Codex" })];
+    render(<SingleAgentSettings agentKind="codex" />);
+    expect(screen.queryByText(note)).not.toBeInTheDocument();
   });
 });

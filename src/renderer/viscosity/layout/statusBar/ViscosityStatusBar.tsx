@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import { useLingui } from "@lingui/react/macro";
 import { useViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
+// ViscosityCode: account pools — "<account> · 62% left" for a pooled thread.
+import { registerAccountPoolStatusBarItem } from "@/renderer/viscosity/accountPools/AccountPoolStatusItem";
 import { registerBuiltinStatusBarItems } from "./builtinStatusBarItems";
 import { type StatusBarItem, useStatusBarItems } from "./statusBarRegistry";
 
 registerBuiltinStatusBarItems();
+registerAccountPoolStatusBarItem(); // ViscosityCode: account pools.
 
 function StatusBarSlot(props: { item: StatusBarItem }) {
   const Item = props.item.component;

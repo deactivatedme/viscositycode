@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ComponentType, ReactNode } from "react";
 import { msg } from "@lingui/core/macro";
 import {
@@ -40,6 +41,9 @@ import { FxProviderSettings } from "@/renderer/components/providers/fx/FxProvide
 import { cursorAgentInstallCommand, cursorRuntimeSlots } from "./cursorRuntimeInstall";
 import type { NativeAgentRuntimeSlots } from "./nativeAgentRuntimes";
 import { antigravityCliInstallCommand, antigravityRuntimeSlots } from "./antigravityRuntimeInstall";
+// ViscosityCode: account-pool hook (provider-declared reason, looked up by base kind).
+import { antigravityAccountPoolUnavailableReason } from "@/renderer/components/providers/antigravity/accountPoolSupport";
+import { baseAgentKind } from "@/shared/contracts";
 
 /**
  * Props handed to a provider's `settingsPanel`. Panels may consume any
@@ -175,6 +179,12 @@ export interface NativeAgentRegistryEntry {
    * kinds. Absent for single-account providers.
    */
   profiles?: NativeAgentProfileSupport;
+  /**
+   * ViscosityCode: why this provider cannot keep several accounts yet, and so
+   * cannot join an account pool. Profile and pool settings show it instead of
+   * offering extra accounts. Only for providers without `profiles`.
+   */
+  accountPoolUnavailableReason?: MessageDescriptor;
 }
 
 const POSIX_MISSING_CURL_NPM_MESSAGE =
@@ -410,6 +420,8 @@ export const NATIVE_AGENT_REGISTRY_ENTRIES: NativeAgentRegistryEntry[] = [
       host
         .resolveAgentAccount({ agentKind: "antigravity", wslDistros })
         .then((result) => result.account),
+    // ViscosityCode: one sign-in per computer, so no profiles or account pool.
+    accountPoolUnavailableReason: antigravityAccountPoolUnavailableReason,
   },
   {
     id: "commandcode",
@@ -573,6 +585,19 @@ function buildAcpRegistryAliasMap(
     }
   }
   return aliases;
+}
+
+/**
+ * ViscosityCode: the reason an agent kind (base or `<driver>:<id>`) cannot join
+ * an account pool, as its provider declared it; undefined when the provider
+ * declares none.
+ */
+export function nativeAgentAccountPoolUnavailableReason(
+  agentKind: string,
+): MessageDescriptor | undefined {
+  const kind = baseAgentKind(agentKind);
+  return NATIVE_AGENT_REGISTRY_ENTRIES.find((entry) => entry.id === kind)
+    ?.accountPoolUnavailableReason;
 }
 
 const ACP_REGISTRY_ALIASES = buildAcpRegistryAliasMap(NATIVE_AGENT_REGISTRY_ENTRIES);

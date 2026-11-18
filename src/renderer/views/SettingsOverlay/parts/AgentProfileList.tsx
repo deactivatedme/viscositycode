@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -12,6 +13,9 @@ import { flushSharedSettings, useSharedSettings } from "@/renderer/state/sharedS
 import { currentWslDistros } from "@/renderer/utils/acpRegistryAuth";
 import type { NativeAgentProfileSupport } from "./agentRegistryNative";
 import { isDuplicateProfileName, uniqueProfileId } from "./profileIds";
+// ViscosityCode: account pools (several accounts of one provider used as a pool).
+import { AccountPoolCard } from "@/renderer/viscosity/accountPools/AccountPoolCard";
+import { useAccountPoolMemberAppender } from "@/renderer/viscosity/accountPools/poolSettings";
 
 /**
  * The profile list every multi-profile provider renders on its base settings
@@ -37,6 +41,8 @@ export function AgentProfileList(props: {
   const setAgentInstance = useSharedSettings((state) => state.setAgentInstance);
   const removeAgentInstance = useSharedSettings((state) => state.removeAgentInstance);
   const removeAgentStatus = useAgentStatusesStore((state) => state.removeAgentStatus);
+  // ViscosityCode: account pools.
+  const appendAccountPoolMember = useAccountPoolMemberAppender();
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingKind, setPendingKind] = useState<string | undefined>();
@@ -109,6 +115,8 @@ export function AgentProfileList(props: {
       );
       setPendingKind(kind);
       setAgentInstance(instance);
+      // ViscosityCode: a new account joins its provider's saved pool, flushed below.
+      appendAccountPoolMember(support.driver, kind);
       support.onCreated?.({ profileKind: kind, instance, statuses: props.statuses ?? [] });
       closeAddForm();
       toast.success(t`Profile ${displayName} added.`);
@@ -157,6 +165,8 @@ export function AgentProfileList(props: {
           favoriteModels: snapshot.favoriteModels,
           recentModels: snapshot.recentModels,
           providerOrder: snapshot.providerOrder,
+          // ViscosityCode: removal also drops the profile from its account pool.
+          accountPools: snapshot.accountPools,
         });
         toast.danger(friendlyError(error));
         return;
@@ -346,6 +356,9 @@ export function AgentProfileList(props: {
           <Trans>Add profile</Trans>
         </Button>
       ) : null}
+
+      {/* ViscosityCode: account pool card for this provider's accounts. */}
+      <AccountPoolCard driver={support.driver} />
 
       <ConfirmDialog
         isOpen={confirmRemoval !== undefined}
