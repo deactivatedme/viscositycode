@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { memo } from "react";
 import type { Project, Thread } from "@/shared/contracts";
 import { useExperimentStore } from "@/renderer/state/experimentStore";
@@ -24,6 +25,8 @@ import {
   useThreadHasDraft,
 } from "@/renderer/hooks/uiSelectors";
 import { openThread, renameThread } from "@/renderer/actions/threadActions";
+// ViscosityCode: per-agent accent colour marker.
+import { agentKindAttribute } from "@/renderer/viscosity/agentColors/api";
 
 type ThreadDragSourceData = Extract<DragSourceData, { type: "thread" }>;
 
@@ -136,7 +139,13 @@ function SortableThreadItemInner(props: {
   );
 
   return (
-    <div {...(rowCanDrag ? { ref } : {})} className="relative w-full pb-0.5">
+    <div
+      {...(rowCanDrag ? { ref } : {})}
+      // ViscosityCode: per-agent accent colour (viscosity/agentColors/agentColors.css).
+      data-vc-sidebar-thread=""
+      {...agentKindAttribute(thread.agentKind)}
+      className="relative w-full pb-0.5"
+    >
       <ThreadContextMenu
         thread={thread}
         project={project}

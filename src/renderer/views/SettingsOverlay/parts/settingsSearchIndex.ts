@@ -265,6 +265,22 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     desktopOnly: true,
     conditional: true,
   },
+  // ViscosityCode: Agent colours (src/renderer/viscosity/agentColors/AgentColorsSettings.tsx).
+  {
+    section: "appearance",
+    anchor: "appearance.agentColors",
+    title: msg`Agent colours`,
+    description: msg`Each agent has its own colour, so you can tell its panes, tabs, and threads apart at a glance.`,
+    keywords:
+      "agent agents color colors colour palette accent provider swatch pick reset tell apart",
+  },
+  {
+    section: "appearance",
+    anchor: "appearance.agentColorMarkers",
+    title: msg`Colour panes and tabs by agent`,
+    description: msg`A thin line in the agent's colour on its pane header, its tab, and its threads in the sidebar.`,
+    keywords: "agent color colors colour marker stripe line accent pane header tab sidebar",
+  },
 
   // ViscosityCode: Effects (animated background + agent effects)
   ...EFFECTS_SETTINGS_SEARCH_ENTRIES,

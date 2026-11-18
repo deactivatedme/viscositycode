@@ -14,6 +14,9 @@ import {
   isRoundtablePanelShown,
   useRoundtableViewStore,
 } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
+// Installs the per-agent colour stylesheet with the tab strip (loads with the main layout).
+import "@/renderer/viscosity/agentColors";
+import { agentKindAttribute } from "@/renderer/viscosity/agentColors/api";
 import { activateThreadTab, closeThreadTab } from "./tabActions";
 
 /** One open-thread tab. Subscribes only to its own thread and selection flags. */
@@ -48,6 +51,7 @@ export function ThreadTab(props: { threadId: string }) {
       data-vc-tab-thread={threadId}
       data-selected={selected || undefined}
       data-on-screen={isOnScreen || undefined}
+      {...agentKindAttribute(thread.agentKind)}
       className="vc-tab group relative flex min-w-0 shrink-0 items-center"
     >
       <Button

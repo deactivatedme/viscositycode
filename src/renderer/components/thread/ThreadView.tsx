@@ -43,6 +43,8 @@ import { ThreadToolRail } from "./ThreadToolRail";
 import { PaneDragHandle } from "./PaneDragAndDrop";
 import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { PaneVisibility } from "@/renderer/paneVisibility";
+// ViscosityCode: per-agent accent colour marker.
+import { agentKindAttribute } from "@/renderer/viscosity/agentColors/api";
 
 /**
  * Strip Electron's `Error invoking remote method '<channel>': Error: ` prefix
@@ -367,6 +369,8 @@ export const ThreadView = memo(function ThreadView(props: ThreadViewProps) {
         data-poracode-thread-pane=""
         // ViscosityCode: lets agent-state effects find this pane (terminal panes have no inner thread id).
         data-vc-thread-id={thread.id}
+        // ViscosityCode: per-agent accent colour (viscosity/agentColors).
+        {...agentKindAttribute(thread.agentKind)}
         data-poracode-attachment-drop-target=""
         data-poracode-pane-hidden={hidden || undefined}
         className={`${usesTerminalPresentation ? "m-thread m-thread--terminal" : "m-thread"} group/pane relative flex h-full min-h-0 flex-col ${isDragging ? "opacity-50" : ""}`}
