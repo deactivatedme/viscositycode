@@ -13,6 +13,11 @@
  */
 import { z } from "zod";
 import type { UsageSnapshot } from "@poracode/agents-usage/types";
+import type { AgentStatus } from "./contracts/agent";
+import { baseAgentKind, type AgentInstanceConfigMap } from "./contracts/agentInstance";
+import { isAgentProfileDriver, parseAgentProfileKind } from "./contracts/agentProfiles";
+import type { ThreadPresentationMode } from "./contracts/common";
+import { usageAccountIdForAgent, type UsageAccountIdHooks } from "./usageAccountId";
 
 export const ACCOUNT_POOLS_VERSION = 1;
 
@@ -81,6 +86,12 @@ export interface PoolMemberState {
   /** Signed in and enabled (auth not "missing", not disabled). */
   ready: boolean;
   availability: MemberAvailability;
+  /**
+   * Usage snapshot id that meters this account (`usageAccountIdForAgent`).
+   * Members that share one (profiles referencing the same login) share one
+   * quota, so failover never moves between them.
+   */
+  usageAccountId?: string;
 }
 
 /**
@@ -115,11 +126,240 @@ export function nextPoolMember(
   tried: ReadonlySet<string> = new Set(),
 ): string | undefined {
   const start = members.findIndex((m) => m.agentKind === current);
+  // Accounts metered together with `current` or a tried member are out too.
+  const spentAccounts = new Set(
+    members
+      .filter((m) => m.agentKind === current || tried.has(m.agentKind))
+      .flatMap((m) => (m.usageAccountId === undefined ? [] : [m.usageAccountId])),
+  );
   for (let step = 1; step <= members.length; step += 1) {
     const member = members[(Math.max(0, start) + step) % members.length];
     if (!member || member.agentKind === current || tried.has(member.agentKind)) continue;
     if (!member.ready || member.availability.kind === "exhausted") continue;
+    if (member.usageAccountId !== undefined && spentAccounts.has(member.usageAccountId)) continue;
     return member.agentKind;
   }
   return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// ViscosityCode: settings wiring helpers (stored pools → effective pools →
+// member states). Stored pools are kept as written (see `accountPools` in
+// src/shared/settings.ts); every reader goes through these helpers instead.
+// ---------------------------------------------------------------------------
+
+function hasOwnEntry<T>(record: Readonly<Record<string, T>>, key: string): boolean {
+  return Object.hasOwn(record, key);
+}
+
+function profileInstance(agentInstances: AgentInstanceConfigMap | undefined, instanceId: string) {
+  return agentInstances && hasOwnEntry(agentInstances, instanceId)
+    ? agentInstances[instanceId]
+    : undefined;
+}
+
+/**
+ * Lenient read of a stored `accountPools` value for the tolerant settings
+ * normalizer: a malformed pool is dropped on its own instead of resetting
+ * every pool. Keys and members are not otherwise rewritten.
+ */
+export function parseStoredAccountPools(value: unknown): AccountPools {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+  // fromEntries defines own keys, so a stored "__proto__" key stays inert data.
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([driver, entry]) => {
+      const parsed = accountPoolSchema.safeParse(entry);
+      return parsed.success ? [[driver, parsed.data] as const] : [];
+    }),
+  );
+}
+
+/**
+ * True when `agentKind` can belong to `driver`'s pool: the driver's base kind
+ * or one of its profile kinds and, when `agentInstances` is given, a profile
+ * that is still configured for that driver.
+ */
+export function isPoolMemberKind(
+  driver: string,
+  agentKind: string,
+  agentInstances?: AgentInstanceConfigMap,
+): boolean {
+  if (!isAgentProfileDriver(driver)) return false;
+  if (agentKind === driver) return true;
+  const profile = parseAgentProfileKind(agentKind);
+  if (!profile || profile.driver !== driver) return false;
+  if (!agentInstances) return true;
+  return profileInstance(agentInstances, profile.instanceId)?.driver === driver;
+}
+
+/**
+ * The members of `driver`'s pool that can still run, in the owner's order:
+ * duplicates, foreign or malformed kinds and (given `agentInstances`) removed
+ * profiles are dropped.
+ */
+export function normalizePoolMembers(
+  driver: string,
+  members: readonly string[],
+  agentInstances?: AgentInstanceConfigMap,
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const member of members) {
+    if (seen.has(member) || !isPoolMemberKind(driver, member, agentInstances)) continue;
+    seen.add(member);
+    out.push(member);
+  }
+  return out;
+}
+
+/**
+ * Effective pools: only drivers that support profiles
+ * (`isAgentProfileDriver`), each with its members normalized. Clients pass
+ * their edits through this before writing them, so the stored value parses
+ * back unchanged.
+ */
+export function normalizeAccountPools(
+  pools: AccountPools | undefined,
+  agentInstances?: AgentInstanceConfigMap,
+): AccountPools {
+  const out: AccountPools = {};
+  for (const [driver, pool] of Object.entries(pools ?? {})) {
+    if (!isAgentProfileDriver(driver)) continue;
+    out[driver] = { ...pool, members: normalizePoolMembers(driver, pool.members, agentInstances) };
+  }
+  return out;
+}
+
+/**
+ * The pool `agentKind` belongs to, with normalized members, or undefined when
+ * its driver has no pool or the account is not a member. The pool is returned
+ * whether or not it is `enabled`; automatic switching checks that flag.
+ */
+export function poolForAgentKind(
+  pools: AccountPools | undefined,
+  agentKind: string,
+  agentInstances?: AgentInstanceConfigMap,
+): AccountPool | undefined {
+  const driver = baseAgentKind(agentKind);
+  if (!pools || !isAgentProfileDriver(driver) || !hasOwnEntry(pools, driver)) return undefined;
+  const pool = pools[driver]!;
+  const members = normalizePoolMembers(driver, pool.members, agentInstances);
+  return members.includes(agentKind) ? { ...pool, members } : undefined;
+}
+
+/** Removes `agentKind` from every pool (a deleted profile), keeping the rest as stored. */
+export function removePoolMember(pools: AccountPools | undefined, agentKind: string): AccountPools {
+  return Object.fromEntries(
+    Object.entries(pools ?? {}).map(([driver, pool]) => [
+      driver,
+      pool.members.includes(agentKind)
+        ? { ...pool, members: pool.members.filter((member) => member !== agentKind) }
+        : pool,
+    ]),
+  );
+}
+
+/**
+ * Usage snapshot ids of every member of an enabled pool, deduplicated. The
+ * pool policy needs these accounts' usage, so collection treats them as on
+ * unless the user opted out (`usageCollectionDisabledProviders`).
+ */
+export function poolUsageAccountIds(
+  pools: AccountPools | undefined,
+  agentInstances?: AgentInstanceConfigMap,
+  hooks?: UsageAccountIdHooks,
+): string[] {
+  const ids = new Set<string>();
+  for (const pool of Object.values(normalizeAccountPools(pools, agentInstances))) {
+    if (!pool.enabled) continue;
+    for (const member of pool.members)
+      ids.add(usageAccountIdForAgent(member, undefined, agentInstances, hooks));
+  }
+  return [...ids];
+}
+
+/** Usage snapshots keyed by usage id, or the list a usage response carries. */
+export type UsageSnapshotLookup =
+  | ReadonlyMap<string, UsageSnapshot>
+  | Readonly<Record<string, UsageSnapshot | undefined>>
+  | readonly UsageSnapshot[];
+
+/** The agent-status fields readiness depends on. */
+export type PoolAgentStatus = Pick<
+  AgentStatus,
+  "kind" | "installed" | "authState" | "presentationAuthStates"
+>;
+
+export interface PoolMemberContext {
+  /** Statuses of the environment the thread runs in (first row per kind wins). */
+  agentStatuses: readonly PoolAgentStatus[];
+  usageSnapshots: UsageSnapshotLookup;
+  now: number;
+  /** Agent kinds the user disabled (`sharedSettings.disabledAgents`). */
+  disabledAgents?: readonly string[];
+  /**
+   * `sharedSettings.agentInstances`: a removed or disabled profile is not
+   * ready, and drivers whose profiles share a meter resolve through it.
+   */
+  agentInstances?: AgentInstanceConfigMap;
+  /** Presentation whose auth applies; absent uses the provider-wide auth state. */
+  presentation?: ThreadPresentationMode;
+  usageAccountIdHooks?: UsageAccountIdHooks;
+}
+
+function isSnapshotList(lookup: UsageSnapshotLookup): lookup is readonly UsageSnapshot[] {
+  return Array.isArray(lookup);
+}
+
+function isSnapshotMap(lookup: UsageSnapshotLookup): lookup is ReadonlyMap<string, UsageSnapshot> {
+  return lookup instanceof Map;
+}
+
+function findSnapshot(lookup: UsageSnapshotLookup, id: string): UsageSnapshot | undefined {
+  if (isSnapshotList(lookup)) return lookup.find((snapshot) => snapshot.providerId === id);
+  if (isSnapshotMap(lookup)) return lookup.get(id);
+  return hasOwnEntry(lookup, id) ? lookup[id] : undefined;
+}
+
+function isMemberReady(agentKind: string, context: PoolMemberContext): boolean {
+  if (context.disabledAgents?.includes(agentKind)) return false;
+  const profile = parseAgentProfileKind(agentKind);
+  if (profile && context.agentInstances) {
+    const instance = profileInstance(context.agentInstances, profile.instanceId);
+    if (!instance || instance.driver !== profile.driver || instance.enabled === false) return false;
+  }
+  const status = context.agentStatuses.find((entry) => entry.kind === agentKind);
+  if (!status?.installed) return false;
+  const auth =
+    (context.presentation === undefined
+      ? undefined
+      : status.presentationAuthStates?.[context.presentation]) ?? status.authState;
+  return auth !== "missing";
+}
+
+/**
+ * One state per pool member, in the owner's order: ready when installed,
+ * enabled and not signed out (`authState !== "missing"`), with availability
+ * from that account's usage snapshot at the pool's switch threshold.
+ */
+export function poolMemberStates(pool: AccountPool, context: PoolMemberContext): PoolMemberState[] {
+  const threshold = pool.switchAtPercent ?? DEFAULT_SWITCH_AT_PERCENT;
+  return pool.members.map((agentKind) => {
+    const usageAccountId = usageAccountIdForAgent(
+      agentKind,
+      undefined,
+      context.agentInstances,
+      context.usageAccountIdHooks,
+    );
+    return {
+      agentKind,
+      ready: isMemberReady(agentKind, context),
+      availability: memberAvailability(
+        findSnapshot(context.usageSnapshots, usageAccountId),
+        context.now,
+        threshold,
+      ),
+      usageAccountId,
+    };
+  });
 }

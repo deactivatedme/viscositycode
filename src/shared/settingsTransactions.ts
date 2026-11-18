@@ -1,7 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { sharedSettingsSchema } from "./settings";
 
-/** The settings transaction vocabulary is independent of transport framing. */
+/**
+ * The settings transaction vocabulary is independent of transport framing.
+ * ViscosityCode: `accountPools` joined SETTINGS_ENTRY_FIELDS without a bump; an
+ * older authority rejects the unknown entry subject before any effect, and
+ * revisions are never persisted.
+ */
 export const SETTINGS_TRANSACTION_VERSION = 1 as const;
 export const SETTINGS_MISSING_REVISION = "missing" as const;
 /** Initial admission ceilings, not measured throughput or latency budgets. */
@@ -36,6 +42,8 @@ export const SETTINGS_ENTRY_FIELDS = [
   "usage",
   "machineScopeModes",
   "sidebarGlassTint",
+  // ViscosityCode: one entry per pool driver, so edits to different pools merge.
+  "accountPools",
 ] as const;
 export const SETTINGS_LIST_FIELDS = [
   "mcpServers",

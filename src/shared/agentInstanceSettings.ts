@@ -1,4 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { AgentInstanceConfig } from "./contracts/agentInstance";
+// ViscosityCode: a removed profile leaves every account pool too.
+import { removePoolMember } from "./accountPools";
 import type { SharedSettings } from "./settings";
 
 export const AGENT_INSTANCE_REMOVAL_FIELDS = [
@@ -12,6 +15,8 @@ export const AGENT_INSTANCE_REMOVAL_FIELDS = [
   "favoriteModels",
   "recentModels",
   "providerOrder",
+  // ViscosityCode: account pools.
+  "accountPools",
 ] as const satisfies readonly (keyof SharedSettings)[];
 
 export function removeAgentInstanceSettings(
@@ -34,5 +39,7 @@ export function removeAgentInstanceSettings(
     favoriteModels: current.favoriteModels.filter((entry) => entry.agentKind !== prefix),
     recentModels: current.recentModels.filter((entry) => entry.agentKind !== prefix),
     providerOrder: current.providerOrder.filter((kind) => kind !== prefix),
+    // ViscosityCode: account pools.
+    accountPools: removePoolMember(current.accountPools, prefix),
   };
 }

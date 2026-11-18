@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { defaultSharedSettings, type SharedSettings } from "./settings";
 import {
@@ -32,6 +33,10 @@ describe("agent instance settings removal", () => {
         { agentKind: "claude:workshop", modelId: "large", presentationMode: "gui" },
       ],
       providerOrder: ["claude", "claude:work", "claude:workshop"],
+      accountPools: {
+        claude: { enabled: true, members: ["claude", "claude:work", "claude:workshop"] },
+        codex: { enabled: false, members: ["codex"] },
+      },
     };
     const before = structuredClone(current);
     const removed = removeAgentInstanceSettings(current, instance);
@@ -51,6 +56,10 @@ describe("agent instance settings removal", () => {
     expect(removed.favoriteModels).toEqual([current.favoriteModels[1]]);
     expect(removed.recentModels).toEqual([current.recentModels[1]]);
     expect(removed.providerOrder).toEqual(["claude", "claude:workshop"]);
+    expect(removed.accountPools).toEqual({
+      claude: { enabled: true, members: ["claude", "claude:workshop"] },
+      codex: { enabled: false, members: ["codex"] },
+    });
     expect(current).toEqual(before);
   });
 });

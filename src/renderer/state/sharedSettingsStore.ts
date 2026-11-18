@@ -1,5 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { create } from "zustand";
 import { reconcileAcpRegistryInstalls } from "./reconcileAcpRegistryInstalls";
+// ViscosityCode: account pools are a shared setting persisted like every other.
+import type { AccountPools } from "@/shared/accountPools";
 import { isRemoteSession, readBridge } from "../bridge";
 import { hasAnyClientBridge, isStandaloneAttachRuntime } from "../clientRuntime";
 import { msg } from "@lingui/core/macro";
@@ -240,6 +243,8 @@ interface SharedSettingsState extends SharedSettings {
   ) => void;
   setAgentInstance: (instance: AgentInstanceConfig) => void;
   removeAgentInstance: (instanceId: string) => void;
+  // ViscosityCode: account pools (src/renderer/viscosity/accountPools/poolSettings.ts).
+  setAccountPools: (pools: AccountPools) => void;
   setNotificationStatuses: (value: {
     done?: boolean;
     needsAttention?: boolean;
@@ -1167,6 +1172,11 @@ export const useSharedSettings = create<SharedSettingsState>()((set, get) => ({
     set(removeAgentInstanceSettings(current, instance));
     persistSettings(selectSharedSettings(get()));
   },
+  // ViscosityCode: account pools; callers normalize members before writing.
+  setAccountPools: (accountPools) => {
+    set({ accountPools });
+    persistSettings(selectSharedSettings(get()));
+  },
   setNotificationStatuses: (partial) => {
     const current = get().notificationStatuses;
     const next = { ...current, ...partial };
@@ -1395,6 +1405,8 @@ function selectSharedSettings(state: SharedSettingsState): SharedSettingsInput {
     acpRegistryInstalledAgents: state.acpRegistryInstalledAgents,
     acpRegistryAutoInstallOptOuts: state.acpRegistryAutoInstallOptOuts,
     agentInstances: state.agentInstances,
+    // ViscosityCode: account pools; absent (never undefined) so the host keeps its value.
+    ...(state.accountPools ? { accountPools: state.accountPools } : {}),
     collapseTerminalComposer: state.collapseTerminalComposer,
     followUpBehavior: state.followUpBehavior,
     cliPickerTarget: state.cliPickerTarget,

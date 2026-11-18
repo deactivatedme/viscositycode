@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import {
   settingsStringListSchema,
@@ -55,6 +56,8 @@ import {
   type CrewMemberSelection,
   type SavedCrew,
 } from "./crew";
+// ViscosityCode: account pools (src/shared/accountPools.ts).
+import { accountPoolsSchema, parseStoredAccountPools } from "./accountPools";
 
 export const WINDOWS_SHELL_AUTO = "auto";
 export const WINDOWS_SHELL_ARGUMENTS_MAX = 8_192;
@@ -509,6 +512,30 @@ export const sharedSettingsSchema = z.object({
   acpRegistryAutoInstallOptOuts: z.array(z.string()),
   /** User-registered agent instances, currently used by generic ACP registry installs. */
   agentInstances: agentInstanceConfigMapSchema,
+  // ViscosityCode: account pools.
+  /**
+   * Account pools keyed by profile driver (`codex`, `claude`, …): the accounts
+   * of one provider that new threads spread over and that a thread fails over
+   * between when one runs out of usage. See `src/shared/accountPools.ts`.
+   *
+   * Stored exactly as written. Pools for drivers without profiles and members
+   * whose profile was removed are ignored when read (`normalizeAccountPools`),
+   * not pruned here: the settings CAS refuses writes whose parsed value differs
+   * from the written one and asserts that only the edited subjects change, so
+   * load-time pruning against `agentInstances` would break unrelated writes,
+   * and a pool for a driver a newer build supports must survive a downgrade.
+   *
+   * Optional in the TypeScript shape and filled with `{}` on load, so
+   * whole-snapshot writers that predate pools omit the key, which produces no
+   * edit and never clears saved pools.
+   *
+   * No SETTINGS_DOCUMENT_VERSION bump: the field is additive. Older readers
+   * keep it as an unknown field and preserve it; documents without it load
+   * with `{}`. Widening `accountPoolSchema` later (more members, a lower
+   * threshold, a new required key) would make older readers refuse the
+   * document, so such a change must bump the document version.
+   */
+  accountPools: accountPoolsSchema.default({}).optional(),
   /** When true, the composer in terminal-native threads starts collapsed. */
   collapseTerminalComposer: z.boolean(),
   /** Default action for GUI messages sent while an agent is working. */
@@ -916,6 +943,8 @@ export const defaultSharedSettings: SharedSettings = {
   acpRegistryInstalledAgents: {},
   acpRegistryAutoInstallOptOuts: [],
   agentInstances: {},
+  // ViscosityCode: account pools.
+  accountPools: {},
   collapseTerminalComposer: true,
   followUpBehavior: "steer",
   threadDocksPlacement: "right",
@@ -1847,6 +1876,8 @@ function normalizeSharedSettingsStateImpl(value: unknown): {
       ...normalized,
       machineSettings: normalizeMachineSettings(parsed.data.machineSettings),
       crews: normalizeSavedCrews(parsed.data.crews),
+      // ViscosityCode: one malformed pool drops alone instead of every pool.
+      accountPools: parseStoredAccountPools(parsed.data.accountPools),
     },
     parsed.data,
   );

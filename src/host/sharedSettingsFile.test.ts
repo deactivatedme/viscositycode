@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -269,6 +270,8 @@ describe("sharedSettingsFile", () => {
     });
 
     expect(readSharedSettingsFile(settingsPath)).toEqual({
+      // ViscosityCode: account pools are an additive setting that loads as {} when absent.
+      accountPools: {},
       followUpBehavior: "steer",
       themeMode: "dark",
       themePreset: "default",

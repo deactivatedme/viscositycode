@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@lingui/core/macro";
 import { allUsageProviderDescriptors } from "@poracode/agents-usage/providers";
 import type { UsageSnapshot, UsageWindow, UsageRingGroup } from "@poracode/agents-usage/types";
@@ -7,6 +8,8 @@ import type { RemoteAgentStatuses } from "@/shared/remote";
 import { USAGE_PROFILE_SUPPORT } from "./usageProfileRegistry";
 import { i18n } from "@/renderer/i18n/i18n";
 import { getProviderManifest } from "./providerManifest";
+// ViscosityCode: usage-account resolution is shared with the host.
+import { usageAccountIdForAgent, type UsageAccountIdHooks } from "@/shared/usageAccountId";
 export { isClaudeUsageProvider } from "./claude/usageProfileSupport";
 
 /**
@@ -152,20 +155,25 @@ export function usageProvidersForAgentInstances(
   return out;
 }
 
+// ViscosityCode: the renderer's manifest aliases and profile registrations
+// layered over the shared resolver, so renderer results are unchanged.
+const RENDERER_USAGE_ACCOUNT_HOOKS: UsageAccountIdHooks = {
+  baseUsageProviderId: (driver) => getProviderManifest(driver)?.usageProviderId,
+  profileUsageAccountId: (driver) => {
+    const support = USAGE_PROFILE_SUPPORT.find((entry) => entry.driver === driver);
+    if (!support?.providerId) return undefined;
+    return (instance, instances) => support.providerId?.(instance, instances);
+  },
+};
+
 /** Resolve quota ownership without falling back to a different profile account. */
 export function usageProviderIdForAgent(
   agentKind: string,
   instanceId: string | undefined,
   instances: AgentInstanceConfigMap | undefined,
 ): string {
-  const driver = baseAgentKind(agentKind);
-  const id = instanceId ?? (driver !== agentKind ? agentKind.slice(driver.length + 1) : undefined);
-  if (!id) return getProviderManifest(driver)?.usageProviderId ?? agentKind;
-  const candidate = agentProfileKind(driver, id);
-  const instance = instances?.[id];
-  const support = USAGE_PROFILE_SUPPORT.find((entry) => entry.driver === driver);
-  if (!instance || instance.driver !== driver || !support?.providerId) return candidate;
-  return support.providerId(instance, instances!) ?? candidate;
+  // ViscosityCode: delegates to src/shared/usageAccountId.ts.
+  return usageAccountIdForAgent(agentKind, instanceId, instances, RENDERER_USAGE_ACCOUNT_HOOKS);
 }
 
 /** Providers that expose the browser-overlay login (cookie or device flow). */
