@@ -7,6 +7,7 @@ import { selectFocusedThreadId } from "@/renderer/hooks/uiSelectors";
 import { useAppStore } from "@/renderer/state/appStore";
 import { EditorTab } from "./EditorTab";
 import { startOpenTabsSync, useRenderableTabIds } from "./openTabsStore";
+import { RoundtableTab } from "./RoundtableTab";
 import { closeThreadTab, openNewThreadTab } from "./tabActions";
 import { ThreadTab } from "./ThreadTab";
 
@@ -107,6 +108,8 @@ export function ViscosityTabStrip() {
         onAuxClick={closeTabOnMiddleClick}
       >
         <EditorTab />
+        {/* ViscosityCode: pinned tab of the open Roundtable session. */}
+        <RoundtableTab />
         <div
           ref={scrollerRef}
           className="vc-tabstrip__scroller flex min-w-0 items-stretch overflow-x-auto overflow-y-hidden"

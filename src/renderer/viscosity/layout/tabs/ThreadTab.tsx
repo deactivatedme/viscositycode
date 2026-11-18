@@ -10,6 +10,10 @@ import {
 import { useAppStore } from "@/renderer/state/appStore";
 import { useFileEditorStore } from "@/renderer/state/fileEditorStore";
 import { useThread } from "@/renderer/state/useThread";
+import {
+  isRoundtablePanelShown,
+  useRoundtableViewStore,
+} from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { activateThreadTab, closeThreadTab } from "./tabActions";
 
 /** One open-thread tab. Subscribes only to its own thread and selection flags. */
@@ -29,11 +33,13 @@ export function ThreadTab(props: { threadId: string }) {
   const editorShown = useFileEditorStore(
     (state) => state.overlayMode === "modal" && state.rootContext !== null,
   );
+  // ViscosityCode: the Roundtable panel covers the panes like the editor does.
+  const roundtableShown = useRoundtableViewStore(isRoundtablePanelShown);
   const hasBackgroundActivity = useThreadHasBackgroundActivity(threadId);
   if (!thread) return null;
 
   const tone = getStatusTone(thread, { hasBackgroundActivity });
-  const selected = isFocused && !editorShown;
+  const selected = isFocused && !editorShown && !roundtableShown;
 
   return (
     // Middle-click closing is delegated to the tab strip via `data-vc-tab-thread`.

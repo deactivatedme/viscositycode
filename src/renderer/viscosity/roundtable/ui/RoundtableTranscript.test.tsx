@@ -1,0 +1,220 @@
+import { fireEvent, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
+import { participant, session, turn } from "./roundtable.testFixtures";
+import {
+  buildTranscriptEntries,
+  findDecisionTurn,
+  RoundtableTranscript,
+} from "./RoundtableTranscript";
+
+const api = vi.hoisted(() => ({
+  live: {} as Record<string, string>,
+  useLiveTurnText: vi.fn<(sessionId: string, turnId: string) => string>(),
+}));
+const tabs = vi.hoisted(() => ({ activateThreadTab: vi.fn<(threadId: string) => void>() }));
+
+vi.mock("../api", () => ({ useLiveTurnText: api.useLiveTurnText }));
+vi.mock("@/renderer/viscosity/layout/tabs/tabActions", () => tabs);
+
+beforeEach(() => {
+  api.live = {};
+  api.useLiveTurnText.mockReset();
+  api.useLiveTurnText.mockImplementation((_sessionId, turnId) => api.live[turnId] ?? "");
+  tabs.activateThreadTab.mockReset();
+});
+
+function bubble(turnId: string): HTMLElement {
+  const element = document.querySelector<HTMLElement>(`[data-vc-rt-turn="${turnId}"]`);
+  if (!element) throw new Error(`no bubble for ${turnId}`);
+  return element;
+}
+
+describe("buildTranscriptEntries", () => {
+  it("separates rounds and places the user's messages before the turns that follow them", () => {
+    const turns = [
+      turn("t1", { round: 1, startedAt: 10 }),
+      turn("t2", { round: 1, startedAt: 20 }),
+      turn("t3", { round: 2, startedAt: 30, noteId: "n2" }),
+      turn("t4", { round: 2, status: "pending" }),
+    ];
+    const notes = [
+      { id: "n2", text: "second", createdAt: 40 },
+      { id: "n1", text: "first", createdAt: 15 },
+      { id: "n3", text: "last", createdAt: 99 },
+    ];
+    expect(buildTranscriptEntries(turns, notes).map((entry) => entry.key)).toEqual([
+      "round:1:t1",
+      "t1",
+      "note:n1",
+      "t2",
+      "note:n2",
+      "round:2:t3",
+      "t3",
+      "t4",
+      "note:n3",
+    ]);
+  });
+
+  it("finds the decision turn of the winner first", () => {
+    const turns = [
+      turn("p1", { verdict: "pick", pickedParticipantId: "b" }),
+      turn("p2", { verdict: "pick", pickedParticipantId: "a" }),
+      turn("p3", { verdict: "approve" }),
+    ];
+    expect(findDecisionTurn(turns, "b")?.id).toBe("p1");
+    expect(findDecisionTurn(turns, "z")?.id).toBe("p2");
+    expect(findDecisionTurn(turns, undefined)?.id).toBe("p2");
+  });
+});
+
+describe("RoundtableTranscript", () => {
+  it("renders the task and every turn status", () => {
+    api.live.run = "Halfway through the fix";
+    render(
+      <RoundtableTranscript
+        session={session({
+          threadIds: { b: "thread-b" },
+          turns: [
+            turn("done", { participantId: "a", responseText: "Patched the redirect." }),
+            turn("fail", { participantId: "a", status: "failed", error: "Agent crashed" }),
+            turn("stop", { participantId: "a", status: "stopped", responseText: "Partial work" }),
+            turn("wait", { participantId: "b", round: 2, status: "waiting-approval" }),
+            turn("run", { participantId: "a", round: 2, status: "running" }),
+            turn("idle", { participantId: "b", round: 2, status: "running" }),
+            turn("next", { participantId: "b", round: 3, status: "pending" }),
+            turn("empty", { participantId: "b", round: 3, status: "done", truncated: true }),
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Task" })).toBeTruthy();
+    expect(screen.getByText("Find and fix the login redirect loop.")).toBeTruthy();
+    expect(within(bubble("done")).getByText("Patched the redirect.")).toBeTruthy();
+    expect(within(bubble("done")).getByText("Builder")).toBeTruthy();
+    expect(within(bubble("fail")).getByRole("alert").textContent).toBe("Agent crashed");
+    expect(within(bubble("stop")).getByText("Partial work")).toBeTruthy();
+    expect(within(bubble("stop")).getAllByText("Stopped").length).toBeGreaterThan(0);
+    expect(within(bubble("wait")).getByRole("status").textContent).toMatch(
+      /Agent B is waiting for your approval/,
+    );
+    expect(within(bubble("run")).getByText("Halfway through the fix")).toBeTruthy();
+    expect(within(bubble("idle")).getByText("Working…")).toBeTruthy();
+    expect(within(bubble("next")).getAllByText("Up next").length).toBeGreaterThan(0);
+    expect(within(bubble("empty")).getByText("No reply")).toBeTruthy();
+    expect(bubble("wait").getAttribute("data-status")).toBe("waiting-approval");
+
+    const separators = screen.getAllByRole("separator").map((element) => element.textContent);
+    expect(separators).toEqual(["Round 1 of 4", "Round 2 of 4", "Round 3 of 4"]);
+    expect(api.useLiveTurnText).not.toHaveBeenCalledWith("rt1", "done");
+  });
+
+  it("opens the waiting participant's thread from the approval callout", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          threadIds: { b: "thread-b" },
+          turns: [turn("wait", { participantId: "b", status: "waiting-approval" })],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open Agent B thread" }));
+    expect(tabs.activateThreadTab).toHaveBeenCalledWith("thread-b");
+  });
+
+  it("shows verdict badges", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          turns: [
+            turn("ok", { participantId: "b", verdict: "approve", responseText: "LGTM" }),
+            turn("redo", { participantId: "b", verdict: "revise", responseText: "Fix tests" }),
+            turn("pick", {
+              participantId: "b",
+              verdict: "pick",
+              pickedParticipantId: "a",
+              responseText: "A is better",
+            }),
+            turn("pick2", { participantId: "b", verdict: "pick", responseText: "?" }),
+          ],
+        })}
+      />,
+    );
+    const verdictOf = (id: string) => bubble(id).querySelector(".vc-rt-verdict");
+    expect(verdictOf("ok")?.getAttribute("data-verdict")).toBe("approve");
+    expect(verdictOf("ok")?.textContent).toBe("Approve");
+    expect(verdictOf("redo")?.textContent).toBe("Revise");
+    expect(verdictOf("pick")?.textContent).toBe("Pick → Agent A");
+    expect(verdictOf("pick2")?.textContent).toBe("Pick");
+  });
+
+  it("shows the user's messages with their recipients", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          pattern: "open",
+          notes: [
+            { id: "n1", text: "What do you think?", mentions: ["b"], createdAt: 5 },
+            { id: "n2", text: "Use the new API", createdAt: 6, deliveredTurnId: "t1" },
+          ],
+          turns: [turn("t1", { participantId: "a", startedAt: 7, responseText: "Done" })],
+        })}
+      />,
+    );
+    const first = document.querySelector<HTMLElement>('[data-vc-rt-note="n1"]')!;
+    expect(within(first).getByText("You")).toBeTruthy();
+    expect(within(first).getByText("What do you think?")).toBeTruthy();
+    expect(within(first).getByText("to Agent B")).toBeTruthy();
+    const second = document.querySelector<HTMLElement>('[data-vc-rt-note="n2"]')!;
+    expect(within(second).getByText("Added to the next prompt of Agent A")).toBeTruthy();
+  });
+
+  it("shows the decision with the winner and the rationale", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          pattern: "debate",
+          status: "done",
+          winnerParticipantId: "a",
+          participants: [participant("a"), participant("b"), participant("j", { role: "judge" })],
+          outcome: { reason: "judge" },
+          turns: [
+            turn("j1", {
+              participantId: "j",
+              verdict: "pick",
+              pickedParticipantId: "a",
+              responseText: "A handles the edge cases.",
+            }),
+          ],
+        })}
+      />,
+    );
+    const decision = screen.getByRole("region", { name: "Decision" });
+    expect(within(decision).getByText("The judge picked a winner.")).toBeTruthy();
+    expect(decision.textContent).toContain("Winner: Agent A");
+    expect(within(decision).getByText("Rationale from Agent J")).toBeTruthy();
+    expect(within(decision).getByText("A handles the edge cases.")).toBeTruthy();
+  });
+
+  it("prefers the engine's own rationale and explains a failure", () => {
+    const { rerender } = render(
+      <RoundtableTranscript
+        session={session({
+          status: "done",
+          outcome: { reason: "approved", rationale: "Reviewer approved round 2." },
+        })}
+      />,
+    );
+    const decision = screen.getByRole("region", { name: "Decision" });
+    expect(within(decision).getByText("A reviewer approved the work.")).toBeTruthy();
+    expect(within(decision).getByText("Rationale")).toBeTruthy();
+    expect(within(decision).getByText("Reviewer approved round 2.")).toBeTruthy();
+
+    rerender(
+      <RoundtableTranscript session={session({ status: "failed", error: "Builder crashed" })} />,
+    );
+    expect(screen.queryByRole("region", { name: "Decision" })).toBeNull();
+    expect(screen.getByRole("alert").textContent).toBe("Builder crashed");
+  });
+});

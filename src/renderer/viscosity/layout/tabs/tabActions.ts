@@ -10,6 +10,7 @@ import { useAppStore } from "@/renderer/state/appStore";
 import { findExperimentByThreadId } from "@/renderer/state/experimentStore";
 import { useFileEditorStore } from "@/renderer/state/fileEditorStore";
 import { getThreadMap } from "@/renderer/state/useThread";
+import { hideRoundtablePanel } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { closeOpenTab, getRenderableTabIds } from "./openTabsStore";
 import { resolveNextTabAfterClose } from "./openTabsModel";
 
@@ -48,9 +49,11 @@ export function hideEditorPanel(): void {
   if (editor.overlayMode === "modal") editor.setOverlayMode(null);
 }
 
-/** Tab (or status bar) press: bring the thread forward over the editor panel. */
+/** Tab (or status bar) press: bring the thread forward over the editor and Roundtable panels. */
 export function activateThreadTab(threadId: string): void {
   hideEditorPanel();
+  // ViscosityCode: also step the Roundtable panel aside (its tab stays).
+  hideRoundtablePanel();
   showThreadInFocusedPane(threadId);
 }
 
@@ -82,6 +85,8 @@ export function closeThreadTab(threadId: string): void {
 /** "+" in the tab strip: the same new-thread draft as the sidebar's button. */
 export function openNewThreadTab(): void {
   hideEditorPanel();
+  // ViscosityCode: the new draft shows in front of the Roundtable panel.
+  hideRoundtablePanel();
   openNewThread();
 }
 
@@ -89,5 +94,7 @@ export function openNewThreadTab(): void {
 export function toggleEditorTab(): void {
   const editor = useFileEditorStore.getState();
   if (!editor.rootContext) return;
+  // ViscosityCode: showing the editor puts it in front of the Roundtable panel.
+  if (editor.overlayMode !== "modal") hideRoundtablePanel();
   editor.setOverlayMode(editor.overlayMode === "modal" ? null : "modal");
 }
