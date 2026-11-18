@@ -75,6 +75,64 @@ export interface RoundtableTurn {
   startedAt?: number;
   endedAt?: number;
   error?: string;
+  /**
+   * Additive (RT1 engine): what this turn was for. The orchestrator re-derives
+   * its position from the stored turns alone, so a reload can resume a session.
+   */
+  phase?: RoundtableTurnPhase;
+  /** Additive (RT1 engine): the user message (`RoundtableNote`) an open-pattern reply answers. */
+  noteId?: string;
+  /** Additive (RT1 engine): `responseText` was cut to the stored cap (a marker sits in the text). */
+  truncated?: boolean;
+}
+
+/** Additive (RT1 engine): the step a turn belongs to, per pattern. */
+export type RoundtableTurnPhase =
+  /** build-review: the builder's work; relay: the builder stage. */
+  | "build"
+  /** build-review: a reviewer's verdict; relay: the reviewer stage. */
+  | "review"
+  /** relay: the planner stage. */
+  | "plan"
+  /** relay: the tester stage. */
+  | "test"
+  /** relay: a stage whose participant has no specific role. */
+  | "contribute"
+  /** debate: independent first proposal. */
+  | "propose"
+  /** debate: revision after reading the others' proposals. */
+  | "critique"
+  /** debate/race: the judge's or a voter's pick. */
+  | "decide"
+  /** debate: the winner implements the chosen proposal. */
+  | "implement"
+  /** race: the candidate's own run inside the experiment. */
+  | "race"
+  /** race: reviewing the other candidates. */
+  | "cross-review"
+  /** open: a reply in the group chat. */
+  | "reply";
+
+/**
+ * Additive (RT1 engine): a message the user posted to a Roundtable. In the
+ * open pattern it asks participants to reply; in the other patterns it steers
+ * the run and is added to the next participant's prompt.
+ */
+export interface RoundtableNote {
+  id: string;
+  text: string;
+  /** Participant ids asked to reply (open pattern); empty or absent = everyone, in order. */
+  mentions?: string[];
+  createdAt: number;
+  /** Steering notes: the turn whose prompt carried this note. */
+  deliveredTurnId?: string;
+}
+
+/** Additive (RT1 engine): why a Roundtable finished, for the UI to explain (localized there). */
+export interface RoundtableOutcome {
+  reason: "approved" | "max-rounds" | "judge" | "vote" | "crown" | "completed" | "single-survivor";
+  /** Judge or crown rationale, when one was given. */
+  rationale?: string;
 }
 
 export type RoundtableStatus = "draft" | "running" | "paused" | "done" | "failed" | "stopped";
@@ -100,10 +158,38 @@ export interface RoundtableSession {
   originThreadId?: string;
   createdAt: number;
   updatedAt: number;
+  /** Additive (RT1 engine): branch of `worktreePath` when the Roundtable created one. */
+  worktreeBranch?: string;
+  /** Additive (RT1 engine): race pattern — the Agent Experiment that holds the candidates. */
+  experimentId?: string;
+  /** Additive (RT1 engine): debate pattern — the winner implements the chosen proposal. */
+  implementWinner?: boolean;
+  /** Additive (RT1 engine): user messages, in posting order. */
+  notes?: RoundtableNote[];
+  /** Additive (RT1 engine): set when the session finishes `done`. */
+  outcome?: RoundtableOutcome;
+  /** Additive (RT1 engine): why the session failed. */
+  error?: string;
 }
 
 /** Live streaming callback: text so far for the running turn (throttled by the driver). */
 export type TurnProgressListener = (partialText: string) => void;
+
+/** Additive (RT1 engine): optional per-turn hooks for `ParticipantDriver.sendTurn`. */
+export interface SendTurnOptions {
+  /**
+   * The participant started (`true`) or stopped (`false`) waiting for the user
+   * (a permission request or a question). The engine shows attention; the user
+   * answers in the participant's own thread. Never auto-approved.
+   */
+  onAttention?: (waiting: boolean) => void;
+  /**
+   * Threads to reference as context (`{kind:"thread"}` mentions) when the
+   * participant can read them with `read_thread`; otherwise ignored (the
+   * prompt already quotes the needed text).
+   */
+  contextThreadIds?: string[];
+}
 
 export interface TurnResult {
   status: Extract<TurnStatus, "done" | "failed" | "stopped">;
@@ -121,7 +207,21 @@ export interface ParticipantDriver {
   /** Create the thread / conversation if needed. Idempotent. */
   ensureStarted(): Promise<void>;
   /** Send one turn and resolve when it finishes (approvals still go to the user). */
-  sendTurn(prompt: string, onProgress?: TurnProgressListener): Promise<TurnResult>;
+  sendTurn(
+    prompt: string,
+    onProgress?: TurnProgressListener,
+    /** Additive (RT1 engine): optional per-turn hooks; drivers may ignore them. */
+    options?: SendTurnOptions,
+  ): Promise<TurnResult>;
+  /**
+   * Additive (RT1 engine), optional: wait for a turn that is already running
+   * (a race candidate launched by the experiment, or a turn in flight when the
+   * window reloaded) and resolve with its result, without sending anything.
+   */
+  awaitCurrentTurn?(
+    onProgress?: TurnProgressListener,
+    options?: SendTurnOptions,
+  ): Promise<TurnResult>;
   /** Interrupt the running turn, if any. */
   stop(): Promise<void>;
   /** Thread id when backed by an agent thread (to open it in a pane). */
