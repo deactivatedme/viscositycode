@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { CROSSAGENT_MCP_TIMEOUT_MS } from "@/supervisor/crossagentMcp/waitTiming";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node-pty";
@@ -99,6 +100,15 @@ import type { ThreadOutputPipeline } from "../threadOutputPipeline";
 import { rewriteSegmentsForWsl } from "../threadAttachments";
 import { launchMayReceiveContextSteers } from "../crewLeadEditNudge";
 import { formatTurnClientContext, structuredTurnTextOptions } from "../turnClientContext";
+// ViscosityCode: playbook pointer for terminal chats.
+import {
+  restartedPlaybookDelivery,
+  resumedPlaybookDelivered,
+  leadsWithTerminalCommand,
+  terminalPlaybookPointer,
+  withPlaybookPointerSegment,
+  withPlaybookPointerText,
+} from "../playbookBrief";
 import {
   buildProviderHandoffInstruction,
   isResolvedThreadMentionSegment,
@@ -125,6 +135,7 @@ import { describeSpawnFailure, sanitizeEnv, sanitizedProcessEnv } from "./spawnD
 import type { SessionRuntimeLifecycle } from "./sessionRuntimeLifecycle";
 import type { StructuredTurnQueue } from "./structuredTurnQueue";
 import { getIterm2StatusL2TerminalEnv, resolveTerminalColorEnv } from "./terminalEnv";
+import { liveReMcpServers } from "@/supervisor/viscosity/liveReMcp"; // ViscosityCode:
 
 export interface SpawnThreadInput {
   threadId: string;
@@ -165,6 +176,7 @@ export interface SpawnThreadInput {
   threadMentionToolsAvailable?: boolean;
   launchConfig?: ThreadConfig;
   crewBriefDelivered?: string;
+  playbookBriefDelivered?: string; // ViscosityCode
   /** A replacement keeps the next prompt's crew edit reminder (`SessionRuntime.crewLeadEditedFiles`). */
   crewLeadEditedFiles?: boolean;
   crossagentsMcpAttached?: boolean;
@@ -434,6 +446,7 @@ export class SpawnPipeline {
   ): Promise<StartThreadResult> {
     const ctx = this.ctx;
     let pendingCrewBriefDelivered: string | undefined;
+    let pendingPlaybookBriefDelivered: string | undefined; // ViscosityCode
     payload = { ...payload, ...snapshotWorkspaceStart(payload), threadId: payload.threadId };
     const adapter = this.requireAdapter(payload.agentKind);
     assertWorkspaceLaunchSupported(payload.workspaceScope, adapter, payload.presentationMode);
@@ -533,6 +546,31 @@ export class SpawnPipeline {
       effectiveSegments && effectiveSegments.length > 0
         ? formatPrompt(effectiveSegments)
         : payload.prompt.trim();
+    // ViscosityCode: the MCP thread title is the user's first line, never the playbook pointer.
+    const titlePrompt = initialPrompt;
+    // ViscosityCode: a terminal chat's first app-sent prompt leads with its playbook pointer.
+    // ViscosityCode: a resumed conversation may still hold a playbook cleared since this process last ran.
+    if (payload.sessionRef) pendingPlaybookBriefDelivered = resumedPlaybookDelivered(runtimeConfig);
+    const playbookPointer =
+      !useStructuredFlow &&
+      initialPrompt.length > 0 &&
+      !leadsWithTerminalCommand(initialPrompt, policySegments) // ViscosityCode: the next plain prompt carries it.
+        ? await terminalPlaybookPointer(
+            runtimeConfig,
+            pendingPlaybookBriefDelivered,
+            executionLocation,
+            { workspaceLocal: adapter.capabilities.requiresWorkspaceLocalAttachments === true },
+          )
+        : undefined;
+    if (playbookPointer) {
+      const pointedSegments = withPlaybookPointerSegment(playbookPointer.text, effectiveSegments);
+      initialPrompt =
+        pointedSegments && pointedSegments !== effectiveSegments
+          ? formatPrompt(pointedSegments)
+          : withPlaybookPointerText(playbookPointer.text, effectiveSegments, initialPrompt);
+      effectiveSegments = pointedSegments;
+      pendingPlaybookBriefDelivered = playbookPointer.fingerprint;
+    }
     // Portable-skills fallback for the initial structured turn: inline SKILL.md
     // instructions for invoked skills this provider can't load natively.
     const inlineSkillInstructions =
@@ -628,7 +666,7 @@ export class SpawnPipeline {
 
     const mcpIdentity = {
       threadId: payload.threadId,
-      title: initialPrompt.split("\n", 1)[0]?.trim() ?? "",
+      title: titlePrompt.split("\n", 1)[0]?.trim() ?? "", // ViscosityCode: pre-pointer prompt.
     };
     // Every provider translator keys its output record by `server.name`, so a
     // plugin server sharing a name with a user-configured one would silently
@@ -639,7 +677,15 @@ export class SpawnPipeline {
     const pluginMcpServers = pluginContributions.mcpServers.filter(
       (server) => !userMcpServerNames.has(server.name),
     );
-    let mcpServers = resolveEnabledMcpServers([...userMcpServers, ...pluginMcpServers]);
+    let mcpServers = resolveEnabledMcpServers([
+      ...userMcpServers,
+      ...pluginMcpServers,
+      // ViscosityCode: the live_re debugger server, only when the chat turns it on.
+      ...liveReMcpServers(runtimeConfig, executionLocation, [
+        ...userMcpServers,
+        ...pluginMcpServers,
+      ]),
+    ]);
     if (this.ctx.options.applyMcpServerAuthorization) {
       mcpServers = await this.ctx.options.applyMcpServerAuthorization(
         mcpServers,
@@ -943,6 +989,10 @@ export class SpawnPipeline {
           launchConfig,
           crossagentsMcpAttached: hasCrossagentsMcp(resolvedMcpServers),
           crossagentsMcpAvailable: ctx.options.crossagentMcp !== undefined,
+          // ViscosityCode
+          ...(pendingPlaybookBriefDelivered !== undefined
+            ? { playbookBriefDelivered: pendingPlaybookBriefDelivered }
+            : {}),
           nativePlugins,
         });
       } catch (error) {
@@ -1009,6 +1059,12 @@ export class SpawnPipeline {
             pendingCrewBriefDelivered = fingerprint;
             const active = ctx.sessions.get(payload.threadId);
             if (active) active.crewBriefDelivered = fingerprint;
+          },
+          // ViscosityCode: same hand-off as the crew brief.
+          onPlaybookBriefDelivered: (fingerprint) => {
+            pendingPlaybookBriefDelivered = fingerprint;
+            const active = ctx.sessions.get(payload.threadId);
+            if (active) active.playbookBriefDelivered = fingerprint;
           },
         },
         { ...initialTurnText, config: launchConfig },
@@ -1143,6 +1199,10 @@ export class SpawnPipeline {
         crossagentsMcpAvailable: ctx.options.crossagentMcp !== undefined,
         ...(pendingCrewBriefDelivered !== undefined
           ? { crewBriefDelivered: pendingCrewBriefDelivered }
+          : {}),
+        // ViscosityCode
+        ...(pendingPlaybookBriefDelivered !== undefined
+          ? { playbookBriefDelivered: pendingPlaybookBriefDelivered }
           : {}),
         nativePlugins,
         ...(shouldQueueInitialPrompt ? { pendingLaunchPrompt: initialPrompt } : {}),
@@ -1372,6 +1432,7 @@ export class SpawnPipeline {
           launchConfig,
           crossagentsMcpAttached: hasCrossagentsMcp(resolvedMcpServers),
           crossagentsMcpAvailable: ctx.options.crossagentMcp !== undefined,
+          ...restartedPlaybookDelivery(session, config), // ViscosityCode
           ...(session.nativePlugins ? { nativePlugins: session.nativePlugins } : {}),
           presentationMode:
             session.presentationMode ?? session.adapter.capabilities.presentationMode,
@@ -1538,6 +1599,7 @@ export class SpawnPipeline {
         launchConfig,
         crossagentsMcpAttached: hasCrossagentsMcp(resolvedMcpServers),
         crossagentsMcpAvailable: this.ctx.options.crossagentMcp !== undefined,
+        ...restartedPlaybookDelivery(session, config), // ViscosityCode
         ...(session.nativePlugins ? { nativePlugins: session.nativePlugins } : {}),
         ...(session.presentationMode ? { presentationMode: session.presentationMode } : {}),
       });
@@ -1717,6 +1779,10 @@ export class SpawnPipeline {
       config: input.config,
       ...(input.crewBriefDelivered !== undefined
         ? { crewBriefDelivered: input.crewBriefDelivered }
+        : {}),
+      // ViscosityCode
+      ...(input.playbookBriefDelivered !== undefined
+        ? { playbookBriefDelivered: input.playbookBriefDelivered }
         : {}),
       ...(input.crewLeadEditedFiles ? { crewLeadEditedFiles: true } : {}),
       ...(input.crossagentsMcpAttached !== undefined

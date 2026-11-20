@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from "node:fs";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1795,4 +1796,61 @@ it("wraps only genuine pre-runtime IPC launch failures without cross-attempt lea
     })
     .catch((error: unknown) => error);
   expect(unwrapConfirmedIpcThreadLaunchFailure(unconfirmed).confirmedLaunchFailure).toBe(false);
+});
+
+// ViscosityCode: the live_re debugger server joins a launch only when the chat turns it on.
+describe("ViscosityCode: live_re launch server", () => {
+  let binary: string;
+  beforeEach(() => {
+    const dir = mkdtempSync(join(tmpdir(), "live-re-launch-"));
+    tempDirs.push(dir);
+    binary = join(dir, "viscosity-live-re");
+    writeFileSync(binary, "");
+    vi.stubEnv("VISCOSITY_LIVE_RE_BIN", binary);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+  it.each(["gui", "terminal"] as const)(
+    "adds live_re to a %s launch only when the chat turns it on",
+    async (presentationMode) => {
+      const launched = new Map<string, unknown>();
+      for (const [threadId, on] of [
+        ["live-on", true],
+        ["live-off", false],
+      ] as const) {
+        const adapter = createAdapter("fixture", createStructuredSession(Promise.resolve()));
+        const mcpApps = {
+          prepare: vi.fn<
+            NonNullable<ConstructorParameters<typeof ThreadSessionManager>[0]["mcpApps"]>["prepare"]
+          >(async (_id, servers) => servers),
+          releaseThread: vi.fn<(threadId: string) => Promise<void>>().mockResolvedValue(undefined),
+          modelContext: vi.fn<(threadId: string) => string | undefined>(),
+        };
+        const manager = createManager("fixture", adapter, undefined, undefined, { mcpApps });
+        await manager.startThread({
+          threadId,
+          agentKind: "fixture",
+          projectLocation: { kind: "posix", path: process.cwd() },
+          config: {
+            model: "fixture/model",
+            ...(on ? { mcpServerOverrides: { "viscosity.live-re": true } } : {}),
+          },
+          prompt: "",
+          initialSize: { cols: 80, rows: 24 },
+          presentationMode,
+        });
+        const servers =
+          presentationMode === "gui"
+            ? mcpApps.prepare.mock.calls[0]?.[1]
+            : vi.mocked(adapter.buildLaunchArgv).mock.calls[0]?.[4]?.mcpServers;
+        launched.set(threadId, servers?.find((server) => server.name === "live_re") ?? null);
+      }
+      expect(launched.get("live-off")).toBeNull();
+      expect(launched.get("live-on")).toMatchObject({
+        id: "viscosity.live-re",
+        transport: { type: "stdio", command: binary, env: { VISCOSITY_LIVE_RE_PROTOCOL: "1" } },
+      });
+      // Never auto-approved: every debugger call still goes through the agent's approval.
+      expect(launched.get("live-on")).not.toHaveProperty("approvalMode");
+    },
+  );
 });

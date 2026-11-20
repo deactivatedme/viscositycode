@@ -1,6 +1,15 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  appendFileSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -10,7 +19,9 @@ import {
   buildElectronBuilderConfig,
   wantsMacAdhocSigning,
   buildStagePackageJson,
+  resolveAzureSignOptions,
   resolveUpdateRepository,
+  verifyPackagedWinPtyOwners,
   verifyLockedComputerUseResources,
 } from "./build-desktop-artifact.mjs";
 
@@ -240,4 +251,154 @@ void test("stages ViscosityCode package metadata without the upstream repository
     url: "https://github.com/acme/viscosity-code",
   });
   assert.equal(nightly.homepage, "https://github.com/acme/viscosity-code");
+});
+
+const AZURE_ENV = {
+  AZURE_SIGNING_PUBLISHER_NAME: "ViscosityCode contributors",
+  AZURE_SIGNING_ENDPOINT: "https://eus.codesigning.azure.net/",
+  AZURE_SIGNING_ACCOUNT_NAME: "viscosity",
+  AZURE_SIGNING_CERT_PROFILE: "public-trust",
+};
+const NO_AZURE_ENV = Object.fromEntries(Object.keys(AZURE_ENV).map((key) => [key, undefined]));
+
+void test("Windows signing skips only the hash-checked PTY job owner", () => {
+  const config = withPackagingEnv(NO_AZURE_ENV, () =>
+    parse(buildElectronBuilderConfig("branded", "win")),
+  );
+  assert.deepEqual(config.win.signExts, ["!pty-job-owner-v1.exe"]);
+  assert.equal(config.win.azureSignOptions, undefined);
+  // The installed electron-builder's own filter decides what gets signed.
+  const appBuilderRequire = createRequire(
+    createRequire(import.meta.url).resolve("electron-builder"),
+  );
+  const { WinPackager } = appBuilderRequire("app-builder-lib");
+  const shouldSign = (file) =>
+    WinPackager.prototype.shouldSignFile.call({ platformSpecificBuildOptions: config.win }, file);
+  assert.equal(shouldSign("resources/pty-job-owner/win32-x64/pty-job-owner-v1.exe"), false);
+  assert.equal(shouldSign("resources/pty-job-owner/win32-arm64/pty-job-owner-v1.exe"), false);
+  assert.equal(shouldSign("ViscosityCode.exe"), true);
+  assert.equal(shouldSign("resources/computer-use-helper/win32-x64/helper.exe"), true);
+});
+
+void test("emits Azure Trusted Signing options only when fully configured", () => {
+  const config = withPackagingEnv(AZURE_ENV, () =>
+    parse(buildElectronBuilderConfig("branded", "win")),
+  );
+  assert.deepEqual(config.win.azureSignOptions, {
+    publisherName: "ViscosityCode contributors",
+    endpoint: "https://eus.codesigning.azure.net/",
+    codeSigningAccountName: "viscosity",
+    certificateProfileName: "public-trust",
+  });
+  assert.deepEqual(config.win.signExts, ["!pty-job-owner-v1.exe"]);
+  // GitHub Actions passes absent secrets as empty strings.
+  const blank = Object.fromEntries(Object.keys(AZURE_ENV).map((key) => [key, " "]));
+  assert.equal(resolveAzureSignOptions(blank), undefined);
+  assert.throws(
+    () => resolveAzureSignOptions({ ...AZURE_ENV, AZURE_SIGNING_CERT_PROFILE: "" }),
+    /partly configured; also set AZURE_SIGNING_CERT_PROFILE/u,
+  );
+  // A macOS build never reads the Windows signing settings.
+  const mac = withPackagingEnv({ ...AZURE_ENV, AZURE_SIGNING_ENDPOINT: "" }, () =>
+    parse(buildElectronBuilderConfig("branded", "mac")),
+  );
+  assert.equal(mac.win.azureSignOptions, undefined);
+});
+
+void test("rejects a packaged PTY job owner that signing rewrote", (t) => {
+  const release = mkdtempSync(join(tmpdir(), "desktop-win-release-"));
+  t.after(() => rmSync(release, { recursive: true, force: true }));
+  // PE header fixture with the GUI subsystem; nothing is launched.
+  const owner = (machine) => {
+    const bytes = Buffer.alloc(512);
+    bytes.writeUInt16LE(0x5a4d, 0);
+    bytes.writeUInt32LE(64, 0x3c);
+    bytes.writeUInt32LE(0x00004550, 64);
+    bytes.writeUInt16LE(machine, 68);
+    bytes.writeUInt16LE(240, 84);
+    bytes.writeUInt16LE(0x20b, 88);
+    bytes.writeUInt16LE(2, 156);
+    return bytes;
+  };
+  const targets = {};
+  const bytesFor = {};
+  for (const [arch, machine] of [
+    ["x64", 0x8664],
+    ["arm64", 0xaa64],
+  ]) {
+    bytesFor[arch] = owner(machine);
+    targets[`win32-${arch}`] = {
+      relativePath: `win32-${arch}/pty-job-owner-v1.exe`,
+      bytes: bytesFor[arch].length,
+      sha256: createHash("sha256").update(bytesFor[arch]).digest("hex"),
+    };
+  }
+  const manifest = JSON.stringify({
+    formatVersion: 1,
+    protocolVersion: 1,
+    helperVersion: "1.0.0",
+    sourceSha256: "a".repeat(64),
+    targets,
+  });
+  // Every installer ships both owners plus the manifest.
+  const ownerPath = (dir, arch) =>
+    join(release, dir, "resources", "pty-job-owner", `win32-${arch}`, "pty-job-owner-v1.exe");
+  for (const dir of ["win-unpacked", "win-arm64-unpacked"]) {
+    for (const arch of ["x64", "arm64"]) {
+      mkdirSync(join(ownerPath(dir, arch), ".."), { recursive: true });
+      writeFileSync(ownerPath(dir, arch), bytesFor[arch]);
+    }
+    writeFileSync(join(release, dir, "resources", "pty-job-owner", "manifest.json"), manifest);
+  }
+  const files = { arm64: ownerPath("win-arm64-unpacked", "arm64") };
+
+  verifyPackagedWinPtyOwners(release, ["x64", "arm64"]);
+  // An Authenticode signature is appended to the PE file.
+  appendFileSync(files.arm64, Buffer.alloc(16, 1));
+  verifyPackagedWinPtyOwners(release, ["x64"]);
+  assert.throws(
+    () => verifyPackagedWinPtyOwners(release, ["x64", "arm64"]),
+    /PTY job owner content or native GUI executable shape differs/u,
+  );
+  // The x64 installer also ships the arm64 owner, which the runtime checks too.
+  appendFileSync(ownerPath("win-unpacked", "arm64"), Buffer.alloc(16, 1));
+  assert.throws(
+    () => verifyPackagedWinPtyOwners(release, ["x64"]),
+    /PTY job owner content or native GUI executable shape differs/u,
+  );
+});
+
+void test("rejects undeclared files next to the packaged PTY job owner", (t) => {
+  const release = mkdtempSync(join(tmpdir(), "desktop-win-release-"));
+  t.after(() => rmSync(release, { recursive: true, force: true }));
+  const root = join(release, "win-unpacked", "resources", "pty-job-owner");
+  const bytes = Buffer.alloc(512);
+  bytes.writeUInt16LE(0x5a4d, 0);
+  bytes.writeUInt32LE(64, 0x3c);
+  bytes.writeUInt32LE(0x00004550, 64);
+  bytes.writeUInt16LE(0x8664, 68);
+  bytes.writeUInt16LE(240, 84);
+  bytes.writeUInt16LE(0x20b, 88);
+  bytes.writeUInt16LE(2, 156);
+  mkdirSync(join(root, "win32-x64"), { recursive: true });
+  writeFileSync(join(root, "win32-x64", "pty-job-owner-v1.exe"), bytes);
+  writeFileSync(
+    join(root, "manifest.json"),
+    JSON.stringify({
+      formatVersion: 1,
+      protocolVersion: 1,
+      helperVersion: "1.0.0",
+      sourceSha256: "a".repeat(64),
+      targets: {
+        "win32-x64": {
+          relativePath: "win32-x64/pty-job-owner-v1.exe",
+          bytes: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        },
+      },
+    }),
+  );
+  verifyPackagedWinPtyOwners(release, ["x64"]);
+  writeFileSync(join(root, "win32-x64", "pty-job-owner-v1.exe.sig"), "x");
+  assert.throws(() => verifyPackagedWinPtyOwners(release, ["x64"]), /undeclared or partial files/u);
 });

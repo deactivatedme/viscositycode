@@ -31,8 +31,12 @@ import { prepareDesktopCli } from "./prepare-desktop-cli.mjs";
 import { preparePackagedDeviceHub } from "./prepare-device-hub.mjs";
 import { pinInstalledVersions, readRuntimeClosure } from "./runtime-closure.mjs";
 import { npmInvocation, releaseScratchRoot } from "./server-host-tools.mjs";
-import { verifyRuntimeResources } from "../src/shared/runtimeResourceInventory.ts";
+import {
+  ptyJobOwnerResource,
+  verifyRuntimeResources,
+} from "../src/shared/runtimeResourceInventory.ts";
 import { readPtyJobOwnerArtifact } from "../src/shared/ptyJobOwnerArtifact.ts";
+import { PTY_JOB_OWNER_FILENAME } from "../src/shared/contracts/ptyJobOwner.ts";
 import { SUPPORTED_LOCALES } from "../src/shared/locale.ts";
 import { forkRepositoryUrl, UPSTREAM_REPOSITORY_URL } from "../src/shared/viscosityRelease.ts";
 import {
@@ -82,6 +86,45 @@ export function resolveUpdateRepository(env = process.env) {
 export function wantsMacAdhocSigning(env = process.env) {
   const hasCertificate = [env.CSC_LINK, env.CSC_NAME].some((value) => value?.trim());
   return !hasCertificate && env.CSC_IDENTITY_AUTO_DISCOVERY?.trim().toLowerCase() === "false";
+}
+
+// ViscosityCode: Azure Trusted Signing (cloud HSM) for Windows. Public CAs no
+// longer issue exportable .pfx keys, so this is the route for new certificates.
+const AZURE_SIGNING_ENV = {
+  publisherName: "AZURE_SIGNING_PUBLISHER_NAME",
+  endpoint: "AZURE_SIGNING_ENDPOINT",
+  codeSigningAccountName: "AZURE_SIGNING_ACCOUNT_NAME",
+  certificateProfileName: "AZURE_SIGNING_CERT_PROFILE",
+};
+
+/** electron-builder `win.azureSignOptions` from AZURE_SIGNING_*, or undefined when unset. */
+export function resolveAzureSignOptions(env = process.env) {
+  const entries = Object.entries(AZURE_SIGNING_ENV).map(([key, name]) => [key, env[name]?.trim()]);
+  if (entries.every(([, value]) => !value)) return undefined;
+  const missing = entries.filter(([, value]) => !value).map(([key]) => AZURE_SIGNING_ENV[key]);
+  if (missing.length > 0)
+    throw new Error(`Azure Trusted Signing is partly configured; also set ${missing.join(", ")}.`);
+  return Object.fromEntries(entries);
+}
+
+/**
+ * ViscosityCode: the packaged PTY job owner must still match its manifest hash
+ * after electron-builder has signed the app (it is excluded via `signExts`).
+ * Each installer ships every target, and the runtime (SSH bundle staging) checks
+ * all of them and rejects undeclared files, so this does too.
+ * electron-builder names its x64 output `win-unpacked`, other arches `win-<arch>-unpacked`.
+ */
+export function verifyPackagedWinPtyOwners(releaseDir, arches) {
+  const root = realpathSync.native(releaseDir);
+  for (const arch of arches) {
+    const resources = join(
+      root,
+      arch === "x64" ? "win-unpacked" : `win-${arch}-unpacked`,
+      "resources",
+    );
+    ptyJobOwnerResource(join(resources, "pty-job-owner"));
+    verifyDesktopPtyTargets(resources, [arch]);
+  }
 }
 
 /** The fork's repository URL for package metadata, or undefined when none exists yet. */
@@ -396,6 +439,12 @@ async function main() {
     const gitHelperArgs = ["scripts/prepare-git-helper.mjs", "--require", "--platform", platform];
     if (arch && platform !== "mac") gitHelperArgs.push("--arch", arch);
     run("node", gitHelperArgs, { cwd: repoRoot });
+    // ViscosityCode: live_re ships for macOS and Windows only (no Linux build).
+    if (platform !== "linux") {
+      const liveReArgs = ["scripts/prepare-live-re.mjs", "--require", "--platform", platform];
+      if (arch && platform !== "mac") liveReArgs.push("--arch", arch);
+      run("node", liveReArgs, { cwd: repoRoot });
+    }
     if (platform === "mac") {
       run("node", ["scripts/prepare-locked-computer-use.mjs"], { cwd: repoRoot });
     }
@@ -553,6 +602,8 @@ async function main() {
     if (platform === "mac") {
       setMacUpdaterMinimumSystemVersion(join(stageRoot, "release"));
     }
+    // ViscosityCode: fail the build if signing changed the PTY job owner bytes.
+    if (platform === "win") verifyPackagedWinPtyOwners(join(stageRoot, "release"), targetArches);
 
     // 8. Copy artifacts back to release/.
     const copied = copyArtifactsBack(join(stageRoot, "release"), outputDir);
@@ -635,6 +686,12 @@ export function buildElectronBuilderConfig(
       ]
         .map((file) => `\n  - dist/cli-runtime/lib/${file}`)
         .join("")
+    : "";
+  const azureSignOptions = platform === "win" ? resolveAzureSignOptions() : undefined;
+  const azureSignOptionsYaml = azureSignOptions
+    ? `\n  azureSignOptions:${Object.entries(azureSignOptions)
+        .map(([key, value]) => `\n    ${key}: ${JSON.stringify(value)}`)
+        .join("")}`
     : "";
   const macEntitlements = "build/entitlements.mac.plist";
   // ViscosityCode: quoted, because a bare "-" is a YAML list item.
@@ -751,6 +808,10 @@ win:
         - x64
         - arm64
   icon: build/icon${iconSuffix}.ico
+  # ViscosityCode: signing rewrites the PTY job owner, whose bytes the runtime
+  # checks against manifest.json; every other .exe is still signed.
+  signExts:
+    - "!${PTY_JOB_OWNER_FILENAME}"${azureSignOptionsYaml}
 
 nsis:
   oneClick: false${platform === "win" ? "\n  include: build/desktop-cli.nsh" : ""}
