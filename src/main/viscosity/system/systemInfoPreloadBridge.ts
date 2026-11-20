@@ -2,7 +2,8 @@
  * ViscosityCode: the `window.viscosityHost.system` bridge built in the
  * preload. Read once at startup, so no IPC channel is needed: Electron's
  * `process.getSystemMemoryInfo()` works in the sandboxed preload, and main's
- * graphics verdict arrives as a renderer argument.
+ * graphics verdict and the OS account name arrive as renderer arguments.
+ * The Tauri shell injects the same shape (`desktop-tauri/src/shell_script.rs`).
  */
 
 /** Preload namespace shape (`window.viscosityHost.system`). */
@@ -13,6 +14,8 @@ export interface ViscositySystemInfoBridge {
   lowPowerGraphics: boolean;
   /** Renderer should confirm the GPU with a one-time WebGL probe (Windows/Linux, not macOS). */
   probeWebGl: boolean;
+  /** The OS account's display name, the profile row's default; absent when unknown. */
+  userName?: string;
 }
 
 export interface SystemMemoryProcess {
@@ -50,20 +53,41 @@ export function lowPowerGraphicsArguments(input: {
   return remoteDesktop || softwareCompositing ? [LOW_POWER_GRAPHICS_ARGUMENT] : [];
 }
 
+/** Renderer argument main adds with the OS account's display name (URI-encoded). */
+export const USER_NAME_ARGUMENT_PREFIX = "--vc-user-name=";
+
+/** Main-side: the argument for a known name, nothing for an unknown one. */
+export function userNameArguments(name: string | null): string[] {
+  return name ? [`${USER_NAME_ARGUMENT_PREFIX}${encodeURIComponent(name)}`] : [];
+}
+
+function userNameFromArguments(argv: readonly string[] | undefined): string | null {
+  const argument = argv?.find((entry) => entry.startsWith(USER_NAME_ARGUMENT_PREFIX));
+  if (!argument) return null;
+  try {
+    return decodeURIComponent(argument.slice(USER_NAME_ARGUMENT_PREFIX.length)) || null;
+  } catch {
+    return null; // Malformed encoding counts as unknown.
+  }
+}
+
 export function createViscositySystemPreloadBridge(
   proc: SystemMemoryProcess,
 ): ViscositySystemInfoBridge {
-  const lowPowerGraphics = proc.argv?.includes(LOW_POWER_GRAPHICS_ARGUMENT) ?? false;
-  const probeWebGl = proc.platform !== undefined && proc.platform !== "darwin";
+  const userName = userNameFromArguments(proc.argv);
+  const facts = {
+    lowPowerGraphics: proc.argv?.includes(LOW_POWER_GRAPHICS_ARGUMENT) ?? false,
+    probeWebGl: proc.platform !== undefined && proc.platform !== "darwin",
+    ...(userName ? { userName } : {}),
+  };
   try {
     const total = proc.getSystemMemoryInfo?.().total;
     return {
       totalMemoryBytes:
         typeof total === "number" && Number.isFinite(total) && total > 0 ? total * 1024 : null,
-      lowPowerGraphics,
-      probeWebGl,
+      ...facts,
     };
   } catch {
-    return { totalMemoryBytes: null, lowPowerGraphics, probeWebGl };
+    return { totalMemoryBytes: null, ...facts };
   }
 }

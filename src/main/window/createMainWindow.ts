@@ -24,7 +24,11 @@ import {
   noteRendererWindowClose,
 } from "./windowHardening";
 import { openDevToolsAfterStartup } from "./deferredDevTools";
-import { lowPowerGraphicsArguments } from "../viscosity/system/systemInfoPreloadBridge"; // ViscosityCode:
+import {
+  lowPowerGraphicsArguments,
+  userNameArguments,
+} from "../viscosity/system/systemInfoPreloadBridge"; // ViscosityCode:
+import { osUserName } from "../viscosity/system/osUserName"; // ViscosityCode:
 import { rectOverlapsWorkArea } from "./windowGeometry";
 
 interface WindowBounds {
@@ -212,6 +216,7 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
           platform: process.platform,
           env: process.env,
         }),
+        ...userNameArguments(osUserName()), // ViscosityCode: OS account name, the profile row's default.
       ],
     },
   });

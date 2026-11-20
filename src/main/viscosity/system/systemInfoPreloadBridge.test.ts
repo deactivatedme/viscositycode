@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   LOW_POWER_GRAPHICS_ARGUMENT,
+  USER_NAME_ARGUMENT_PREFIX,
   createViscositySystemPreloadBridge,
   lowPowerGraphicsArguments,
+  userNameArguments,
 } from "./systemInfoPreloadBridge";
 
 describe("createViscositySystemPreloadBridge", () => {
@@ -42,6 +44,19 @@ describe("createViscositySystemPreloadBridge", () => {
       createViscositySystemPreloadBridge({ argv: ["--lc-is-dev=0", LOW_POWER_GRAPHICS_ARGUMENT] })
         .lowPowerGraphics,
     ).toBe(true);
+  });
+
+  it("reads the OS account name main passed, and leaves it out otherwise", () => {
+    const argv = ["--lc-is-dev=0", ...userNameArguments("Sam O'Neil / Ünï")];
+    expect(argv[1]).toBe("--vc-user-name=Sam%20O'Neil%20%2F%20%C3%9Cn%C3%AF");
+    expect(createViscositySystemPreloadBridge({ argv }).userName).toBe("Sam O'Neil / Ünï");
+    // A main that knows no name, a pre-upgrade main, and a malformed argument all omit the field.
+    expect(userNameArguments(null)).toEqual([]);
+    for (const older of [undefined, [], [USER_NAME_ARGUMENT_PREFIX], ["--vc-user-name=%E0%A4%A"]]) {
+      expect(createViscositySystemPreloadBridge(older ? { argv: older } : {})).not.toHaveProperty(
+        "userName",
+      );
+    }
   });
 });
 

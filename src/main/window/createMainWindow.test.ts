@@ -82,6 +82,9 @@ vi.mock("./windowMaterial", () => ({
   syncNativeThemeForMaterial,
 }));
 
+// ViscosityCode: a fixed OS account name, so no test runs the live lookup.
+vi.mock("../viscosity/system/osUserName", () => ({ osUserName: () => "Sam Doe" }));
+
 describe("createMainWindow", () => {
   afterEach(() => vi.useRealTimers());
 
@@ -482,6 +485,15 @@ describe("createMainWindow native chrome", () => {
         await createOnPlatform("win32", { appearance: "dark", sidebarTranslucency: true }),
       ),
     ).toContain("--vc-low-power-graphics");
+  });
+
+  it("tells the renderer the OS account name for the profile row", async () => {
+    const options = await createOnPlatform("darwin", {
+      appearance: "dark",
+      sidebarTranslucency: true,
+    });
+    const { additionalArguments } = options.webPreferences as { additionalArguments: string[] };
+    expect(additionalArguments).toContain("--vc-user-name=Sam%20Doe");
   });
 
   it("applies no material on Windows builds without the capability", async () => {
