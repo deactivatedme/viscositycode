@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fork, type ChildProcess } from "node:child_process";
+import { totalmem } from "node:os";
 import { cacheImagePreview, readImagePreviewSnapshot } from "../remote/server/imagePreview";
 import { decodeDatabaseReadFailure } from "./databaseReadErrors";
 import type {
@@ -13,6 +15,11 @@ import {
 } from "./databaseReadProtocol";
 
 const READ_WORKERS = 2;
+// ViscosityCode: on hosts with 8 GB or less, one reader (~30-50 MB) at a time; extra reads queue.
+const LOW_MEMORY_BYTES = 8.5 * 1024 ** 3;
+// ViscosityCode: a read queued this long behind that cap may use the full pool, so a slow or
+// killed read cannot make the reads behind it miss their own deadline.
+const LOW_MEMORY_OVERFLOW_MS = 1_000;
 const WARM_READ_WORKERS = 1;
 // Bursts get both workers; once reads go quiet, all idle workers retire.
 const IDLE_READ_WORKERS = 0;
@@ -28,6 +35,7 @@ interface ReadJob {
   readonly resolve: (value: unknown) => void;
   readonly reject: (error: unknown) => void;
   readonly timer: ReturnType<typeof setTimeout>;
+  overdue?: boolean; // ViscosityCode: queued past LOW_MEMORY_OVERFLOW_MS
 }
 
 interface ReadSlot {
@@ -44,6 +52,7 @@ export class AsyncDatabaseReads {
   private nextId = 0;
   private closed = false;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly maxWorkers = totalmem() <= LOW_MEMORY_BYTES ? 1 : READ_WORKERS; // ViscosityCode
 
   constructor(
     private readonly dbPath: string,
@@ -68,15 +77,23 @@ export class AsyncDatabaseReads {
     return new Promise<DatabaseReadResult<K>>((resolve, reject) => {
       const id = ++this.nextId;
       const timer = setTimeout(() => this.expire(id), READ_DEADLINE_MS);
-      this.queued.push({
+      const job: ReadJob = {
         id,
         operation,
         args,
         resolve: (value) => resolve(value as DatabaseReadResult<K>),
         reject,
         timer,
-      });
+      };
+      this.queued.push(job);
       this.dispatch();
+      // ViscosityCode: still queued under the low-memory cap; allow a second worker if it waits on.
+      if (this.maxWorkers < READ_WORKERS && this.queued.includes(job)) {
+        setTimeout(() => {
+          job.overdue = true;
+          this.dispatch();
+        }, LOW_MEMORY_OVERFLOW_MS).unref();
+      }
     });
   }
 
@@ -110,7 +127,8 @@ export class AsyncDatabaseReads {
     }
     while (
       this.queued.length > [...this.slots].filter((candidate) => !candidate.ready).length &&
-      this.slots.size + this.terminating.size < READ_WORKERS
+      this.slots.size + this.terminating.size <
+        (this.queued[0]?.overdue ? READ_WORKERS : this.maxWorkers) // ViscosityCode
     ) {
       if (!this.spawnWorker()) return;
     }

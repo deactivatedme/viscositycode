@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { preloadable } from "@/renderer/utils/preloadable";
 import { isBrowserClientRuntime } from "@/renderer/clientRuntime";
 import { createDeferredPrewarmRunner } from "@/renderer/utils/deferredPrewarm";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 
 export const DeferredFeedbackDialog = preloadable(() =>
   import("@/renderer/components/common/FeedbackDialog").then((module) => module.FeedbackDialog),
@@ -182,16 +184,30 @@ const compactPrewarmTasks = [
   DeferredInlineDiffView.preload,
 ] as const;
 
+// ViscosityCode: Lightweight warms only the chat essentials; the terminal (and its WebGL
+// context), Settings and diff views load on first open instead of sitting in the heap.
+const lightweightDesktopPrewarmTasks = [
+  DeferredCommandPalette.preload,
+  DeferredItemMarkdownInner.preload,
+] as const;
+
 export type DeferredFeaturePrewarmTarget = "desktop" | "compact";
 
 const prewarmRunners = {
   desktop: createDeferredPrewarmRunner(desktopPrewarmTasks),
   compact: createDeferredPrewarmRunner(compactPrewarmTasks),
+  lightweightDesktop: createDeferredPrewarmRunner(lightweightDesktopPrewarmTasks), // ViscosityCode:
 };
 
 export function startDeferredFeaturePrewarm(
   target: DeferredFeaturePrewarmTarget = "desktop",
 ): () => void {
   // Browser chunks need a network/cache fetch; local packaged imports do not.
-  return prewarmRunners[target]({ requiresOnline: isBrowserClientRuntime() });
+  // ViscosityCode: Lightweight on the local desktop uses the short runner; a desktop browser
+  // client keeps the full list so views stay cached across a remote link.
+  const runner =
+    target === "desktop" && !isBrowserClientRuntime() && isLightweightActive()
+      ? prewarmRunners.lightweightDesktop
+      : prewarmRunners[target];
+  return runner({ requiresOnline: isBrowserClientRuntime() });
 }

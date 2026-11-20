@@ -1,13 +1,32 @@
-import { describe, expect, it } from "vitest";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeDraftPaneId } from "@/shared/paneId";
 import {
   keepAlivePatch,
+  LIGHTWEIGHT_MAX_KEEP_ALIVE_PANES,
   MAX_KEEP_ALIVE_PANES,
   removeKeepAliveId,
   touchKeepAliveIds,
 } from "./paneCacheSlice";
 
+const { lightweightMock } = vi.hoisted(() => ({ lightweightMock: { active: false } }));
+vi.mock("@/renderer/viscosity/performance/lightweight", () => ({
+  isLightweightActive: () => lightweightMock.active,
+}));
+
 describe("paneCacheSlice", () => {
+  afterEach(() => {
+    lightweightMock.active = false;
+  });
+
+  it("caps hidden panes at 3 in Lightweight and 8 otherwise", () => {
+    const current = Array.from({ length: MAX_KEEP_ALIVE_PANES }, (_, index) => `hidden-${index}`);
+    expect(touchKeepAliveIds(current, "new", [])).toHaveLength(MAX_KEEP_ALIVE_PANES);
+    lightweightMock.active = true;
+    expect(LIGHTWEIGHT_MAX_KEEP_ALIVE_PANES).toBe(3);
+    expect(touchKeepAliveIds(current, "new", [])).toEqual(["hidden-6", "hidden-7", "new"]);
+  });
+
   it("adds touched panes to the end", () => {
     expect(touchKeepAliveIds(["a", "b"], "a", [])).toEqual(["b", "a"]);
   });

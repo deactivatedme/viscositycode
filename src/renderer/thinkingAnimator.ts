@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // One clock batches text shimmer, brain firing and provider-icon shine. CSS
 // steps() limits visible changes but still wakes Chromium at display refresh
 // rate; direct writes to cached targets avoid that continuous animation work.
@@ -40,7 +41,12 @@ function prefersReducedMotion(): boolean {
 function isAppBackgrounded(): boolean {
   if (typeof document === "undefined") return true;
   const root = document.documentElement;
-  return root.hasAttribute("data-app-hidden") || root.hasAttribute("data-app-unfocused");
+  return (
+    root.hasAttribute("data-app-hidden") ||
+    root.hasAttribute("data-app-unfocused") ||
+    // ViscosityCode: Lightweight mode (fx/FxRoot.tsx) keeps the 5fps cadence while focused.
+    root.hasAttribute("data-vc-lightweight")
+  );
 }
 
 // Triangle 0→1→0 over the period, mapped to 0.45..1 (matches the old

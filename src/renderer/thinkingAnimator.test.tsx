@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBrainThinking, useIconShine, useShimmer } from "./thinkingAnimator";
@@ -37,6 +38,7 @@ describe("thinkingAnimator", () => {
     vi.unstubAllGlobals();
     document.documentElement.removeAttribute("data-app-hidden");
     document.documentElement.removeAttribute("data-app-unfocused");
+    document.documentElement.removeAttribute("data-vc-lightweight");
   });
 
   it("drives the shimmer background-position from a shared timer", () => {
@@ -118,6 +120,20 @@ describe("thinkingAnimator", () => {
 
   it("continues at a lower rate while the app is unfocused", () => {
     document.documentElement.setAttribute("data-app-unfocused", "");
+    const { getByTestId } = render(<ShimmerProbe active={true} />);
+    const el = getByTestId("shimmer") as HTMLSpanElement;
+    const initial = el.style.backgroundPositionX;
+
+    vi.advanceTimersByTime(150);
+    expect(el.style.backgroundPositionX).toBe(initial);
+
+    vi.advanceTimersByTime(50);
+    expect(parseFloat(el.style.backgroundPositionX)).toBeCloseTo(-18.2, 1);
+  });
+
+  // ViscosityCode: Lightweight mode uses the 5fps cadence even while focused.
+  it("runs at the lower rate in Lightweight mode", () => {
+    document.documentElement.setAttribute("data-vc-lightweight", "");
     const { getByTestId } = render(<ShimmerProbe active={true} />);
     const el = getByTestId("shimmer") as HTMLSpanElement;
     const initial = el.style.backgroundPositionX;

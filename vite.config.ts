@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createReadStream, existsSync, readdirSync, readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -647,7 +648,9 @@ export default defineConfig(({ command, mode }) => ({
               test: (id: string) =>
                 /[\\/]node_modules[\\/]/.test(id) &&
                 !/[\\/]@shikijs[\\/](?:langs|themes)[\\/]/.test(id) &&
-                !/[\\/]node_modules[\\/]jsqr[\\/]/.test(id),
+                !/[\\/]node_modules[\\/]jsqr[\\/]/.test(id) &&
+                // ViscosityCode: keep the lazily imported Sentry SDK out of the startup vendor chunk.
+                !/[\\/]node_modules[\\/]@sentry(?:-internal)?[\\/]/.test(id),
               priority: 10,
             },
           ].filter((group) => !webOnly || group.name === "ui" || group.name === "framework"),

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
@@ -67,6 +68,13 @@ import {
   setImagePreviewStoreDir,
 } from "../remote/server/imagePreview";
 
+// ViscosityCode: the reader cap follows host RAM; tests pin it so they do not depend on the machine.
+const hostMemory = vi.hoisted(() => ({ bytes: 16 * 1024 ** 3 }));
+vi.mock("node:os", async (importOriginal) => {
+  const original = await importOriginal<typeof import("node:os")>();
+  return { ...original, totalmem: () => hostMemory.bytes };
+});
+
 let artifacts: string;
 let workerPath: string;
 let delayedWorkerPath: string;
@@ -111,6 +119,7 @@ beforeAll(async () => {
 
 afterAll(() => rmSync(artifacts, { recursive: true, force: true }));
 beforeEach(() => {
+  hostMemory.bytes = 16 * 1024 ** 3;
   directory = mkdtempSync(resolvePath("tmp/async-database-"));
   dbPath = join(directory, "state.sqlite");
   // Upgrade the previous persisted format through the normal owning writer.
@@ -698,6 +707,50 @@ describe("worker-backed SQLite reads", () => {
       if (previous === undefined) delete process.env.NODE_OPTIONS;
       else process.env.NODE_OPTIONS = previous;
     }
+  });
+
+  it("runs a single reader on an 8 GB host and queues concurrent reads behind it", async () => {
+    hostMemory.bytes = 8 * 1024 ** 3;
+    const spawns = join(directory, "spawns-low-memory.txt");
+    const recorder = join(directory, "record-spawn-low-memory.cjs");
+    writeFileSync(
+      recorder,
+      `if(require('node:worker_threads').isMainThread)require('node:fs').appendFileSync(${JSON.stringify(spawns)}, process.pid + '\\n');`,
+    );
+    const countSpawns = () =>
+      existsSync(spawns) ? readFileSync(spawns, "utf8").trim().split("\n").length : 0;
+    const previous = process.env.NODE_OPTIONS;
+    process.env.NODE_OPTIONS = `${previous ?? ""} --require=${JSON.stringify(recorder)}`;
+    try {
+      const reads = pool();
+      const expected = dbReadThreadRuntimeItems("thread-1");
+      await expect(
+        Promise.all([
+          reads.read("runtimeItems", ["thread-1"]),
+          reads.read("runtimeItems", ["thread-1"]),
+          reads.read("runtimeItems", ["thread-1"]),
+        ]),
+      ).resolves.toEqual([expected, expected, expected]);
+      expect(countSpawns()).toBe(1);
+    } finally {
+      if (previous === undefined) delete process.env.NODE_OPTIONS;
+      else process.env.NODE_OPTIONS = previous;
+    }
+  });
+
+  it("lets a read queued behind a blocked read on an 8 GB host overflow to a second worker", async () => {
+    hostMemory.bytes = 8 * 1024 ** 3;
+    const reads = pool(delayedWorkerPath);
+    writeFileSync(`${dbPath}.hold-slow-query`, "hold until the queued read finishes");
+    const slow = reads.read("runtimeItems", ["slow"]);
+    void slow.catch(() => undefined);
+    try {
+      // Without the overflow this read would wait out its 4 s deadline and reject.
+      expect(await reads.read("runtimeItems", ["fast"])).toEqual([]);
+    } finally {
+      rmSync(`${dbPath}.hold-slow-query`, { force: true });
+    }
+    await slow;
   });
 
   it("serves app state on the owner connection while read workers are enabled", async () => {

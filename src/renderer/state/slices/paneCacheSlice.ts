@@ -1,6 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { AppView, Thread } from "@/shared/contracts";
 import { isDraftPaneId } from "@/shared/paneId";
 import type { SliceCreator } from "./shared";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 
 /**
  * Keep-alive cache for terminal-presentation thread panes.
@@ -25,6 +27,8 @@ export interface PaneCacheSlice {
 
 /** Max hidden terminal panes to keep alive (Chromium ~16 WebGL contexts). */
 export const MAX_KEEP_ALIVE_PANES = 8;
+/** ViscosityCode: Lightweight keeps fewer hidden xterms (each holds a buffer and a WebGL context). */
+export const LIGHTWEIGHT_MAX_KEEP_ALIVE_PANES = 3;
 
 export function touchKeepAliveIds(
   current: readonly string[],
@@ -39,7 +43,8 @@ export function touchKeepAliveIds(
     next.push(id);
   }
   const visible = new Set(visiblePaneIds);
-  while (next.length > MAX_KEEP_ALIVE_PANES) {
+  const cap = isLightweightActive() ? LIGHTWEIGHT_MAX_KEEP_ALIVE_PANES : MAX_KEEP_ALIVE_PANES; // ViscosityCode:
+  while (next.length > cap) {
     const index = next.findIndex((id) => !visible.has(id));
     if (index === -1) break;
     next.splice(index, 1);
