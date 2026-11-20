@@ -14,6 +14,7 @@ import { resolveThemeMode } from "@/shared/themeMode";
 import type { ThemeMode } from "@/shared/contracts";
 import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings";
 import { DEFAULT_THEME_ID, getThemePreset, hasThemePreset, isDarkOnlyTheme } from "./themePresets";
+import { moveCachedThemeToDefaultOnce } from "./viscosity/themeDefaultMigration";
 import { MANAGED_THEME_VARS } from "./themeTokens";
 // ViscosityCode: client-side appearance prefs (UI font) applied before mount.
 import { applyViscosityAppearance } from "./viscosity/viscosityAppearanceStore";
@@ -191,6 +192,7 @@ export function bootstrapAppThemeFromCache(): void {
     // Never block boot on a fork preference.
   }
   try {
+    moveCachedThemeToDefaultOnce(SHARED_SETTINGS_CACHE_KEY); // ViscosityCode
     const raw = localStorage.getItem(SHARED_SETTINGS_CACHE_KEY);
     // ViscosityCode: no cache (fresh install or origin) boots the default selection.
     const cached = (raw ? JSON.parse(raw) : {}) as {

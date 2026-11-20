@@ -19,6 +19,7 @@ import {
   takeInitialReadReconciliation,
   whenWritesAdmitted,
 } from "./sharedSettingsAuthority";
+import { moveCachedThemeToDefaultOnce } from "@/renderer/theme/viscosity/themeDefaultMigration";
 import { customThemeSchema, MAX_CUSTOM_THEMES, type CustomTheme } from "@/shared/customThemes";
 import {
   DEFAULT_SELECTED_THEME_ID,
@@ -325,6 +326,7 @@ function loadFallbackSettings(): SharedSettings {
   }
 
   try {
+    moveCachedThemeToDefaultOnce(STORAGE_KEY); // ViscosityCode: before the first read
     return normalizeSharedSettings(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"));
   } catch {
     return { ...defaultSharedSettings };
