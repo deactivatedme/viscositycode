@@ -4,10 +4,13 @@
 //! data root, then sends the window to a one-time pairing link, or to an error
 //! page with Retry. `VC_TAURI_DEV_URL` skips the sidecar and opens that URL.
 
+#[cfg(target_os = "macos")]
+mod menu;
 mod navigation;
 mod owner;
 mod page;
 mod pairing;
+mod shell_script;
 mod sidecar;
 mod tray;
 
@@ -17,6 +20,8 @@ use std::thread;
 
 use tauri::webview::NewWindowResponse;
 use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder};
+#[cfg(windows)]
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 
 use navigation::Action;
@@ -26,7 +31,11 @@ use sidecar::Failure;
 pub const MAIN_WINDOW: &str = "main";
 /// Pinned because the `http://127.0.0.1:<port>` origin keys the web client's
 /// localStorage/IndexedDB and with it the paired session.
+#[cfg(not(windows))]
 pub const DEFAULT_PORT: u16 = 49380;
+/// Below Windows' dynamic range (49152-65535), where Hyper-V/WSL2/Docker reserve blocks (EACCES).
+#[cfg(windows)]
+pub const DEFAULT_PORT: u16 = 47380;
 /// The web client switches to the compact (mobile) layout at 767px and below.
 const MIN_WIDTH: f64 = 1024.0;
 
@@ -73,7 +82,7 @@ pub fn loopback_url(raw: &str) -> Result<Url, String> {
     }
 }
 
-/// Used by a second launch (single-instance) and the tray's Show.
+/// Used by a second launch (single-instance), the tray's Show, and Windows notification clicks.
 pub(crate) fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         let _ = window.unminimize();
@@ -95,6 +104,10 @@ fn open_main_window(app: &AppHandle, url: Url) -> tauri::Result<()> {
         .title("ViscosityCode")
         .inner_size(1280.0, 832.0)
         .min_inner_size(MIN_WIDTH, 640.0)
+        // First launch only: the window-state plugin restores saved geometry once the window is ready.
+        .prevent_overflow()
+        .center()
+        .initialization_script(shell_script::script())
         // Keeps HTML5 drag-and-drop uploads working in the web client.
         .disable_drag_drop_handler()
         .on_navigation(move |url| {
@@ -197,7 +210,11 @@ pub fn run() -> Result<(), Error> {
         Some(raw) => Some(loopback_url(&raw)?),
         None => None,
     };
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // Replaces Tauri's default macOS menu, whose Cmd+W would close the only window and quit.
+    #[cfg(target_os = "macos")]
+    let builder = builder.menu(menu::app_menu);
+    let app = builder
         // Registered first so a second launch only focuses the existing window.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_main(app);
@@ -214,6 +231,15 @@ pub fn run() -> Result<(), Error> {
         .manage(Shell::default())
         .setup(move |app| {
             let handle = app.handle().clone();
+            // Windows only: macOS already activates the app on a click, and a handler would park
+            // a thread plus a 0.5 s main-thread poll per notification left in Notification Center.
+            #[cfg(windows)]
+            {
+                let clicked = handle.clone();
+                handle
+                    .notification()
+                    .on_action(move |_| show_main(&clicked))?;
+            }
             match dev_url {
                 Some(url) => {
                     if let Some(shell) = handle.try_state::<Shell>() {
