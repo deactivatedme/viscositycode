@@ -69,6 +69,8 @@ import {
 import { HookPluginSettings } from "./parts/HookPluginSettings";
 // ViscosityCode: account pools — a provider that cannot pool says why.
 import { AccountPoolUnavailableNote } from "@/renderer/viscosity/accountPools/AccountPoolUnavailableNote";
+// ViscosityCode: presentation-only check for the Tauri desktop window.
+import { isLocalDesktopWindow } from "@/renderer/viscosity/localDesktopWindow";
 import {
   MachineAttentionHint,
   NoMachineStatusRow,
@@ -155,6 +157,8 @@ export function SingleAgentSettings(props: {
   const isRemoteMachine = selectedMachine.ref.host === "remote";
   const isMachineOnline = selectedMachine.status === "online";
   const agentHost = agentManagementHostForMachine(selectedMachine);
+  // ViscosityCode: a remote client's own host is remote too; its provider panels call unrouted procedures.
+  const hostIsRemote = agentHost.isRemote;
   const { scoped: machineStatuses, othersNeedingAttention } = useMachineScopedStatuses(
     props.agentKind,
     selectedMachine,
@@ -811,7 +815,7 @@ export function SingleAgentSettings(props: {
   // belong to, so leaving them above the panel would strand one runtime's setup
   // outside the grouping.
   const panelOwnsInstallRows =
-    !isRemoteMachine &&
+    !hostIsRemote &&
     providerEntry?.settingsPanel !== undefined &&
     providerEntry.ownsInstallRows === true;
   // A panel that owns the install rows already presents its provider's runtimes
@@ -1083,7 +1087,7 @@ export function SingleAgentSettings(props: {
       </div>
 
       <div className="space-y-4">
-        {providerEntry?.settingsPanel && !isRemoteMachine ? (
+        {providerEntry?.settingsPanel && !hostIsRemote ? (
           <providerEntry.settingsPanel
             agentKind={props.agentKind}
             statuses={installedStatuses}
@@ -1091,6 +1095,15 @@ export function SingleAgentSettings(props: {
             onOpenProfile={props.onOpenProfile}
             {...(panelOwnsInstallRows ? { installRows: environmentRows } : {})}
           />
+        ) : null}
+        {/* ViscosityCode: say why the desktop window shows less than the Electron app. */}
+        {hostIsRemote && isLocalDesktopWindow() ? (
+          <p className="text-xs text-muted">
+            <Trans>
+              Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this
+              window yet.
+            </Trans>
+          </p>
         ) : null}
 
         {/* ViscosityCode: account pools — a provider that cannot pool says why. */}
@@ -1101,7 +1114,7 @@ export function SingleAgentSettings(props: {
         {/* Panels that own auth UI (e.g. OpenCode's per-AI-provider sign-in)
             make the generic single sign-in row redundant. On remote machines the
             settingsPanel itself isn't rendered, so keep generic auth available. */}
-        {hasAuthSettings && (isRemoteMachine || providerEntry?.ownsAuthUi !== true) && (
+        {hasAuthSettings && (hostIsRemote || providerEntry?.ownsAuthUi !== true) && (
           <div className="space-y-2">
             {envVarAuthMethod && acpInstanceId ? (
               <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-foreground">
@@ -1300,11 +1313,11 @@ export function SingleAgentSettings(props: {
         />
       </div>
 
-      {isRemoteMachine ? null : (
+      {hostIsRemote ? null : (
         <NativeMcpSettings agentKind={agent.kind} statuses={installedStatuses} />
       )}
 
-      {isCursorProfileKind(agent.kind) || isRemoteMachine ? null : (
+      {isCursorProfileKind(agent.kind) || hostIsRemote ? null : (
         <HookPluginSettings
           agentKind={agent.kind}
           agentLabel={agent.label}

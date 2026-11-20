@@ -280,6 +280,47 @@ describe("remote bridge", () => {
     expect(window.poracode.onQuickComposerShown(() => undefined)).toBeTypeOf("function");
   });
 
+  // ViscosityCode: login and OAuth links must open instead of rejecting as a desktop-only call.
+  it("opens native external links in a new browser window", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    installRemoteBridge();
+
+    await expect(
+      window.poracode.openExternalNative("https://example.com/login"),
+    ).resolves.toBeUndefined();
+
+    expect(open).toHaveBeenCalledWith("https://example.com/login", "_blank", "noopener,noreferrer");
+    open.mockRestore();
+  });
+
+  // ViscosityCode: OAuth and terminal links are third-party URLs; only web and mail schemes open.
+  it("refuses external links outside http, https and mailto, or with credentials", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    installRemoteBridge();
+
+    for (const url of [
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "ms-msdt:/id",
+      "https://user:pw@example.com/",
+      "not a url",
+    ]) {
+      await expect(window.poracode.openExternalNative(url)).rejects.toThrow(/external URL/iu);
+      await expect(window.poracode.openExternal(url)).rejects.toThrow(/external URL/iu);
+    }
+    expect(open).not.toHaveBeenCalled();
+    await expect(window.poracode.openExternal("mailto:a@example.com")).resolves.toBeUndefined();
+    expect(open).toHaveBeenCalledWith("mailto:a@example.com", "_blank", "noopener,noreferrer");
+    open.mockRestore();
+  });
+
+  it("treats global shortcut suspension as a no-op so key capture stays quiet", async () => {
+    installRemoteBridge();
+    await expect(
+      window.poracode.setGlobalShortcutsSuspended({ suspended: true }),
+    ).resolves.toBeUndefined();
+  });
+
   it("tracks the paired desktop platform after bridge installation", () => {
     setRemoteBridgeClient({} as RemoteDesktopClient, "darwin");
     installRemoteBridge();

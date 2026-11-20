@@ -164,7 +164,7 @@ describe("Settings → xAI API", () => {
       error: undefined,
     });
     render(<XaiSettings />);
-    expect(statusLine().textContent).toBe("Grok over the xAI API works only in the desktop app.");
+    expect(statusLine().textContent).toBe("Grok over the xAI API isn't available here yet.");
     expect(keyInput()).toBeDisabled();
     expect(bridge.keyStatus).not.toHaveBeenCalled();
   });

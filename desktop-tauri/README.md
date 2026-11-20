@@ -93,18 +93,33 @@ need an `opener:` IPC grant; links reach the Rust new-window handler instead.
   tracked notification would park a thread and a 0.5 s main-thread poll until
   it leaves Notification Center. The web client's own `onclick` handler
   never runs: the plugin's `window.Notification` polyfill returns no object
-  that gets events.
+  that gets events. Instead the web client sets `extra: { threadId }` on the
+  notification (browsers ignore the option), and on a Windows click the shell
+  dispatches `viscosity-shell:notification-open` on the page's `window`, a
+  `CustomEvent` whose `detail` is `{ threadId }`; the web client opens that
+  thread (`src/renderer/notifications.ts`). Only an id of at most 256
+  characters from `A-Z a-z 0-9 - _ . :` is sent, JSON-encoded into the script.
+  The event is additive: `window.viscosityShell.version` stays `1`, and a web
+  client that does not know it ignores it.
 - A main-frame initialization script (`src/shell_script.rs`) defines two
   globals before the web client loads:
   - `window.viscosityShell = Object.freeze({ kind: "tauri", version: 1 })`
     tells the shared web client that it runs in this shell, the host's own
     local desktop window. Bump `version` only for an incompatible change.
   - `window.viscosityHost.system`, merged with `Object.assign` into any existing
-    `window.viscosityHost`: the same Lightweight-mode facts the Electron
-    preload exposes (`src/main/viscosity/system/systemInfoPreloadBridge.ts`).
-    These are `totalMemoryBytes` (physical memory, or `null`),
+    `window.viscosityHost`: the same system facts the Electron preload exposes
+    (`src/main/viscosity/system/systemInfoPreloadBridge.ts`). For Lightweight
+    mode these are `totalMemoryBytes` (physical memory, or `null`),
     `lowPowerGraphics` (a Windows Remote Desktop session, `SESSIONNAME`
-    `RDP-*`), and `probeWebGl` (`true` except on macOS).
+    `RDP-*`), and `probeWebGl` (`true` except on macOS). The optional
+    `userName` is the OS account's display name, which the sidebar profile row
+    shows until the user renames it: the full name on macOS and Linux
+    (`getpwuid_r`), the display name on Windows (`GetUserNameExW`), else the
+    login name (`USER` / `USERNAME`), and left out when none is known. It is
+    read once with a 500 ms cap, at most 80 characters without control
+    characters, and goes only into this window's page. The field is additive
+    (`version` stays `1`): a web client without it shows the signed-in
+    provider account or "Account", as in a browser.
 
 ## Identity
 

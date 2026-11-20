@@ -350,6 +350,9 @@ export const remoteSettingsWireSchema = remoteSettingsWireBaseSchema.extend({
   usage: sharedSettingsSchema.shape.usage.optional(),
   crews: sharedSettingsSchema.shape.crews.removeDefault().optional(),
   playbooks: savedPlaybooksSchema.optional(), // ViscosityCode: optional for hosts without playbooks.
+  // ViscosityCode: host-acting thread housekeeping; optional and defaultless for older hosts.
+  autoArchiveDoneAfterDays: sharedSettingsSchema.shape.autoArchiveDoneAfterDays.optional(),
+  autoMarkDoneOnPrMerge: sharedSettingsSchema.shape.autoMarkDoneOnPrMerge.optional(),
   followUpBehavior: sharedSettingsSchema.shape.followUpBehavior.optional().default("steer"),
   searchUseIgnoreFiles: sharedSettingsSchema.shape.searchUseIgnoreFiles.optional(),
   searchExclude: sharedSettingsSchema.shape.searchExclude.optional(),

@@ -171,7 +171,7 @@ describe("XaiParticipantDriver", () => {
       Promise.reject(new Error("No handler registered for 'viscosity:xai:respond'"));
     const result = await driverWith(bridge).sendTurn("Go");
     expect(result.status).toBe("failed");
-    expect(result.error).toContain("desktop app");
+    expect(result.error).toBe("Grok over the xAI API isn't available here yet.");
     expect(bridge.listenerCount()).toBe(0);
   });
 

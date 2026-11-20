@@ -1,8 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // @vitest-environment jsdom
 import { fireEvent, screen } from "@testing-library/react";
 import { useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project, Thread } from "@/shared/contracts";
+import type { PoracodeBridge } from "@/shared/ipc";
+import { installBrowserClientRuntime, resetClientRuntimeForTest } from "@/renderer/clientRuntime";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
@@ -66,6 +69,11 @@ function thread(
 }
 
 describe("ArchivedThreadsSettings", () => {
+  afterEach(() => {
+    resetClientRuntimeForTest();
+    Reflect.deleteProperty(window, "poracode");
+  });
+
   beforeEach(() => {
     actions.deleteThreadsAndOwnedWorktrees.mockReset();
     actions.unarchiveThread.mockReset();
@@ -215,5 +223,66 @@ describe("ArchivedThreadsSettings", () => {
     expect(screen.getByRole("button", { name: "Clear all" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Restore thread" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Delete thread" })).toBeEnabled();
+  });
+
+  // ViscosityCode: the Tauri window is a browser client whose own archive is its host's.
+  it("lists the bridge host's archive under the first option in a remote session", async () => {
+    const bridge = { arch: "web" } as unknown as PoracodeBridge;
+    window.poracode = bridge;
+    installBrowserClientRuntime(bridge);
+    useRemoteServersStore.setState((state) => ({
+      servers: [
+        ...state.servers,
+        {
+          desktopId: "host",
+          label: "Work Mac",
+          endpoint: window.location.origin,
+          accessToken: "host-token",
+          scopes: [],
+        },
+      ],
+      runtime: { ...state.runtime, host: { status: "online", projects: [], threads: [] } },
+    }));
+    useAppStore.setState((state) => ({
+      threads: [
+        ...state.threads,
+        thread("host-row", "Host archive", "2026-08-22T20:00:00.000Z", {
+          desktopId: "host",
+          projectId: "remote:host:project:host-project",
+        }),
+      ],
+    }));
+    render(<ArchiveSettings />);
+
+    expect(screen.getByText("Host archive")).toBeInTheDocument();
+    expect(screen.queryByText("Local newer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Remote archive")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Restore thread" }));
+    expect(actions.unarchiveThread).toHaveBeenCalledWith("host-row");
+  });
+
+  it("lists the bridge host once, as the first option, in a remote session", async () => {
+    const bridge = { arch: "web" } as unknown as PoracodeBridge;
+    window.poracode = bridge;
+    installBrowserClientRuntime(bridge);
+    useRemoteServersStore.setState((state) => ({
+      servers: [
+        ...state.servers,
+        {
+          desktopId: "host",
+          label: "Work Mac",
+          endpoint: window.location.origin,
+          accessToken: "host-token",
+          scopes: [],
+        },
+      ],
+      runtime: { ...state.runtime, host: { status: "online", projects: [], threads: [] } },
+    }));
+    render(<ArchiveSettings />);
+
+    // Browser runtimes use the compact sheet picker, whose rows are buttons.
+    fireEvent.click(screen.getByRole("button", { name: /Machine: Work Mac/ }));
+    expect(await screen.findByRole("button", { name: "Studio Mac" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Work Mac" })).toHaveLength(1);
   });
 });

@@ -6,14 +6,23 @@
  * the Settings deep link to a provider's agent page, where its profiles and
  * account pool live.
  */
-import type { AgentStatus } from "@/shared/contracts";
+import type { AgentStatus, Project } from "@/shared/contracts";
 import { runAgentLoginCommand } from "@/renderer/actions/agentLoginActions";
 import { refreshHostAgentAuthStatus } from "@/renderer/actions/hostAgentAuthActions";
 import { isRemoteSession, readBridge } from "@/renderer/bridge";
 import { refreshAndMergeProviderUsage } from "@/renderer/components/providers/refreshProviderUsageSnapshot";
 import { usePanelStore } from "@/renderer/state/panelStore";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
-import { findTerminalAuthMethodForStatus } from "@/renderer/utils/acpRegistryAuth";
+import {
+  findProjectForMachine,
+  findTerminalAuthMethodForStatus,
+  scopeEnvForStatus,
+} from "@/renderer/utils/acpRegistryAuth";
+import { isLocalDesktopWindow } from "@/renderer/viscosity/localDesktopWindow";
+import { useAppStore } from "@/renderer/state/appStore";
+import { selectBrowserBridgeClientServer } from "@/renderer/state/remoteServers/browserBridge";
+import { remoteConnectionKey } from "@/renderer/state/remoteServers/types";
+import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 
 /**
  * Force a live usage collection of every tracked account (the usage panel's
@@ -36,12 +45,13 @@ export function openProviderAgentSettings(agentKind: string): void {
 }
 
 /**
- * True on a desktop client. A browser client has no desktop sign-in surface
- * (matching the thread sign-in dock); an unknown runtime offers nothing.
+ * True on a desktop client or the Tauri desktop window. Another browser client
+ * has no desktop sign-in surface (matching the thread sign-in dock); an unknown
+ * runtime offers nothing. Presentation only.
  */
 export function canOpenLocalAgentSettings(): boolean {
   try {
-    return !isRemoteSession();
+    return !isRemoteSession() || isLocalDesktopWindow();
   } catch {
     return false;
   }
@@ -52,6 +62,30 @@ export function canStartTerminalSignIn(status: AgentStatus | undefined): status 
   loginCommand: string;
 } {
   return Boolean(status?.loginCommand) && canOpenLocalAgentSettings();
+}
+
+/**
+ * In a remote client the dashboard's statuses are the bridge host's, so its
+ * login runs there too, never in whichever paired host's project comes first.
+ */
+function bridgeHostLoginProject(status: AgentStatus): Project | undefined {
+  if (!isRemoteSession()) return undefined;
+  const host = selectBrowserBridgeClientServer(useRemoteServersStore.getState());
+  if (!host) return undefined;
+  const env = scopeEnvForStatus(status);
+  return findProjectForMachine(
+    {
+      id: remoteConnectionKey(host),
+      ref: { host: "local", env },
+      kind: env.kind === "wsl" ? "local-wsl" : "local",
+      label: host.label,
+      status: "online",
+      desktopId: remoteConnectionKey(host),
+      ...(host.platform ? { platform: host.platform } : {}),
+    },
+    useAppStore.getState().projects,
+    false,
+  );
 }
 
 /**
@@ -66,7 +100,9 @@ export function startAccountSignIn(
 ): boolean {
   if (!canStartTerminalSignIn(status)) return false;
   const method = findTerminalAuthMethodForStatus(status);
+  const project = bridgeHostLoginProject(status);
   const opened = runAgentLoginCommand({
+    ...(project ? { project } : {}),
     label: status.label,
     status,
     command: status.loginCommand,

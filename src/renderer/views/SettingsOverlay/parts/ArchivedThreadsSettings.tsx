@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { Button, Surface, Tooltip } from "@heroui/react";
 import { ArchiveRestore, GitFork, Trash2 } from "lucide-react";
@@ -12,7 +13,6 @@ import { deleteThreadsAndOwnedWorktrees, unarchiveThread } from "@/renderer/acti
 import { SettingsPage } from "./SettingsForm";
 import {
   ArchivedThreadsMachinePicker,
-  LOCAL_ARCHIVE_MACHINE_ID,
   useArchivedThreadsMachine,
   type ArchivedThreadsScopeProps,
 } from "./ArchivedThreadsMachinePicker";
@@ -51,16 +51,12 @@ export function ArchivedThreadsSettings(props: ArchivedThreadsScopeProps) {
   const {
     options,
     selectedMachine,
+    selectedServerId,
     unavailable: selectedMachineUnavailable,
   } = useArchivedThreadsMachine(props.machineId);
   const [clearTarget, setClearTarget] = useState<ClearTarget | null>(null);
-  const selectedMachineId = selectedMachine.id;
   const archivedThreads = threads.filter(
-    (thread) =>
-      thread.archived &&
-      (selectedMachineId === LOCAL_ARCHIVE_MACHINE_ID
-        ? thread.remoteServerId === undefined
-        : thread.remoteServerId === selectedMachineId),
+    (thread) => thread.archived && thread.remoteServerId === selectedServerId, // ViscosityCode
   );
   const groups = groupArchivedThreads(archivedThreads);
   const selectedMachineLabel = selectedMachine.label;

@@ -1,4 +1,5 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { useSyncExternalStore } from "react";
 import { applyExternalSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import {
   REMOTE_SETTINGS_KEYS,
@@ -28,7 +29,21 @@ const additiveRemoteSettingsKeys = new Set<keyof RemoteSettings>([
   "searchExclude",
   "crews",
   "playbooks", // ViscosityCode
+  "autoArchiveDoneAfterDays", // ViscosityCode
+  "autoMarkDoneOnPrMerge", // ViscosityCode
 ]);
+// ViscosityCode: the host's last settings-read, so Settings shows an additive
+// row only when that host returned (and therefore keeps) the key.
+let hydratedHostSettings: RemoteSettings | null = null;
+const hydratedHostSettingsListeners = new Set<() => void>();
+function setHydratedHostSettings(settings: RemoteSettings | null): void {
+  hydratedHostSettings = settings;
+  for (const listener of hydratedHostSettingsListeners) listener();
+}
+function subscribeHydratedHostSettings(listener: () => void): () => void {
+  hydratedHostSettingsListeners.add(listener);
+  return () => hydratedHostSettingsListeners.delete(listener);
+}
 // Monotonic id of the most recent push. Only its resolution may write back to
 // desktopSettings, so a slow or failed earlier push can't clobber the value a
 // newer push already committed (nor a late push repopulate after a reset).
@@ -50,9 +65,17 @@ export function applyDesktopSettings(settings: RemoteSettings): void {
   // before that edit; let the push response win instead of flip-flopping.
   if (pendingPushes > 0) return;
   desktopSettings = settings;
-  // ViscosityCode: playbooks is additive like crews.
-  const { usage, searchUseIgnoreFiles, searchExclude, crews, playbooks, ...requiredSettings } =
-    settings;
+  // ViscosityCode: playbooks and thread housekeeping are additive like crews.
+  const {
+    usage,
+    searchUseIgnoreFiles,
+    searchExclude,
+    crews,
+    playbooks,
+    autoArchiveDoneAfterDays,
+    autoMarkDoneOnPrMerge,
+    ...requiredSettings
+  } = settings;
   applyExternalSharedSettings({
     ...requiredSettings,
     ...(usage !== undefined ? { usage } : {}),
@@ -60,12 +83,25 @@ export function applyDesktopSettings(settings: RemoteSettings): void {
     ...(searchExclude !== undefined ? { searchExclude } : {}),
     ...(crews !== undefined ? { crews } : {}),
     ...(playbooks !== undefined ? { playbooks } : {}), // ViscosityCode
+    // ViscosityCode: thread housekeeping the host acts on.
+    ...(autoArchiveDoneAfterDays !== undefined ? { autoArchiveDoneAfterDays } : {}),
+    ...(autoMarkDoneOnPrMerge !== undefined ? { autoMarkDoneOnPrMerge } : {}),
   });
+  setHydratedHostSettings(settings); // ViscosityCode
+}
+
+/** ViscosityCode: true when the paired host's settings-read carried `key`. */
+export function useHostReturnsRemoteSetting(key: keyof RemoteSettings): boolean {
+  return useSyncExternalStore(
+    subscribeHydratedHostSettings,
+    () => hydratedHostSettings?.[key] !== undefined,
+  );
 }
 
 /** Forget the synced snapshot (disconnect / switching desktops). */
 export function resetDesktopSettings(): void {
   desktopSettings = null;
+  setHydratedHostSettings(null); // ViscosityCode
   settingsGeneration += 1;
   pendingPushes = 0;
   // Invalidate any in-flight push so its late resolution can't repopulate the

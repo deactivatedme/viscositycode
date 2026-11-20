@@ -5,6 +5,7 @@ import { Settings2 } from "lucide-react";
 import { Button } from "@/renderer/components/common/Button";
 import { PixelLoader } from "@/renderer/components/common/PixelLoader";
 import { usePanelStore } from "@/renderer/state/panelStore";
+import { isLocalDesktopWindow } from "@/renderer/viscosity/localDesktopWindow";
 
 export function NoAgentsComposerHint(props: { detecting: boolean }) {
   return (
@@ -26,7 +27,12 @@ export function NoAgentsComposerHint(props: { detecting: boolean }) {
           <Button
             size="sm"
             variant="tertiary"
-            onPress={() => usePanelStore.getState().openSettingsSection("agentsGeneral")}
+            onPress={() =>
+              // The Tauri window's Agents tree has the registry; other browsers only get Models.
+              usePanelStore
+                .getState()
+                .openSettingsSection(isLocalDesktopWindow() ? "acpRegistry" : "agentsGeneral")
+            }
           >
             <Settings2 aria-hidden="true" className="size-3.5" />
             <Trans>Set up in Settings → Agents</Trans>

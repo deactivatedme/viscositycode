@@ -134,6 +134,9 @@ export const remoteSettingsSchema = sharedSettingsSchema
     // Optional for older hosts; remote edits must keep the field sparse.
     crews: sharedSettingsSchema.shape.crews.removeDefault().optional(),
     playbooks: savedPlaybooksSchema.optional(), // ViscosityCode: optional for hosts without playbooks.
+    // ViscosityCode: host-acting thread housekeeping; optional and defaultless for older hosts.
+    autoArchiveDoneAfterDays: sharedSettingsSchema.shape.autoArchiveDoneAfterDays.optional(),
+    autoMarkDoneOnPrMerge: sharedSettingsSchema.shape.autoMarkDoneOnPrMerge.optional(),
     // Optional for backward-compatible reads from remote-v3 hosts released
     // before native clients could edit usage card ordering and collapse state.
     usage: sharedSettingsSchema.shape.usage.optional(),

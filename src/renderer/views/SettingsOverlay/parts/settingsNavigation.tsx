@@ -39,6 +39,7 @@ import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { getSettingsInstalledAgents } from "@/shared/agentStatus";
 import { hasChangelogSource } from "@/shared/changelog";
 import { ProviderIcon } from "@/renderer/components/providers/ProviderIcon";
+import { isLocalDesktopWindow } from "@/renderer/viscosity/localDesktopWindow"; // ViscosityCode
 import type { SettingsSection } from "./types";
 
 export interface SettingsDestination {
@@ -66,6 +67,18 @@ const DESKTOP_ONLY_SECTIONS = new Set<SettingsSection>([
   "xai", // ViscosityCode: the xAI key lives in the desktop main process
 ]);
 
+// ViscosityCode: desktop-only sections the host's own Tauri window still shows (presentation only).
+const LOCAL_WINDOW_SECTIONS = new Set<SettingsSection>([
+  "agents",
+  "skills",
+  "search",
+  "shortcuts",
+  "mcpServers",
+  "threads",
+  "archived",
+  "about",
+]);
+
 /** Whether this client shows `id`; the sidebar and every settings search share it. */
 export function isSettingsSectionVisible(id: SettingsSection, remoteSession: boolean): boolean {
   return (
@@ -73,7 +86,8 @@ export function isSettingsSectionVisible(id: SettingsSection, remoteSession: boo
     (id !== "changelog" || hasChangelogSource()) && // ViscosityCode: no source → no section
     (!remoteSession ||
       !DESKTOP_ONLY_SECTIONS.has(id) ||
-      (id === "remoteServers" && hasClientCapability("manageRemoteEnvironments")))
+      (id === "remoteServers" && hasClientCapability("manageRemoteEnvironments")) ||
+      (LOCAL_WINDOW_SECTIONS.has(id) && isLocalDesktopWindow())) // ViscosityCode
   );
 }
 
@@ -195,14 +209,14 @@ export function useSettingsShortcutDestinations(): SettingsDestination[] {
   const { sectionGroups, isSectionVisible } = useSettingsNavigation();
   const statuses = useAgentStatusesStore((state) => state.agentStatuses);
   const wslStatuses = useAgentStatusesStore((state) => state.wslAgentStatuses);
-  const remoteSession = isRemoteSession();
+  const agentsTree = isSectionVisible("agents"); // ViscosityCode: also the Tauri window
   const agents: SettingsDestination[] = [
     {
       id: "agentsGeneral",
       icon: <Bot className="size-4" />,
-      label: remoteSession ? t`Models` : t`Agents · General`,
+      label: agentsTree ? t`Agents · General` : t`Models`,
     },
-    ...(!remoteSession
+    ...(agentsTree
       ? [
           {
             id: "acpRegistry" as const,

@@ -76,6 +76,11 @@ vi.mock("@/renderer/state/appStore", () => ({
   },
 }));
 
+// ViscosityCode: isLocalDesktopWindow's module also reads paired servers; unused here.
+vi.mock("@/renderer/state/remoteServersStore", () => ({
+  useRemoteServersStore: { getState: () => ({ servers: [] }) },
+}));
+
 vi.mock("@/renderer/state/sharedSettingsStore", () => ({
   useSharedSettings: {
     getState: () => sharedSettingsState.current,
@@ -358,6 +363,30 @@ describe("showUserNotification PWA path", () => {
       switchWorkspace: true,
     });
     expect(notifications[0]!.close).toHaveBeenCalledOnce();
+  });
+
+  // ViscosityCode: the Tauri shell reports a Windows toast click as a page event.
+  it("opens the thread from the shell's click event only in the Tauri window", () => {
+    const { notifications } = installBrowserNotification();
+    showUserNotification(notification());
+    expect(notifications[0]!.options).toMatchObject({ extra: { threadId: "thread-1" } });
+
+    const click = (detail: unknown) =>
+      window.dispatchEvent(new CustomEvent("viscosity-shell:notification-open", { detail }));
+    click({ threadId: "thread-1" });
+    vi.stubGlobal("viscosityShell", { kind: "tauri", version: 2 });
+    click({ threadId: "thread-1" });
+    expect(openThreadMock).not.toHaveBeenCalled();
+
+    vi.stubGlobal("viscosityShell", Object.freeze({ kind: "tauri", version: 1 }));
+    click({ threadId: 7 });
+    click(null);
+    expect(openThreadMock).not.toHaveBeenCalled();
+    click({ threadId: "thread-1" });
+    expect(openThreadMock).toHaveBeenCalledExactlyOnceWith("thread-1", {
+      focusComposer: true,
+      switchWorkspace: true,
+    });
   });
 
   it("requests browser notification permission before showing the notification", async () => {

@@ -6,15 +6,17 @@ import {
   communityReleasesUrl,
   communityRepositoryUrl,
 } from "@/shared/communityLinks";
-import { brandText, UPSTREAM_BRAND_NAME } from "@/shared/brand";
+import { BRAND_NAME, brandText, UPSTREAM_BRAND_NAME } from "@/shared/brand";
 import { UPSTREAM_REPOSITORY_URL } from "@/shared/viscosityRelease";
 import { Button } from "@heroui/react";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { readBridge } from "@/renderer/bridge";
+import { isRemoteSession, readBridge } from "@/renderer/bridge";
 import { PixelLoader } from "@/renderer/components/common";
 import { updateDownloadDisplay } from "@/renderer/state/updateDownloadDisplay";
 import { useUpdateStore } from "@/renderer/state/updateStore";
+import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
+import { servesThisPage } from "@/renderer/viscosity/localDesktopWindow";
 import { BrandWordmark } from "@/renderer/components/common/BrandWordmark";
 import { productNameFor } from "@/shared/channel";
 import { SettingsPage } from "./SettingsForm";
@@ -122,6 +124,13 @@ function UpdateButton() {
 export function AboutSettings() {
   const { t } = useLingui();
   const bridge = readBridge();
+  // ViscosityCode: a remote client (the Tauri window included) reports its host, not an Electron app.
+  const remoteSession = isRemoteSession();
+  // The host serving this page, not whichever paired host Settings last chose.
+  const hostVersion = useRemoteServersStore(
+    (state) => state.servers.find((server) => servesThisPage(server.endpoint))?.appVersion,
+  );
+  const appVersion = remoteSession ? hostVersion : bridge.appVersion;
   const productName = brandText(productNameFor(bridge.channel)); // ViscosityCode
   const repositoryUrl = communityRepositoryUrl();
   const releasesUrl = communityReleasesUrl();
@@ -149,11 +158,21 @@ export function AboutSettings() {
             <p className="text-sm font-medium text-foreground">
               <Trans comment="About page label: app version row">Version</Trans>
             </p>
-            <p className="text-xs text-muted">{bridge.appVersion}</p>
+            {appVersion ? <p className="text-xs text-muted">{appVersion}</p> : null}
+            {remoteSession ? (
+              <p className="text-xs text-muted">
+                <Trans>
+                  Updates arrive as new {BRAND_NAME} installers. Install the latest release to
+                  update.
+                </Trans>
+              </p>
+            ) : null}
           </div>
-          <div className="shrink-0">
-            <UpdateButton />
-          </div>
+          {remoteSession ? null : (
+            <div className="shrink-0">
+              <UpdateButton />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-4">
@@ -163,12 +182,14 @@ export function AboutSettings() {
           <p className="text-sm text-muted capitalize">{bridge.channel}</p>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-medium text-foreground">
-            <Trans comment="About page label: Electron framework version">Electron</Trans>
-          </p>
-          <p className="text-sm text-muted">{bridge.electronVersion}</p>
-        </div>
+        {remoteSession ? null : (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-foreground">
+              <Trans comment="About page label: Electron framework version">Electron</Trans>
+            </p>
+            <p className="text-sm text-muted">{bridge.electronVersion}</p>
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-medium text-foreground">

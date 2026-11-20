@@ -12,7 +12,7 @@ const US_MODELS = XAI_US_TEXT_MODELS.join(", ");
 function descriptor(code: XaiErrorCode): MessageDescriptor {
   switch (code) {
     case "unavailable":
-      return msg`Grok over the xAI API is only available in the desktop app.`;
+      return msg`Grok over the xAI API isn't available here yet.`;
     case "no-key":
       return msg`Add an xAI API key in Settings, or set the XAI_API_KEY environment variable.`;
     case "invalid-key-format":

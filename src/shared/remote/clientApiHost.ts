@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { agentVisionResponseSchema, type AgentVision } from "../agentVision";
 import {
@@ -73,6 +74,7 @@ import {
   type PrWatchKey,
   type ProjectNotes,
   type ProviderUsageResponse,
+  type McpServer,
   type ScheduledTask,
   type ScheduledTaskInput,
   type ScheduledTaskRun,
@@ -92,12 +94,20 @@ import {
 } from "../deviceWorkspace";
 import { RemoteClientError } from "./clientErrors";
 import { parseExactOptionalResponse, parseResponse } from "./clientParse";
+// ViscosityCode: the host's MCP settings routes (iOS and Android already call them).
+import {
+  remoteMcpSettingsOperationResultSchema,
+  remoteMcpSettingsReadResultSchema,
+  type RemoteMcpSettingsCommand,
+  type RemoteMcpSettingsOperation,
+} from "./contract/routeSchemas";
 
 const settingsResponseSchema = z.object({ settings: remoteSettingsSchema });
 const browserStateResponseSchema = z.object({ state: remoteBrowserStateSchema });
 const attachmentUploadResponseSchema = z.object({ path: z.string().min(1) });
 const projectNotesResponseSchema = z.object({ notes: projectNotesSchema.nullable() });
 const prWatchResponseSchema = z.object({ watch: prWatchSchema.nullable() });
+type RemoteMcpSettingsOperationResult = z.infer<typeof remoteMcpSettingsOperationResultSchema>;
 
 export abstract class RemoteClientHostApi extends RemoteClientDevicePreviewApi {
   async deviceInventory(signal?: AbortSignal) {
@@ -447,6 +457,49 @@ export abstract class RemoteClientHostApi extends RemoteClientDevicePreviewApi {
       "settings",
     );
     return result.settings;
+  }
+
+  // ViscosityCode: host-owned custom MCP servers, credential values masked by the host.
+  async mcpSettings(): Promise<McpServer[]> {
+    return parseResponse(
+      remoteMcpSettingsReadResultSchema,
+      await this.requestJson("/api/settings/mcp-servers"),
+      "MCP settings",
+    ).servers;
+  }
+
+  /** One row upsert/remove/move; the host restores masked values from its stored copy. */
+  async mcpSettingsCommand(command: RemoteMcpSettingsCommand): Promise<McpServer[]> {
+    return parseResponse(
+      remoteMcpSettingsReadResultSchema,
+      await this.requestJson("/api/settings/mcp-servers/command", {
+        method: "POST",
+        body: command,
+      }),
+      "MCP settings",
+    ).servers;
+  }
+
+  /** Probe or OAuth step the host resolves by server id, so credentials never round-trip. */
+  async mcpSettingsOperation<Kind extends RemoteMcpSettingsOperation["kind"]>(
+    operation: RemoteMcpSettingsOperation & { kind: Kind },
+  ): Promise<Extract<RemoteMcpSettingsOperationResult, { kind: Kind }>> {
+    const result = parseResponse(
+      remoteMcpSettingsOperationResultSchema,
+      await this.requestJson("/api/settings/mcp-servers/operation", {
+        method: "POST",
+        body: operation,
+      }),
+      "MCP operation",
+    );
+    if (result.kind !== operation.kind) {
+      throw new RemoteClientError(
+        "The server sent an unexpected MCP operation response. It may be running an incompatible version.",
+        500,
+        "invalid_response",
+      );
+    }
+    return result as Extract<RemoteMcpSettingsOperationResult, { kind: Kind }>;
   }
 
   async uploadAttachment(input: {

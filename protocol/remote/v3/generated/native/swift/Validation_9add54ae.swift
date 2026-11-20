@@ -97,6 +97,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_03913a0b6a906e00 = RemoteSchema(type: "object", required: Set(["settings"]), properties: ["settings": RemoteSchemas.schema_72caa7d86a390b15], additionalAllowed: true, unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_039b848cf1c1ad6c = RemoteSchema(type: "integer", defaultValue: .int(50), minimum: 1.0, maximum: 200.0, unknownPolicy: .strip)
 }
 

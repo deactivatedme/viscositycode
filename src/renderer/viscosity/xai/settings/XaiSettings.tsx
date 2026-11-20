@@ -129,9 +129,7 @@ function XaiKeyRow() {
         </div>
       </SettingRow>
       <p role="status" className="text-xs text-muted" data-vc-xai-key-status={status?.source ?? ""}>
-        {available
-          ? (error ?? statusText)
-          : t`Grok over the xAI API works only in the desktop app.`}
+        {available ? (error ?? statusText) : t`Grok over the xAI API isn't available here yet.`}
       </p>
     </div>
   );

@@ -52,7 +52,12 @@ function ThemeUrlErrorText(props: { error: ThemeUrlError }) {
     case "busy":
       return <Trans>Other theme downloads are still running. Try again in a moment.</Trans>;
     case "unavailable":
-      return <Trans>Importing from a link is only available in the desktop app.</Trans>;
+      return (
+        <Trans>
+          Importing from a link isn't available here yet. Download the theme file and use Import
+          theme.
+        </Trans>
+      );
     case "network":
       return <Trans>Could not download the file. Check the link and your connection.</Trans>;
   }

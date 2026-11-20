@@ -225,7 +225,9 @@
         "**/generated": true
       },
       "prAutomationDefault": "off",
-      "prMergeMethod": "squash"
+      "prMergeMethod": "squash",
+      "autoArchiveDoneAfterDays": 3,
+      "autoMarkDoneOnPrMerge": true
     }
   }
 }

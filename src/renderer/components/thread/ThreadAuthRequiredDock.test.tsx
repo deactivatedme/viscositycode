@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentStatus, Project } from "@/shared/contracts";
@@ -121,5 +122,79 @@ describe("ThreadAuthRequiredDock host resolution", () => {
       screen.getByText("Agent: Sign in on the paired desktop, then refresh this status."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
+  });
+});
+
+// ViscosityCode: the Tauri desktop window signs in for its own host's projects only.
+describe("ThreadAuthRequiredDock in the Tauri desktop window", () => {
+  const callRemoteProcedure = vi.fn<(procedure: string, payload: unknown) => Promise<unknown>>();
+  const initialStore = useRemoteServersStore.getState();
+  function pairedServer(desktopId: string, endpoint: string) {
+    return { desktopId, label: desktopId, endpoint, accessToken: "token", scopes: [] };
+  }
+  beforeEach(() => {
+    session.browser = true;
+    Object.assign(window, { viscosityShell: Object.freeze({ kind: "tauri", version: 1 }) });
+    bridge.authenticateAcpAgent.mockReset().mockResolvedValue(undefined);
+    bridge.focusWindow.mockReset().mockResolvedValue(undefined);
+    loginActions.runAgentLoginCommand.mockReset().mockReturnValue(true);
+    callRemoteProcedure.mockReset().mockResolvedValue(undefined);
+    useRemoteServersStore.setState({
+      servers: [
+        pairedServer("local-host", window.location.origin),
+        pairedServer("other-host", "https://other.example.test"),
+      ],
+      refreshServer: vi.fn<(desktopId: string) => Promise<void>>(async () => undefined),
+      withClient: (async (_desktopId: string, invoke: (client: unknown) => Promise<unknown>) =>
+        invoke({ callRemoteProcedure })) as typeof initialStore.withClient,
+    });
+  });
+  afterEach(() => {
+    session.browser = false;
+    Reflect.deleteProperty(window, "viscosityShell");
+    useRemoteServersStore.setState(initialStore, true);
+  });
+
+  it("offers the terminal login for a project on this window's own host", () => {
+    const owner = project("local-host");
+    renderDock(terminalStatus, owner);
+
+    expect(
+      screen.getByText("Agent: Run agent login before this thread can run."),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    const input = loginActions.runAgentLoginCommand.mock.calls[0]?.[0] as { project: Project };
+    expect(input.project).toBe(owner);
+  });
+
+  it("runs agent auth on this window's own host", async () => {
+    renderDock(oauthStatus, project("local-host"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    await waitFor(() =>
+      expect(callRemoteProcedure).toHaveBeenCalledWith("authenticateAcpAgent", {
+        agentKind: "agent",
+        methodId: "oauth",
+      }),
+    );
+    expect(bridge.authenticateAcpAgent).not.toHaveBeenCalled();
+  });
+
+  it("keeps sign-in hidden for another paired host's project", () => {
+    renderDock(terminalStatus, project("other-host"));
+
+    expect(
+      screen.getByText("Agent: Sign in on the paired desktop, then refresh this status."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+  });
+
+  it("keeps sign-in hidden without the shell marker", () => {
+    Reflect.deleteProperty(window, "viscosityShell");
+    renderDock(oauthStatus, project("local-host"));
+
+    expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
   });
 });

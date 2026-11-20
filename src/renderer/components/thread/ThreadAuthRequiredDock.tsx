@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { toast } from "@heroui/react";
 import { KeyRound, LogIn, RefreshCw, Settings } from "lucide-react";
@@ -12,6 +13,8 @@ import { openSettings } from "@/renderer/actions/panelActions";
 import { Button } from "@/renderer/components/common/Button";
 import { useAppStore } from "@/renderer/state/appStore";
 import { projectHostRunsOnThisMachine } from "@/renderer/state/hostLocality";
+import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
+import { isLocalDesktopHost } from "@/renderer/viscosity/localDesktopWindow";
 import {
   agentAuthTarget,
   findAgentAuthMethodForStatus,
@@ -47,13 +50,17 @@ export function ThreadAuthRequiredDock(props: {
   // machine only, so they are offered only when the owner runs here.
   const isBrowserClient = isRemoteSession();
   const ownerRunsHere = projectHostRunsOnThisMachine(project);
+  // ViscosityCode: the Tauri window gets the desktop sign-in surface for its own host's projects (presentation only).
+  const ownerKey = project?.remoteServerId ?? project?.location.remoteServerId;
+  const ownerIsThisMachinesHost = isBrowserClient && isLocalDesktopHost(ownerKey);
   const [pendingAction, setPendingAction] = useState<"login" | "refresh" | undefined>();
   const agentAuthMethod = findAgentAuthMethodForStatus(agentStatus);
   const terminalAuthMethod = findTerminalAuthMethodForStatus(agentStatus);
-  const canUseAgentAuth = agentAuthMethod !== undefined && ownerRunsHere && !isBrowserClient;
-  const canUseTerminalLogin = Boolean(agentStatus.loginCommand) && !isBrowserClient;
+  const canOpenLocalSettings = (ownerRunsHere && !isBrowserClient) || ownerIsThisMachinesHost;
+  const canUseAgentAuth = agentAuthMethod !== undefined && canOpenLocalSettings;
+  const canUseTerminalLogin =
+    Boolean(agentStatus.loginCommand) && (!isBrowserClient || ownerIsThisMachinesHost);
   const hasDirectLogin = canUseAgentAuth || canUseTerminalLogin;
-  const canOpenLocalSettings = ownerRunsHere && !isBrowserClient;
   const preferTerminalLogin = shouldPreferTerminalLogin(agentStatus);
   const useTerminalLogin = canUseTerminalLogin && (preferTerminalLogin || !canUseAgentAuth);
   const loginCommandDisplay = agentStatus.loginCommandDisplay ?? agentStatus.loginCommand;
@@ -101,11 +108,19 @@ export function ThreadAuthRequiredDock(props: {
     if (canUseAgentAuth) {
       setPendingAction("login");
       try {
-        await readBridge().authenticateAcpAgent({
+        const payload = {
           agentKind: agentStatus.kind,
           methodId: agentAuthMethod.id,
           ...agentAuthTarget(agentStatus),
-        });
+        };
+        // ViscosityCode: a browser bridge can point at another paired host, so target the owner.
+        await (ownerIsThisMachinesHost && ownerKey !== undefined
+          ? useRemoteServersStore
+              .getState()
+              .withClient(ownerKey, (client) =>
+                client.callRemoteProcedure("authenticateAcpAgent", payload),
+              )
+          : readBridge().authenticateAcpAgent(payload));
         props.onAuthenticated?.();
         void readBridge().focusWindow();
         await refreshHostAgentAuthStatus(agentStatus, project?.remoteServerId);

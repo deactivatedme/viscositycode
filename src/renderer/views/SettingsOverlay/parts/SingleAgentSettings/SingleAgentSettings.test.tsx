@@ -267,10 +267,20 @@ const uninstallAgentHookPluginMock = vi.hoisted(() =>
   vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
 );
 
+const getNativeMcpSetupMock = vi.hoisted(() =>
+  vi.fn<() => Promise<unknown>>(async () => ({
+    supported: false,
+    candidates: [],
+    installedNames: [],
+    modifiedNames: [],
+  })),
+);
+const bridgeSession = vi.hoisted(() => ({ remote: false }));
+
 vi.mock("@/renderer/bridge", () => ({
   isMac: () => false,
   isWindows: () => true,
-  isRemoteSession: () => false,
+  isRemoteSession: () => bridgeSession.remote,
   readBridge: () => ({
     refreshAgentStatuses: refreshAgentStatusesMock,
     setAcpRegistryAgentAuth: setAcpRegistryAgentAuthMock,
@@ -284,12 +294,7 @@ vi.mock("@/renderer/bridge", () => ({
     updateAcpRegistryAgent: updateAcpRegistryAgentMock,
     installAcpRegistryAgent: installAcpRegistryAgentMock,
     getAgentHookPluginStatuses: getAgentHookPluginStatusesMock,
-    getNativeMcpSetup: async () => ({
-      supported: false,
-      candidates: [],
-      installedNames: [],
-      modifiedNames: [],
-    }),
+    getNativeMcpSetup: getNativeMcpSetupMock,
     installAgentHookPlugin: installAgentHookPluginMock,
     uninstallAgentHookPlugin: uninstallAgentHookPluginMock,
   }),
@@ -545,6 +550,9 @@ describe("SingleAgentSettings", () => {
       .mockReset()
       .mockResolvedValue({ kind: "antigravity", commands: [] });
     useRemoteServersStore.setState({ servers: [], runtime: {} });
+    bridgeSession.remote = false;
+    delete (window as { viscosityShell?: unknown }).viscosityShell;
+    getNativeMcpSetupMock.mockClear();
   });
 
   /** Scope the Agents pages to another machine, as the machine bar would. */
@@ -2535,6 +2543,86 @@ describe("SingleAgentSettings", () => {
     const loginCall = runAgentLoginCommandMock.mock.calls.at(-1)?.[0];
     expect(loginCall?.project?.remoteServerId).toBe("conn-1");
     expect(loginCall?.command).toBe("codex login");
+  });
+
+  /** The Tauri window: a browser client whose local machine is the host it is served from. */
+  const bindWindowToHost = () => {
+    bridgeSession.remote = true;
+    (window as { viscosityShell?: unknown }).viscosityShell = Object.freeze({
+      kind: "tauri",
+      version: 1,
+    });
+    useRemoteServersStore.setState({
+      servers: [
+        {
+          connectionId: "conn-1",
+          desktopId: "conn-1",
+          label: "Studio",
+          endpoint: "https://conn-1.test",
+          accessToken: "token",
+          platform: "linux",
+          scopes: [],
+        },
+      ],
+      runtime: { "conn-1": { status: "online", projects: [], threads: [] } },
+    });
+    remoteClientMock.callRemoteProcedure.mockImplementation(async (procedure) =>
+      procedure === "listAcpRegistry" ? { version: "1.0.0", agents: [] } : {},
+    );
+  };
+  const windowNote =
+    "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet.";
+
+  it("swaps the window host's provider panels for generic auth and a note", async () => {
+    bindWindowToHost();
+    statusesState.agentStatuses = [
+      makeStatus("codex", {
+        label: "Codex",
+        envKind: "posix",
+        authState: "missing",
+        loginCommand: "codex login",
+      }),
+    ];
+
+    render(<SingleAgentSettings agentKind="codex" />);
+
+    expect(screen.getByText(windowNote)).toBeInTheDocument();
+    expect(screen.queryByText(/Run a second Codex account/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    expect(runAgentLoginCommandMock.mock.calls.at(-1)?.[0].project?.location).toEqual({
+      kind: "posix",
+      path: "~",
+      remoteServerId: "conn-1",
+    });
+    await act(async () => {});
+    expect(getNativeMcpSetupMock).not.toHaveBeenCalled();
+    expect(getAgentHookPluginStatusesMock).not.toHaveBeenCalled();
+  });
+
+  it("installs on the window's host without any project", () => {
+    bindWindowToHost();
+    statusesState.agentStatuses = [
+      makeStatus("codex", { label: "Codex", installed: false, envKind: "posix" }),
+    ];
+
+    render(<SingleAgentSettings agentKind="codex" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Install" }));
+    expect(runAgentInstallCommandMock.mock.calls.at(-1)?.[0].project).toMatchObject({
+      remoteServerId: "conn-1",
+      location: { kind: "posix", path: "~", remoteServerId: "conn-1" },
+    });
+  });
+
+  it("keeps Electron's provider panels and shows no window note", async () => {
+    statusesState.agentStatuses = [makeStatus("codex", { label: "Codex", envKind: "windows" })];
+
+    render(<SingleAgentSettings agentKind="codex" />);
+
+    expect(screen.getByText(/Run a second Codex account/)).toBeInTheDocument();
+    expect(screen.queryByText(windowNote)).toBeNull();
+    await waitFor(() => expect(getNativeMcpSetupMock).toHaveBeenCalled());
+    expect(getAgentHookPluginStatusesMock).toHaveBeenCalled();
   });
 
   it("supports remote ACP auth, env-var credentials, logout, and Detect on remote machines", async () => {

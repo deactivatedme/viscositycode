@@ -1,8 +1,8 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
-// @vitest-environment node
+// ViscosityCode: jsdom (not node) so the Quick Composer row can read the client runtime.
 
 import type { MessageDescriptor } from "@lingui/core";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   COMPOSER_CONTROL_COMMAND_IDS,
   DEFAULT_KEYBINDINGS,
@@ -16,6 +16,16 @@ import {
   type ShortcutContext,
 } from "./shortcutCatalog";
 import { formatKeybinding, type PlatformName } from "./keybindingMatcher";
+
+// ViscosityCode: the Quick Composer row needs the Electron shell (nativeShell).
+const runtime = vi.hoisted(() => ({ nativeShell: true }));
+vi.mock(import("@/renderer/clientRuntime"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  hasClientCapability: (capability) => capability === "nativeShell" && runtime.nativeShell,
+}));
+afterEach(() => {
+  runtime.nativeShell = true;
+});
 
 const resolveLabel = (value: string | MessageDescriptor): string =>
   typeof value === "string" ? value : (value.message ?? String(value.id));
@@ -85,6 +95,21 @@ describe("shortcut catalog", () => {
       });
       expect(row?.keys).toEqual([formatKeybinding(expected[platform], platform)]);
     }
+  });
+
+  // ViscosityCode: browser clients (the Tauri window, phones) have no system-wide hotkey service.
+  it("omits the global quick composer row without the native shell", () => {
+    runtime.nativeShell = false;
+    const rows = buildShortcutRows(
+      buildCommandRegistry(),
+      DEFAULT_KEYBINDINGS.keybindings,
+      "win32",
+      resolveLabel,
+    );
+
+    expect(rows.some((item) => item.id === QUICK_COMPOSER_COMMAND_ID)).toBe(false);
+    // Its stored binding must not resurface as a custom row either.
+    expect(rows.some((item) => item.title === QUICK_COMPOSER_COMMAND_ID)).toBe(false);
   });
 
   it("does not expose chat slash commands as shortcut rows", () => {

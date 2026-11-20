@@ -8,8 +8,11 @@ const bridgeMock = vi.hoisted(() => ({
   checkForUpdate: vi.fn<() => Promise<void>>(),
   installUpdate: vi.fn<() => Promise<void>>(),
 }));
+// ViscosityCode: remote-session About reads the paired record of the host serving the page.
+const session = vi.hoisted(() => ({ remote: false }));
 
 vi.mock("@/renderer/bridge", () => ({
+  isRemoteSession: () => session.remote,
   readBridge: () => ({
     appVersion: "1.0.0",
     channel: "stable",
@@ -23,7 +26,13 @@ vi.mock("@/renderer/bridge", () => ({
 import { useUpdateStore } from "@/renderer/state/updateStore";
 import { BRAND_NAME } from "@/shared/brand";
 import { UPSTREAM_REPOSITORY_URL } from "@/shared/viscosityRelease";
+import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
+import type { RemoteServerRecord } from "@/renderer/state/remoteServers/types";
 import { AboutSettings } from "./AboutSettings";
+
+function pairedHost(desktopId: string, endpoint: string): RemoteServerRecord {
+  return { desktopId, label: desktopId, endpoint, accessToken: "token", scopes: [] };
+}
 
 describe("AboutSettings update download", () => {
   beforeEach(() => {
@@ -69,6 +78,8 @@ describe("AboutSettings update download", () => {
 describe("AboutSettings", () => {
   beforeEach(() => {
     bridgeMock.openExternal.mockClear();
+    session.remote = false;
+    useRemoteServersStore.setState({ servers: [] });
   });
 
   it("shows app details and links without the retired data import action", () => {
@@ -97,5 +108,31 @@ describe("AboutSettings", () => {
     expect(screen.queryByText(/All rights reserved/)).not.toBeInTheDocument();
     const visibleText = document.body.textContent ?? "";
     expect(visibleText.replace("Based on Poracode (Apache-2.0)", "")).not.toMatch(/\bPoracode/);
+  });
+
+  // ViscosityCode: the Tauri window is a remote session of its own host.
+  it("shows the host version and the installer note in a remote session", () => {
+    session.remote = true;
+    // Another paired host chosen in Settings must not stand in for this app's version.
+    useRemoteServersStore.setState({
+      servers: [
+        { ...pairedHost("other", "https://other.test/"), appVersion: "9.9.9" },
+        { ...pairedHost("home", window.location.origin), appVersion: "2.4.0" },
+      ],
+    });
+    useUpdateStore.setState({ phase: "idle" });
+    render(<AboutSettings />);
+
+    expect(screen.getByText("2.4.0")).toBeVisible();
+    expect(screen.queryByText("1.0.0")).not.toBeInTheDocument();
+    expect(screen.queryByText("9.9.9")).not.toBeInTheDocument();
+    expect(screen.queryByText("Electron")).not.toBeInTheDocument();
+    expect(screen.queryByText("43.1.0")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `Updates arrive as new ${BRAND_NAME} installers. Install the latest release to update.`,
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Check for updates" })).not.toBeInTheDocument();
   });
 });

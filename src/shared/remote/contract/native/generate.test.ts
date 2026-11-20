@@ -108,7 +108,9 @@ describe("remote v3 native binding generator", () => {
         // add five structural types and move only the source hash while keeping older hosts valid.
         // ViscosityCode: optional playbooks (thread config + settings, phrase cap 10) add four
         // structural types and move only the source hash.
-        sourceHash: "sha256:f9be5ac20286ca22fa2b79d2e001c23e699b66835513e450aac32c2e9c9a37a9",
+        // ViscosityCode: optional settings `autoArchiveDoneAfterDays` and `autoMarkDoneOnPrMerge`
+        // move only the source hash; reshuffled content shards drop one Swift and two Kotlin files.
+        sourceHash: "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199",
         manifestHash: "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3",
         counts: {
           routes: 121,
@@ -123,8 +125,8 @@ describe("remote v3 native binding generator", () => {
           semanticValidators: 25,
           // Content-defined shards (emitterCommon.shardDeclarations) average
           // ~200 lines, so a contract change rewrites only nearby files.
-          swiftFiles: 146,
-          kotlinFiles: 129,
+          swiftFiles: 145,
+          kotlinFiles: 127,
           stateMachines: 5,
         },
       });

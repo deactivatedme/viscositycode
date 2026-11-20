@@ -1,4 +1,5 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteSettings, RemoteSettingsPatch } from "@/shared/remote";
 import { defaultSharedSettings } from "@/shared/settings";
@@ -19,6 +20,7 @@ import {
   applyDesktopSettings,
   pushDesktopSettingsDiff,
   resetDesktopSettings,
+  useHostReturnsRemoteSetting,
 } from "./remoteSettingsSync";
 
 function deferred<T>() {
@@ -229,6 +231,62 @@ describe("pushDesktopSettingsDiff push ordering", () => {
     );
     await flush();
     expect(updateSettings).toHaveBeenCalledWith({ playbooks: [playbook] });
+  });
+
+  // ViscosityCode: pre-upgrade — a host that predates the housekeeping keys.
+  it("never pushes thread housekeeping to a host whose settings-read omits it", () => {
+    const autoArchive = renderHook(() => useHostReturnsRemoteSetting("autoArchiveDoneAfterDays"));
+    const markDone = renderHook(() => useHostReturnsRemoteSetting("autoMarkDoneOnPrMerge"));
+    const client = {
+      updateSettings: vi.fn<RemoteDesktopClient["updateSettings"]>(),
+    } as unknown as RemoteDesktopClient;
+
+    act(() => applyDesktopSettings(settings("v0")));
+    pushDesktopSettingsDiff(client, {
+      ...input("v0"),
+      autoArchiveDoneAfterDays: 0,
+      autoMarkDoneOnPrMerge: false,
+    } as SharedSettingsInput);
+
+    expect(client.updateSettings).not.toHaveBeenCalled();
+    expect(h.applyExternalSharedSettings).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ autoArchiveDoneAfterDays: expect.anything() }),
+    );
+    expect(autoArchive.result.current).toBe(false);
+    expect(markDone.result.current).toBe(false);
+  });
+
+  // ViscosityCode
+  it("syncs thread housekeeping with a host that returns it, until the host is reset", async () => {
+    const autoArchive = renderHook(() => useHostReturnsRemoteSetting("autoArchiveDoneAfterDays"));
+    const markDone = renderHook(() => useHostReturnsRemoteSetting("autoMarkDoneOnPrMerge"));
+    const remote = {
+      ...settings("v0"),
+      autoArchiveDoneAfterDays: 3,
+      autoMarkDoneOnPrMerge: true,
+    } as RemoteSettings;
+    act(() => applyDesktopSettings(remote));
+    expect(h.applyExternalSharedSettings).toHaveBeenLastCalledWith(remote);
+    expect(autoArchive.result.current).toBe(true);
+    expect(markDone.result.current).toBe(true);
+
+    const updateSettings = vi.fn<(patch: RemoteSettingsPatch) => Promise<RemoteSettings>>(
+      async () => ({ ...remote, autoMarkDoneOnPrMerge: false }) as RemoteSettings,
+    );
+    pushDesktopSettingsDiff(
+      { updateSettings } as unknown as RemoteDesktopClient,
+      {
+        ...input("v0"),
+        autoArchiveDoneAfterDays: 3,
+        autoMarkDoneOnPrMerge: false,
+      } as SharedSettingsInput,
+    );
+    await flush();
+    expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ autoMarkDoneOnPrMerge: false });
+
+    act(() => resetDesktopSettings());
+    expect(autoArchive.result.current).toBe(false);
+    expect(markDone.result.current).toBe(false);
   });
 
   it("forwards follow-up behavior changes to the desktop", async () => {

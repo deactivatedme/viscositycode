@@ -91,6 +91,29 @@ pub(crate) fn show_main(app: &AppHandle) {
     }
 }
 
+/// The page event a Windows notification click sends: `viscosity-shell:notification-open` with
+/// `detail: { threadId }`, from the `extra.threadId` the web client set on the notification
+/// (README "Window and page contract"). `None` unless the id is short and plain.
+#[cfg(any(windows, test))]
+fn notification_open_script(
+    extra: &std::collections::HashMap<String, serde_json::Value>,
+) -> Option<String> {
+    let id = extra.get("threadId")?.as_str()?;
+    let plain = !id.is_empty()
+        && id.len() <= 256
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"-_.:".contains(&byte));
+    if !plain {
+        return None;
+    }
+    // serde_json keeps the id a string literal even if the check above ever widens.
+    let detail = serde_json::json!({ "threadId": id });
+    Some(format!(
+        "window.dispatchEvent(new CustomEvent(\"viscosity-shell:notification-open\", {{ detail: {detail} }}));"
+    ))
+}
+
 fn open_external(app: &AppHandle, url: &Url) {
     if let Err(error) = app.opener().open_url(url.as_str(), None::<&str>) {
         eprintln!("viscositycode-desktop: could not open {url}: {error}");
@@ -236,9 +259,18 @@ pub fn run() -> Result<(), Error> {
             #[cfg(windows)]
             {
                 let clicked = handle.clone();
-                handle
-                    .notification()
-                    .on_action(move |_| show_main(&clicked))?;
+                handle.notification().on_action(move |performed| {
+                    show_main(&clicked);
+                    let script = performed
+                        .notification()
+                        .and_then(|notification| notification_open_script(notification.extra()));
+                    if let (Some(script), Some(window)) =
+                        (script, clicked.get_webview_window(MAIN_WINDOW))
+                        && let Err(error) = window.eval(script)
+                    {
+                        eprintln!("viscositycode-desktop: could not open the notification's thread: {error}");
+                    }
+                })?;
             }
             match dev_url {
                 Some(url) => {
@@ -277,6 +309,72 @@ mod tests {
         let url = loopback_url("http://127.0.0.1:3101/?pair=abc").unwrap();
         assert_eq!(url.port(), Some(3101));
         assert!(loopback_url("http://127.0.0.1/").is_ok());
+    }
+
+    fn extra(thread_id: serde_json::Value) -> std::collections::HashMap<String, serde_json::Value> {
+        std::collections::HashMap::from([("threadId".to_owned(), thread_id)])
+    }
+
+    #[test]
+    fn notification_click_dispatches_a_plain_thread_id() {
+        assert_eq!(
+            notification_open_script(&extra("3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b".into()))
+                .as_deref(),
+            Some(
+                "window.dispatchEvent(new CustomEvent(\"viscosity-shell:notification-open\", \
+                 { detail: {\"threadId\":\"3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b\"} }));"
+            )
+        );
+        assert!(notification_open_script(&extra("a".repeat(256).into())).is_some());
+    }
+
+    /// The web client's `new Notification(title, options)` options, through the plugin's
+    /// polyfill and its click payload, as `on_action` receives them.
+    #[test]
+    fn web_notification_extra_reaches_the_click_handler() {
+        let data: tauri_plugin_notification::NotificationData =
+            serde_json::from_value(serde_json::json!({
+                "title": "Repo",
+                "body": "Thread",
+                "silent": true,
+                "extra": { "threadId": "thread-1" },
+            }))
+            .unwrap();
+        let performed: tauri_plugin_notification::ActionPerformed =
+            serde_json::from_value(serde_json::json!({
+                "actionId": "tap",
+                "inputValue": null,
+                "notification": serde_json::to_value(&data).unwrap(),
+            }))
+            .unwrap();
+        let script = performed
+            .notification()
+            .and_then(|notification| notification_open_script(notification.extra()));
+        assert!(script.is_some_and(|script| script.contains(r#"{"threadId":"thread-1"}"#)));
+    }
+
+    #[test]
+    fn notification_click_ignores_anything_but_a_plain_id() {
+        for thread_id in [
+            serde_json::Value::from(""),
+            "a".repeat(257).into(),
+            "\"});alert(1);//".into(),
+            "id with spaces".into(),
+            "id\u{2028}".into(),
+            "</script>".into(),
+            7.into(),
+            serde_json::Value::Null,
+        ] {
+            assert_eq!(
+                notification_open_script(&extra(thread_id.clone())),
+                None,
+                "{thread_id}"
+            );
+        }
+        assert_eq!(
+            notification_open_script(&std::collections::HashMap::new()),
+            None
+        );
     }
 
     #[test]

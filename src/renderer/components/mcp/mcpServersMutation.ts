@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { McpServer } from "@/shared/contracts";
 import {
   flushSharedSettings,
@@ -23,6 +24,25 @@ export interface McpServersSink {
   servers: McpServer[];
   loadServers?: () => Promise<McpServer[]>;
   saveServers: (servers: McpServer[]) => Promise<void>;
+  // ViscosityCode: single-row writes for a host-owned, redacted list.
+  rows?: McpServerRowCommands;
+}
+
+/**
+ * Single-row writes for a list its host owns and serves redacted (Global in a
+ * remote session). When present, every write goes through these instead of
+ * `saveServers`: sending the list back would return each masked secret as a
+ * value. The host restores the masks of the one row it receives.
+ */
+export interface McpServerRowCommands {
+  upsert: (server: McpServer) => Promise<void>;
+  remove: (serverId: string) => Promise<void>;
+  /**
+   * Move `server` (with its edits) between this list and project `projectId`
+   * on the host, which holds the only unredacted copy. Resolves `false`,
+   * having written nothing, when that project is not on this list's host.
+   */
+  move: (server: McpServer, projectId: string, toProject: boolean) => Promise<boolean>;
 }
 
 /** The source's current list — authoritative when it exposes a fresh read. */
@@ -42,14 +62,11 @@ export async function updateServerRow(
   update: (server: McpServer) => McpServer,
 ): Promise<void> {
   const current = await readCurrentServers(sink);
-  let found = false;
-  const next = current.map((item) => {
-    if (item.id !== serverId) return item;
-    found = true;
-    return update(item);
-  });
-  if (!found) return;
-  await sink.saveServers(next);
+  const row = current.find((item) => item.id === serverId);
+  if (!row) return;
+  const next = update(row);
+  if (sink.rows) await sink.rows.upsert(next); // ViscosityCode
+  else await sink.saveServers(current.map((item) => (item.id === serverId ? next : item)));
 }
 
 /**
@@ -60,7 +77,8 @@ export async function updateServerRow(
 export async function removeServerRow(sink: McpServersSink, serverId: string): Promise<void> {
   const current = await readCurrentServers(sink);
   if (!current.some((item) => item.id === serverId)) return;
-  await sink.saveServers(current.filter((item) => item.id !== serverId));
+  if (sink.rows) await sink.rows.remove(serverId); // ViscosityCode
+  else await sink.saveServers(current.filter((item) => item.id !== serverId));
 }
 
 /**

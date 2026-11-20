@@ -81,10 +81,10 @@ afterEach(() => {
 });
 
 describe("CloudAgentsPanel", () => {
-  it("explains that a remote session lists cloud agents on the host", () => {
+  it("explains that a remote session cannot list cloud agents yet", () => {
     mocks.remote = true;
     render(<CloudAgentsPanel />);
-    expect(screen.getByText(/listed in the desktop app on the host computer/)).toBeTruthy();
+    expect(screen.getByText(/Cloud agents can't be listed here yet/)).toBeTruthy();
     expect(mocks.list).not.toHaveBeenCalled();
   });
 

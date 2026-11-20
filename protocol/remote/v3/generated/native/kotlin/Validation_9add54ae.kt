@@ -101,6 +101,10 @@ internal val schema_034741cb26a53fe4: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("remove")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_03913a0b6a906e00: RemoteSchema by lazy {
+    RemoteSchema(type = "object", required = setOf("settings"), properties = mapOf("settings" to schema_72caa7d86a390b15), additionalAllowed = true, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
+}
+
 internal val schema_039b848cf1c1ad6c: RemoteSchema by lazy {
     RemoteSchema(type = "integer", defaultValue = JsonPrimitive(50), minimum = 1.0, maximum = 200.0, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

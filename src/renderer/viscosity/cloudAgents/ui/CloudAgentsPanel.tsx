@@ -63,8 +63,7 @@ export function CloudAgentsPanel() {
       <Centered>
         <p data-cloud-agents-remote="">
           <Trans>
-            Cloud agents are listed in the desktop app on the host computer. Cloud threads still
-            appear in your thread list.
+            Cloud agents can't be listed here yet. Cloud threads still appear in your thread list.
           </Trans>
         </p>
       </Centered>

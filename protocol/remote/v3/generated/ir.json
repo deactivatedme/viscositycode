@@ -67910,6 +67910,14 @@
                     "agent-settings.strip-sensitive"
                   ]
                 },
+                "autoArchiveDoneAfterDays": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "autoMarkDoneOnPrMerge": {
+                  "type": "boolean"
+                },
                 "commitGenEffort": {
                   "type": "string"
                 },
@@ -68750,6 +68758,14 @@
                 "agent-settings.strip-sensitive"
               ]
             },
+            "autoArchiveDoneAfterDays": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "autoMarkDoneOnPrMerge": {
+              "type": "boolean"
+            },
             "commitGenEffort": {
               "type": "string"
             },
@@ -69516,6 +69532,14 @@
                   "x-poracode-transforms": [
                     "agent-settings.strip-sensitive"
                   ]
+                },
+                "autoArchiveDoneAfterDays": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "autoMarkDoneOnPrMerge": {
+                  "type": "boolean"
                 },
                 "commitGenEffort": {
                   "type": "string"
@@ -88265,7 +88289,7 @@
     "void-envelope.omit-result",
     "void-result.omit-field"
   ],
-  "sourceHash": "sha256:f9be5ac20286ca22fa2b79d2e001c23e699b66835513e450aac32c2e9c9a37a9",
+  "sourceHash": "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199",
   "unknownObjectFields": "ignore",
   "webSocket": {
     "clientMessages": [

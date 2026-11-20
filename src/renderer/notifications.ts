@@ -17,6 +17,7 @@ import {
 import { i18n } from "@/renderer/i18n/i18n";
 import type { UserNotification, UserNotificationCategory } from "@/shared/threadNotification";
 import { threadOnScreenOverride } from "@/renderer/viscosity/threadVisibilityHook"; // ViscosityCode: desktop shell's on-screen rule
+import { isLocalDesktopWindow } from "@/renderer/viscosity/localDesktopWindow"; // ViscosityCode
 
 type NotificationCategory = UserNotificationCategory;
 
@@ -64,6 +65,15 @@ function openNotificationThread(threadId: string): void {
     return;
   }
   openThread(threadId, { focusComposer: true, switchWorkspace: true });
+}
+
+// ViscosityCode: the Tauri shell's Notification polyfill never fires onclick; on Windows the shell
+// reports the click with the toast's `extra.threadId` instead (desktop-tauri/README.md).
+if (typeof window !== "undefined") {
+  window.addEventListener("viscosity-shell:notification-open", (event) => {
+    const threadId = (event as CustomEvent<{ threadId?: unknown } | null>).detail?.threadId;
+    if (typeof threadId === "string" && isLocalDesktopWindow()) openNotificationThread(threadId);
+  });
 }
 
 function getStatusDetail(category: NotificationCategory, status: ThreadStatus): string {
@@ -158,7 +168,8 @@ function showBrowserNotification(
       const native = new Notification(projectName, {
         body,
         silent: true,
-      });
+        extra: { threadId }, // ViscosityCode: read by the Tauri shell's click handler; browsers ignore it
+      } as NotificationOptions);
       native.onclick = () => {
         void readBridge().focusWindow();
         openNotificationThread(threadId);

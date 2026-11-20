@@ -278,6 +278,23 @@ async function pickBrowserFiles(options?: {
   });
 }
 
+// ViscosityCode: Electron's assertSafeExternalUrl schemes; credentials refused like the Tauri opener.
+const EXTERNAL_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+function openBrowserWindow(url: string): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return Promise.reject(new Error("Invalid external URL"));
+  }
+  if (!EXTERNAL_URL_PROTOCOLS.has(parsed.protocol) || parsed.username || parsed.password) {
+    return Promise.reject(new Error(`External URL is not allowed: ${parsed.protocol}`));
+  }
+  window.open(parsed.toString(), "_blank", "noopener,noreferrer");
+  return Promise.resolve();
+}
+
 const remoteBridgeOverrides = {
   // Metadata reads. Analytics/diagnostics stay disabled in remote sessions.
   // `platform` is a getter so it tracks the paired desktop after connect.
@@ -395,10 +412,11 @@ const remoteBridgeOverrides = {
     Promise.reject(new Error("Learned routing memory can only be changed on desktop.")),
 
   // Shell conveniences with browser-native equivalents.
-  openExternal: (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-    return Promise.resolve();
-  },
+  openExternal: openBrowserWindow, // ViscosityCode: scheme-checked
+  // ViscosityCode: login/OAuth/terminal links use this; the Tauri shell hands new windows to the OS browser.
+  openExternalNative: openBrowserWindow,
+  // ViscosityCode: a browser registers no OS-global shortcuts, so key capture has nothing to suspend.
+  setGlobalShortcutsSuspended: () => Promise.resolve(),
   // Notification click handlers focus the app window.
   focusWindow: () => {
     window.focus();

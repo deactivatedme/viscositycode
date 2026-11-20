@@ -89,14 +89,14 @@ val RemoteRootCodecs.routeU2ESchedulesU2DCommandU2EResponse: RemoteRootCodec<Rou
 val RemoteRootCodecs.routeU2ESchedulesU2DReadU2EResponse: RemoteRootCodec<RouteschedulesU2DCommandResponse_bc1920595e>
     get() = RemoteRootCodec("route.schedules-read.response", serializer<RouteschedulesU2DCommandResponse_bc1920595e>(), schema_bc1920595e8cfd89)
 
-val RemoteRootCodecs.routeU2ESettingsU2DReadU2EResponse: RemoteRootCodec<RoutesettingsU2DReadResponse_33890b4ba7>
-    get() = RemoteRootCodec("route.settings-read.response", serializer<RoutesettingsU2DReadResponse_33890b4ba7>(), schema_33890b4ba7f0ec07)
+val RemoteRootCodecs.routeU2ESettingsU2DReadU2EResponse: RemoteRootCodec<RoutesettingsU2DReadResponse_03913a0b6a>
+    get() = RemoteRootCodec("route.settings-read.response", serializer<RoutesettingsU2DReadResponse_03913a0b6a>(), schema_03913a0b6a906e00)
 
-val RemoteRootCodecs.routeU2ESettingsU2DWriteU2ERequest: RemoteRootCodec<RoutesettingsU2DWriteRequest_fc771d507c>
-    get() = RemoteRootCodec("route.settings-write.request", serializer<RoutesettingsU2DWriteRequest_fc771d507c>(), schema_fc771d507ce1ccb5)
+val RemoteRootCodecs.routeU2ESettingsU2DWriteU2ERequest: RemoteRootCodec<RoutesettingsU2DWriteRequest_88f132b26b>
+    get() = RemoteRootCodec("route.settings-write.request", serializer<RoutesettingsU2DWriteRequest_88f132b26b>(), schema_88f132b26b338f86)
 
-val RemoteRootCodecs.routeU2ESettingsU2DWriteU2EResponse: RemoteRootCodec<RoutesettingsU2DReadResponse_33890b4ba7>
-    get() = RemoteRootCodec("route.settings-write.response", serializer<RoutesettingsU2DReadResponse_33890b4ba7>(), schema_33890b4ba7f0ec07)
+val RemoteRootCodecs.routeU2ESettingsU2DWriteU2EResponse: RemoteRootCodec<RoutesettingsU2DReadResponse_03913a0b6a>
+    get() = RemoteRootCodec("route.settings-write.response", serializer<RoutesettingsU2DReadResponse_03913a0b6a>(), schema_03913a0b6a906e00)
 
 val RemoteRootCodecs.routeU2EShellU2DSnapshotU2EQuery: RemoteRootCodec<RouteshellU2DSnapshotQuery_b2ca36e3fa>
     get() = RemoteRootCodec("route.shell-snapshot.query", serializer<RouteshellU2DSnapshotQuery_b2ca36e3fa>(), schema_b2ca36e3fa7743ad)

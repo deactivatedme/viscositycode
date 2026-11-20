@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { MessageDescriptor } from "@lingui/core";
 import { i18n } from "@/renderer/i18n/i18n";
 import { SETTINGS_SEARCH_INDEX, searchSettings } from "./settingsSearchIndex";
+import { isSettingsSectionVisible } from "./settingsNavigation"; // ViscosityCode
 
 /** Anchor literals wired onto rows across the section components. */
 function anchorsDeclaredInComponents(): Set<string> {
@@ -156,6 +157,33 @@ describe("searchSettings", () => {
     );
   });
 
+  // ViscosityCode: section visibility, not desktopOnly, gates Skills (the Tauri window shows it;
+  // settingsNavigation.localWindow.test.tsx covers the sidebar with and without the shell).
+  it("offers skills.manage to remote sessions so section visibility decides", () => {
+    const remote = searchSettings("skills", t, { remoteSession: true });
+    expect(remote.map((r) => r.anchor)).toContain("skills.manage");
+    const shown = remote.filter((r) => isSettingsSectionVisible(r.section, true));
+    expect(shown.map((r) => r.anchor)).not.toContain("skills.manage");
+  });
+
+  // ViscosityCode: Threads and MCP rows a remote session renders are offered; section visibility
+  // still hides them on phones (settingsNavigation.localWindow.test.tsx covers the Tauri window).
+  it("offers remotely rendered Threads and MCP rows so section visibility decides", () => {
+    for (const [query, anchor] of [
+      ["auto archive", "threads.autoArchiveDoneAfter"],
+      ["pull request merges", "threads.markDoneOnPrMerge"],
+      ["quick remove", "threads.defaultThreadRemoval"],
+      ["confirm delete", "threads.confirmThreadDelete"],
+      ["mcp", "mcpServers.manage"],
+      ["per-project", "mcpServers.projects"],
+    ] as const) {
+      const remote = searchSettings(query, t, { remoteSession: true });
+      expect(remote.map((r) => r.anchor)).toContain(anchor);
+      const shown = remote.filter((r) => isSettingsSectionVisible(r.section, true));
+      expect(shown.map((r) => r.anchor)).not.toContain(anchor);
+    }
+  });
+
   it("hides dev-only settings unless dev mode is on", () => {
     const anchor = "dev.disableCliHookPlugin";
     expect(searchSettings("hook plugin", t).map((r) => r.anchor)).not.toContain(anchor);
@@ -166,7 +194,6 @@ describe("searchSettings", () => {
 
   it("hides desktop-only settings in remote sessions", () => {
     const anchors = searchSettings("auto", t, { remoteSession: true }).map((r) => r.anchor);
-    expect(anchors).not.toContain("threads.autoArchiveDoneAfter");
     expect(anchors).not.toContain("usage.autoRefreshMinutes");
     expect(anchors).not.toContain("terminal.autoShowTerminalPanel");
     expect(
@@ -179,11 +206,8 @@ describe("searchSettings", () => {
       "general.editorLsp",
     );
     expect(
-      searchSettings("quick remove", t, { remoteSession: true }).map((r) => r.anchor),
-    ).not.toContain("threads.defaultThreadRemoval");
-    expect(
-      searchSettings("confirm delete", t, { remoteSession: true }).map((r) => r.anchor),
-    ).not.toContain("threads.confirmThreadDelete");
+      searchSettings("unload idle", t, { remoteSession: true }).map((r) => r.anchor),
+    ).not.toContain("threads.unloadIdleThreadsAfter");
     expect(searchSettings("panel", t, { remoteSession: true }).map((r) => r.anchor)).not.toContain(
       "terminal.terminalPosition",
     );

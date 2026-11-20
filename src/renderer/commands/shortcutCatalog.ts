@@ -8,6 +8,7 @@ import {
   QUICK_COMPOSER_COMMAND_ID,
 } from "@/shared/keybindings";
 import { BRAND_NAME, UPSTREAM_BRAND_NAME } from "@/shared/brand"; // ViscosityCode
+import { hasClientCapability } from "@/renderer/clientRuntime"; // ViscosityCode
 import { COMPOSER_CONTROL_COMMANDS } from "./composerCommands";
 import { bindingForPlatform, formatKeybinding, type PlatformName } from "./keybindingMatcher";
 import type { AppCommand } from "./registry";
@@ -354,14 +355,19 @@ export function buildShortcutRows(
     })),
   );
 
-  const systemRows = SYSTEM_SHORTCUTS.map((command) =>
-    buildRebindableRow(command, () => ({
-      group: BRAND_NAME,
-      section: "general",
-      contexts: ["global"],
-      whenTemplate: null,
-    })),
-  );
+  // ViscosityCode: system-wide hotkeys need the Electron shell; browser clients cannot register one.
+  // The window check keeps the catalog buildable in node-environment tests.
+  const systemRows =
+    typeof window !== "undefined" && hasClientCapability("nativeShell")
+      ? SYSTEM_SHORTCUTS.map((command) =>
+          buildRebindableRow(command, () => ({
+            group: BRAND_NAME,
+            section: "general",
+            contexts: ["global"],
+            whenTemplate: null,
+          })),
+        )
+      : [];
 
   const localRows = LOCAL_SHORTCUTS.map((shortcut) =>
     rowWithSearchText(

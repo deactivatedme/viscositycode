@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState, type ReactNode } from "react";
 import { Input, Modal, Tooltip, toast } from "@heroui/react";
 import {
@@ -43,7 +44,10 @@ import {
 } from "./mcpServersMutation";
 import { friendlyError } from "@/shared/messages";
 import { type McpServerProbeState, useMcpServerProbes } from "./useMcpServerProbes";
-import { useMcpServerOauth } from "./useMcpServerOauth";
+import { type McpServerOauthApi, useMcpServerOauth } from "./useMcpServerOauth";
+// ViscosityCode: OAuth reachability for browser clients.
+import { isBrowserClientRuntime } from "@/renderer/clientRuntime";
+import { isLocalDesktopHost } from "@/renderer/viscosity/localDesktopWindow";
 
 const EMPTY_MCP_SERVERS: McpServer[] = [];
 type McpServerScope = "user" | "workspace";
@@ -65,6 +69,19 @@ interface McpServerSource extends McpServersSink {
   projectLocation?: ProjectLocation;
   projectName?: string;
   projectIcon?: string;
+}
+
+/**
+ * ViscosityCode: probe and sign-in state a host-owned list resolves itself, by
+ * server id on its host, because its redacted definitions cannot be probed or
+ * signed in from this client.
+ */
+export interface McpServerSourceOperations {
+  probes: {
+    states: Record<string, McpServerProbeState>;
+    probe: (server: McpServer) => void;
+  };
+  oauth: McpServerOauthApi & { authenticatedServerIds: ReadonlySet<string> };
 }
 
 interface McpEditorDestination {
@@ -93,12 +110,12 @@ interface McpToolList {
   label: string;
   tools: readonly string[];
   disabledTools: readonly string[];
-  onToolEnabledChange: (tool: string, enabled: boolean) => void;
+  onToolEnabledChange?: (tool: string, enabled: boolean) => void; // ViscosityCode: absent = read-only
 }
 
 export function McpServersManager(props: {
   sources: {
-    user: McpServerSource;
+    user: McpServerSource & { operations?: McpServerSourceOperations }; // ViscosityCode
     workspace?: McpServerSource;
   };
   importProjects?: McpImportProjectTarget[];
@@ -116,15 +133,34 @@ export function McpServersManager(props: {
   const [importOpen, setImportOpen] = useState(false);
   const [builtInSettingsId, setBuiltInSettingsId] = useState<BuiltInMcpServerId>();
   const [toolList, setToolList] = useState<McpToolList>();
-  const userOauth = useMcpServerOauth();
+  const userOperations = props.sources.user.operations; // ViscosityCode
+  const localUserOauth = useMcpServerOauth(undefined, userOperations === undefined);
+  const userOauth: McpServerOauthApi & { authenticatedServerIds?: ReadonlySet<string> } =
+    userOperations?.oauth ?? localUserOauth;
   // Each scope signs in on its own host: user servers on this one, workspace
   // servers on their project's host (the hook resolves which host a location names).
   const workspaceLocation = props.sources.workspace?.projectLocation;
-  const workspaceOauth = useMcpServerOauth(
+  const ownerWorkspaceOauth = useMcpServerOauth(
     workspaceLocation,
     props.sources.workspace !== undefined,
   );
-  const userProbes = useMcpServerProbes(props.sources.user.servers);
+  // ViscosityCode: OAuth redirects to its host's loopback, so a browser finishes it only on that machine.
+  const workspaceOauth: McpServerOauthApi =
+    isBrowserClientRuntime() && !isLocalDesktopHost(workspaceLocation?.remoteServerId)
+      ? {
+          ...ownerWorkspaceOauth,
+          authenticate: (server) => {
+            const serverName = server.name;
+            toast.danger(t`Sign in to ${serverName} from the app on the host machine.`);
+            return Promise.resolve(false);
+          },
+        }
+      : ownerWorkspaceOauth;
+  // ViscosityCode: never probe a host-owned list's redacted definitions from here.
+  const localUserProbes = useMcpServerProbes(
+    userOperations ? EMPTY_MCP_SERVERS : props.sources.user.servers,
+  );
+  const userProbes = userOperations?.probes ?? localUserProbes;
   const workspaceProbes = useMcpServerProbes(
     props.sources.workspace?.servers ?? EMPTY_MCP_SERVERS,
     props.sources.workspace?.projectLocation,
@@ -296,7 +332,22 @@ export function McpServersManager(props: {
         existingIndex === -1
           ? [...targetServers, server]
           : targetServers.map((item) => (item.id === server.id ? server : item));
-      await targetSource.saveServers(nextTarget);
+      // ViscosityCode: a host-owned list holds only redacted copies, so a move
+      // across it runs on its host, which holds the original.
+      const hostRows = targetSource.rows ?? source?.rows;
+      const otherProjectId = targetSource.rows ? source?.projectId : targetSource.projectId;
+      if (
+        source &&
+        sourceServerId !== undefined &&
+        hostRows &&
+        otherProjectId !== undefined &&
+        (await hostRows.move(server, otherProjectId, targetSource.rows === undefined))
+      ) {
+        setEditor((current) => (current?.key === editorKey ? undefined : current));
+        return;
+      }
+      if (targetSource.rows) await targetSource.rows.upsert(server);
+      else await targetSource.saveServers(nextTarget);
       try {
         if (source && sourceServerId !== undefined) {
           // Re-read the source now that the destination confirmed: the
@@ -304,10 +355,7 @@ export function McpServersManager(props: {
           // other clients a window to modify the source. Remove only the moved
           // id from the fresh read; if that read or save still fails, the
           // source keeps its copy — a safe duplicate, never a loss.
-          const currentSource = await readCurrentServers(source);
-          if (currentSource.some((item) => item.id === sourceServerId)) {
-            await source.saveServers(currentSource.filter((item) => item.id !== sourceServerId));
-          }
+          await removeServerRow(source, sourceServerId);
         }
       } finally {
         // The destination holds the server from here on: close the editor even
@@ -340,7 +388,9 @@ export function McpServersManager(props: {
         names.add(name);
         return true;
       });
-      if (imported.length > 0) await target.saveServers([...current, ...imported]);
+      if (target.rows) {
+        for (const server of imported) await target.rows.upsert(server); // ViscosityCode
+      } else if (imported.length > 0) await target.saveServers([...current, ...imported]);
     })().catch((error) => reportMutationError(error));
   };
 
@@ -424,12 +474,14 @@ export function McpServersManager(props: {
                         <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
                           {tool}
                         </span>
-                        <ToggleSwitch
-                          size="sm"
-                          aria-label={enabled ? t`Disable ${tool}` : t`Enable ${tool}`}
-                          isSelected={enabled}
-                          onChange={(selected) => toolList.onToolEnabledChange(tool, selected)}
-                        />
+                        {toolList.onToolEnabledChange ? (
+                          <ToggleSwitch
+                            size="sm"
+                            aria-label={enabled ? t`Disable ${tool}` : t`Enable ${tool}`}
+                            isSelected={enabled}
+                            onChange={(selected) => toolList.onToolEnabledChange?.(tool, selected)}
+                          />
+                        ) : null}
                       </li>
                     );
                   })}
@@ -517,7 +569,7 @@ export function McpServersManager(props: {
           <div className="overflow-hidden rounded-xl border border-[var(--hairline)]">
             {visibleServers.map(({ scope, source, server }) => {
               const probes = scope === "user" ? userProbes : workspaceProbes;
-              const oauth = scope === "user" ? userOauth : workspaceOauth;
+              const oauth: typeof userOauth = scope === "user" ? userOauth : workspaceOauth;
               const destinationId =
                 scope === "user"
                   ? GLOBAL_MCP_DESTINATION_ID
@@ -536,7 +588,9 @@ export function McpServersManager(props: {
                   oauth={{
                     supported: serverUrl !== undefined,
                     authenticated:
-                      serverUrl !== undefined && oauth.authenticatedUrls.has(serverUrl),
+                      serverUrl !== undefined &&
+                      (oauth.authenticatedServerIds?.has(server.id) ?? // ViscosityCode
+                        oauth.authenticatedUrls.has(serverUrl)),
                     busy: oauth.busyServerIds.has(server.id),
                     onAuthenticate: () => {
                       void oauth.authenticate(server).then((authenticated) => {
@@ -654,16 +708,21 @@ export function McpServersManager(props: {
                       label: server.label,
                       tools: server.tools,
                       disabledTools: props.disabledBuiltInTools?.[server.id] ?? [],
-                      onToolEnabledChange: (tool, enabled) => {
-                        props.onBuiltInToolEnabledChange?.(server.id, tool, enabled);
-                        setToolList((current) => {
-                          if (!current) return current;
-                          const disabled = new Set(current.disabledTools);
-                          if (enabled) disabled.delete(tool);
-                          else disabled.add(tool);
-                          return { ...current, disabledTools: [...disabled] };
-                        });
-                      },
+                      // ViscosityCode: no handler (remote sessions) lists the tools read-only.
+                      ...(props.onBuiltInToolEnabledChange
+                        ? {
+                            onToolEnabledChange: (tool: string, enabled: boolean) => {
+                              props.onBuiltInToolEnabledChange?.(server.id, tool, enabled);
+                              setToolList((current) => {
+                                if (!current) return current;
+                                const disabled = new Set(current.disabledTools);
+                                if (enabled) disabled.delete(tool);
+                                else disabled.add(tool);
+                                return { ...current, disabledTools: [...disabled] };
+                              });
+                            },
+                          }
+                        : {}),
                     })
                   }
                   {...(server.settingsLabel

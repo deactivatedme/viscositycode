@@ -385,6 +385,7 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
   },
 
   // Threads
+  // ViscosityCode: rows a remote session renders drop desktopOnly; section visibility gates them.
   {
     section: "threads",
     anchor: "threads.followUpBehavior",
@@ -406,7 +407,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Auto-archive done threads after`,
     description: msg`Threads marked done that have not been touched for this many days are archived automatically on app launch. Set to 0 to disable.`,
     keywords: "auto archive done complete days cleanup launch",
-    desktopOnly: true,
   },
   {
     section: "threads",
@@ -414,7 +414,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Mark done when the pull request merges`,
     description: msg`Worktree threads are marked done as soon as Poracode sees their pull request merge. Threads mid-turn wait until the turn finishes.`,
     keywords: "done pr pull request merged auto complete worktree sidebar",
-    desktopOnly: true,
   },
   {
     section: "threads",
@@ -422,7 +421,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Default thread removal`,
     description: msg`Action for the quick-remove button on sidebar threads.`,
     keywords: "default thread removal delete archive quick remove sidebar",
-    desktopOnly: true,
   },
   {
     section: "threads",
@@ -430,7 +428,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Confirm before deleting threads`,
     description: msg`Show a confirmation before permanently deleting a thread.`,
     keywords: "confirm delete thread worktree remove ask warning",
-    desktopOnly: true,
   },
   {
     section: "threads",
@@ -616,10 +613,11 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Skills`,
     description: msg`Manage shared skills across global and project scopes.`,
     keywords: "skills shared agents instructions import enable disable global project provider",
-    desktopOnly: true,
+    // ViscosityCode: not desktopOnly; section visibility gates it (the Tauri window shows Skills).
   },
 
   // MCP Servers
+  // ViscosityCode: not desktopOnly; section visibility gates them (the Tauri window shows MCP Servers).
   {
     section: "mcpServers",
     anchor: "mcpServers.manage",
@@ -627,7 +625,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     description: msg`Manage the MCP server configurations Poracode adds when starting supported agents. Workspace servers can be configured in each project's settings.`,
     keywords:
       "mcp model context protocol tools server stdio http sse workspace user built-in crossagent routing crossagents subagent delegate delegation guide instructions spawn agent model",
-    desktopOnly: true,
   },
   {
     section: "mcpServers",
@@ -635,7 +632,6 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     title: msg`Project MCP servers`,
     description: msg`Servers in a project's settings apply only to that project and override global servers with the same name. To move a global server, edit it and change its scope.`,
     keywords: "mcp project workspace scope per-project move override",
-    desktopOnly: true,
   },
 
   // Plugins

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type {
   AgentEnvVarAuthMethod,
   AgentOwnedAuthMethod,
@@ -163,8 +164,9 @@ export function findProjectForMachine(
   isLocalWindows: boolean,
   machineStatuses: readonly AgentStatus[] = [],
 ): Project | undefined {
-  if (machine.ref.host === "remote") {
-    const desktopId = machine.ref.desktopId;
+  // ViscosityCode: a remote client's local entries are its bridge host, so they take the host branch too.
+  const desktopId = machine.ref.host === "remote" ? machine.ref.desktopId : machine.desktopId;
+  if (desktopId !== undefined) {
     const remoteProjects = projects.filter(
       (project) => projectRemoteOwnerId(project) === desktopId,
     );

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -101,7 +102,36 @@ describe("native settings fixture", () => {
     delete response.settings.usage;
     delete response.settings.searchUseIgnoreFiles;
     delete response.settings.searchExclude;
+    // ViscosityCode: thread housekeeping keys are additive too.
+    delete response.settings.autoArchiveDoneAfterDays;
+    delete response.settings.autoMarkDoneOnPrMerge;
 
-    expect(responseSchema("settings-read").parse(response)).toBeTruthy();
+    const wire = responseSchema("settings-read").parse(response) as { settings: unknown };
+    const parsed = remoteSettingsSchema.parse(wire.settings);
+    expect(parsed).not.toHaveProperty("autoArchiveDoneAfterDays");
+    expect(parsed).not.toHaveProperty("autoMarkDoneOnPrMerge");
+  });
+
+  // ViscosityCode
+  it("carries thread housekeeping when present and keeps patches sparse", () => {
+    const wire = responseSchema("settings-read").parse(fixture.settingsResponse) as {
+      settings: unknown;
+    };
+    expect(remoteSettingsSchema.parse(wire.settings)).toMatchObject({
+      autoArchiveDoneAfterDays: 3,
+      autoMarkDoneOnPrMerge: true,
+    });
+
+    const unrelated = { titleGenFast: true };
+    for (const patch of [
+      requestSchema("settings-write").parse(unrelated),
+      remoteSettingsPatchSchema.parse(unrelated),
+    ]) {
+      expect(patch).not.toHaveProperty("autoArchiveDoneAfterDays");
+      expect(patch).not.toHaveProperty("autoMarkDoneOnPrMerge");
+    }
+    expect(remoteSettingsPatchSchema.parse({ autoMarkDoneOnPrMerge: false })).toEqual({
+      autoMarkDoneOnPrMerge: false,
+    });
   });
 });

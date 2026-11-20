@@ -174,6 +174,8 @@ export function SettingsSidebar(props: {
   };
 
   const { sectionGroups, isSectionVisible } = useSettingsNavigation();
+  // ViscosityCode: the host's own Tauri window shows the full Agents tree too.
+  const agentsTree = isSectionVisible("agents");
 
   // Desktop-only sections drop out of their group on remote sessions; a group
   // whose rows are all hidden renders nothing at all, header included.
@@ -244,7 +246,7 @@ export function SettingsSidebar(props: {
             {visibleGroups.map((group, groupIndex) => (
               <div key={group.id} className={groupIndex > 0 ? "space-y-0.5 pt-2" : "space-y-0.5"}>
                 {group.hasTree &&
-                  (remoteSession ? (
+                  (!agentsTree ? (
                     <SettingsNavButton
                       iconOnly
                       icon={<Bot className="size-4" />}
@@ -423,7 +425,7 @@ export function SettingsSidebar(props: {
                     {group.label}
                   </p>
                   {group.hasTree &&
-                    (remoteSession ? (
+                    (!agentsTree ? (
                       <SettingsNavButton
                         icon={<Bot className="size-4" />}
                         label={t`Models`}
