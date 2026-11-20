@@ -128,6 +128,10 @@ interface ThreadTrack {
   lastMessages: CanonicalContentBlock[][];
   /** A runtime `error` was classified for the current turn. */
   errorSeen: boolean;
+  /** A user message (or a failover's re-sent prompt) arrived since the last `turn.completed`. */
+  inputSinceTurnEnd: boolean;
+  /** The last turn finished or was stopped and no new work began: nothing to resume. */
+  idle: boolean;
 }
 
 interface FailoverChain {
@@ -181,6 +185,8 @@ export class AccountPoolFailoverService {
   private readonly terminalSuggested = new Set<string>();
   /** Error notifications held per thread until its failover settles (`holdErrorNotification`). */
   private readonly heldNotifications = new Map<string, Set<(publish: boolean) => void>>();
+  /** Expiry of tracks an errored thread keeps after its session exits (`observeThreadExited`). */
+  private readonly trackExpiries = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly runs = new Set<Promise<void>>();
   private disposed = false;
 
@@ -235,6 +241,7 @@ export class AccountPoolFailoverService {
       else this.chains.delete(threadId);
     }
     for (const release of [...this.settleWaiters.values()]) release();
+    this.clearTrackExpiries();
     this.tracks.clear();
     this.terminalSuggested.clear();
   }
@@ -243,6 +250,7 @@ export class AccountPoolFailoverService {
   dispose(): Promise<void> {
     this.disposed = true;
     for (const release of [...this.settleWaiters.values()]) release();
+    this.clearTrackExpiries();
     // Held notifications are released, never lost, when the owner shuts down.
     for (const threadId of [...this.heldNotifications.keys()]) {
       this.releaseHeldNotifications(threadId, "publish");
@@ -331,6 +339,7 @@ export class AccountPoolFailoverService {
       const thread = this.deps.getThread(threadId);
       if (!thread || thread.archived || thread.presentationMode !== "gui") return false;
       if (!resolveAccountPool(this.deps.getAccountPools(), thread.agentKind)) return false;
+      if (this.tracks.get(threadId)?.idle) return false;
       return !this.deps.canSwitchThread || this.deps.canSwitchThread(threadId);
     } catch (error) {
       this.report(error);
@@ -371,6 +380,10 @@ export class AccountPoolFailoverService {
         track.turnMessages = [];
         track.turnMessageIds = new Set();
         track.errorSeen = false;
+        track.idle = false;
+        // A turn with no input since the last one ended (a resumed session)
+        // must never inherit an earlier turn's prompt, whatever its outcome.
+        if (!track.inputSinceTurnEnd) track.lastMessages = [];
         return;
       }
       case "item.started": {
@@ -381,6 +394,8 @@ export class AccountPoolFailoverService {
         track.turnMessageIds.add(event.itemId);
         track.turnMessages.push(content);
         track.lastMessages = track.turnMessages;
+        track.inputSinceTurnEnd = true;
+        track.idle = false;
         return;
       }
       case "error": {
@@ -392,13 +407,21 @@ export class AccountPoolFailoverService {
       }
       case "turn.completed": {
         if (event.state === "failed") {
-          if (!this.track(event.threadId).errorSeen) {
-            this.maybeFailOver(event.threadId, undefined, undefined);
-          }
+          const track = this.track(event.threadId);
+          if (!track.errorSeen) this.maybeFailOver(event.threadId, undefined, undefined);
+          // Its prompt stays readable (`turnMessages`) for a late classification.
+          track.inputSinceTurnEnd = false;
           return;
         }
         // A turn that finished (or that the user stopped) ends the chain: the
         // next out-of-usage failure starts over with every account eligible.
+        // Its prompt is done too: a later failure (a resumed turn without user
+        // input, an idle error) must never re-send it.
+        const track = this.track(event.threadId);
+        track.turnMessages = [];
+        track.lastMessages = [];
+        track.inputSinceTurnEnd = false;
+        track.idle = true;
         const chain = this.chains.get(event.threadId);
         if (chain && !chain.inFlight) this.chains.delete(event.threadId);
         return;
@@ -419,6 +442,7 @@ export class AccountPoolFailoverService {
     track.status = status;
     if (status === "launching" || status === "working") {
       track.errorSeen = false;
+      track.idle = false;
       this.terminalSuggested.delete(threadId);
       return;
     }
@@ -455,9 +479,29 @@ export class AccountPoolFailoverService {
     if (this.chains.get(threadId)?.inFlight) return;
     this.chains.delete(threadId);
     this.terminalSuggested.delete(threadId);
-    // An errored thread keeps its last prompt: a failure can still be
-    // classified after its session closed. Anything else is released.
-    if (this.tracks.get(threadId)?.status !== "error") this.tracks.delete(threadId);
+    // An errored thread keeps its last prompt for a bounded time: a failure
+    // can still be classified after its session closed. Anything else is released.
+    const track = this.tracks.get(threadId);
+    if (track?.status === "error") this.expireTrack(threadId, track);
+    else this.tracks.delete(threadId);
+  }
+
+  private expireTrack(threadId: string, track: ThreadTrack): void {
+    clearTimeout(this.trackExpiries.get(threadId));
+    const timer = setTimeout(() => {
+      this.trackExpiries.delete(threadId);
+      if (this.tracks.get(threadId) !== track || track.status !== "error") return;
+      // A failover still running for this thread needs the prompt; check again later.
+      if (this.chains.get(threadId)?.inFlight) this.expireTrack(threadId, track);
+      else this.tracks.delete(threadId);
+    }, this.deps.errorNotificationHoldMs ?? DEFAULT_ERROR_NOTIFICATION_HOLD_MS);
+    timer.unref?.();
+    this.trackExpiries.set(threadId, timer);
+  }
+
+  private clearTrackExpiries(): void {
+    for (const timer of this.trackExpiries.values()) clearTimeout(timer);
+    this.trackExpiries.clear();
   }
 
   private track(threadId: string): ThreadTrack {
@@ -469,6 +513,8 @@ export class AccountPoolFailoverService {
         turnMessageIds: new Set(),
         lastMessages: [],
         errorSeen: false,
+        inputSinceTurnEnd: false,
+        idle: false,
       };
       this.tracks.set(threadId, track);
     }
@@ -486,8 +532,16 @@ export class AccountPoolFailoverService {
   ): void {
     const existing = this.chains.get(threadId);
     if (existing?.inFlight) return;
+    const turnSeq = this.tracks.get(threadId)?.turnSeq ?? 0;
     // A late failure of the turn that already failed over is not a new failure.
-    if (existing && existing.switchedAtTurnSeq === this.tracks.get(threadId)?.turnSeq) return;
+    if (existing && existing.switchedAtTurnSeq === turnSeq) return;
+    // A chain covers the failed turn and its re-sent turn only. A newer turn
+    // (after the re-sent one ended some other way) starts a new chain, so
+    // accounts that recovered since are eligible again.
+    const chain =
+      existing?.switchedAtTurnSeq !== undefined && turnSeq > existing.switchedAtTurnSeq + 1
+        ? undefined
+        : existing;
     const thread = this.deps.getThread(threadId);
     if (!thread || thread.archived) return;
     const pool = resolveAccountPool(this.deps.getAccountPools(), thread.agentKind);
@@ -496,19 +550,22 @@ export class AccountPoolFailoverService {
     if (classifyFailure(reason, this.failureAvailabilityOf(thread.agentKind, now)) !== "usage") {
       return;
     }
-    this.markExhausted(thread.agentKind, pool, now);
+    this.markExhausted(thread.agentKind, now);
     if (thread.presentationMode !== "gui") {
       this.suggestForTerminal(thread, pool);
       return;
     }
     if (this.deps.canSwitchThread && !this.deps.canSwitchThread(threadId)) return;
-
     const track = this.track(threadId);
-    const chain = existing ?? { tried: new Set<string>(), inFlight: false, cancelled: false };
-    chain.tried.add(thread.agentKind);
-    chain.inFlight = true;
-    chain.cancelled = false;
-    this.chains.set(threadId, chain);
+    // An idle thread's error interrupted no work: switching would start an
+    // unrequested turn. The mark above still steers other threads away.
+    if (track.idle) return;
+
+    const claimed = chain ?? { tried: new Set<string>(), inFlight: false, cancelled: false };
+    claimed.tried.add(thread.agentKind);
+    claimed.inFlight = true;
+    claimed.cancelled = false;
+    this.chains.set(threadId, claimed);
     const claim: FailoverClaim = {
       threadId,
       fromAgentKind: thread.agentKind,
@@ -517,7 +574,7 @@ export class AccountPoolFailoverService {
         track.turnMessages.length > 0 ? track.turnMessages : track.lastMessages,
       ),
       turnSeq: track.turnSeq,
-      chain,
+      chain: claimed,
       originalError: message ?? thread.errorMessage ?? FALLBACK_ERROR,
       settled: false,
     };
@@ -621,6 +678,9 @@ export class AccountPoolFailoverService {
     claim.chain.current = decision.to;
     delete claim.chain.switchingTo;
     claim.chain.switchedAtTurnSeq = claim.turnSeq;
+    // The re-sent prompt is the next turn's input, even if it echoes no user message.
+    const track = this.tracks.get(claim.threadId);
+    if (track) track.inputSinceTurnEnd = true;
     this.publish(
       switchedNotice({ threadId: claim.threadId, threadTitle: current.title, fromLabel, toLabel }),
     );
@@ -738,8 +798,12 @@ export class AccountPoolFailoverService {
     return failureAvailability(this.snapshots.get(usageId), this.exhaustedMarks.get(usageId), now);
   }
 
-  /** Remember an out-of-usage failure so other threads skip the account too. */
-  private markExhausted(agentKind: string, pool: ResolvedAccountPool, now: number): void {
+  /**
+   * Remember an out-of-usage failure so other threads skip the account too.
+   * The mark also classifies later failures (`failureAvailability`), so it is
+   * judged at the default 100% rule, never the pool's `switchAtPercent`.
+   */
+  private markExhausted(agentKind: string, now: number): void {
     for (const [usageId, mark] of this.exhaustedMarks) {
       if (mark.until <= now) this.exhaustedMarks.delete(usageId);
     }
@@ -747,7 +811,6 @@ export class AccountPoolFailoverService {
     const next = exhaustedMarkFor(
       this.snapshots.get(usageId),
       now,
-      pool.switchAtPercent,
       this.deps.exhaustedCooldownMs ?? DEFAULT_EXHAUSTED_COOLDOWN_MS,
     );
     const known = this.exhaustedMarks.get(usageId);

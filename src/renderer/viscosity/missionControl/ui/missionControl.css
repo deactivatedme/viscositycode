@@ -1,16 +1,17 @@
 /* ViscosityCode: Mission Control (center panel, Agents board, status bar item).
  * Scoped to html[data-vc-shell]; the compact/PWA layout never renders these
  * surfaces. Colours come from the --vc-* tokens; card states reuse the
- * agent-state colours of fx/agentState (data-vc-fx-state) and each card's
+ * shared agent-state colours (data-vc-fx-state) and each card's
  * edge is its agent's accent (data-vc-agent-kind → --vc-agent-accent). The
- * only animation reuses `vc-fx-dot-pulse` and pauses with the other effects.
+ * only animation reuses `vc-fx-dot-pulse` (agentActivity.css) and pauses
+ * while the window is in the background.
  */
 
 /* === Panel over the center split view ==================================== */
 html[data-vc-shell] .vc-mc {
   position: absolute;
   inset: 0;
-  /* Same layer as the Roundtable panel and the bot chat: above the panes' own
+  /* Same layer as the Roundtable panel: above the panes' own
      overlays and the inline editor panel (z-20) in the center body. */
   z-index: 21;
   display: flex;
@@ -21,7 +22,8 @@ html[data-vc-shell] .vc-mc {
     var(--vc-panel-bg) calc(var(--vc-panel-alpha) * 100%),
     transparent
   );
-  backdrop-filter: blur(var(--vc-panel-blur));
+  /* Same backdrop as the shell panels: none while blur is off or Lightweight. */
+  backdrop-filter: var(--vc-panel-backdrop, none);
   color: var(--vc-text);
 }
 
@@ -128,9 +130,7 @@ html[data-vc-shell] .vc-mc-card {
   border-radius: var(--vc-radius-lg);
   background: var(--vc-surface);
   outline: none;
-  transition:
-    border-color var(--vc-motion-base) var(--vc-ease-standard),
-    box-shadow var(--vc-motion-base) var(--vc-ease-standard);
+  transition: border-color var(--vc-motion-base) var(--vc-ease-standard);
 }
 
 /* The agent's accent edge. */
@@ -172,22 +172,15 @@ html[data-vc-shell] .vc-mc-card[data-vc-mc-state="done"] {
   --vc-mc-state: var(--vc-state-success);
 }
 
-html[data-vc-shell] .vc-mc-card:is([data-vc-mc-state="attention"], [data-vc-mc-state="error"]) {
-  border-color: color-mix(in oklab, var(--vc-mc-state) 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--vc-mc-state) 18%, transparent);
-}
-
-html[data-vc-shell] .vc-mc-card[data-vc-mc-state="working"] {
-  border-color: color-mix(in oklab, var(--vc-mc-state) 35%, var(--vc-border-subtle));
-}
-
+/* A live state tints the hairline border; no glow, so the focus ring above
+   stays the card's only box-shadow. */
 html[data-vc-shell]
-  .vc-mc-card:is([data-vc-mc-state="attention"], [data-vc-mc-state="error"]):has(
-    .vc-mc-card__open:focus-visible
+  .vc-mc-card:is(
+    [data-vc-mc-state="working"],
+    [data-vc-mc-state="attention"],
+    [data-vc-mc-state="error"]
   ) {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--vc-mc-state) 18%, transparent),
-    0 0 0 3px var(--vc-focus-ring);
+  border-color: color-mix(in oklab, var(--vc-mc-state) 40%, var(--vc-border-subtle));
 }
 
 html[data-vc-shell] .vc-mc-card__head {
@@ -345,6 +338,12 @@ html[data-vc-shell] .vc-mc-card__actions {
 /* === Motion: pause with the other effects, drop it for reduced motion ==== */
 html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-mc-card__dot {
   animation-play-state: paused;
+}
+
+/* Lightweight mode: the dot keeps its colour and holds still (!important: the
+   pulse rule's state selector is more specific). */
+html[data-vc-shell][data-vc-lightweight] .vc-mc-card__dot {
+  animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

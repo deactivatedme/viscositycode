@@ -67,7 +67,11 @@ export const DEFAULT_SWITCH_AT_PERCENT = 100;
 export type MemberAvailability =
   | { kind: "available"; headroomPercent: number }
   | { kind: "exhausted"; until?: number }
-  | { kind: "unknown" };
+  /**
+   * `transient`: the last poll failed (`rate-limited`, `error`); usage is readable otherwise.
+   * `headroomPercent`: headroom by the last good reading the snapshot kept, when it has one.
+   */
+  | { kind: "unknown"; transient?: true; headroomPercent?: number };
 
 /**
  * True when a snapshot's credit balance is its meter and has run out. A
@@ -102,6 +106,21 @@ export function memberAvailability(
 ): MemberAvailability {
   if (!snapshot) return { kind: "unknown" };
   if (snapshot.status === "quota-hit") return { kind: "exhausted" };
+  if (snapshot.status === "rate-limited" || snapshot.status === "error") {
+    // The usage service keeps the last good windows on a failed poll; rank by them.
+    const live = snapshot.windows.filter((w) => w.resetsAt === undefined || w.resetsAt > now);
+    // A kept credit-only reading with no balance left: no headroom (still not "exhausted").
+    if (creditBalanceExhausted(snapshot)) {
+      return { kind: "unknown", transient: true, headroomPercent: 0 };
+    }
+    if (live.length === 0) return { kind: "unknown", transient: true };
+    const worst = Math.max(...live.map((w) => w.usedPercent));
+    return {
+      kind: "unknown",
+      transient: true,
+      headroomPercent: Math.max(0, switchAtPercent - worst),
+    };
+  }
   if (snapshot.status !== "ok") return { kind: "unknown" };
   if (creditBalanceExhausted(snapshot)) return { kind: "exhausted" };
   let worst = 0;
@@ -138,11 +157,19 @@ export interface PoolMemberState {
   usageAccountId?: string;
 }
 
+/** Headroom assumed for an account whose usage poll just failed (neutral, not optimistic). */
+const UNKNOWN_HEADROOM_PERCENT = 50;
+/** A failed poll whose last reading had no headroom left: after unreadable usage, before exhausted. */
+const TRANSIENT_OUT_SCORE = 250;
+
 /**
  * Pick the account a NEW thread should start on: the ready member with the
- * most headroom; ties keep the owner's order; unknown usage ranks after any
- * account with known headroom but before exhausted ones. Returns undefined
- * when no member is ready.
+ * most headroom; ties keep the owner's order. A failed poll counts with the
+ * headroom of its last good reading, or a neutral 50% without one (like Smart
+ * start), so a polling hiccup on one account never moves new work to an
+ * account that is nearly out. Usage that cannot be
+ * read (unsupported, not polled yet) ranks after any known headroom, then a
+ * failed poll whose last reading was out; exhausted ranks last. Returns undefined when no member is ready.
  */
 export function bestPoolMember(members: readonly PoolMemberState[]): string | undefined {
   let best: { agentKind: string; score: number; index: number } | undefined;
@@ -150,7 +177,15 @@ export function bestPoolMember(members: readonly PoolMemberState[]): string | un
     if (!member.ready) return;
     const a = member.availability;
     const score =
-      a.kind === "available" ? 1000 + a.headroomPercent : a.kind === "unknown" ? 500 : 0;
+      a.kind === "available"
+        ? 1000 + a.headroomPercent
+        : a.kind === "unknown"
+          ? a.transient
+            ? a.headroomPercent === 0
+              ? TRANSIENT_OUT_SCORE
+              : 1000 + (a.headroomPercent ?? UNKNOWN_HEADROOM_PERCENT)
+            : 500
+          : 0;
     if (!best || score > best.score || (score === best.score && index < best.index)) {
       best = { agentKind: member.agentKind, score, index };
     }

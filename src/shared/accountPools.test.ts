@@ -127,6 +127,104 @@ describe("pool choices", () => {
     expect(bestPoolMember([members[3]!])).toBeUndefined();
   });
 
+  it("prefers an account whose poll just failed over one that is nearly out", () => {
+    const unknown: PoolMemberState = {
+      agentKind: "claude",
+      ready: true,
+      availability: { kind: "unknown", transient: true },
+    };
+    const nearlyOut: PoolMemberState = {
+      agentKind: "claude:work",
+      ready: true,
+      availability: { kind: "available", headroomPercent: 1 },
+    };
+    const roomy: PoolMemberState = {
+      ...nearlyOut,
+      availability: { kind: "available", headroomPercent: 60 },
+    };
+    expect(bestPoolMember([unknown, nearlyOut])).toBe("claude");
+    expect(bestPoolMember([nearlyOut, unknown])).toBe("claude");
+    expect(bestPoolMember([unknown, roomy])).toBe("claude:work");
+  });
+
+  it("ranks a failed poll by its last good reading when the snapshot kept one", () => {
+    const stale: PoolMemberState = {
+      agentKind: "claude",
+      ready: true,
+      availability: memberAvailability(
+        snapshot({
+          status: "rate-limited",
+          windows: [{ id: "5h", label: "5h", usedPercent: 99, resetsAt: NOW + 60_000 }],
+        }),
+        NOW,
+      ),
+    };
+    const roomy: PoolMemberState = {
+      agentKind: "claude:work",
+      ready: true,
+      availability: { kind: "available", headroomPercent: 40 },
+    };
+    expect(stale.availability).toEqual({ kind: "unknown", transient: true, headroomPercent: 1 });
+    expect(bestPoolMember([stale, roomy])).toBe("claude:work");
+  });
+
+  it("ranks a failed poll whose last reading was out after unreadable usage", () => {
+    const creditOnlyOut: PoolMemberState = {
+      agentKind: "claude",
+      ready: true,
+      availability: memberAvailability(snapshot({ status: "error", credits: { balance: 0 } }), NOW),
+    };
+    const windowOut: PoolMemberState = {
+      agentKind: "claude:old",
+      ready: true,
+      availability: memberAvailability(
+        snapshot({
+          status: "rate-limited",
+          windows: [{ id: "5h", label: "5h", usedPercent: 100, resetsAt: NOW + 60_000 }],
+        }),
+        NOW,
+      ),
+    };
+    const roomy: PoolMemberState = {
+      agentKind: "claude:work",
+      ready: true,
+      availability: { kind: "available", headroomPercent: 40 },
+    };
+    const unsupported: PoolMemberState = {
+      agentKind: "claude:spare",
+      ready: true,
+      availability: { kind: "unknown" },
+    };
+    // Still "unknown", so failover never treats a polling hiccup as exhaustion.
+    expect(creditOnlyOut.availability).toEqual({
+      kind: "unknown",
+      transient: true,
+      headroomPercent: 0,
+    });
+    expect(bestPoolMember([creditOnlyOut, roomy])).toBe("claude:work");
+    expect(bestPoolMember([creditOnlyOut, windowOut, unsupported])).toBe("claude:spare");
+    expect(bestPoolMember([creditOnlyOut, windowOut])).toBe("claude");
+  });
+
+  it("ranks an account whose usage cannot be read after any known headroom", () => {
+    const unsupported: PoolMemberState = {
+      agentKind: "claude",
+      ready: true,
+      availability: memberAvailability(snapshot({ status: "unsupported" }), NOW),
+    };
+    const known: PoolMemberState = {
+      agentKind: "claude:work",
+      ready: true,
+      availability: { kind: "available", headroomPercent: 40 },
+    };
+    expect(unsupported.availability).toEqual({ kind: "unknown" });
+    expect(bestPoolMember([unsupported, known])).toBe("claude:work");
+    expect(memberAvailability(snapshot({ status: "rate-limited" }), NOW)).toEqual({
+      kind: "unknown",
+      transient: true,
+    });
+  });
+
   it("fails over in the owner's order, skipping exhausted, not-ready and tried accounts", () => {
     expect(nextPoolMember(members, "codex")).toBe("codex:work");
     expect(nextPoolMember(members, "codex", new Set(["codex:work"]))).toBe("codex:home");

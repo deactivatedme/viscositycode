@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "@/renderer/state/appStore";
 import { type FileEditorRootContext, useFileEditorStore } from "@/renderer/state/fileEditorStore";
-import { useBotChatPanelStore } from "@/renderer/viscosity/bots/botChatPanelStore";
 import { useRoundtableViewStore } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { acquireViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
 import {
@@ -44,7 +43,6 @@ beforeEach(() => {
   localStorage.removeItem(MISSION_CONTROL_PREFS_KEY);
   useMissionControlViewStore.setState({ shown: false, tabId: null, filter: "all" });
   useRoundtableViewStore.setState({ openSessionId: null, shown: false, setup: null });
-  useBotChatPanelStore.setState({ openBotId: null });
   useFileEditorStore.setState({ rootContext: null, overlayMode: null });
   useAppStore.setState({ view: { kind: "thread", panes: ["a"] }, pendingActiveThreadId: null });
   releaseShell = acquireViscosityShellFlag(document.documentElement);
@@ -110,13 +108,12 @@ describe("mission control preferences", () => {
 });
 
 describe("mission control view", () => {
-  it("opens in front of the editor, a Roundtable and a bot chat", () => {
+  it("opens in front of the editor and a Roundtable", () => {
     useFileEditorStore.setState({
       rootContext: { projectId: "p1" } as unknown as FileEditorRootContext,
       overlayMode: "modal",
     });
     useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true });
-    useBotChatPanelStore.setState({ openBotId: "bot1" });
 
     openMissionControl({ filter: "needs", tabId: "agents" });
 
@@ -128,7 +125,6 @@ describe("mission control view", () => {
     expect(useFileEditorStore.getState().overlayMode).toBeNull();
     // The Roundtable keeps its tab; only its panel steps aside.
     expect(useRoundtableViewStore.getState()).toMatchObject({ openSessionId: "rt1", shown: false });
-    expect(useBotChatPanelStore.getState().openBotId).toBeNull();
   });
 
   it("toggles and closes", () => {
@@ -149,7 +145,7 @@ describe("mission control view", () => {
     expect(toast.info).toHaveBeenCalledWith("Mission Control is available in the desktop app.");
   });
 
-  it("steps aside when the user goes to a thread, the editor, a Roundtable or a bot", () => {
+  it("steps aside when the user goes to a thread, the editor or a Roundtable", () => {
     stopSync = startMissionControlViewSync();
 
     openMissionControl();
@@ -160,16 +156,18 @@ describe("mission control view", () => {
     useAppStore.setState({ view: { kind: "home" } });
     expect(useMissionControlViewStore.getState().shown).toBe(false);
 
+    // A new-thread draft while already on a draft keeps the view kind but moves the visit.
+    useAppStore.setState({ view: { kind: "draft", projectId: "p1" } as never });
+    openMissionControl();
+    useAppStore.setState({ draftVisit: useAppStore.getState().draftVisit + 1 });
+    expect(useMissionControlViewStore.getState().shown).toBe(false);
+
     openMissionControl();
     useFileEditorStore.setState({ overlayMode: "modal" });
     expect(useMissionControlViewStore.getState().shown).toBe(false);
 
     openMissionControl();
     useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true });
-    expect(useMissionControlViewStore.getState().shown).toBe(false);
-
-    openMissionControl();
-    useBotChatPanelStore.setState({ openBotId: "bot1" });
     expect(useMissionControlViewStore.getState().shown).toBe(false);
   });
 

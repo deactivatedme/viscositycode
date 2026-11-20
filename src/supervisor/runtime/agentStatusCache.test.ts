@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { STATUS_CACHE_VERSION } from "@/shared/agentStatusCache";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -308,7 +309,7 @@ describe("agent status cache", () => {
     const service = runtime.agentStatusService as unknown as {
       readCachedStatuses(distros: string[]): unknown;
     };
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(service.readCachedStatuses([])).toEqual({ windows: [], wsl: [], fromCache: false });
   });
   it("invalidates v32 snapshots so connected accounts and credentials are re-probed", async () => {
@@ -330,7 +331,7 @@ describe("agent status cache", () => {
     const service = runtime.agentStatusService as unknown as {
       readCachedStatuses(distros: string[]): unknown;
     };
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(service.readCachedStatuses([])).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -394,7 +395,7 @@ describe("agent status cache", () => {
     const service = runtime.agentStatusService as unknown as {
       readCachedStatuses(distros: string[]): unknown;
     };
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(service.readCachedStatuses([])).toEqual({ windows: [], wsl: [], fromCache: false });
   });
   it("invalidates v11 caches produced before successful ACP sessions established auth", async () => {
@@ -749,7 +750,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses(["Ubuntu"]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -800,7 +801,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses(["Ubuntu"]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -840,7 +841,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses([]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -881,7 +882,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses([]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -919,7 +920,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses([]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -962,7 +963,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses([]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -1001,7 +1002,7 @@ describe("agent status cache", () => {
       }
     ).readCachedStatuses([]);
 
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -1062,7 +1063,7 @@ describe("agent status cache", () => {
         readCachedStatuses: (distros: readonly string[]) => unknown;
       }
     ).readCachedStatuses(["Ubuntu"]);
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -1102,7 +1103,7 @@ describe("agent status cache", () => {
         readCachedStatuses: (distros: readonly string[]) => unknown;
       }
     ).readCachedStatuses([]);
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -1133,7 +1134,7 @@ describe("agent status cache", () => {
         readCachedStatuses: (distros: readonly string[]) => unknown;
       }
     ).readCachedStatuses([]);
-    expect(STATUS_CACHE_VERSION).toBe(81);
+    expect(STATUS_CACHE_VERSION).toBe(82);
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
@@ -1172,9 +1173,15 @@ describe("agent status cache", () => {
     expect(cached).toEqual({ windows: [], wsl: [], fromCache: false });
   });
 
-  it.each(["gemini", "gemini:work"])(
-    "invalidates v80 %s observations across native and WSL while retaining unaffected providers",
-    async (kind) => {
+  // ViscosityCode: v81 Claude rows hold the stale static model list and plan label.
+  it.each([
+    ["gemini", 80],
+    ["gemini:work", 80],
+    ["claude", 81],
+    ["claude:work", 81],
+  ] as const)(
+    "invalidates %s observations cached at v%s across native and WSL while retaining unaffected providers",
+    async (kind, version) => {
       const dataDir = makeTempDir();
       process.env.PORACODE_DATA_DIR = dataDir;
       const { cacheDir, statusCachePath } = resolvePoracodePaths(dataDir);
@@ -1194,15 +1201,15 @@ describe("agent status cache", () => {
       };
       const staleNative = {
         kind,
-        label: "Gemini",
+        label: kind,
         installed: true,
         authState: "missing",
         capabilities: baseCaps,
         envKind: "windows",
       };
       const retainedNative = {
-        kind: "claude",
-        label: "Claude Code",
+        kind: "codex",
+        label: "Codex",
         installed: true,
         authState: "authenticated",
         capabilities: baseCaps,
@@ -1210,7 +1217,7 @@ describe("agent status cache", () => {
       };
       const staleWsl = {
         kind,
-        label: "Gemini",
+        label: kind,
         installed: true,
         authState: "missing",
         capabilities: baseCaps,
@@ -1218,8 +1225,8 @@ describe("agent status cache", () => {
         envDistro: "Ubuntu",
       };
       const retainedWsl = {
-        kind: "claude",
-        label: "Claude Code",
+        kind: "codex",
+        label: "Codex",
         installed: true,
         authState: "authenticated",
         capabilities: baseCaps,
@@ -1229,7 +1236,7 @@ describe("agent status cache", () => {
       writeFileSync(
         statusCachePath,
         JSON.stringify({
-          version: 80,
+          version,
           windows: [staleNative, retainedNative],
           wsl: [staleWsl, retainedWsl],
         }),
@@ -1246,10 +1253,10 @@ describe("agent status cache", () => {
         }
       ).readCachedStatuses(["Ubuntu"]);
 
-      expect(STATUS_CACHE_VERSION).toBe(81);
+      expect(STATUS_CACHE_VERSION).toBe(82);
       expect(cached.fromCache).toBe(false);
-      expect(cached.windows.map((status) => status.kind)).toEqual(["claude"]);
-      expect(cached.wsl.map((status) => status.kind)).toEqual(["claude"]);
+      expect(cached.windows.map((status) => status.kind)).toEqual(["codex"]);
+      expect(cached.wsl.map((status) => status.kind)).toEqual(["codex"]);
     },
   );
 

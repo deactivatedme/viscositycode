@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { isAgentStatusCacheEntryCompatible } from "./agentStatusCacheRegistry";
 import {
@@ -10,7 +11,7 @@ import {
 } from "./contracts/agent";
 
 // The supervisor, passive owner inventory, and renderer migration share this
-// codec. v67-v81 have compatible shapes; provider-owned policies invalidate only
+// codec. v67-v82 have compatible shapes; provider-owned policies invalidate only
 // changed derivations. Older/future generations still refuse in full. v71 adds
 // the optional workflow-mode capability fields; only Claude rows are re-probed.
 // v72 refreshes Pi models from the user's scoped settings.
@@ -28,7 +29,10 @@ import {
 // v81 re-probes Gemini after preserving probe env/cwd, macOS Keychain API-key detection, and profile file storage isolation.
 // Provider-only changes advance the producer and provider policy together;
 // incompatible shared changes also advance the minimum compatible generation.
-export const STATUS_CACHE_VERSION = 81;
+// ViscosityCode: v82 re-probes Claude (and its profiles) so rows saved from the
+// static fallback after a timed-out fast-mode turn pick up SDK-discovered models
+// (Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5) and the Ultra/Max plan label.
+export const STATUS_CACHE_VERSION = 82;
 const MINIMUM_COMPATIBLE_STATUS_CACHE_VERSION = 67;
 
 export interface AgentStatusCacheSnapshot {

@@ -3,17 +3,13 @@
  * Poracode). Every input is state the window already holds and that changes
  * on status changes, never on streaming text: thread rows (host-derived
  * status and attention), saved Roundtable sessions (turn status lives there;
- * live turn text has its own store), bots and their API chats (replies land
- * once finished; the streaming text has its own channel).
+ * live turn text has its own store).
  *
- * Roundtable sessions and API bot chats are read straight from their stores,
- * read-only: their public APIs expose summaries and single sessions, and the
+ * Roundtable sessions are read straight from their store, read-only: their public APIs expose summaries and single sessions, and the
  * board needs every session's turns and participant threads at once.
  */
 import { useAppStore } from "@/renderer/state/appStore";
 import { useMinuteClock } from "@/renderer/viscosity/accountPools/minuteClock";
-import { useBots } from "@/renderer/viscosity/bots/api";
-import { useBotChatsStore } from "@/renderer/viscosity/bots/botApiChat";
 import { useRoundtableStore } from "@/renderer/viscosity/roundtable/roundtableStore";
 import {
   buildMissionCards,
@@ -33,14 +29,9 @@ function useMissionSessions(): MissionSession[] {
 export function useMissionCards(): MissionCard[] {
   const threads = useAppStore((state) => state.threads);
   const sessions = useMissionSessions();
-  const bots = useBots();
-  const apiChats = useBotChatsStore((state) => state.chats);
-  const runningApiChats = useBotChatsStore((state) => state.running);
   // Finished cards leave after the recent window; a minute is precise enough.
   const now = useMinuteClock();
-  return sortMissionCards(
-    buildMissionCards({ threads, sessions, bots, apiChats, runningApiChats, now }),
-  );
+  return sortMissionCards(buildMissionCards({ threads, sessions, now }));
 }
 
 type SessionsById = Readonly<Record<string, MissionSession>>;
@@ -49,28 +40,19 @@ let needsYouCache:
   | {
       threads: MissionCountInputs["threads"];
       sessions: SessionsById;
-      bots: MissionCountInputs["bots"];
       count: number;
     }
   | undefined;
 
-/** `countNeedsYou`, memoized on the identity of its three sources. */
+/** `countNeedsYou`, memoized on the identity of its two sources. */
 export function getNeedsYouCount(
   threads: MissionCountInputs["threads"],
   sessions: SessionsById,
-  bots: MissionCountInputs["bots"],
 ): number {
   const cached = needsYouCache;
-  if (
-    cached &&
-    cached.threads === threads &&
-    cached.sessions === sessions &&
-    cached.bots === bots
-  ) {
-    return cached.count;
-  }
-  const count = countNeedsYou({ threads, sessions: Object.values(sessions), bots });
-  needsYouCache = { threads, sessions, bots, count };
+  if (cached && cached.threads === threads && cached.sessions === sessions) return cached.count;
+  const count = countNeedsYou({ threads, sessions: Object.values(sessions) });
+  needsYouCache = { threads, sessions, count };
   return count;
 }
 
@@ -80,6 +62,5 @@ export function getNeedsYouCount(
  */
 export function useNeedsYouCount(): number {
   const sessions = useRoundtableStore((state) => state.sessions);
-  const bots = useBots();
-  return useAppStore((state) => getNeedsYouCount(state.threads, sessions, bots));
+  return useAppStore((state) => getNeedsYouCount(state.threads, sessions));
 }

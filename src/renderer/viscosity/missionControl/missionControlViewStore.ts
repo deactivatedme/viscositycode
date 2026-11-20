@@ -5,7 +5,7 @@
  * `shown` is a view state of this window only (never host state, never
  * persisted). The panel opens only on an explicit user action (activity bar,
  * palette, status bar) and steps aside as soon as the user goes elsewhere: a
- * thread, another center view, the inline editor, a Roundtable or a bot chat.
+ * thread, another center view, the inline editor or a Roundtable.
  * Agent activity never brings it forward.
  *
  * The tab and filter are client view preferences in localStorage, read and
@@ -17,10 +17,6 @@ import { create } from "zustand";
 import { i18n } from "@/renderer/i18n/i18n";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useFileEditorStore } from "@/renderer/state/fileEditorStore";
-import {
-  closeBotChatPanel,
-  useBotChatPanelStore,
-} from "@/renderer/viscosity/bots/botChatPanelStore";
 import {
   hideRoundtablePanel,
   useRoundtableViewStore,
@@ -123,8 +119,8 @@ export function isMissionControlShown(): boolean {
 }
 
 /**
- * Show the panel over the split view, in front of the inline editor, an open
- * Roundtable and a bot chat (their tabs/state stay). User actions only.
+ * Show the panel over the split view, in front of the inline editor and an
+ * open Roundtable (their tabs/state stay). User actions only.
  * Outside the desktop shell it says where the panel lives instead.
  */
 export function openMissionControl(options?: { filter?: MissionFilter; tabId?: string }): void {
@@ -135,7 +131,6 @@ export function openMissionControl(options?: { filter?: MissionFilter; tabId?: s
   const editor = useFileEditorStore.getState();
   if (editor.overlayMode === "modal") editor.setOverlayMode(null);
   hideRoundtablePanel();
-  closeBotChatPanel();
   if (options?.filter) setMissionControlFilter(options.filter);
   if (options?.tabId) setMissionControlTab(options.tabId);
   if (!useMissionControlViewStore.getState().shown) {
@@ -158,7 +153,7 @@ export function toggleMissionControl(): void {
 /**
  * Hide the panel when the user navigates elsewhere: opening a thread (any
  * `openThread` marks the pending active thread first), switching the center
- * view, showing the inline editor, a Roundtable or a bot chat. Installed
+ * view, showing the inline editor or a Roundtable. Installed
  * outside React by the center host; returns the unsubscribe.
  */
 export function startMissionControlViewSync(): () => void {
@@ -169,18 +164,21 @@ export function startMissionControlViewSync(): () => void {
     const openedThread =
       state.pendingActiveThreadId !== null &&
       state.pendingActiveThreadId !== previous.pendingActiveThreadId;
-    if (openedThread || state.view.kind !== previous.view.kind) closeMissionControl();
+    // A new-thread draft (Cmd+N, the sidebar's New thread) moves `draftVisit` even when the view kind stays.
+    if (
+      openedThread ||
+      state.draftVisit !== previous.draftVisit ||
+      state.view.kind !== previous.view.kind
+    ) {
+      closeMissionControl();
+    }
   });
   const unsubscribeRoundtable = useRoundtableViewStore.subscribe((state, previous) => {
     if (state.shown && !previous.shown) closeMissionControl();
-  });
-  const unsubscribeBot = useBotChatPanelStore.subscribe((state, previous) => {
-    if (state.openBotId !== null && state.openBotId !== previous.openBotId) closeMissionControl();
   });
   return () => {
     unsubscribeEditor();
     unsubscribeApp();
     unsubscribeRoundtable();
-    unsubscribeBot();
   };
 }

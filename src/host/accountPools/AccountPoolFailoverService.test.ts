@@ -17,6 +17,7 @@ import {
   type AccountFailoverOutcome,
   type AccountPoolFailoverDeps,
 } from "./AccountPoolFailoverService";
+import { FAILOVER_CONTINUE_PROMPT } from "./failoverPolicy";
 
 const NOW = 1_800_000_000_000;
 const PROJECT: Project = {
@@ -735,5 +736,125 @@ describe("AccountPoolFailoverService held error notifications", () => {
     h.emit(state("error", "thread-1", "codex"));
     void h.service.dispose();
     await expect(held).resolves.toBe(true);
+  });
+});
+
+// ViscosityCode: prompt scope, chain lifetime and retained-track regressions.
+function completeTurn(h: Harness, turnId: string): void {
+  h.emit(runtime({ type: "turn.completed", threadId: "thread-1", turnId, state: "completed" }));
+  h.emit(state("idle"));
+}
+
+describe("AccountPoolFailoverService prompt scope and chain lifetime", () => {
+  it("never re-sends a completed turn's prompt from a resumed turn without user input", async () => {
+    const h = makeHarness();
+    startTurn(h, "turn-1", "Run the migration and push");
+    completeTurn(h, "turn-1");
+    // A background task resumes the session with no user message.
+    h.emit(runtime({ type: "turn.started", threadId: "thread-1", turnId: "turn-2" }));
+    h.emit(state("working"));
+    failTurn(h, "turn-2", "usage_limited");
+    await settle(h, 1);
+    expect(h.switches[0]?.prompt).toBe(FAILOVER_CONTINUE_PROMPT);
+  });
+
+  it("never re-sends a non-usage failed turn's prompt from a later turn without user input", async () => {
+    const h = makeHarness();
+    startTurn(h, "turn-1", "Deploy");
+    failTurnWithoutReason(h, "turn-1");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(h.switches).toHaveLength(0);
+    // A background task resumes the session with no user message.
+    h.emit(runtime({ type: "turn.started", threadId: "thread-1", turnId: "turn-2" }));
+    h.emit(state("working"));
+    failTurn(h, "turn-2", "usage_limited");
+    await settle(h, 1);
+    expect(h.switches[0]?.prompt).toBe(FAILOVER_CONTINUE_PROMPT);
+  });
+
+  it("never starts an unrequested turn from an idle error", async () => {
+    const h = makeHarness();
+    startTurn(h, "turn-1", "Run the migration and push");
+    completeTurn(h, "turn-1");
+    h.emit({ type: "provider-usage", snapshot: exhausted("codex", NOW + 60_000) });
+    expect(h.service.mayFailOver("thread-1")).toBe(false);
+    h.emit(state("error"));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(h.switches).toHaveLength(0);
+    expect(h.pending).toEqual([]);
+
+    // The next prompt the owner sends still fails over, with that prompt.
+    startTurn(h, "turn-2", "Try again");
+    failTurn(h, "turn-2", "usage_limited");
+    await settle(h, 1);
+    expect(h.switches[0]?.prompt).toBe("Try again");
+  });
+
+  it("marks an out-of-usage account at 100%, not the pool's earlier switch threshold", async () => {
+    let clock = NOW;
+    const h = makeHarness({ overrides: { now: () => clock } });
+    h.pools.codex = { ...h.pools.codex!, switchAtPercent: 90 };
+    h.emit({
+      type: "provider-usage",
+      snapshot: {
+        providerId: "codex",
+        status: "ok",
+        fetchedAt: NOW,
+        windows: [
+          { id: "5h", label: "5h", usedPercent: 100, resetsAt: NOW + 60_000 },
+          { id: "week", label: "Week", usedPercent: 92, resetsAt: NOW + 6 * 86_400_000 },
+        ],
+      },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await settle(h, 1);
+    startTurn(h, "turn-2", "Ship it");
+    completeTurn(h, "turn-2");
+
+    // The 5-hour window reset; the owner moves the thread back by hand.
+    clock = NOW + 120_000;
+    h.threads.set("thread-1", { ...h.threads.get("thread-1")!, agentKind: "codex" });
+    h.emit(state("working", "thread-1", "codex"));
+    startTurn(h, "turn-3", "Something else");
+    failTurnWithoutReason(h, "turn-3");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(h.switches).toHaveLength(1);
+    expect(h.pending).toEqual(["thread-1"]);
+  });
+
+  it("starts a new chain when a newer turn fails after a non-usage failure", async () => {
+    const h = makeHarness({
+      members: ["codex", "codex:work"],
+      overrides: { exhaustedCooldownMs: 0 },
+    });
+    startTurn(h, "turn-1", "Ship it");
+    failTurn(h, "turn-1", "usage_limited");
+    await settle(h, 1);
+    // The re-sent turn on codex:work fails for an unrelated reason.
+    startTurn(h, "turn-2", "Ship it");
+    failTurnWithoutReason(h, "turn-2");
+    // Later, after codex recovered, a new prompt on codex:work runs out.
+    startTurn(h, "turn-3", "Next task");
+    failTurn(h, "turn-3", "usage_limited");
+    await settle(h, 2);
+    expect(h.switches.map((payload) => [payload.agentKind, payload.prompt])).toEqual([
+      ["codex:work", "Ship it"],
+      ["codex", "Next task"],
+    ]);
+  });
+
+  it("releases an errored thread's prompt a bounded time after its session exits", async () => {
+    const h = makeHarness({ overrides: { errorNotificationHoldMs: 20 } });
+    startTurn(h, "turn-1", "Secret pasted text");
+    failTurnWithoutReason(h, "turn-1");
+    h.emit({ type: "thread-exited", threadId: "thread-1", exitCode: null });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    // A late out-of-usage classification no longer has the old prompt.
+    h.emit(
+      runtime({ type: "error", threadId: "thread-1", message: "limit", reason: "usage_limited" }),
+    );
+    await settle(h, 1);
+    expect(h.switches[0]?.prompt).toBe(FAILOVER_CONTINUE_PROMPT);
   });
 });

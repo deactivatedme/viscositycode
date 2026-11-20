@@ -13,7 +13,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { assistantDisplayText } from "@/shared/assistantMessageText";
-import { TOOL_ITEM_TYPES } from "@/renderer/fx/agentState/derive";
+import { TOOL_ITEM_TYPES } from "@/renderer/viscosity/agentActivity/derive";
 import { useAppStore } from "@/renderer/state/appStore";
 import type { RuntimeChatItem } from "@/renderer/state/slices/runtimeChatItem";
 

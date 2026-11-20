@@ -3,7 +3,9 @@
  *
  * Turns the managed host's agent statuses, profiles, account pools and usage
  * snapshots into one row per provider with nested rows per account, plus the
- * "Who has room right now" ranking. Decisions come from the shared account
+ * "Who has room right now" ranking. Only enabled accounts whose usage is set
+ * up are listed (`isAccountShown`, the shared usage-visibility rule); Settings
+ * → Agents and → Usage are where the others are turned on. Decisions come from the shared account
  * pool core (`memberAvailability`, the rule the host failover policy uses),
  * which counts a credit balance only for a credit-only account, so a zero
  * balance the usage panel hides never reads as "out of usage".
@@ -14,6 +16,7 @@
 import {
   DEFAULT_SWITCH_AT_PERCENT,
   memberAvailability,
+  MIN_POOL_MEMBERS_IN_USE,
   type AccountPools,
   type MemberAvailability,
 } from "@/shared/accountPools";
@@ -26,6 +29,7 @@ import {
   type UsageSnapshot,
 } from "@/shared/contracts";
 import { hasDisplayableCredits } from "@/renderer/components/providers/usageFormat";
+import { isUsageProviderShown } from "@/renderer/components/providers/usageProviders";
 import {
   enabledPoolMembers,
   poolUsageTone,
@@ -72,6 +76,10 @@ export interface SubscriptionAccount {
   percentLeft: number | undefined;
   tone: PoolUsageTone;
   pool: SubscriptionPoolMembership | undefined;
+  /** Owner-written reset text per usage window id (pretend entries only). */
+  resetTexts?: Readonly<Record<string, string>>;
+  /** Agent kind whose icon and accent the row borrows, when not its own kind (pretend entries). */
+  styleKind?: string;
 }
 
 export interface SubscriptionProvider {
@@ -83,6 +91,10 @@ export interface SubscriptionProvider {
   supportsPool: boolean;
   /** Present while the provider's pool is on with at least two members. */
   pool: { size: number; switchAtPercent: number } | undefined;
+  /** Set on a device-local pretend entry (display only, see pretendSubscriptions.ts). */
+  pretendId?: string;
+  /** Agent kind whose icon and accent the provider row borrows, when not its own id. */
+  styleKind?: string;
 }
 
 export interface SubscriptionsInput {
@@ -105,6 +117,8 @@ export interface SubscriptionsInput {
   /** Sort key for providers (lower first); ties sort by label. */
   providerRank: (providerId: string) => number;
   now: number;
+  /** Account kinds listed even without usage (the owner's Customize overrides); disabled ones stay hidden. */
+  keepKinds?: ReadonlySet<string>;
 }
 
 /** Provider row an agent kind belongs to: a profile's driver, else the kind itself. */
@@ -138,25 +152,49 @@ export function accountReadiness(
   return status.authState === "authenticated" ? "signed-in" : "ready";
 }
 
+/**
+ * Whether the dashboard lists an account: not turned off by the owner, and
+ * either `kept` (an enabled pool member or a Customize override) or its usage
+ * is set up: a source exists, it is tracked and it passes the shared
+ * usage-visibility rule (`isUsageProviderShown`, detected meaning signed in or
+ * ready). So an installed agent without usage, or a signed-in one whose usage
+ * source returns nothing, gets no empty row; a signed-out or not-installed
+ * account still shows while it holds a usage reading.
+ */
+export function isAccountShown(account: SubscriptionAccount, kept = false): boolean {
+  if (account.readiness === "disabled") return false;
+  if (kept) return true;
+  return (
+    account.usageSupported &&
+    account.usageTracked &&
+    isUsageProviderShown(account.snapshot, isAccountReady(account.readiness))
+  );
+}
+
 /** Signed in (or not known to be signed out), installed and enabled. */
 export function isAccountReady(readiness: AccountReadiness): boolean {
   return readiness === "signed-in" || readiness === "ready";
 }
 
+/** One status per kind: the first installed row, else the first row (a WSL-only install beats the native "not installed" row). */
 function firstStatusByKind(statuses: readonly AgentStatus[]): Map<string, AgentStatus> {
   const byKind = new Map<string, AgentStatus>();
   for (const status of statuses) {
-    if (!byKind.has(status.kind)) byKind.set(status.kind, status);
+    const kept = byKind.get(status.kind);
+    if (!kept || (!kept.installed && status.installed)) byKind.set(status.kind, status);
   }
   return byKind;
 }
 
 /**
  * Every account kind the dashboard considers, grouped by provider row:
- * status rows, configured profiles of profile drivers (disabled ones too, so
- * they read as disabled) and the drivers those profiles belong to.
+ * status rows, configured profiles of profile drivers and the drivers those
+ * profiles belong to. `isAccountShown` drops the disabled ones afterwards.
  */
-function collectKinds(input: SubscriptionsInput, byKind: Map<string, AgentStatus>): Set<string> {
+function collectKinds(
+  input: Pick<SubscriptionsInput, "instances">,
+  byKind: Map<string, AgentStatus>,
+): Set<string> {
   const kinds = new Set<string>(byKind.keys());
   for (const instance of Object.values(input.instances ?? {})) {
     if (!isAgentProfileDriver(instance.driver)) continue;
@@ -164,6 +202,18 @@ function collectKinds(input: SubscriptionsInput, byKind: Map<string, AgentStatus
     kinds.add(agentProfileKind(instance.driver, instance.id));
   }
   return kinds;
+}
+
+/**
+ * Every account kind the host knows, including the ones the dashboard hides
+ * (disabled or not installed): what a display override may stay keyed on.
+ */
+export function knownAccountKinds(
+  input: Pick<SubscriptionsInput, "statuses" | "instances" | "disabledAgents">,
+): string[] {
+  const kinds = collectKinds(input, firstStatusByKind(input.statuses));
+  for (const kind of input.disabledAgents) kinds.add(kind);
+  return [...kinds];
 }
 
 /**
@@ -238,15 +288,25 @@ export function buildSubscriptionProviders(input: SubscriptionsInput): Subscript
   const providers: SubscriptionProvider[] = [];
   for (const [providerId, kinds] of kindsByProvider) {
     const storedPool = Object.hasOwn(input.pools, providerId) ? input.pools[providerId] : undefined;
-    const members = enabledPoolMembers(providerId, storedPool, input.instances);
+    const poolMembers = enabledPoolMembers(providerId, storedPool, input.instances);
+    // Pool members stay listed (the host fails over to them) and so do overridden rows.
+    const shownKinds = kinds.filter((kind) =>
+      isAccountShown(
+        buildAccount(kind, input, byKind.get(kind), undefined),
+        poolMembers?.includes(kind) === true || input.keepKinds?.has(kind) === true,
+      ),
+    );
+    if (shownKinds.length === 0) continue;
+    // Pool positions and size count only the members listed here, like the host's failover.
+    const members = poolMembers?.filter((member) => shownKinds.includes(member));
     const pool =
-      members && storedPool
+      members && members.length >= MIN_POOL_MEMBERS_IN_USE && storedPool
         ? {
             members,
             switchAtPercent: storedPool.switchAtPercent ?? DEFAULT_SWITCH_AT_PERCENT,
           }
         : undefined;
-    const accounts = kinds.map((kind) => buildAccount(kind, input, byKind.get(kind), pool));
+    const accounts = shownKinds.map((kind) => buildAccount(kind, input, byKind.get(kind), pool));
     // Usage data alone counts only on the kind that owns the meter, so an
     // alias kind reporting under another provider's id adds no second row.
     const owned = accounts.some(
@@ -264,10 +324,16 @@ export function buildSubscriptionProviders(input: SubscriptionsInput): Subscript
       pool: pool ? { size: pool.members.length, switchAtPercent: pool.switchAtPercent } : undefined,
     });
   }
+  return sortSubscriptionProviders(providers, input.providerRank);
+}
+
+/** Providers by rank (lower first), ties by label. */
+export function sortSubscriptionProviders(
+  providers: readonly SubscriptionProvider[],
+  rank: (providerId: string) => number,
+): SubscriptionProvider[] {
   return providers.toSorted(
-    (left, right) =>
-      input.providerRank(left.id) - input.providerRank(right.id) ||
-      left.label.localeCompare(right.label),
+    (left, right) => rank(left.id) - rank(right.id) || left.label.localeCompare(right.label),
   );
 }
 
@@ -276,6 +342,8 @@ export interface RoomEntry {
   agentKind: string;
   label: string;
   usageId: string;
+  /** See `SubscriptionAccount.styleKind`. */
+  styleKind?: string;
   /** Usage left in the most-used live window (percent, rounded). */
   percentLeft: number;
   tone: PoolUsageTone;
@@ -286,6 +354,8 @@ export interface OutEntry {
   agentKind: string;
   label: string;
   usageId: string;
+  /** See `SubscriptionAccount.styleKind`. */
+  styleKind?: string;
   /** Epoch ms when the limiting window resets, when the provider says. */
   until: number | undefined;
 }
@@ -324,6 +394,7 @@ export function summarizeRoom(
           agentKind: account.agentKind,
           label: account.label,
           usageId: account.usageId,
+          ...(account.styleKind ? { styleKind: account.styleKind } : {}),
           until: own.until,
         });
         continue;
@@ -337,6 +408,7 @@ export function summarizeRoom(
         agentKind: account.agentKind,
         label: account.label,
         usageId: account.usageId,
+        ...(account.styleKind ? { styleKind: account.styleKind } : {}),
         percentLeft: Math.round(headroom.headroomPercent),
         tone: account.tone,
       });

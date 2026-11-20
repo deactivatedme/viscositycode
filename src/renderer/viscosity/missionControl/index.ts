@@ -5,7 +5,7 @@
  * built-in "Agents" tab, the activity bar item, the "N need you" status bar
  * item and the "Open Mission Control" palette command) and exposes the
  * center host. Mount `MissionControlHost` inside the center frame's body
- * next to the Roundtable and bot hosts. Other features add tabs through
+ * next to the Roundtable host. Other features add tabs through
  * `./tabs` and open the panel through `openMissionControl`. The Subscriptions
  * feature is imported here once, so its tab and command register at startup.
  */

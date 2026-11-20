@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Button, Chip } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LogIn, Settings2 } from "lucide-react";
+import { LogIn, Settings2, SlidersHorizontal } from "lucide-react";
 import { formatResetCountdown } from "@poracode/agents-usage/formatters";
 import { ProviderUsageCircle } from "@/renderer/components/providers/ProviderUsageCircle";
 import {
@@ -163,13 +163,22 @@ function SignInAction(props: { account: SubscriptionAccount }) {
   );
 }
 
-export function SubscriptionAccountRow(props: { account: SubscriptionAccount; now: number }) {
-  const { account, now } = props;
+export function SubscriptionAccountRow(props: {
+  account: SubscriptionAccount;
+  now: number;
+  /** Real accounts: open the display-only customize editor. */
+  onCustomize?: () => void;
+}) {
+  const { t } = useLingui();
+  const { account, now, onCustomize } = props;
   const snapshot = account.snapshot;
   const windows = snapshot?.windows ?? [];
   const { credits } = summarizeUsageSnapshot(snapshot, false);
   const sharedReset = usesSharedWindowReset(account.usageId);
-  const sharedResetIn = sharedReset ? sharedWindowResetLabel(snapshot, now) : undefined;
+  const resetTexts = account.resetTexts;
+  // Owner-written reset text replaces the real countdowns.
+  const sharedResetIn =
+    sharedReset && !resetTexts ? sharedWindowResetLabel(snapshot, now) : undefined;
   const signedInAs = snapshot?.authenticatedAs;
   const plan = snapshot?.plan;
   const pool = account.pool;
@@ -178,7 +187,7 @@ export function SubscriptionAccountRow(props: { account: SubscriptionAccount; no
     <li
       data-subscription-account={account.agentKind}
       data-subscription-tone={account.tone}
-      {...agentKindAttribute(account.agentKind)}
+      {...agentKindAttribute(account.styleKind ?? account.agentKind)}
       className="flex items-start gap-3 rounded-lg border border-border/15 bg-surface px-3 py-2.5"
     >
       <ProviderUsageCircle
@@ -204,7 +213,19 @@ export function SubscriptionAccountRow(props: { account: SubscriptionAccount; no
         ) : null}
         {account.hasUsageData ? (
           <div className="mt-2 space-y-2">
-            {windows.length > 0 ? (
+            {resetTexts ? (
+              // Owner-written reset text sits under each bar.
+              windows.map((window) => (
+                <div key={window.id}>
+                  <UsageWindowBars windows={[window]} showPace={false} showReset={false} />
+                  {resetTexts[window.id] ? (
+                    <p className="mt-1 text-[11px] tabular-nums text-muted">
+                      {resetTexts[window.id]}
+                    </p>
+                  ) : null}
+                </div>
+              ))
+            ) : windows.length > 0 ? (
               // Remounted once a minute: the bars read the clock at mount for
               // their reset countdowns.
               <UsageWindowBars
@@ -227,9 +248,21 @@ export function SubscriptionAccountRow(props: { account: SubscriptionAccount; no
           <NoUsageData account={account} now={now} />
         )}
       </div>
-      {account.readiness === "needs-sign-in" ? (
-        <div className="shrink-0">
-          <SignInAction account={account} />
+      {account.readiness === "needs-sign-in" || onCustomize ? (
+        <div className="flex shrink-0 items-center gap-1">
+          {account.readiness === "needs-sign-in" ? <SignInAction account={account} /> : null}
+          {onCustomize ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              isIconOnly
+              className="size-7 min-h-7 min-w-7 text-muted"
+              aria-label={t`Customize account ${account.label}…`}
+              onPress={onCustomize}
+            >
+              <SlidersHorizontal aria-hidden="true" className="size-3.5" />
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </li>

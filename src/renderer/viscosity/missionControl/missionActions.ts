@@ -1,7 +1,7 @@
 /**
  * ViscosityCode Mission Control: what a card's buttons do (fork of Poracode).
  * Every action reuses an existing one — the tab strip's thread activation,
- * the Roundtable view, the Bots API, the composer's interrupt, the Roundtable
+ * the Roundtable view, the composer's interrupt, the Roundtable
  * stop — so Mission Control owns no navigation or process control of its own.
  *
  * "Review request" only brings the waiting thread forward; the user answers
@@ -10,10 +10,8 @@
 import { toast } from "@heroui/react";
 import { friendlyError } from "@/shared/messages";
 import { readBridge } from "@/renderer/bridge";
-import { openBot } from "@/renderer/viscosity/bots/api";
-import { stopBotApiReply } from "@/renderer/viscosity/bots/botApiChat";
 import { activateThreadTab } from "@/renderer/viscosity/layout/tabs/tabActions";
-import { stopRoundtable } from "@/renderer/viscosity/roundtable/api";
+import { interruptRoundtable, stopRoundtable } from "@/renderer/viscosity/roundtable/api";
 import { openRoundtableView } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { closeMissionControl } from "./missionControlViewStore";
 import type { MissionCard } from "./missionModel";
@@ -33,7 +31,7 @@ function showRoundtable(sessionId: string): void {
   closeMissionControl();
 }
 
-/** Open: the thread in the focused pane, the Roundtable view, or the bot's chat. */
+/** Open: the thread in the focused pane or the Roundtable view. */
 export function openMissionCard(card: MissionCard): void {
   switch (card.kind) {
     case "thread":
@@ -41,9 +39,6 @@ export function openMissionCard(card: MissionCard): void {
       return;
     case "roundtable":
       showRoundtable(card.sessionId);
-      return;
-    case "bot":
-      openBot(card.botId).catch(reportError);
       return;
   }
 }
@@ -58,14 +53,13 @@ export function reviewMissionCard(card: MissionCard): void {
       if (card.reviewThreadId) showThread(card.reviewThreadId);
       else showRoundtable(card.sessionId);
       return;
-    case "bot":
-      if (card.threadId) showThread(card.threadId);
-      else openBot(card.botId).catch(reportError);
-      return;
   }
 }
 
-/** Stop: the same interrupt as the composer's Stop (a Roundtable ends, like its own Stop). */
+/**
+ * Stop: the same interrupt as the composer's Stop. A Roundtable does what its
+ * own Stop does: a team chat stops its current replies, other patterns end.
+ */
 export async function stopMissionCard(card: MissionCard): Promise<void> {
   if (!card.canStop) return;
   try {
@@ -74,11 +68,9 @@ export async function stopMissionCard(card: MissionCard): Promise<void> {
         await readBridge().interruptThread({ threadId: card.threadId });
         return;
       case "roundtable":
-        await stopRoundtable(card.sessionId);
-        return;
-      case "bot":
-        if (card.threadId) await readBridge().interruptThread({ threadId: card.threadId });
-        else await stopBotApiReply(card.chatId);
+        await (card.pattern === "open"
+          ? interruptRoundtable(card.sessionId)
+          : stopRoundtable(card.sessionId));
         return;
     }
   } catch (error) {

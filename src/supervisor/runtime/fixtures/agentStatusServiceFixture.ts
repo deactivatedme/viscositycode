@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { STATUS_CACHE_VERSION } from "@/shared/agentStatusCache";
 import { beforeEach, vi } from "vitest";
 import type { AgentStatus } from "@/shared/contracts";
@@ -132,6 +133,8 @@ function setup(adapters: AgentAdapter[], onEvent?: (event: SupervisorEvent) => v
     adapters: registry,
     settingsPath: "/unused-mocked/settings.json",
     statusCachePath: memory.path,
+    // ViscosityCode: these races drive the startup sweep directly, not its settle delay.
+    startupDetectionDelayMs: 0,
     emit(event) {
       events.push(event);
       onEvent?.(event);

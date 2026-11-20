@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { createFakeHost, FAKE_NOW_MS } from "../testHost";
 import {
@@ -41,6 +42,15 @@ describe("formatClaudePlan", () => {
     expect(formatClaudePlan("max")).toBe("Max");
     expect(formatClaudePlan("Max Subscription")).toBe("Max");
     expect(formatClaudePlan("ultra")).toBe("Ultra");
+  });
+
+  it("reads `claude auth status` planTier values the same way", () => {
+    expect(formatClaudePlan("max", "max_20x")).toBe("Ultra");
+    expect(formatClaudePlan("max", "max_5x")).toBe("Max");
+    expect(formatClaudePlan("max", "max_other")).toBe("Max");
+    expect(formatClaudePlan("max_20x")).toBe("Ultra");
+    expect(formatClaudePlan("max_5x")).toBe("Max");
+    expect(formatClaudePlan("pro", "pro")).toBe("Pro Subscription");
   });
 });
 

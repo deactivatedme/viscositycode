@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { CollectOptions, HostPort, HttpResponse } from "../host";
 import type { UsageSnapshot, UsageWindow } from "../types";
 
@@ -21,6 +22,8 @@ export const CURSOR_SHARED_USAGE_ENDPOINT =
   "https://cursor.com/api/dashboard/get-sand-usage-status";
 export const CURSOR_BILLING_USAGE_ENDPOINT =
   "https://cursor.com/api/dashboard/v2/usage-status?scope=user";
+export const CURSOR_TEAM_BILLING_USAGE_ENDPOINT =
+  "https://cursor.com/api/dashboard/v2/usage-status?scope=team";
 /**
  * cursor-agent exchanges a User API key (`crsr_…`) for a short-lived session
  * JWT through this endpoint, then reads DashboardService over api2. Cursor
@@ -85,6 +88,10 @@ const MEMBERSHIP_LABELS: Record<string, string> = {
 
 interface CursorSharedUsage {
   isUnified?: boolean;
+  /** The plan Cursor shows for the unified pool (e.g. "Ultra"), even for team-managed seats. */
+  cursorPlanName?: string;
+  /** Who bills the pool, e.g. SAND_BILLING_BRAND_GROK when the seat is paid through xAI. */
+  billingBrand?: string;
   usagePercent?: number;
   hasNonZeroIncludedLimit?: boolean;
   includedLimitZero?: boolean;
@@ -177,6 +184,15 @@ function toResetMs(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/** "Cursor Ultra", plus "(Grok)" when the unified pool is billed through xAI. */
+function unifiedPlanLabel(shared: CursorSharedUsage | undefined): string | undefined {
+  const name = shared?.cursorPlanName?.trim();
+  if (!name) return undefined;
+  const key = name.toLowerCase().replace(/\s+/g, "_");
+  const label = MEMBERSHIP_LABELS[key] ?? MEMBERSHIP_LABELS[`unified_${key}`] ?? `Cursor ${name}`;
+  return /_GROK$/i.test(shared?.billingBrand?.trim() ?? "") ? `${label} (Grok)` : label;
+}
+
 /** Pure: map a parsed `/api/usage-summary` body to a snapshot. */
 export function parseCursorUsage(
   body: unknown,
@@ -203,6 +219,9 @@ export function parseCursorUsage(
     );
 
   if (unified) {
+    // A team-managed seat reports membershipType "enterprise"; the unified pool names the real plan.
+    const sharedPlan = unifiedPlanLabel(shared);
+    const unifiedPlanName = sharedPlan ?? planName;
     const percent = clampPercent(shared?.usagePercent);
     const reset = toResetMs(shared?.nextResetTimestampUtc);
     const hasLimit =
@@ -264,7 +283,7 @@ export function parseCursorUsage(
       ...(!windows.some((w) => w.id === "weekly")
         ? { error: "Shared weekly usage unavailable" }
         : {}),
-      ...(planName ? { plan: planName } : {}),
+      ...(unifiedPlanName ? { plan: unifiedPlanName } : {}),
       ...(account.email ? { authenticatedAs: account.email } : {}),
     };
   }
@@ -412,10 +431,14 @@ async function collectCursorAdditionalUsage(
     }
   }
   const shared = await read(CURSOR_SHARED_USAGE_ENDPOINT, "POST");
-  const billing =
+  let billing =
     (shared as CursorSharedUsage | undefined)?.isUnified === true
       ? await read(CURSOR_BILLING_USAGE_ENDPOINT, "GET")
       : undefined;
+  // A team-managed seat has no user-scoped billing; its monthly usage lives at team scope.
+  if ((billing as CursorBillingUsage | undefined)?.availability === "missing_team_id") {
+    billing = await read(CURSOR_TEAM_BILLING_USAGE_ENDPOINT, "GET");
+  }
   return { shared, billing };
 }
 

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   cachedAgentStatusSchema,
   decodeAgentStatusCache,
@@ -165,6 +166,11 @@ const execFileAsync = promisify(execFile);
 // v69 re-probes Devin so cached statuses gain the `/goal <objective>` thread-title command.
 // v70 re-probes Claude so cached statuses default to the 400k context window, not 1M.
 const WSL_AGENT_DETECTION_TIMEOUT_MS = 60_000;
+// ViscosityCode: each native probe can spawn a 100-300 MB CLI, so a full sweep
+// runs at most this many adapters at once instead of every adapter together.
+const NATIVE_PROBE_CONCURRENCY = 2;
+// ViscosityCode: a cached launch revalidates only after the app has settled.
+export const STARTUP_DETECTION_DELAY_MS = 15_000;
 const WSL_LXSS_REGISTRY_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
 
 /**
@@ -187,6 +193,32 @@ function machineAgentSettingsFor(
 ): Record<string, boolean | string> | undefined {
   const merged = effectiveAgentSettings(settings, localMachineKey(env), agentKind);
   return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+// ViscosityCode: each wrapped task settles with its own result; at most `limit` run at
+// once until `lift()` starts every waiting and later task immediately.
+function concurrencyLimiter(limit: number) {
+  let active = 0;
+  let lifted = false;
+  const waiting: Array<() => void> = [];
+  const run = async <T>(task: () => Promise<T>): Promise<T> => {
+    if (!lifted && active >= limit) await new Promise<void>((resolve) => waiting.push(resolve));
+    else active++;
+    try {
+      return await task();
+    } finally {
+      // Hand the slot straight to the next waiter so a late caller cannot overtake it.
+      const next = waiting.shift();
+      if (next) next();
+      else active--;
+    }
+  };
+  const lift = () => {
+    lifted = true;
+    active += waiting.length;
+    for (const resolve of waiting.splice(0)) resolve();
+  };
+  return { run, lift };
 }
 
 export async function detectWslAgentStatuses(
@@ -287,6 +319,8 @@ export interface AgentStatusServiceOptions {
   emit(event: SupervisorEvent): void;
   /** Repair recorded WSL installations only when detection actually probes their distro. */
   prepareWslEnvironment?: (distro: string) => Promise<void>;
+  /** ViscosityCode: delay before a cached launch revalidates; 0 sweeps immediately. */
+  startupDetectionDelayMs?: number;
 }
 
 interface DetectionResults {
@@ -317,6 +351,10 @@ export class AgentStatusService {
   private pendingDetection: Promise<DetectionResults> | undefined;
   private startupDetectionLaunched = false;
   private startupDetectionWslDistros = new Set<string>();
+  private deferredStartupDetection: NodeJS.Timeout | undefined; // ViscosityCode
+  // ViscosityCode: queued scoped/selected probes lift the running sweep's native limit.
+  private priorityDetectionWaiting = 0;
+  private liftNativeProbeLimit: (() => void) | undefined;
   private pendingWslDistroList: Promise<string[]> | undefined;
   private wslDistroCache: { value: string[]; expiresAt: number } | undefined;
 
@@ -401,7 +439,12 @@ export class AgentStatusService {
     this.assertCacheWritable();
     const wslDistros = [...new Set(payload.wslDistros)];
     const accepted = this.readAcceptedStatuses(wslDistros);
-    this.detectStartupAgentStatusesBackground(wslDistros);
+    // ViscosityCode: only a cache covering every requested distro can wait; first-launch
+    // discovery and a newly added WSL distro probe now.
+    const canDefer =
+      accepted.fromCache &&
+      wslDistros.every((distro) => accepted.wsl.some((status) => status.envDistro === distro));
+    this.detectStartupAgentStatusesBackground(wslDistros, canDefer);
     return accepted;
   }
 
@@ -433,6 +476,7 @@ export class AgentStatusService {
   invalidateAgentStatuses(): void {
     this.publication.invalidate();
     this.clearDiskCache();
+    this.clearDeferredStartupDetection(); // ViscosityCode
     this.startupDetectionLaunched = false;
     this.startupDetectionWslDistros.clear();
   }
@@ -485,6 +529,7 @@ export class AgentStatusService {
 
   /** Cancel full discovery sweeps without interrupting scoped install/login probes. */
   cancelAgentDiscovery(): AgentStatusesResponse {
+    const deferred = this.clearDeferredStartupDetection(); // ViscosityCode
     const cancelled = this.fullDetectionJobs.size > 0;
     for (const [ticket, controller] of this.fullDetectionJobs) {
       this.publication.retire(ticket);
@@ -497,6 +542,10 @@ export class AgentStatusService {
       // probe. Restore only targets no longer claimed by another request.
       for (const job of [...this.scopedDetectionJobs].reverse())
         job.ticket = this.publication.resumeUnclaimed(job.ticket);
+    } else if (deferred) {
+      // ViscosityCode: a cancelled deferred sweep never started; the next read may schedule again.
+      this.startupDetectionLaunched = false;
+      this.startupDetectionWslDistros.clear();
     }
     return this.readAcceptedStatuses();
   }
@@ -525,6 +574,7 @@ export class AgentStatusService {
     );
     for (const job of this.scopedDetectionJobs) job.ticket = retained.get(job.ticket) ?? job.ticket;
     this.clearDiskCache();
+    this.clearDeferredStartupDetection(); // ViscosityCode: this sweep replaces it
     this.startupDetectionWslDistros.clear();
     this.startupDetectionLaunched = true;
     for (const distro of wslDistros) {
@@ -540,7 +590,7 @@ export class AgentStatusService {
     const adapter = this.options.adapters.get(payload.agentKind);
     if (!adapter) return { ...payload, environment: "native", status: null };
     invalidateExecutablePathCache();
-    const result = await this.runDetectionTask(async () => {
+    const result = await this.runPriorityDetectionTask(async () => {
       if (this.options.adapters.get(payload.agentKind) !== adapter)
         throw new Error("The selected provider changed before its probe. Retry explicitly.");
       const settings = this.readSettings();
@@ -593,7 +643,7 @@ export class AgentStatusService {
     };
     this.scopedDetectionJobs.add(job);
     try {
-      await this.runDetectionTask(async () => {
+      await this.runPriorityDetectionTask(async () => {
         const settings = this.readSettings();
         const disabled = new Set(settings.disabledAgents);
         const results = await Promise.allSettled(
@@ -826,22 +876,66 @@ export class AgentStatusService {
     return pending;
   }
 
-  private detectStartupAgentStatusesBackground(wslDistros: readonly string[]): void {
+  // ViscosityCode: a scoped or selected probe waits for the queue like before, but a
+  // sweep ahead of it drops its native limit so the wait stays about one probe long.
+  private runPriorityDetectionTask(
+    task: () => Promise<DetectionResults>,
+  ): Promise<DetectionResults> {
+    this.priorityDetectionWaiting++;
+    this.liftNativeProbeLimit?.();
+    let waiting = true;
+    const started = () => {
+      if (!waiting) return;
+      waiting = false;
+      this.priorityDetectionWaiting--;
+    };
+    return this.runDetectionTask(() => {
+      started();
+      return task();
+    }).finally(started);
+  }
+
+  private detectStartupAgentStatusesBackground(
+    wslDistros: readonly string[],
+    canDefer = false,
+  ): void {
     const newWslDistros = wslDistros.filter(
       (distro) => !this.startupDetectionWslDistros.has(distro),
     );
     if (this.startupDetectionLaunched && newWslDistros.length === 0) {
       return;
     }
+    const firstSweep = !this.startupDetectionLaunched; // ViscosityCode
     this.startupDetectionLaunched = true;
     for (const distro of newWslDistros) {
       this.startupDetectionWslDistros.add(distro);
     }
-    const detectionWslDistros = [...this.startupDetectionWslDistros];
-    void this.queueFullDetection(detectionWslDistros).catch((error) => {
-      if (error instanceof AgentDiscoveryCancelledError) return;
-      console.error("[supervisor] background agent detection failed", error);
-    });
+    // ViscosityCode: a pending deferred sweep reads the distro set when it fires.
+    if (this.deferredStartupDetection) return;
+    const run = () => {
+      this.deferredStartupDetection = undefined;
+      const detectionWslDistros = [...this.startupDetectionWslDistros];
+      void this.queueFullDetection(detectionWslDistros).catch((error) => {
+        if (error instanceof AgentDiscoveryCancelledError) return;
+        console.error("[supervisor] background agent detection failed", error);
+      });
+    };
+    // ViscosityCode: keep the launch-time probe storm out of renderer/host boot.
+    const delayMs = this.options.startupDetectionDelayMs ?? STARTUP_DETECTION_DELAY_MS;
+    if (firstSweep && canDefer && delayMs > 0) {
+      this.deferredStartupDetection = setTimeout(run, delayMs);
+      this.deferredStartupDetection.unref?.();
+      return;
+    }
+    run();
+  }
+
+  // ViscosityCode: returns whether a deferred startup sweep was pending.
+  private clearDeferredStartupDetection(): boolean {
+    if (!this.deferredStartupDetection) return false;
+    clearTimeout(this.deferredStartupDetection);
+    this.deferredStartupDetection = undefined;
+    return true;
   }
 
   private statusTarget(adapter: AgentAdapter, env: RefreshAgentScopeEnv): AgentStatusTarget {
@@ -972,24 +1066,33 @@ export class AgentStatusService {
     }
 
     signal.throwIfAborted();
+    // ViscosityCode: limit native probes unless a scoped/selected probe is waiting.
+    const nativeLimiter = concurrencyLimiter(NATIVE_PROBE_CONCURRENCY);
+    this.liftNativeProbeLimit = nativeLimiter.lift;
+    if (this.priorityDetectionWaiting > 0) nativeLimiter.lift();
     const nativePromise = Promise.allSettled(
-      adapters.map(async (adapter) => {
-        const env = { kind: "native" } as const;
-        const target = this.statusTarget(adapter, env);
-        if (!this.publication.owns(job.ticket, target)) return;
-        const status = await this.probeScopedStatus(
-          adapter,
-          env,
-          disabled,
-          machineAgentSettingsFor(settings, env, adapter.kind),
-          signal,
-        );
-        // Stream per adapter so the first-launch discovery screen can reveal
-        // tiles in real time. The terminal `windows-agent-statuses` event
-        // still fires below with the full list.
-        this.publishStatus(job.ticket, adapter, target, status, "agent-detected");
-      }),
+      adapters.map((adapter) =>
+        nativeLimiter.run(async () => {
+          // A queued adapter must not start probing after the sweep was cancelled.
+          signal.throwIfAborted();
+          const env = { kind: "native" } as const;
+          const target = this.statusTarget(adapter, env);
+          if (!this.publication.owns(job.ticket, target)) return;
+          const status = await this.probeScopedStatus(
+            adapter,
+            env,
+            disabled,
+            machineAgentSettingsFor(settings, env, adapter.kind),
+            signal,
+          );
+          // Stream per adapter so the first-launch discovery screen can reveal
+          // tiles in real time. The terminal `windows-agent-statuses` event
+          // still fires below with the full list.
+          this.publishStatus(job.ticket, adapter, target, status, "agent-detected");
+        }),
+      ),
     ).then((results) => {
+      if (this.liftNativeProbeLimit === nativeLimiter.lift) this.liftNativeProbeLimit = undefined; // ViscosityCode
       for (const result of results) {
         if (result.status === "rejected" && !signal.aborted)
           console.error("[supervisor] native detection failed", result.reason);

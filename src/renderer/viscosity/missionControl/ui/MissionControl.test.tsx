@@ -5,8 +5,6 @@ import { useAppStore } from "@/renderer/state/appStore";
 import type { RuntimeChatItem } from "@/renderer/state/slices/runtimeChatItem";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import type { PoolMemberView } from "@/renderer/viscosity/accountPools/poolModel";
-import { useBotChatsStore } from "@/renderer/viscosity/bots/botApiChat";
-import { useBotsStore } from "@/renderer/viscosity/bots/botStore";
 import { viscosityCommands } from "@/renderer/viscosity/commands/viscosityCommands";
 import { getActivityBarItem } from "@/renderer/viscosity/layout/activityBar/activityBarRegistry";
 import { getStatusBarItems } from "@/renderer/viscosity/layout/statusBar/statusBarRegistry";
@@ -155,8 +153,6 @@ beforeEach(() => {
   useMissionControlViewStore.setState({ shown: false, tabId: null, filter: "all" });
   useRoundtableStore.setState({ sessions: {} });
   useRoundtableViewStore.setState({ openSessionId: null, shown: false, setup: null });
-  useBotsStore.setState({ bots: {}, order: [] });
-  useBotChatsStore.setState({ chats: {}, running: {} });
   useAppStore.setState({
     threads: THREADS,
     projects: [{ id: "p1", name: "Viscosity" } as Project],
@@ -337,6 +333,32 @@ describe("AgentsTab", () => {
     expect(within(roundtable).getByText("Waiting for you")).toBeInTheDocument();
     fireEvent.click(within(roundtable).getByRole("button", { name: /^Review request/ }));
     expect(mocks.activateThreadTab).toHaveBeenCalledExactlyOnceWith("t-wait");
+  });
+});
+
+describe("AgentsTab Work together", () => {
+  it("labels a team chat's Stop as Stop replies", () => {
+    const session: RoundtableSession = {
+      id: "rt-open",
+      version: 1,
+      title: "Team chat",
+      task: "Talk it through",
+      pattern: "open",
+      projectId: "p1",
+      participants: [],
+      threadIds: {},
+      maxRounds: 2,
+      status: "running",
+      turns: [{ id: "u1", participantId: "a", round: 1, prompt: "Hi", status: "running" }],
+      createdAt: Date.now() - 60_000,
+      updatedAt: Date.now() - 1_000,
+    };
+    useRoundtableStore.setState({ sessions: { "rt-open": session } });
+    render(<AgentsTab />);
+    const stop = within(card("roundtable:rt-open")).getByRole("button", {
+      name: "Stop replies in Team chat",
+    });
+    expect(stop).toHaveTextContent("Stop replies");
   });
 });
 

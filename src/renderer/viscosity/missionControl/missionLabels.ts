@@ -5,12 +5,12 @@
  */
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { FxAgentState } from "@/renderer/fx/agentState/derive";
+import type { FxAgentState } from "@/renderer/viscosity/agentActivity/derive";
 import { formatAge } from "./missionClock";
 import type { MissionLiveState } from "./missionActivity";
 import type { MissionCard, MissionFilter } from "./missionModel";
 
-/** `data-vc-fx-state` for a card: the agent-state colours of fx/agentState. */
+/** `data-vc-fx-state` for a card: the shared agent-state colours. */
 export function missionFxState(
   card: Pick<MissionCard, "state">,
   live: MissionLiveState | null,
@@ -50,6 +50,8 @@ export function missionStateLabel(
       return i18n._(msg`Done`);
     case "idle":
       if (card.kind === "roundtable" && card.status === "paused") return i18n._(msg`Paused`);
+      // An idle team chat waits for the next message, as its header and sidebar say.
+      if (card.kind === "roundtable" && card.pattern === "open") return i18n._(msg`Ready`);
       return i18n._(msg`Idle`);
   }
 }

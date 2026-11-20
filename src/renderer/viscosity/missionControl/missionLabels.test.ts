@@ -39,6 +39,7 @@ function roundtableCard(overrides: Partial<RoundtableMissionCard> = {}): Roundta
     key: "roundtable:rt1",
     sessionId: "rt1",
     status: "running",
+    pattern: "build-review",
     reviewThreadId: undefined,
     state: "working",
     title: "Debate",
@@ -77,6 +78,8 @@ describe("missionStateLabel", () => {
     );
     expect(label(roundtableCard({ state: "attention" }))).toBe("Waiting for you");
     expect(label(roundtableCard({ state: "idle", status: "paused" }))).toBe("Paused");
+    expect(label(roundtableCard({ state: "idle", pattern: "open" }))).toBe("Ready");
+    expect(label(roundtableCard({ state: "idle" }))).toBe("Idle");
     expect(label(threadCard({ state: "done" }))).toBe("Done");
     expect(label(threadCard({ state: "error" }))).toBe("Error");
   });

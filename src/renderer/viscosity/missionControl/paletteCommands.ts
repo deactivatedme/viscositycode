@@ -16,7 +16,7 @@ export function missionControlCommands(): AppCommand[] {
     {
       id: OPEN_MISSION_CONTROL_COMMAND_ID,
       title: msg`Open Mission Control`,
-      subtitle: msg`Every agent, Roundtable and bot at a glance`,
+      subtitle: msg`Every agent and Roundtable at a glance`,
       group: msg`Mission Control`,
       keywords: [
         "mission control",

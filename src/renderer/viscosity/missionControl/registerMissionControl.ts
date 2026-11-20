@@ -29,7 +29,7 @@ import {
 } from "./ui/MissionControlStatusItem";
 
 export const MISSION_CONTROL_ACTIVITY_ITEM_ID = "mission-control";
-/** Right after Agents (100), before Bots (150) and Roundtable (160). */
+/** Right after Agents (100), before Roundtable (160). */
 export const MISSION_CONTROL_ACTIVITY_ITEM_ORDER = 110;
 /** After the agent counters (200-220), before the Roundtable progress (300). */
 export const MISSION_CONTROL_STATUS_ITEM_ORDER = 230;
@@ -65,7 +65,7 @@ export function registerMissionControl(): void {
     toggle: true,
     onPreload: preloadMissionControlPanel,
     useIsActive: useMissionControlShown,
-    // Threads, bots and Roundtables waiting for an approval or an answer.
+    // Threads and Roundtables waiting for an approval or an answer.
     useBadge: useNeedsYouBadge,
     useIsAvailable: useViscosityShellEnabled,
   });

@@ -4,6 +4,7 @@ import type { AgentInstanceConfigMap, AgentStatus, UsageSnapshot } from "@/share
 import {
   accountReadiness,
   buildSubscriptionProviders,
+  knownAccountKinds,
   lastUsageUpdate,
   subscriptionProviderId,
   summarizeRoom,
@@ -72,6 +73,19 @@ function input(partial: Partial<SubscriptionsInput> = {}): SubscriptionsInput {
   };
 }
 
+describe("knownAccountKinds", () => {
+  it("lists hidden accounts too: disabled, not installed and disabled profiles", () => {
+    const base = input({ disabledAgents: ["pi", "gone"] });
+    const kinds = knownAccountKinds(base);
+    expect(kinds).toEqual(expect.arrayContaining(["codex:side", "gemini", "pi", "gone"]));
+    const shown = buildSubscriptionProviders(base).flatMap((row) =>
+      row.accounts.map((account) => account.agentKind),
+    );
+    expect(shown.every((kind) => kinds.includes(kind))).toBe(true);
+    expect(shown).not.toContain("codex:side");
+  });
+});
+
 describe("subscriptionProviderId", () => {
   it("nests profile kinds under their driver and keeps other kinds whole", () => {
     expect(subscriptionProviderId("codex:work")).toBe("codex");
@@ -101,29 +115,29 @@ describe("accountReadiness", () => {
 describe("buildSubscriptionProviders", () => {
   it("makes one row per owned provider with its accounts nested, in rank order", () => {
     const providers = buildSubscriptionProviders(input());
-    expect(providers.map((provider) => provider.id)).toEqual(["claude", "codex", "pi"]);
+    // pi is installed but has no usage source, so it is not set up here.
+    expect(providers.map((provider) => provider.id)).toEqual(["claude", "codex"]);
     const codex = providers.find((provider) => provider.id === "codex")!;
     expect(codex.label).toBe("P:codex");
     expect(codex.supportsPool).toBe(true);
     expect(codex.pool).toBeUndefined();
-    // Base account first, then profiles by label.
-    expect(codex.accounts.map((account) => account.agentKind)).toEqual([
-      "codex",
-      "codex:side",
-      "codex:work",
-    ]);
-    expect(codex.accounts.map((account) => account.readiness)).toEqual([
-      "signed-in",
-      "disabled",
-      "signed-in",
-    ]);
+    // Base account first, then profiles by label; the disabled profile is not listed.
+    expect(codex.accounts.map((account) => account.agentKind)).toEqual(["codex", "codex:work"]);
+    expect(codex.accounts.map((account) => account.readiness)).toEqual(["signed-in", "signed-in"]);
     // Not installed, not configured and no usage: no row.
     expect(providers.some((provider) => provider.id === "gemini")).toBe(false);
-    expect(providers.find((provider) => provider.id === "pi")!.supportsPool).toBe(false);
   });
 
   it("carries plan, usage left, tone and honest usage flags per account", () => {
-    const providers = buildSubscriptionProviders(input({ disabledUsageProviders: ["codex:side"] }));
+    const enabledSide = { ...instances, side: { ...instances.side!, enabled: true } };
+    const providers = buildSubscriptionProviders(
+      input({
+        instances: enabledSide,
+        disabledUsageProviders: ["codex:side"],
+        // Kept rows (as a Customize override keeps them) expose the flags of accounts without usage.
+        keepKinds: new Set(["codex:side", "pi"]),
+      }),
+    );
     const claude = providers.find((provider) => provider.id === "claude")!.accounts[0]!;
     expect(claude.snapshot?.plan).toBe("Max");
     expect(claude.readiness).toBe("needs-sign-in");
@@ -157,15 +171,10 @@ describe("buildSubscriptionProviders", () => {
     );
     const codex = providers.find((provider) => provider.id === "codex")!;
     expect(codex.pool).toEqual({ size: 2, switchAtPercent: 90 });
-    expect(codex.accounts.map((account) => account.agentKind)).toEqual([
-      "codex:work",
-      "codex",
-      "codex:side",
-    ]);
+    expect(codex.accounts.map((account) => account.agentKind)).toEqual(["codex:work", "codex"]);
     expect(codex.accounts.map((account) => account.pool)).toEqual([
       { position: 1, size: 2, switchAtPercent: 90 },
       { position: 2, size: 2, switchAtPercent: 90 },
-      undefined,
     ]);
     // 95% used is out at the pool's 90% rule, with the window's reset time.
     expect(codex.accounts[1]!.availability).toEqual({ kind: "exhausted", until: NOW + 5 * HOUR });
@@ -210,6 +219,86 @@ describe("buildSubscriptionProviders", () => {
     }
   });
 
+  it("counts only listed pool members in its badges and Pool on", () => {
+    // codex:side is a disabled profile, so it is hidden and the host skips it.
+    const pooled = buildSubscriptionProviders(
+      input({
+        pools: { codex: { enabled: true, members: ["codex:work", "codex:side", "codex"] } },
+      }),
+    ).find((provider) => provider.id === "codex")!;
+    expect(pooled.pool).toEqual({ size: 2, switchAtPercent: 100 });
+    expect(pooled.accounts.map((account) => [account.agentKind, account.pool?.position])).toEqual([
+      ["codex:work", 1],
+      ["codex", 2],
+    ]);
+    expect(pooled.accounts.every((account) => account.pool?.size === 2)).toBe(true);
+
+    const single = buildSubscriptionProviders(
+      input({ pools: { codex: { enabled: true, members: ["codex:side", "codex"] } } }),
+    ).find((provider) => provider.id === "codex")!;
+    expect(single.pool).toBeUndefined();
+    expect(single.accounts.every((account) => account.pool === undefined)).toBe(true);
+  });
+
+  it("prefers an installed row over an earlier not-installed row of the same kind", () => {
+    // Windows: the native row reads not installed, the WSL row is installed.
+    const providers = buildSubscriptionProviders(
+      input({
+        statuses: [status("claude", { installed: false }), status("claude")],
+        snapshots: {},
+      }),
+    );
+    const claude = providers.find((provider) => provider.id === "claude")!;
+    expect(claude.accounts.map((account) => account.readiness)).toEqual(["signed-in"]);
+  });
+
+  it("lists only enabled accounts and drops providers left without any", () => {
+    const providers = buildSubscriptionProviders(
+      input({
+        disabledAgents: ["pi", "codex"],
+        instances: {
+          ...instances,
+          // Configured but not installed here.
+          away: { id: "away", driver: "codex", displayName: "Away", config: {} },
+        } as AgentInstanceConfigMap,
+      }),
+    );
+    expect(providers.map((provider) => provider.id)).toEqual(["claude", "codex"]);
+    // The base kind is off in Settings, Side is a disabled profile, Away is not installed.
+    expect(
+      providers.find((provider) => provider.id === "codex")!.accounts.map((a) => a.agentKind),
+    ).toEqual(["codex:work"]);
+    // Needs sign-in stays while it still holds usage data: its Sign in button is the fix.
+    expect(providers[0]!.accounts[0]!.readiness).toBe("needs-sign-in");
+  });
+
+  it("keeps pool-excluded members and usage-only rows only while tracked", () => {
+    const excluded = buildSubscriptionProviders(
+      input({
+        pools: {
+          codex: {
+            enabled: true,
+            members: ["codex", "codex:work"],
+            excludedMembers: ["codex:work"],
+          },
+        },
+      }),
+    ).find((provider) => provider.id === "codex")!;
+    expect(excluded.accounts.map((account) => account.agentKind)).toContain("codex:work");
+
+    const usageOnly = (disabledUsageProviders: string[]) =>
+      buildSubscriptionProviders(
+        input({
+          statuses: [status("meter", { installed: false })],
+          instances: {},
+          snapshots: { meter: snapshot("meter", 20) },
+          disabledUsageProviders,
+        }),
+      ).map((provider) => provider.id);
+    expect(usageOnly([])).toEqual(["meter"]);
+    expect(usageOnly(["meter"])).toEqual([]);
+  });
+
   it("shows a usage-only provider once, on the kind that owns the meter", () => {
     const providers = buildSubscriptionProviders(
       input({
@@ -248,9 +337,87 @@ describe("buildSubscriptionProviders", () => {
       input({
         statuses: [status("pi"), status("pi", { authState: "missing" })],
         instances: {},
+        usageSupportedIds: new Set(["pi"]),
       }),
     );
     expect(providers[0]!.accounts[0]!.readiness).toBe("signed-in");
+  });
+});
+
+describe("usage visibility", () => {
+  const kinds = (providers: ReturnType<typeof buildSubscriptionProviders>) =>
+    providers.flatMap((provider) => provider.accounts.map((account) => account.agentKind));
+
+  it("hides a signed-in account whose usage source returns nothing", () => {
+    const providers = buildSubscriptionProviders(
+      input({
+        statuses: [status("gemini")],
+        instances: {},
+        snapshots: { gemini: snapshot("gemini", 0, { status: "auth-missing", windows: [] }) },
+      }),
+    );
+    expect(kinds(providers)).toEqual([]);
+  });
+
+  it("hides an installed account without a usage source", () => {
+    const providers = buildSubscriptionProviders(
+      input({ statuses: [status("pi")], instances: {}, snapshots: {} }),
+    );
+    expect(kinds(providers)).toEqual([]);
+  });
+
+  it("shows a signed-in account with a usage source before its first snapshot", () => {
+    const providers = buildSubscriptionProviders(
+      input({ statuses: [status("codex")], instances: {}, snapshots: {} }),
+    );
+    expect(kinds(providers)).toEqual(["codex"]);
+  });
+
+  it("shows a needs-sign-in account only while it holds usage data", () => {
+    const signedOut = (snapshots: Record<string, UsageSnapshot>) =>
+      kinds(
+        buildSubscriptionProviders(
+          input({
+            statuses: [status("claude", { authState: "missing" })],
+            instances: {},
+            snapshots,
+          }),
+        ),
+      );
+    expect(signedOut({})).toEqual([]);
+    expect(signedOut({ claude: snapshot("claude", 30, { status: "auth-missing" }) })).toEqual([
+      "claude",
+    ]);
+  });
+
+  it("keeps enabled pool members without usage data, so the pool size holds", () => {
+    const codex = buildSubscriptionProviders(
+      input({
+        statuses: [status("codex"), status("codex:work")],
+        snapshots: { codex: snapshot("codex", 10) },
+        usageSupportedIds: new Set(["codex"]),
+        pools: { codex: { enabled: true, members: ["codex", "codex:work"] } },
+      }),
+    ).find((provider) => provider.id === "codex")!;
+    expect(codex.accounts.map((account) => account.agentKind)).toEqual(["codex", "codex:work"]);
+    expect(codex.pool).toEqual({ size: 2, switchAtPercent: 100 });
+  });
+
+  it("keeps an overridden account but never a disabled one", () => {
+    const kept = (disabledAgents: string[]) =>
+      kinds(
+        buildSubscriptionProviders(
+          input({
+            statuses: [status("pi")],
+            instances: {},
+            snapshots: {},
+            disabledAgents,
+            keepKinds: new Set(["pi"]),
+          }),
+        ),
+      );
+    expect(kept([])).toEqual(["pi"]);
+    expect(kept(["pi"])).toEqual([]);
   });
 });
 

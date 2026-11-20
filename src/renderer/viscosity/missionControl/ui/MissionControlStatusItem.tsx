@@ -1,6 +1,6 @@
 /**
  * ViscosityCode Mission Control: status bar item "N need you" (fork of
- * Poracode). Shown while at least one thread, bot or Roundtable waits for an
+ * Poracode). Shown while at least one thread or Roundtable waits for an
  * approval or an answer; pressing it opens Mission Control on "Needs you".
  * It re-renders on status changes only, never on streaming text.
  */

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { STATUS_CACHE_VERSION } from "@/shared/agentStatusCache";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,6 +23,7 @@ import {
   AgentStatusService,
   detectWslAgentStatuses,
   parseWslRegistryDistributionNames,
+  STARTUP_DETECTION_DELAY_MS,
 } from "./agentStatusService";
 
 const tempDirs: string[] = [];
@@ -177,7 +179,14 @@ HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\{333}
             })
           : fixture.service;
       if (trigger === "startup") {
-        await service.getAgentStatuses({ wslDistros: [] });
+        // A cached launch defers its revalidation sweep until the app has settled.
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        try {
+          await service.getAgentStatuses({ wslDistros: [] });
+          vi.advanceTimersByTime(STARTUP_DETECTION_DELAY_MS);
+        } finally {
+          vi.useRealTimers();
+        }
       } else {
         await service.refreshAgentStatuses({
           wslDistros: [],
@@ -196,6 +205,142 @@ HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\{333}
       expect(detectInstall).toHaveBeenCalledTimes(2);
     },
   );
+
+  it("probes at most two native adapters at once and isolates a rejecting adapter", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const releases: Array<() => void> = [];
+    const adapters = ["a", "b", "c", "d", "e"].map((kind) =>
+      makeAdapter(kind, kind, async () => {
+        inFlight++;
+        peak = Math.max(peak, inFlight);
+        await new Promise<void>((resolve) => releases.push(resolve));
+        inFlight--;
+        if (kind === "b") throw new Error("probe failed");
+        return { ...makeStatus(), kind, label: kind };
+      }),
+    );
+    const { service, emit } = makeMultiAdapterService(adapters);
+
+    const refresh = service.refreshAgentStatuses({ wslDistros: [] });
+    for (let released = 0; released < adapters.length; released++) {
+      await vi.waitFor(() => expect(releases.length).toBeGreaterThan(0));
+      expect(inFlight).toBeLessThanOrEqual(2);
+      releases.shift()?.();
+    }
+    const result = await refresh;
+
+    expect(peak).toBe(2);
+    expect(result.windows.map((status) => status.kind).toSorted()).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
+    const detected = emit.mock.calls
+      .map(([event]) => event)
+      .filter((event) => event.type === "agent-detected")
+      .map((event) => event.status.kind);
+    expect(detected.toSorted()).toEqual(["a", "b", "c", "d", "e"]);
+  });
+
+  it("lifts the sweep's native limit while a scoped probe waits behind it", async () => {
+    const releases: Array<() => void> = [];
+    let inFlight = 0;
+    const adapters = ["a", "b", "c", "d", "e"].map((kind) =>
+      makeAdapter(kind, kind, async () => {
+        inFlight++;
+        await new Promise<void>((resolve) => releases.push(resolve));
+        inFlight--;
+        return { ...makeStatus(), kind, label: kind };
+      }),
+    );
+    const { service } = makeMultiAdapterService(adapters);
+
+    const sweep = service.refreshAgentStatuses({ wslDistros: [] });
+    await vi.waitFor(() => expect(inFlight).toBe(2));
+    const scoped = service.refreshAgentStatuses({ wslDistros: [], scope: { agentKinds: ["a"] } });
+    // The rest of the sweep starts at once instead of two at a time.
+    await vi.waitFor(() => expect(inFlight).toBe(5));
+    for (const release of releases.splice(0)) release();
+    await sweep;
+    await vi.waitFor(() => expect(releases).toHaveLength(1));
+    releases.shift()?.();
+    const result = await scoped;
+    expect(result.windows.map((status) => status.kind).toSorted()).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
+  });
+
+  it("starts the cached startup sweep at once when a requested WSL distro has no rows", async () => {
+    const detectInstall = vi.fn<AgentAdapter["detectInstall"]>().mockResolvedValue(makeStatus());
+    const fixture = makeService(detectInstall);
+    await fixture.service.refreshAgentStatuses({ wslDistros: [] });
+    detectInstall.mockClear();
+    const service = new AgentStatusService({
+      adapters: new Map([["codex", makeAdapter("codex", "Codex", detectInstall)]]),
+      settingsPath: join(dirname(fixture.statusCachePath), "settings.json"),
+      statusCachePath: fixture.statusCachePath,
+      emit: vi.fn<(event: SupervisorEvent) => void>(),
+    });
+
+    const cached = await service.getAgentStatuses({ wslDistros: ["Ubuntu"] });
+    expect(cached.fromCache).toBe(true);
+    expect(cached.wsl).toEqual([]);
+    // Real timers: a deferred sweep would not start for STARTUP_DETECTION_DELAY_MS.
+    await vi.waitFor(() =>
+      expect(detectInstall).toHaveBeenCalledWith(
+        expect.objectContaining({ envKind: "wsl", wslDistro: "Ubuntu" }),
+      ),
+    );
+  });
+
+  it("defers the cached startup sweep until the app settles, but not an explicit refresh", async () => {
+    const detectInstall = vi.fn<AgentAdapter["detectInstall"]>().mockResolvedValue(makeStatus());
+    const fixture = makeService(detectInstall);
+    await fixture.service.refreshAgentStatuses({ wslDistros: [] });
+    detectInstall.mockClear();
+    const makeCachedService = () =>
+      new AgentStatusService({
+        adapters: new Map([["codex", makeAdapter("codex", "Codex", detectInstall)]]),
+        settingsPath: join(dirname(fixture.statusCachePath), "settings.json"),
+        statusCachePath: fixture.statusCachePath,
+        emit: vi.fn<(event: SupervisorEvent) => void>(),
+      });
+
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const service = makeCachedService();
+      const cached = await service.getAgentStatuses({ wslDistros: [] });
+      expect(cached.fromCache).toBe(true);
+      expect(cached.windows).toHaveLength(1);
+      await service.getAgentStatuses({ wslDistros: [] });
+      vi.advanceTimersByTime(STARTUP_DETECTION_DELAY_MS - 1);
+      await Promise.resolve();
+      expect(detectInstall).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      await vi.waitFor(() => expect(detectInstall).toHaveBeenCalledTimes(1));
+
+      detectInstall.mockClear();
+      const refreshed = makeCachedService();
+      await refreshed.getAgentStatuses({ wslDistros: [] });
+      await refreshed.refreshAgentStatuses({ wslDistros: [] });
+      expect(detectInstall).toHaveBeenCalledTimes(1);
+      // The refresh replaced the pending startup sweep.
+      vi.advanceTimersByTime(STARTUP_DETECTION_DELAY_MS);
+      await new Promise<void>((resolve) => {
+        setImmediate(resolve);
+      });
+      expect(detectInstall).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
   it("distinguishes a missing status cache from a cached unavailable provider", async () => {
     const detectInstall = vi
@@ -327,7 +472,7 @@ HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\{333}
           wsl: [],
         }),
       );
-      expect(STATUS_CACHE_VERSION).toBe(81);
+      expect(STATUS_CACHE_VERSION).toBe(82);
       expect(service.getCachedCapabilities("codex")).toBeUndefined();
     },
   );

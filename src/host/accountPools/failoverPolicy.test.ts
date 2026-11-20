@@ -199,11 +199,11 @@ describe("member readiness and decisions", () => {
   });
 
   it("marks the failed account until its reported reset, else a cool-down guess", () => {
-    expect(exhaustedMarkFor(snapshot("codex", 100, NOW + 9_000), NOW, undefined)).toEqual({
+    expect(exhaustedMarkFor(snapshot("codex", 100, NOW + 9_000), NOW)).toEqual({
       until: NOW + 9_000,
       resetKnown: true,
     });
-    expect(exhaustedMarkFor(undefined, NOW, undefined, 1_000)).toEqual({
+    expect(exhaustedMarkFor(undefined, NOW, 1_000)).toEqual({
       until: NOW + 1_000,
       resetKnown: false,
     });

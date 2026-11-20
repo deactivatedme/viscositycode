@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import type { HostPort, OAuthToken } from "../host";
 import {
@@ -8,6 +9,7 @@ import {
   CURSOR_PLAN_INFO_ENDPOINT,
   CURSOR_SHARED_USAGE_ENDPOINT,
   CURSOR_BILLING_USAGE_ENDPOINT,
+  CURSOR_TEAM_BILLING_USAGE_ENDPOINT,
   parseCursorPeriodUsage,
   parseCursorUsage,
 } from "./cursor";
@@ -129,6 +131,68 @@ describe("collectCursor cookie", () => {
     const snap = await collectCursor(host);
     expect(snap.status).toBe("ok");
     expect(snap.windows.map((w) => w.id)).toEqual(["cursor-auto", "cursor-api"]);
+  });
+});
+
+describe("Cursor team-managed unified seat", () => {
+  // Shape seen from a team-owned seat billed through xAI: usage-summary says
+  // "enterprise", but the shared pool is unified with an "Ultra" plan.
+  const ENTERPRISE_SUMMARY = {
+    membershipType: "enterprise",
+    limitType: "team",
+    individualUsage: {
+      plan: { used: 0, limit: 55_395, autoPercentUsed: 0, apiPercentUsed: 0 },
+      onDemand: { enabled: true, used: 0, limit: null },
+    },
+  };
+  const TEAM_SHARED = {
+    ...SHARED_USAGE,
+    usagePercent: 84.0166,
+    cursorPlanName: "Ultra",
+    billingBrand: "SAND_BILLING_BRAND_GROK",
+  };
+
+  it("shows the weekly pool and the real plan instead of the enterprise meters", () => {
+    const snap = parseCursorUsage(ENTERPRISE_SUMMARY, {}, NOW, { shared: TEAM_SHARED });
+    expect(snap.plan).toBe("Cursor Ultra (Grok)");
+    expect(snap.status).toBe("ok");
+    expect(snap.windows.map((w) => [w.id, Math.round(w.usedPercent ?? -1)])).toEqual([
+      ["weekly", 84],
+    ]);
+  });
+
+  it("names a non-Grok unified plan without the brand", () => {
+    const snap = parseCursorUsage(ENTERPRISE_SUMMARY, {}, NOW, {
+      shared: { ...TEAM_SHARED, billingBrand: "SAND_BILLING_BRAND_CURSOR", cursorPlanName: "Pro+" },
+    });
+    expect(snap.plan).toBe("Cursor Pro+");
+  });
+
+  it("reads team-scope billing when user scope has no team id", async () => {
+    const urls: string[] = [];
+    const host: HostPort = {
+      now: () => NOW,
+      credentials: {
+        getOAuthToken: async () => ({ accessToken: "jwt", accountId: "u1" }),
+        getSecret: async () => undefined,
+      },
+      http: {
+        request: async (req) => {
+          urls.push(req.url);
+          const bodies: Record<string, unknown> = {
+            "https://cursor.com/api/usage-summary": ENTERPRISE_SUMMARY,
+            [CURSOR_SHARED_USAGE_ENDPOINT]: TEAM_SHARED,
+            [CURSOR_BILLING_USAGE_ENDPOINT]: { availability: "missing_team_id" },
+            [CURSOR_TEAM_BILLING_USAGE_ENDPOINT]: BILLING_USAGE,
+          };
+          return { status: 200, headers: {}, body: JSON.stringify(bodies[req.url]) };
+        },
+      },
+    };
+    const snap = await collectCursor(host);
+    expect(urls).toContain(CURSOR_TEAM_BILLING_USAGE_ENDPOINT);
+    expect(snap.plan).toBe("Cursor Ultra (Grok)");
+    expect(snap.windows.map((w) => w.id)).toEqual(["weekly", "extra-usage"]);
   });
 });
 

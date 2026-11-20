@@ -44,9 +44,7 @@ const CARD_STYLE = { "--vc-mc-accent": AGENT_ACCENT_CSS } as CSSProperties;
 
 /** The agent kind a card represents (its accent and its account pool), if any. */
 export function cardAgentKind(card: MissionCard): string | undefined {
-  if (card.kind === "thread") return card.agentKind;
-  if (card.kind === "bot") return card.agentKind;
-  return undefined;
+  return card.kind === "thread" ? card.agentKind : undefined;
 }
 
 /** The chat thread whose live step the card shows: GUI threads that are mid-turn. */
@@ -67,7 +65,6 @@ function cardPoolView(card: MissionCard, pools: MissionPoolLookup): PoolMemberVi
 function CardIcon(props: { card: MissionCard; label: string }) {
   const { card } = props;
   if (card.kind === "roundtable") return <UsersRound className="size-4" />;
-  if (card.kind === "bot" && !card.agentKind) return <Bot className="size-4" />;
   const agentKind = cardAgentKind(card);
   return agentKind ? (
     <ProviderIcon kind={agentKind} fallbackLabel={props.label} className="size-4" />
@@ -159,6 +156,8 @@ function StopButton(props: {
   const { card, focusAfter } = props;
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [stopping, setStopping] = useState(false);
+  // A Work together chat's Stop only interrupts the current replies (`stopMissionCard`).
+  const repliesOnly = card.kind === "roundtable" && card.pattern === "open";
 
   useLayoutEffect(() => {
     const button = buttonRef.current;
@@ -182,12 +181,12 @@ function StopButton(props: {
       ref={buttonRef}
       size="sm"
       variant="danger-soft"
-      aria-label={t`Stop ${props.title}`}
+      aria-label={repliesOnly ? t`Stop replies in ${props.title}` : t`Stop ${props.title}`}
       isPending={stopping}
       onPress={stop}
     >
       <Square aria-hidden="true" className="size-3" />
-      {t`Stop`}
+      {repliesOnly ? t`Stop replies` : t`Stop`}
     </Button>
   );
 }
@@ -219,14 +218,7 @@ export function MissionCardView(props: MissionCardViewProps) {
 
   const agentKind = cardAgentKind(card);
   const agentName = agentKind ? props.agentLabel(agentKind) : undefined;
-  const kindLabel =
-    card.kind === "roundtable"
-      ? t`Roundtable`
-      : card.kind === "bot"
-        ? agentName
-          ? t`Bot · ${agentName}`
-          : t`Bot`
-        : (agentName ?? t`Agent`);
+  const kindLabel = card.kind === "roundtable" ? t`Roundtable` : (agentName ?? t`Agent`);
   const live = card.state === "working" ? activity.live : null;
   const stateLabel = missionStateLabel(card, live, i18n);
   const title = card.title.trim() || t`Untitled`;

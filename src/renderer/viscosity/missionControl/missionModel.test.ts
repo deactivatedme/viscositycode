@@ -6,7 +6,6 @@ import {
   countMissionFilters,
   countNeedsYou,
   isMissionFilter,
-  type MissionBot,
   type MissionCard,
   type MissionInputs,
   type MissionSession,
@@ -46,6 +45,7 @@ function session(overrides: Partial<MissionSession> = {}): MissionSession {
     id: "rt1",
     title: "Fix the login bug",
     projectId: "p1",
+    pattern: "build-review",
     status: "running",
     turns: [],
     threadIds: {},
@@ -55,38 +55,10 @@ function session(overrides: Partial<MissionSession> = {}): MissionSession {
   };
 }
 
-function agentBot(id: string, chatId: string | undefined): MissionBot {
-  return {
-    id,
-    label: `Bot ${id}`,
-    projectId: "p1",
-    ...(chatId ? { chatId } : {}),
-    brain: { kind: "agent", agentKind: "agent-b", model: "m", presentationMode: "gui" },
-  };
-}
-
-function apiBot(id: string, chatId: string | undefined): MissionBot {
-  return {
-    id,
-    label: `Grok ${id}`,
-    projectId: "p1",
-    ...(chatId ? { chatId } : {}),
-    brain: {
-      kind: "xai",
-      model: "grok",
-      region: "global",
-      tools: { webSearch: false, xSearch: false },
-    },
-  };
-}
-
 function inputs(overrides: Partial<MissionInputs> = {}): MissionInputs {
   return {
     threads: [],
     sessions: [],
-    bots: [],
-    apiChats: {},
-    runningApiChats: {},
     now: NOW,
     ...overrides,
   };
@@ -149,49 +121,6 @@ describe("buildMissionCards", () => {
     expect(byKey.get("thread:e")).toMatchObject({ state: "error", errorText: "Rate limited" });
   });
 
-  it("shows an agent bot's chat thread once, as the bot", () => {
-    const cards = buildMissionCards(
-      inputs({
-        threads: [thread("chat", { status: "needs_approval" })],
-        bots: [agentBot("b1", "chat"), agentBot("b2", undefined)],
-      }),
-    );
-    expect(keys(cards)).toEqual(["bot:b1"]);
-    expect(cards[0]).toMatchObject({
-      kind: "bot",
-      state: "attention",
-      attentionKind: "approval",
-      threadId: "chat",
-      agentKind: "agent-b",
-    });
-  });
-
-  it("reads API bot chats: streaming, failed, recent and idle", () => {
-    const cards = buildMissionCards(
-      inputs({
-        bots: [
-          apiBot("run", "c1"),
-          apiBot("fail", "c2"),
-          apiBot("recent", "c3"),
-          apiBot("old", "c4"),
-        ],
-        apiChats: {
-          c1: { updatedAt: NOW, messages: [{ role: "user" }] },
-          c2: { updatedAt: NOW, messages: [{ role: "assistant", status: "failed" }] },
-          c3: { updatedAt: NOW - 60_000, messages: [{ role: "assistant" }] },
-          c4: { updatedAt: NOW - RECENT_FINISHED_WINDOW_MS - 1, messages: [{ role: "assistant" }] },
-        },
-        runningApiChats: { c1: true },
-      }),
-    );
-    expect(cards.map((card) => [card.key, card.state, card.canStop])).toEqual([
-      ["bot:run", "working", true],
-      ["bot:fail", "error", false],
-      ["bot:recent", "done", false],
-      ["bot:old", "idle", false],
-    ]);
-  });
-
   it("lets a live Roundtable stand for its participant threads", () => {
     const cards = buildMissionCards(
       inputs({
@@ -219,12 +148,32 @@ describe("buildMissionCards", () => {
         turn("t1", { participantId: "b", status: "waiting-approval", startedAt: NOW - 5_000 }),
       ],
     });
-    const [card] = buildMissionCards(inputs({ sessions: [value] }));
+    const [card] = buildMissionCards(
+      inputs({ threads: [thread("pa"), thread("pb")], sessions: [value] }),
+    );
     expect(card).toMatchObject({
       state: "attention",
       reviewThreadId: "pb",
       startedAt: NOW - 5_000,
     });
+  });
+
+  it("never points Review request at a deleted or archived participant thread", () => {
+    const value = session({
+      threadIds: { a: "pa", b: "pb" },
+      turns: [turn("t1", { participantId: "b", status: "waiting-approval" })],
+    });
+    // Deleted: the waiting participant's thread is gone, so the card opens the Roundtable.
+    const [deleted] = buildMissionCards(inputs({ threads: [thread("pa")], sessions: [value] }));
+    expect(deleted).toMatchObject({ state: "attention", reviewThreadId: undefined });
+    // Archived: same, and another participant that waits for the user takes over.
+    const [archived] = buildMissionCards(
+      inputs({
+        threads: [thread("pa", { status: "needs_reply" }), thread("pb", { archived: true })],
+        sessions: [value],
+      }),
+    );
+    expect(archived).toMatchObject({ reviewThreadId: "pa" });
   });
 
   it("after a Roundtable ends, shows only the participants the user keeps using", () => {
@@ -294,7 +243,7 @@ describe("buildMissionCards", () => {
         state: "attention",
         reviewThreadId: "pa",
       });
-      expect(countNeedsYou({ ...sources, bots: [] })).toBe(1);
+      expect(countNeedsYou(sources)).toBe(1);
     });
 
     it("never counts one wait twice when both sessions are live", () => {
@@ -319,7 +268,7 @@ describe("buildMissionCards", () => {
         state: "attention",
         reviewThreadId: "pa",
       });
-      expect(countNeedsYou({ ...sources, bots: [] })).toBe(1);
+      expect(countNeedsYou(sources)).toBe(1);
     });
 
     it("after both end, shows each participant the user keeps using once", () => {
@@ -337,7 +286,6 @@ describe("buildMissionCards", () => {
         countNeedsYou({
           threads: [thread("pb", { status: "needs_reply" })],
           sessions: [comparison(), debate({ status: "done" })],
-          bots: [],
         }),
       ).toBe(1);
     });
@@ -354,6 +302,21 @@ describe("buildMissionCards", () => {
     expect(roundtableMissionState(session({ status: "failed" }), NOW)).toBe("error");
     expect(roundtableMissionState(session({ status: "stopped" }), NOW)).toBe("done");
     expect(roundtableMissionState(session({ status: "paused" }), NOW)).toBe("idle");
+  });
+
+  it("shows a team chat waiting for the next message as idle, and replying as working", () => {
+    const notes = [{ id: "n1", text: "Hi", createdAt: NOW - 5_000 }];
+    const reply = (status: RoundtableTurn["status"]) =>
+      turn("t1", { round: 0, phase: "reply", noteId: "n1", status, startedAt: NOW - 4_000 });
+    const idle = session({ pattern: "open", notes, turns: [reply("done")] });
+    expect(roundtableMissionState(idle, NOW)).toBe("idle");
+    const [card] = buildMissionCards(inputs({ sessions: [idle] }));
+    // Its Stop only interrupts replies, so there is nothing to stop while it waits.
+    expect(card).toMatchObject({ state: "idle", startedAt: undefined, canStop: false });
+    const busy = session({ pattern: "open", notes, turns: [reply("running")] });
+    expect(roundtableMissionState(busy, NOW)).toBe("working");
+    const [busyCard] = buildMissionCards(inputs({ sessions: [busy] }));
+    expect(busyCard).toMatchObject({ pattern: "open", canStop: true });
   });
 });
 
@@ -427,9 +390,8 @@ describe("countNeedsYou", () => {
             turns: [turn("t1", { status: "waiting-approval" })],
           }),
         ],
-        bots: [agentBot("b1", "chat")],
       }),
     ).toBe(3);
-    expect(countNeedsYou({ threads: [], sessions: [], bots: [] })).toBe(0);
+    expect(countNeedsYou({ threads: [], sessions: [] })).toBe(0);
   });
 });

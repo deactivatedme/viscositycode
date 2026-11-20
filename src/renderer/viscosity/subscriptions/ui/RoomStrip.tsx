@@ -13,21 +13,18 @@ import type { OutEntry, RoomEntry, RoomSummary } from "../subscriptionsModel";
 
 function RoomItem(props: { entry: RoomEntry; rank: number }) {
   const { entry, rank } = props;
+  const kind = entry.styleKind ?? entry.agentKind;
   return (
     // The ordered list already announces the rank, so the visible number is decorative.
     <li
       data-subscription-room={entry.agentKind}
-      {...agentKindAttribute(entry.agentKind)}
+      {...agentKindAttribute(kind)}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/15 bg-surface px-2 py-1 text-xs"
     >
       <span aria-hidden="true" className="tabular-nums text-muted">
         {rank}
       </span>
-      <ProviderIcon
-        kind={entry.agentKind}
-        fallbackLabel={entry.label}
-        className="size-3.5 shrink-0"
-      />
+      <ProviderIcon kind={kind} fallbackLabel={entry.label} className="size-3.5 shrink-0" />
       <span className="truncate text-foreground">{entry.label}</span>
       <span
         className="shrink-0 tabular-nums"
@@ -42,14 +39,15 @@ function RoomItem(props: { entry: RoomEntry; rank: number }) {
 function OutItem(props: { entry: OutEntry; now: number }) {
   const { entry, now } = props;
   const resetIn = formatResetCountdown(entry.until, now);
+  const kind = entry.styleKind ?? entry.agentKind;
   return (
     <li
       data-subscription-out={entry.agentKind}
-      {...agentKindAttribute(entry.agentKind)}
+      {...agentKindAttribute(kind)}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/10 px-2 py-1 text-xs text-muted"
     >
       <ProviderIcon
-        kind={entry.agentKind}
+        kind={kind}
         fallbackLabel={entry.label}
         className="size-3.5 shrink-0 opacity-70"
       />
@@ -76,7 +74,7 @@ export function RoomStrip(props: { summary: RoomSummary; now: number }) {
       data-subscriptions-room=""
       className="rounded-xl border border-border/15 bg-surface-secondary/30 p-3"
     >
-      <h3 id={headingId} className="text-xs font-semibold uppercase tracking-wider text-muted">
+      <h3 id={headingId} className="text-xs font-semibold text-muted">
         <Trans>Who has room right now</Trans>
       </h3>
       {room.length > 0 ? (

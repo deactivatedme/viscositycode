@@ -2,7 +2,7 @@
  * ViscosityCode Mission Control: the center-panel mount (fork of Poracode).
  * Rendered by the fork's center frame inside the desktop shell only; the
  * panel loads lazily the first time it opens. The view sync (step aside when
- * the user opens a thread, the editor, a Roundtable or a bot chat) is
+ * the user opens a thread, the editor or a Roundtable) is
  * installed here, outside React's render path.
  *
  * When the shell turns off (the window shrinks to the compact layout), the

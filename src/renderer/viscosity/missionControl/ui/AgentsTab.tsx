@@ -1,8 +1,7 @@
 /**
  * ViscosityCode Mission Control: the built-in "Agents" tab (fork of
  * Poracode). A card for every active or recently finished thread (all
- * projects), every live Roundtable and every bot with a chat, waits for the
- * user first. Filters: All / Needs you / Working / Errors / Done (remembered
+ * projects) and every live Roundtable, waits for the user first. Filters: All / Needs you / Working / Errors / Done (remembered
  * per viewer). The grid is one tab stop (each card's title button); arrow
  * keys, Home and End move between cards and Enter opens one.
  */
@@ -35,7 +34,7 @@ function EmptyBoard(props: { filter: MissionFilter; total: number }) {
   let hint: string;
   if (props.total === 0) {
     title = t`No agents running`;
-    hint = t`Threads, Roundtables and bots show here while they work, wait for you or just finished.`;
+    hint = t`Threads and Roundtables show here while they work, wait for you or just finished.`;
   } else {
     switch (props.filter) {
       case "needs":

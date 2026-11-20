@@ -235,15 +235,16 @@ export function decideFailover(
 
 /**
  * The failed account's mark: its snapshot's reset when it reports one,
- * otherwise a cool-down guess that is never shown as a reset time.
+ * otherwise a cool-down guess that is never shown as a reset time. Judged at
+ * the default 100% rule: the mark also classifies later failures
+ * (`failureAvailability`), which the pool's `switchAtPercent` must not reach.
  */
 export function exhaustedMarkFor(
   snapshot: UsageSnapshot | undefined,
   now: number,
-  switchAtPercent: number | undefined,
   cooldownMs: number = DEFAULT_EXHAUSTED_COOLDOWN_MS,
 ): ExhaustedMark {
-  const availability = memberAvailability(snapshot, now, switchAtPercent);
+  const availability = memberAvailability(snapshot, now, DEFAULT_SWITCH_AT_PERCENT);
   if (availability.kind === "exhausted" && availability.until !== undefined) {
     return { until: availability.until, resetKnown: true };
   }

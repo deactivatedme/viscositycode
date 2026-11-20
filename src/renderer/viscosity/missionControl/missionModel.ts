@@ -2,7 +2,7 @@
  * ViscosityCode Mission Control: the card model (fork of Poracode).
  *
  * Pure functions that turn what the window already holds — thread rows
- * (host-derived status and attention), Roundtable sessions and bots — into one
+ * (host-derived status and attention) and Roundtable sessions — into one
  * card per agent, plus the filters, the sort and the "needs you" count. Nothing
  * here reads a store, keys on a provider name, or looks at streaming text: the
  * inputs change on status changes, never on content deltas.
@@ -11,7 +11,7 @@ import { getStatusTone } from "@/renderer/components/providers/statusTone";
 import type { Thread } from "@/shared/contracts";
 import { threadAttentionStatus } from "@/shared/threadAttention";
 import type { RoundtableSession } from "../roundtable/types";
-import type { BotProfile } from "../bots/api";
+import { isChatIdle } from "../roundtable/ui/patterns";
 
 /** Finished work stays on the board this long after it ended. */
 export const RECENT_FINISHED_WINDOW_MS = 2 * 60 * 60 * 1000;
@@ -33,7 +33,7 @@ export function isMissionFilter(value: unknown): value is MissionFilter {
 export type MissionAttentionKind = "approval" | "reply";
 
 interface MissionCardBase {
-  /** Unique across kinds: "thread:<id>", "roundtable:<id>", "bot:<id>". */
+  /** Unique across kinds: "thread:<id>", "roundtable:<id>". */
   key: string;
   state: MissionCardState;
   title: string;
@@ -63,25 +63,12 @@ export interface RoundtableMissionCard extends MissionCardBase {
   kind: "roundtable";
   sessionId: string;
   status: RoundtableSession["status"];
+  pattern: RoundtableSession["pattern"];
   /** The participant thread waiting for the user, when one is. */
   reviewThreadId: string | undefined;
 }
 
-export interface BotMissionCard extends MissionCardBase {
-  kind: "bot";
-  botId: string;
-  brain: "agent" | "xai";
-  chatId: string;
-  /** Agent bots: the chat thread (status, Stop, Review request). */
-  threadId: string | undefined;
-  agentKind: string | undefined;
-  presentation: "gui" | "terminal" | undefined;
-  remoteServerId: string | undefined;
-  attentionKind: MissionAttentionKind | undefined;
-  errorText: string | undefined;
-}
-
-export type MissionCard = ThreadMissionCard | RoundtableMissionCard | BotMissionCard;
+export type MissionCard = ThreadMissionCard | RoundtableMissionCard;
 
 export type MissionThread = Pick<
   Thread,
@@ -111,24 +98,21 @@ export type MissionThread = Pick<
 
 export type MissionSession = Pick<
   RoundtableSession,
-  "id" | "title" | "projectId" | "status" | "turns" | "threadIds" | "createdAt" | "updatedAt"
+  | "id"
+  | "title"
+  | "projectId"
+  | "pattern"
+  | "status"
+  | "turns"
+  | "notes"
+  | "threadIds"
+  | "createdAt"
+  | "updatedAt"
 >;
-
-export type MissionBot = Pick<BotProfile, "id" | "label" | "brain" | "chatId" | "projectId">;
-
-export interface MissionApiChat {
-  updatedAt: number;
-  messages: ReadonlyArray<{ role: "user" | "assistant"; status?: "failed" | "stopped" }>;
-}
 
 export interface MissionInputs {
   threads: readonly MissionThread[];
   sessions: readonly MissionSession[];
-  bots: readonly MissionBot[];
-  /** API bot chats by chat id. */
-  apiChats: Readonly<Record<string, MissionApiChat | undefined>>;
-  /** API bot chats with a reply streaming. */
-  runningApiChats: Readonly<Record<string, boolean | undefined>>;
   now: number;
   recentWindowMs?: number;
 }
@@ -287,6 +271,16 @@ function ownedWaitingTurn(session: MissionSession, owners: ParticipantOwners) {
     : undefined;
 }
 
+/** `threadId` when that thread is loaded and not archived (a deleted chat is never offered). */
+function liveThreadId(
+  threadId: string | undefined,
+  threadsById: ReadonlyMap<string, MissionThread>,
+): string | undefined {
+  if (!threadId) return undefined;
+  const thread = threadsById.get(threadId);
+  return thread && !thread.archived ? threadId : undefined;
+}
+
 /** A participant thread the session owns that waits for the user, if any. */
 function waitingParticipantThread(
   session: MissionSession,
@@ -319,8 +313,9 @@ export function roundtableMissionState(
     case "paused": {
       const waiting = owners ? ownedWaitingTurn(session, owners) : waitingTurn(session);
       if (waiting || waitingThreadId) return "attention";
-      // A paused Roundtable waits for Resume, not for an answer.
-      return session.status === "running" ? "working" : "idle";
+      // A paused Roundtable waits for Resume, and an idle team chat for the
+      // next message: neither is working.
+      return session.status === "running" && !isChatIdle(session) ? "working" : "idle";
     }
     case "draft":
       return null;
@@ -350,91 +345,28 @@ function roundtableCard(
     key: `roundtable:${session.id}`,
     sessionId: session.id,
     status: session.status,
+    pattern: session.pattern,
     title: session.title,
     projectId: session.projectId,
     state,
     reviewThreadId:
-      (waiting ? session.threadIds[waiting.participantId] : undefined) ?? waitingThreadId,
-    startedAt: session.status === "running" ? (active?.startedAt ?? session.createdAt) : undefined,
+      liveThreadId(waiting ? session.threadIds[waiting.participantId] : undefined, threadsById) ??
+      waitingThreadId,
+    startedAt:
+      session.status === "running" && state !== "idle"
+        ? (active?.startedAt ?? session.createdAt)
+        : undefined,
     endedAt: live ? undefined : session.updatedAt,
     activityAt: session.updatedAt,
-    canStop: live,
-  };
-}
-
-function apiBotState(
-  chat: MissionApiChat | undefined,
-  running: boolean,
-  now: number,
-  recentWindowMs: number,
-): MissionCardState {
-  if (running) return "working";
-  const last = chat?.messages.at(-1);
-  if (last?.role === "assistant" && last.status === "failed") return "error";
-  if (chat && chat.messages.length > 0 && now - chat.updatedAt <= recentWindowMs) return "done";
-  return "idle";
-}
-
-function botCard(
-  bot: MissionBot,
-  chatId: string,
-  inputs: MissionInputs,
-  threadsById: ReadonlyMap<string, MissionThread>,
-  recentWindowMs: number,
-): BotMissionCard {
-  const base = {
-    kind: "bot" as const,
-    key: `bot:${bot.id}`,
-    botId: bot.id,
-    chatId,
-    title: bot.label,
-    projectId: bot.projectId,
-  };
-  if (bot.brain.kind === "agent") {
-    const thread = threadsById.get(chatId);
-    const result = thread ? threadMissionState(thread, inputs.now, recentWindowMs) : null;
-    const timing = thread ? threadTiming(thread) : undefined;
-    const state = result?.state ?? "idle";
-    return {
-      ...base,
-      brain: "agent",
-      threadId: thread ? chatId : undefined,
-      agentKind: bot.brain.agentKind,
-      presentation: thread?.presentationMode === "terminal" ? "terminal" : "gui",
-      remoteServerId: thread?.remoteServerId,
-      state,
-      attentionKind: result?.attentionKind,
-      errorText: state === "error" ? firstLine(thread?.errorMessage) : undefined,
-      startedAt: state === "working" || state === "attention" ? timing?.startedAt : undefined,
-      endedAt: timing?.endedAt,
-      activityAt: timing?.activityAt ?? 0,
-      canStop: thread ? threadCanStop(thread) : false,
-    };
-  }
-  const chat = inputs.apiChats[chatId];
-  const running = inputs.runningApiChats[chatId] === true;
-  const state = apiBotState(chat, running, inputs.now, recentWindowMs);
-  return {
-    ...base,
-    brain: "xai",
-    threadId: undefined,
-    agentKind: undefined,
-    presentation: undefined,
-    remoteServerId: undefined,
-    state,
-    attentionKind: undefined,
-    errorText: undefined,
-    startedAt: running ? chat?.updatedAt : undefined,
-    endedAt: running ? undefined : chat?.updatedAt,
-    activityAt: chat?.updatedAt ?? 0,
-    canStop: running,
+    // A team chat's Stop only interrupts replies, so it needs a reply in progress (as in its view).
+    canStop:
+      session.pattern === "open" ? session.status === "running" && !isChatIdle(session) : live,
   };
 }
 
 /**
  * Every card on the board, unsorted: active or recently finished threads in
- * all projects, running (or recently finished) Roundtables, and every bot
- * with a chat. An agent bot's chat thread shows once, as the bot's card. A
+ * all projects and running (or recently finished) Roundtables. A
  * live Roundtable stands for its participant threads; after it ends, its
  * finished participants stay under its card and only the ones the user keeps
  * using (working, waiting, failed) show on their own. A thread shared by
@@ -444,12 +376,6 @@ export function buildMissionCards(inputs: MissionInputs): MissionCard[] {
   const recentWindowMs = inputs.recentWindowMs ?? RECENT_FINISHED_WINDOW_MS;
   const threadsById = new Map(inputs.threads.map((thread) => [thread.id, thread]));
   const cards: MissionCard[] = [];
-  const botThreadIds = new Set<string>();
-  for (const bot of inputs.bots) {
-    if (!bot.chatId) continue;
-    if (bot.brain.kind === "agent") botThreadIds.add(bot.chatId);
-    cards.push(botCard(bot, bot.chatId, inputs, threadsById, recentWindowMs));
-  }
   const owners = participantOwners(inputs.sessions);
   const liveParticipants = new Set<string>();
   const endedParticipants = new Set<string>();
@@ -463,7 +389,7 @@ export function buildMissionCards(inputs: MissionInputs): MissionCard[] {
     }
   }
   for (const thread of inputs.threads) {
-    if (botThreadIds.has(thread.id) || liveParticipants.has(thread.id)) continue;
+    if (liveParticipants.has(thread.id)) continue;
     const result = threadMissionState(thread, inputs.now, recentWindowMs);
     if (!result) continue;
     if (result.state === "done" && endedParticipants.has(thread.id)) continue;
@@ -532,10 +458,10 @@ export function countMissionFilters(
   return counts;
 }
 
-export type MissionCountInputs = Pick<MissionInputs, "threads" | "sessions" | "bots">;
+export type MissionCountInputs = Pick<MissionInputs, "threads" | "sessions">;
 
 /**
- * How many cards are in "Needs you": threads, bots and Roundtables waiting
+ * How many cards are in "Needs you": threads and Roundtables waiting
  * for an approval or an answer, each counted once (a Roundtable stands for
  * its waiting participant). Waits never age out, so this needs no clock and
  * the status bar matches the board.
@@ -543,8 +469,6 @@ export type MissionCountInputs = Pick<MissionInputs, "threads" | "sessions" | "b
 export function countNeedsYou(inputs: MissionCountInputs): number {
   const cards = buildMissionCards({
     ...inputs,
-    apiChats: {},
-    runningApiChats: {},
     now: 0,
     recentWindowMs: Number.POSITIVE_INFINITY,
   });

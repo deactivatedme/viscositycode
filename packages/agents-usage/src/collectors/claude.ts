@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { DEFAULT_CLIENT_VERSIONS } from "../clientVersions";
 import { parseRetryAfter, toEpochMs } from "../formatters";
 import type { CollectOptions, HostPort, HttpClient, HttpResponse, OAuthToken } from "../host";
@@ -63,18 +64,18 @@ function titleCase(value: string): string {
 /**
  * Render a subscription type like "claude_pro" as "Claude Pro Subscription".
  * Max plans use Claude's plan names: Max 20x was renamed "Ultra" and Max 5x is
- * now just "Max". The creds file still reports both as `subscriptionType:
- * "max"`; only `rateLimitTier` (e.g. "default_claude_max_20x") tells them apart.
+ * now just "Max". Both report `subscriptionType: "max"`; only the tier tells
+ * them apart. `tier` is the creds file's `rateLimitTier`
+ * ("default_claude_max_20x") or `claude auth status`'s `planTier` ("max_20x").
+ * This is the one rule every Claude plan label goes through.
  */
-export function formatClaudePlan(
-  value: string | undefined,
-  rateLimitTier?: string,
-): string | undefined {
+export function formatClaudePlan(value: string | undefined, tier?: string): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
   if (/^ultra( subscription)?$/i.test(trimmed)) return "Ultra";
-  if (/^max( subscription)?$/i.test(trimmed)) {
-    return /_20x$/i.test(rateLimitTier?.trim() ?? "") ? "Ultra" : "Max";
+  // ViscosityCode: also accept a tier-shaped value ("max_20x", "max_5x").
+  if (/^max(_\w+)?( subscription)?$/i.test(trimmed)) {
+    return /_20x$/i.test(tier?.trim() ?? "") || /_20x\b/i.test(trimmed) ? "Ultra" : "Max";
   }
   return /subscription$/i.test(trimmed) ? titleCase(trimmed) : `${titleCase(trimmed)} Subscription`;
 }
