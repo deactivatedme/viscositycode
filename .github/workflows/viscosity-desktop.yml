@@ -215,7 +215,10 @@ jobs:
               echo "::notice::No Windows certificate configured; building an unsigned installer."
             fi
           fi
-          npx --yes "$TAURI_CLI" build --ci --bundles "$BUNDLES" "${CONFIG_ARGS[@]}"
+          # Its own prefix: npm exec inside the repo trips its check of the root
+          # package.json overrides (EOVERRIDE).
+          npm install --prefix ../.tauri-cli --no-save --no-package-lock --no-audit --no-fund "$TAURI_CLI"
+          ../.tauri-cli/node_modules/.bin/tauri build --ci --bundles "$BUNDLES" "${CONFIG_ARGS[@]}"
         env:
           # macOS: Developer ID Application certificate (base64 .p12) + password.
           APPLE_CERTIFICATE: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
@@ -267,4 +270,6 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --draft \
             --title "ViscosityCode $TAG" \
-            --notes "Desktop installers for ViscosityCode $TAG. This app cannot open a data folder (~/.viscositycode) created by the earlier Electron ViscosityCode app yet: it shows an error page and changes nothing. Keep the Electron app for that data, or start this app on another folder with VISCOSITY_TAURI_BASE_DIR."
+            --notes "Desktop installers for ViscosityCode $TAG. This app cannot open a data folder (~/.viscositycode) created by the earlier Electron ViscosityCode app yet: it shows an error page and changes nothing. Keep the Electron app for that data, or start this app on another folder with VISCOSITY_TAURI_BASE_DIR.
+
+          Windows: unless this release says it is signed, the installer is unsigned, so SmartScreen may block it; click More info, then Run anyway. It needs the Microsoft Edge WebView2 runtime (preinstalled on Windows 11; the installer downloads it when missing). On first launch Windows Defender Firewall may ask about \"Node.js JavaScript Runtime\": that is the bundled host. Cancel is safe unless you use WSL projects, which need Allow."

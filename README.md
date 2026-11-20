@@ -130,6 +130,8 @@ bun run tauri:build  # build ViscosityCode.app and the DMG
 bun run tauri:smoke  # headless check of the bundled host
 ```
 
+**On Windows:** the installer is unsigned, so SmartScreen may block it; click **More info** → **Run anyway**. The app needs the Microsoft Edge WebView2 runtime (preinstalled on Windows 11; the installer downloads it when missing). On first launch Windows Defender Firewall may show an alert for "Node.js JavaScript Runtime": that is the bundled host. **Cancel** is safe unless you use WSL projects, which need **Allow**.
+
 `bun run dev` still runs the Electron app for development; Electron is no longer packaged or released. The Tauri app has no in-app updates yet: to update, quit it and replace the app with the new build.
 
 **Coming from the Electron app?** The Tauri app cannot open a data folder (`~/.viscositycode`) that the Electron ViscosityCode app created: that app sealed its credential key with the macOS keychain, and there is no migration yet. The Tauri app installs over `ViscosityCode.app` (same identifier) and then shows an error page for that folder; nothing in it is changed or deleted. Until a migration ships, keep the Electron build for that data, or start the Tauri app on another folder, for example `VISCOSITY_TAURI_BASE_DIR=~/.viscositycode-tauri /Applications/ViscosityCode.app/Contents/MacOS/viscositycode-desktop`.

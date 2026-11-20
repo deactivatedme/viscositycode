@@ -21,7 +21,12 @@ void test("builds Tauri DMGs for both Mac architectures and a Windows x64 NSIS i
   assert.equal(legs["darwin-x64"].bundles, "app,dmg");
   assert.equal(legs["win32-x64"].bundles, "nsis");
   assert.equal(workflow.env.TAURI_CLI, "@tauri-apps/cli@2.12.4");
-  assert.match(step("Package").run, /npx --yes "\$TAURI_CLI" build/u);
+  assert.match(
+    step("Package").run,
+    /npm install --prefix (\S+) .*"\$TAURI_CLI"\n\s*\1\/node_modules\/\.bin\/tauri build /u,
+  );
+  // npx inside the repo fails npm's override check (EOVERRIDE).
+  assert.doesNotMatch(step("Package").run, /\bnpx\b/u);
   assert.match(step("Package").run, /--config tauri\.bundle\.conf\.json/u);
 });
 
@@ -37,6 +42,23 @@ void test("bundles the qualified standalone archive for each leg's own target", 
   assert.equal(download.with.pattern, "viscosity-server-standalone-${{ matrix.target }}-*");
   assert.match(step("Stage the standalone archive (macOS)").run, /checkLayout/u);
   assert.match(step("Stage the standalone archive (Windows)").run, /runtime\/node\.exe/u);
+});
+
+void test("the server archive build stages live_re before assembling the tarball", async () => {
+  const server = parse(
+    await readFile(
+      new URL("../../.github/workflows/_server-artifact.yml", import.meta.url),
+      "utf8",
+    ),
+  );
+  const steps = server.jobs.build.steps;
+  const script = steps.find(
+    (candidate) => candidate.name === "Build and assemble the server artifact",
+  ).run;
+  const stage = script.indexOf("node scripts/prepare-live-re.mjs --require --host-only");
+  assert.ok(stage > script.indexOf("prepare:git-helper"), "live_re must be staged with --require");
+  assert.ok(stage < script.indexOf("assemble-server-tarball.mjs"), "stage live_re before assembly");
+  assert.ok(steps.some((candidate) => candidate.with?.workspaces === "native/live-re"));
 });
 
 void test("a re-run of only the failed legs still finds the server job's archives", async () => {
@@ -85,6 +107,8 @@ void test("draft release notes warn that Electron-created data folders are refus
   const create = workflow.jobs["draft-release"].steps[1].run;
   assert.match(create, /Electron/u);
   assert.match(create, /VISCOSITY_TAURI_BASE_DIR/u);
+  assert.match(create, /SmartScreen/u);
+  assert.match(create, /Node\.js JavaScript Runtime/u);
 });
 
 void test("uploads only installers under the fork's names, and releases only those", () => {
