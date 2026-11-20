@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -70,10 +71,14 @@ function makeSpawnedProcess(): SpawnedProcess {
   } as unknown as SpawnedProcess;
 }
 
-function createProbeQuery(): Query {
+function createProbeQuery(
+  init: Record<string, unknown> = { commands: [{ name: "help", description: "Show help" }] },
+  turnError?: Error,
+): Query {
   let closed = false;
   return {
     async next(): Promise<IteratorResult<SDKMessage>> {
+      if (turnError) throw turnError;
       if (closed) return { done: true, value: undefined };
       return { done: true, value: undefined };
     },
@@ -92,9 +97,7 @@ function createProbeQuery(): Query {
     setModel: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     setMaxThinkingTokens: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     applyFlagSettings: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    initializationResult: vi.fn<() => Promise<unknown>>().mockResolvedValue({
-      commands: [{ name: "help", description: "Show help" }],
-    }),
+    initializationResult: vi.fn<() => Promise<unknown>>().mockResolvedValue(init),
     supportedCommands: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
     supportedModels: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
     getContextUsage: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
@@ -176,7 +179,35 @@ describe("mapClaudeSlashCommands", () => {
   });
 });
 
+const CLAUDE_GEN_55_IDS = ["claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5"];
+
 describe("claudeCapabilitiesFromCliVersion", () => {
+  it.each(["2.1.110", "2.1.153", "2.1.169", "2.1.196", "2.1.218", "2.1.249", "2.1.324"])(
+    "hides the 5.5 generation on Claude Code %s",
+    (version) => {
+      const p = claudeCapabilitiesFromCliVersion(version);
+      for (const id of CLAUDE_GEN_55_IDS) {
+        expect(p?.models?.map((m) => m.id)).not.toContain(id);
+        expect(p?.modelEfforts && id in p.modelEfforts).toBe(false);
+        expect(p?.fastModels).not.toContain(id);
+      }
+    },
+  );
+
+  it("hides only the 5.5 generation before Claude Code 2.1.325", () => {
+    const p = claudeCapabilitiesFromCliVersion("2.1.324");
+    expect(p?.models?.map((m) => m.id)).toEqual([
+      "claude-fable-5-1",
+      "claude-fable-5",
+      "claude-opus-5",
+      "claude-opus-4-8",
+      "claude-opus-4-7",
+      "claude-opus-4-6",
+      "claude-sonnet-5",
+      "haiku",
+    ]);
+  });
+
   it("hides Opus 5, Fable 5, Opus 4.7, Opus 4.8, and Sonnet 5 below 2.1.111", () => {
     const p = claudeCapabilitiesFromCliVersion("2.1.110");
     expect(p?.models?.map((m) => m.id)).not.toContain("claude-opus-5");
@@ -239,8 +270,8 @@ describe("claudeCapabilitiesFromCliVersion", () => {
     expect(p?.modelContextSizes && "claude-fable-5-1" in p.modelContextSizes).toBe(false);
   });
 
-  it("returns undefined when CLI supports Fable 5.1", () => {
-    expect(claudeCapabilitiesFromCliVersion("2.1.250")).toBeUndefined();
+  it("returns undefined when CLI supports the 5.5 generation", () => {
+    expect(claudeCapabilitiesFromCliVersion("2.1.325")).toBeUndefined();
     expect(claudeCapabilitiesFromCliVersion("3.0.0")).toBeUndefined();
   });
 
@@ -252,6 +283,32 @@ describe("claudeCapabilitiesFromCliVersion", () => {
 });
 
 describe("claudeCapabilitiesFromSdkModels", () => {
+  it("does not seed built-ins an older CLI predates unless the SDK reports them", () => {
+    const capabilities = claudeCapabilitiesFromSdkModels(
+      [
+        {
+          value: "default",
+          resolvedModel: "claude-opus-4-8",
+          displayName: "Default",
+          description: "",
+        },
+        { value: "claude-fable-5-1", displayName: "Fable 5.1", description: "" },
+      ],
+      "2.1.300",
+    );
+    const ids = capabilities?.models.map((m) => m.id) ?? [];
+    expect(ids[0]).toBe("claude-fable-5-1");
+    expect(ids).not.toContain("claude-fable-5-2");
+    expect(ids).not.toContain("claude-opus-5-5");
+    expect(ids).not.toContain("claude-sonnet-5-5");
+    expect(capabilities?.modelEfforts["claude-fable-5-2"]).toBeUndefined();
+    expect(capabilities?.fastModels).not.toContain("claude-opus-5-5");
+    expect(capabilities?.defaultHiddenModels).not.toContain("claude-fable-5-1");
+    // Opus 5 is verified on 2.1.300, so it is the newest visible Opus there.
+    expect(ids).toContain("claude-opus-5");
+    expect(capabilities?.defaultHiddenModels).not.toContain("claude-opus-5");
+  });
+
   it("exposes smaller working windows for newly discovered long-context Claude models", () => {
     const models = [
       "claude-fable-5-2",
@@ -327,6 +384,60 @@ describe("claudeCapabilitiesFromSdkModels", () => {
     expect(capabilities?.modelEfforts["claude-fable-5-2"]).not.toContain("ultracode");
   });
 
+  // ViscosityCode: init payload captured read-only from Claude Code 2.1.329.
+  it("maps the Claude Code 2.1.329 catalog to the 5.5 generation", () => {
+    const xhigh = ["low", "medium", "high", "xhigh", "max"];
+    const entry = (
+      value: string,
+      resolvedModel: string,
+      displayName: string,
+      extra: Record<string, unknown> = {},
+    ) => ({ value, resolvedModel, displayName, description: "", ...extra });
+    const capabilities = claudeCapabilitiesFromSdkModels([
+      entry("default", "claude-opus-5-5", "Default (recommended)", {
+        supportedEffortLevels: xhigh,
+        supportsFastMode: true,
+      }),
+      entry("opus", "claude-opus-5-5", "Opus 5.5", { supportsFastMode: true }),
+      entry("fable", "claude-fable-5-2", "Fable 5.2", { supportsFastMode: true }),
+      entry("sonnet", "claude-sonnet-5-5", "Sonnet 5.5"),
+      entry("haiku", "claude-haiku-5-5", "Haiku 5.5"),
+      entry("claude-fable-5-1", "claude-fable-5-1", "Fable 5.1"),
+      entry("claude-haiku-4-5-20251001", "claude-haiku-4-5-20251001", "Haiku 4.5"),
+      entry("claude-sonnet-5", "claude-sonnet-5", "Sonnet 5"),
+      entry("claude-opus-5", "claude-opus-5", "Opus 5", { supportsFastMode: true }),
+      entry("claude-fable-5", "claude-fable-5", "Fable 5"),
+      entry("claude-opus-4-8", "claude-opus-4-8", "Opus 4.8", { supportsFastMode: true }),
+      entry("claude-opus-4-7", "claude-opus-4-7", "Opus 4.7"),
+      entry("claude-opus-4-6", "claude-opus-4-6", "Opus 4.6"),
+      entry("claude-sonnet-4-6", "claude-sonnet-4-6", "Sonnet 4.6"),
+    ]);
+    const labels = new Map(capabilities?.models.map((m) => [m.id, m.label]));
+    expect(labels.get("claude-fable-5-2")).toBe("Fable 5.2");
+    expect(labels.get("claude-opus-5-5")).toBe("Opus 5.5");
+    expect(labels.get("claude-sonnet-5-5")).toBe("Sonnet 5.5");
+    expect(labels.get("haiku")).toBe("Haiku 5.5");
+    expect(labels.has("claude-haiku-5-5")).toBe(false);
+    const ids = capabilities?.models.map((m) => m.id) ?? [];
+    expect(ids[0]).toBe("claude-fable-5-2");
+    expect(ids.indexOf("haiku")).toBeLessThan(ids.indexOf("claude-haiku-4-5-20251001"));
+    const hidden = capabilities?.defaultHiddenModels ?? [];
+    for (const id of ["claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "haiku"]) {
+      expect(hidden).not.toContain(id);
+    }
+    for (const id of [
+      "claude-fable-5-1",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "claude-haiku-4-5-20251001",
+    ]) {
+      expect(hidden).toContain(id);
+    }
+    expect(capabilities?.fastModels).toEqual(
+      expect.arrayContaining(["claude-opus-5-5", "claude-fable-5-2"]),
+    );
+  });
+
   it("does not erase explicit historical models absent from the current SDK catalog", () => {
     const capabilities = claudeCapabilitiesFromSdkModels([
       {
@@ -355,6 +466,37 @@ describe("win32PathToWslMount", () => {
 });
 
 describe("Claude SDK probe process handling", () => {
+  // ViscosityCode: regression for "[claude-probe] native sdk: Operation aborted".
+  it("keeps SDK-discovered models when the fast-mode turn is aborted", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "claude-probe-fast-"));
+    tempDirs.push(dataDir);
+    vi.stubEnv("PORACODE_DATA_DIR", dataDir);
+    mockSdk.query.mockReturnValue(
+      createProbeQuery(
+        {
+          commands: [{ name: "help", description: "Show help" }],
+          account: { email: "user@example.com" },
+          models: [
+            { value: "fable", resolvedModel: "claude-fable-5-2", displayName: "Fable 5.2" },
+            { value: "opus", resolvedModel: "claude-opus-5-5", displayName: "Opus 5.5" },
+          ],
+        },
+        new Error("Operation aborted"),
+      ),
+    );
+    const result = await probeClaudeCapabilities({
+      location: { kind: "posix", path: "/tmp" },
+      executablePath: "claude",
+      // Older than the 5.5 minimum: the SDK catalog must still win.
+      version: "2.1.300",
+    });
+    const ids = result?.models?.map((m) => m.id);
+    expect(ids).toContain("claude-fable-5-2");
+    expect(ids).toContain("claude-opus-5-5");
+    expect(result?.slashCommands?.map((c) => c.id)).toEqual(["help"]);
+    expect(result?.fastDisabledReason).toBeUndefined();
+  });
+
   it("publishes saved custom windows through capability discovery", async () => {
     mockSdk.query.mockReturnValue(createProbeQuery());
     const result = await probeClaudeCapabilities({

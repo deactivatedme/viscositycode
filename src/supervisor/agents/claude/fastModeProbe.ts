@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { Query, SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { AsyncPromptQueue } from "./promptQueue";
 import { readFastAvailabilityAt, writeFastAvailabilityAt } from "./fastModeCacheCore";
@@ -40,18 +41,28 @@ export async function resolveFastAvailability(
   } catch {
     return undefined; // CLI predates the flag — leave fast ungated.
   }
-  queue.push({
-    type: "user",
-    session_id: "",
-    parent_tool_use_id: null,
-    message: { role: "user", content: "Respond with the single word: ok" },
-  } as SDKUserMessage);
+  try {
+    queue.push({
+      type: "user",
+      session_id: "",
+      parent_tool_use_id: null,
+      message: { role: "user", content: "Respond with the single word: ok" },
+    } as SDKUserMessage);
 
-  for await (const message of runtime) {
-    if (message.type !== "result") continue;
-    const available = (message as { fast_mode_state?: string }).fast_mode_state === "on";
-    await writeFastAvailabilityAt(cachePath, accountEmail, available);
-    return available;
+    for await (const message of runtime) {
+      if (message.type !== "result") continue;
+      const available = (message as { fast_mode_state?: string }).fast_mode_state === "on";
+      await writeFastAvailabilityAt(cachePath, accountEmail, available);
+      return available;
+    }
+  } catch (error) {
+    // ViscosityCode: the probe timeout aborts this turn and the iterator throws. Swallow it so
+    // the caller keeps the models and commands it already read from init.
+    console.log(
+      "[claude-probe] fast-mode check skipped:",
+      error instanceof Error ? error.message : String(error),
+    );
+    return undefined;
   }
 
   // Aborted/timed out before a result: don't cache a spurious "disabled".

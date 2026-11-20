@@ -1,9 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Runs inside WSL (login-shell `node` invocation) to execute the Claude Agent SDK
  * with a Linux `claude` path. Prints one JSON object on stdout:
  * `{ "slashCommands": AgentSlashCommand[], "fastAvailable"?: boolean }`.
  *
- * Args: <claudePath> <timeoutMs> [<fastModeCachePath>]. When the cache path is
+ * Args: <claudePath> <timeoutMs> [<fastModeCachePath>] [<cliVersion>]. When the cache path is
  * given (a `/mnt/c/...` mount of the host cache), fast-mode availability is
  * probed once per account and shared with the native path.
  */
@@ -54,6 +55,7 @@ async function main() {
   const claudePath = process.argv[2];
   const timeoutMs = Math.min(Math.max(Number(process.argv[3]) || 12_000, 3000), 60_000);
   const cachePath = process.argv[4]?.trim() || undefined;
+  const cliVersion = process.argv[5]?.trim() || undefined;
 
   if (!claudePath?.trim()) {
     console.error(JSON.stringify({ error: "missing_claude_path" }));
@@ -82,7 +84,7 @@ async function main() {
 
     const init = await q.initializationResult();
     const slashCommands = mapCommands(init.commands, await readSkillNames(q));
-    const modelCapabilities = claudeCapabilitiesFromSdkModels(init.models);
+    const modelCapabilities = claudeCapabilitiesFromSdkModels(init.models, cliVersion);
     const fastAvailable = cachePath
       ? await resolveFastAvailability(q, queue, init.account?.email, cachePath)
       : undefined;

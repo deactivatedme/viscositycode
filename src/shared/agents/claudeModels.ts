@@ -1,5 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { LabeledOption } from "@/shared/contracts";
 
+// ViscosityCode: the 5.5 generation (Fable 5.2, Opus 5.5, Sonnet 5.5).
+export const CLAUDE_FABLE_52_MODEL_ID = "claude-fable-5-2";
+export const CLAUDE_OPUS_55_MODEL_ID = "claude-opus-5-5";
+export const CLAUDE_SONNET_55_MODEL_ID = "claude-sonnet-5-5";
 export const CLAUDE_FABLE_51_MODEL_ID = "claude-fable-5-1";
 export const CLAUDE_FABLE_5_MODEL_ID = "claude-fable-5";
 export const CLAUDE_OPUS_5_MODEL_ID = "claude-opus-5";
@@ -42,8 +47,9 @@ export function parseClaudeModelVersion(text: string): {
     return { version: Number(`${major}.${minor}`), major, minor };
   }
 
-  // Hyphenated version e.g. "claude-fable-5-1" -> 5.1, "claude-opus-4-8" -> 4.8
-  const hyphenMatch = /(?:fable|opus|sonnet|haiku)-(\d+)-(\d+)(?![\d])/i.exec(norm);
+  // Hyphenated version e.g. "claude-fable-5-1" -> 5.1, "claude-opus-4-8" -> 4.8. The minor is
+  // 1-2 digits so a snapshot date ("claude-opus-4-20250514") falls through to the single version.
+  const hyphenMatch = /(?:fable|opus|sonnet|haiku)-(\d+)-(\d{1,2})(?!\d)/i.exec(norm);
   if (hyphenMatch) {
     const major = Number(hyphenMatch[1]);
     const minor = Number(hyphenMatch[2]);
@@ -126,32 +132,32 @@ export function isClaudeAutoCapable(modelId?: string): boolean {
 }
 
 /**
- * Identifies legacy or superseded Claude models that should be hidden by default
- * until the user expands the full model picker list.
+ * ViscosityCode: family and version used for ordering. A version-less alias
+ * (`haiku`) takes its version from the label the SDK gave it ("Haiku 5.5").
  */
-export function isLegacyClaudeModel(model: Pick<LabeledOption, "id" | "label">): boolean {
+export function claudeModelRank(model: Pick<LabeledOption, "id" | "label">): ParsedClaudeModel {
   const parsed = parseClaudeModel(model.id || model.label);
-  switch (parsed.family) {
-    case "fable":
-      // Fable 5.1+ is active; Fable 5.0 is legacy
-      return parsed.version > 0 && parsed.version < 5.1;
-    case "opus":
-      // Opus 5+ is active; Opus 4.8, 4.7, 4.6 are legacy
-      return parsed.version > 0 && parsed.version < 5.0;
-    case "sonnet":
-      // Sonnet 5+ is active; legacy sonnet / 3.7 / 4.x are legacy
-      return parsed.version < 5.0;
-    case "haiku":
-      return false;
-    default:
-      return parsed.version > 0 && parsed.version < 5.0;
-  }
+  if (parsed.version > 0 || !model.label) return parsed;
+  return { ...parsed, ...parseClaudeModelVersion(model.label) };
 }
 
+/**
+ * ViscosityCode: hide a model by default when a newer version of the same named
+ * family is in the list, so only the newest Fable/Opus/Sonnet/Haiku shows until
+ * the user expands the picker. Third-party ("other") models are never hidden.
+ * Relative rather than fixed thresholds, so it does not go stale each release.
+ */
 export function claudeDefaultHiddenModels(
   models: readonly Pick<LabeledOption, "id" | "label">[],
 ): string[] {
-  return models.filter(isLegacyClaudeModel).map((model) => model.id);
+  const ranked = models.map((model) => ({ id: model.id, ...claudeModelRank(model) }));
+  const newest = new Map<ClaudeFamily, number>();
+  for (const model of ranked) {
+    newest.set(model.family, Math.max(newest.get(model.family) ?? 0, model.version));
+  }
+  return ranked
+    .filter((model) => model.family !== "other" && model.version < newest.get(model.family)!)
+    .map((model) => model.id);
 }
 
 const CLAUDE_FAMILY_PRECEDENCE: Record<ClaudeFamily, number> = {
@@ -170,8 +176,8 @@ export function sortClaudeModels<T extends Pick<LabeledOption, "id" | "label">>(
   models: readonly T[],
 ): T[] {
   return [...models].sort((a, b) => {
-    const parsedA = parseClaudeModel(a.id || a.label);
-    const parsedB = parseClaudeModel(b.id || b.label);
+    const parsedA = claudeModelRank(a);
+    const parsedB = claudeModelRank(b);
 
     const famDiff =
       CLAUDE_FAMILY_PRECEDENCE[parsedA.family] - CLAUDE_FAMILY_PRECEDENCE[parsedB.family];

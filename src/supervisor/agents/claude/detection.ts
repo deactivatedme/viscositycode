@@ -1,3 +1,5 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { formatClaudePlan } from "@poracode/agents-usage"; // ViscosityCode
 import { compactAgentProviderMetadata, type AgentCapability } from "@/shared/contracts";
 import { readAgentCommandOutput, type DetectionSpec, type StatusProbeResult } from "../base";
 import { getAgentProbeCwd } from "../probeCwd";
@@ -109,22 +111,8 @@ interface ClaudeAuthStatusResponse {
   email?: string;
   orgName?: string;
   subscriptionType?: string;
-}
-
-function titleCaseWords(value: string): string {
-  return value
-    .split(/[\s_-]+/g)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function formatClaudePlan(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  if (!trimmed) return undefined;
-  return /subscription$/i.test(trimmed)
-    ? titleCaseWords(trimmed)
-    : `${titleCaseWords(trimmed)} Subscription`;
+  /** e.g. "max_20x" (Ultra) or "max_5x" (Max). */
+  planTier?: string;
 }
 
 export function parseClaudeAuthStatusJson(output: string): StatusProbeResult | undefined {
@@ -138,12 +126,12 @@ export function parseClaudeAuthStatusJson(output: string): StatusProbeResult | u
     return undefined;
   }
 
+  // ViscosityCode: one plan rule with the usage collector, so Ultra and Max differ.
+  const plan = formatClaudePlan(parsed.subscriptionType, parsed.planTier);
   const providerMetadata = compactAgentProviderMetadata({
     ...(parsed.email?.trim() ? { authenticatedAs: parsed.email.trim() } : {}),
     ...(parsed.orgName?.trim() ? { organization: parsed.orgName.trim() } : {}),
-    ...(formatClaudePlan(parsed.subscriptionType)
-      ? { plan: formatClaudePlan(parsed.subscriptionType) }
-      : {}),
+    ...(plan ? { plan } : {}),
     ...(parsed.authMethod?.trim()
       ? { authMethod: parsed.authMethod === "claude.ai" ? "Claude.ai" : parsed.authMethod.trim() }
       : {}),

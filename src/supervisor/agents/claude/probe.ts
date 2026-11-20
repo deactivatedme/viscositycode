@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AgentCapability, AgentTerminalAuthMethod } from "@/shared/contracts";
@@ -127,6 +128,7 @@ async function probeClaudeSdkPartialNative(
   timeoutMs: number,
   envOverrides?: Record<string, string>,
   signal?: AbortSignal,
+  cliVersion?: string,
 ): Promise<Partial<AgentCapability> | undefined> {
   if (signal?.aborted) return undefined;
   try {
@@ -153,7 +155,7 @@ async function probeClaudeSdkPartialNative(
       });
       const init = await q.initializationResult();
       const slashCommands = mapClaudeSlashCommands(init.commands, await readClaudeSkillNames(q));
-      const modelCapabilities = claudeCapabilitiesFromSdkModels(init.models);
+      const modelCapabilities = claudeCapabilitiesFromSdkModels(init.models, cliVersion);
       const fastAvailable = await resolveFastAvailability(
         q,
         queue,
@@ -218,7 +220,8 @@ async function probeClaudeSdkPartialWsl(
     ctx.location.distro,
     "/tmp",
     "node",
-    [workerWslPath, ctx.executablePath, String(timeoutMs), cacheWslPath],
+    // ViscosityCode: the CLI version lets the worker skip built-ins this CLI predates.
+    [workerWslPath, ctx.executablePath, String(timeoutMs), cacheWslPath, ctx.version ?? ""],
     {
       timeout: timeoutMs + 3000,
       ...(envOverrides ? { env: envOverrides } : {}),
@@ -290,9 +293,19 @@ export async function probeClaudeCapabilities(
   const sdkPartial =
     ctx.location.kind === "wsl"
       ? await probeClaudeSdkPartialWsl(ctx, timeoutMs, options?.env)
-      : await probeClaudeSdkPartialNative(ctx.executablePath, timeoutMs, options?.env, ctx.signal);
+      : await probeClaudeSdkPartialNative(
+          ctx.executablePath,
+          timeoutMs,
+          options?.env,
+          ctx.signal,
+          ctx.version,
+        );
 
-  const versionPartial = claudeCapabilitiesFromCliVersion(ctx.version);
+  // ViscosityCode: the SDK catalog is authoritative for the ids it reports (the version gate
+  // already applied to seeded built-ins); the full CLI-version gate is the offline fallback.
+  const versionPartial = sdkPartial?.models?.length
+    ? undefined
+    : claudeCapabilitiesFromCliVersion(ctx.version);
 
   // Always advertise the terminal login + `claude auth logout` capabilities
   // when the binary is installed — the Settings UI gates the Login/Logout

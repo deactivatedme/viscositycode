@@ -1,11 +1,14 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import {
   claudeDefaultHiddenModels,
   formatClaudeModelLabel,
   isClaudeAutoCapable,
-  isLegacyClaudeModel,
   parseClaudeModel,
   sortClaudeModels,
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
   CLAUDE_FABLE_51_MODEL_ID,
   CLAUDE_FABLE_5_MODEL_ID,
   CLAUDE_OPUS_5_MODEL_ID,
@@ -126,19 +129,8 @@ describe("isClaudeAutoCapable", () => {
   });
 });
 
-describe("isLegacyClaudeModel & claudeDefaultHiddenModels", () => {
-  it("marks older versions as legacy", () => {
-    expect(isLegacyClaudeModel({ id: CLAUDE_FABLE_51_MODEL_ID, label: "Fable 5.1" })).toBe(false);
-    expect(isLegacyClaudeModel({ id: CLAUDE_FABLE_5_MODEL_ID, label: "Fable 5" })).toBe(true);
-    expect(isLegacyClaudeModel({ id: CLAUDE_OPUS_5_MODEL_ID, label: "Opus 5" })).toBe(false);
-    expect(isLegacyClaudeModel({ id: CLAUDE_OPUS_48_MODEL_ID, label: "Opus 4.8" })).toBe(true);
-    expect(isLegacyClaudeModel({ id: CLAUDE_OPUS_47_MODEL_ID, label: "Opus 4.7" })).toBe(true);
-    expect(isLegacyClaudeModel({ id: CLAUDE_OPUS_46_MODEL_ID, label: "Opus 4.6" })).toBe(true);
-    expect(isLegacyClaudeModel({ id: CLAUDE_SONNET_5_MODEL_ID, label: "Sonnet 5" })).toBe(false);
-    expect(isLegacyClaudeModel({ id: CLAUDE_HAIKU_MODEL_ID, label: "Haiku" })).toBe(false);
-  });
-
-  it("filters built-in models to hide legacy versions by default", () => {
+describe("claudeDefaultHiddenModels", () => {
+  it("hides every model with a newer version in the same family", () => {
     const models = [
       { id: CLAUDE_FABLE_51_MODEL_ID, label: "Fable 5.1" },
       { id: CLAUDE_FABLE_5_MODEL_ID, label: "Fable 5" },
@@ -156,9 +148,53 @@ describe("isLegacyClaudeModel & claudeDefaultHiddenModels", () => {
       CLAUDE_OPUS_46_MODEL_ID,
     ]);
   });
+
+  it("keeps only the 5.5 generation visible once it is listed", () => {
+    const models = [
+      { id: CLAUDE_FABLE_52_MODEL_ID, label: "Fable 5.2" },
+      { id: CLAUDE_FABLE_51_MODEL_ID, label: "Fable 5.1" },
+      { id: CLAUDE_OPUS_55_MODEL_ID, label: "Opus 5.5" },
+      { id: CLAUDE_OPUS_5_MODEL_ID, label: "Opus 5" },
+      { id: CLAUDE_SONNET_55_MODEL_ID, label: "Sonnet 5.5" },
+      { id: CLAUDE_SONNET_5_MODEL_ID, label: "Sonnet 5" },
+      { id: CLAUDE_HAIKU_MODEL_ID, label: "Haiku 5.5" },
+      { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
+    ];
+    expect(claudeDefaultHiddenModels(models)).toEqual([
+      CLAUDE_FABLE_51_MODEL_ID,
+      CLAUDE_OPUS_5_MODEL_ID,
+      CLAUDE_SONNET_5_MODEL_ID,
+      "claude-haiku-4-5-20251001",
+    ]);
+  });
+
+  it("ranks dated snapshot ids by model version, not by the date", () => {
+    const models = [
+      { id: "claude-opus-4-1-20250805", label: "claude-opus-4-1-20250805" },
+      { id: "claude-opus-4-20250514", label: "claude-opus-4-20250514" },
+    ];
+    expect(claudeDefaultHiddenModels(models)).toEqual(["claude-opus-4-20250514"]);
+  });
+
+  it("never hides third-party models", () => {
+    const models = [
+      { id: "glm-4-6", label: "GLM 4.6" },
+      { id: "kimi-k2", label: "Kimi K2" },
+      { id: CLAUDE_OPUS_55_MODEL_ID, label: "Opus 5.5" },
+    ];
+    expect(claudeDefaultHiddenModels(models)).toEqual([]);
+  });
 });
 
 describe("sortClaudeModels", () => {
+  it("ranks the version-less haiku alias by its label", () => {
+    const sorted = sortClaudeModels([
+      { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
+      { id: CLAUDE_HAIKU_MODEL_ID, label: "Haiku 5.5" },
+    ]);
+    expect(sorted.map((m) => m.id)).toEqual([CLAUDE_HAIKU_MODEL_ID, "claude-haiku-4-5-20251001"]);
+  });
+
   it("sorts models by family and descending version", () => {
     const input = [
       { id: "claude-opus-5", label: "Opus 5" },

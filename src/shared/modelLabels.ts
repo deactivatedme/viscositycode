@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Cross-provider model-id → display-label formatting shared by the renderer
  * (ProviderModelMenu, sub-agent progress chips) and the supervisor (Cursor ACP
@@ -115,7 +116,10 @@ export function formatCursorBaseModelLabel(baseId: string, fallbackLabel?: strin
   }
 
   // Accepts an optional 8-digit snapshot date: "claude-sonnet-4-5-20250929".
-  const claude = /^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,2}))?(?:-(\d{8}))?$/i.exec(baseId);
+  // ViscosityCode: includes the fable family ("claude-fable-5-2" -> "Fable 5.2").
+  const claude = /^claude-(opus|sonnet|haiku|fable)-(\d+)(?:-(\d{1,2}))?(?:-(\d{8}))?$/i.exec(
+    baseId,
+  );
   if (claude) {
     const version = claude[3] ? `${claude[2]}.${claude[3]}` : claude[2]!;
     const snapshot = claude[4] ? ` (${claude[4]})` : "";

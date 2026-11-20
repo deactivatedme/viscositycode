@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { homedir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -6,7 +7,7 @@ import {
   createClaudeProfileAdapter,
   overrideProfileCapabilities,
 } from "./index";
-import { claudeCapabilities } from "./detection";
+import { claudeCapabilities, parseClaudeAuthStatusJson } from "./detection";
 import {
   clearExecutablePathCache,
   primeWslLaunchEnvironment,
@@ -219,14 +220,29 @@ describe("claudeCapabilities", () => {
     expect(claudeCapabilities.fastModels).not.toContain("claude-fable-5-1");
   });
 
-  it("lists Fable 5.1 first at medium effort so it is the default for new threads", () => {
-    expect(claudeCapabilities.models[0]).toEqual({ id: "claude-fable-5-1", label: "Fable 5.1" });
+  // ViscosityCode: the 5.5 generation leads the static fallback.
+  it.each([
+    ["claude-fable-5-2", "Fable 5.2", true],
+    ["claude-opus-5-5", "Opus 5.5", true],
+    ["claude-sonnet-5-5", "Sonnet 5.5", false],
+  ] as const)("surfaces %s as %s with frontier effort tiers", (id, label, fast) => {
+    expect(claudeCapabilities.models).toContainEqual({ id, label });
+    expect(claudeCapabilities.modelEfforts[id]).toEqual(["low", "medium", "high", "xHigh", "max"]);
+    expect(claudeCapabilities.modelContextSizes?.[id]).toEqual(["400k", "1m"]);
+    expect(claudeCapabilities.fastModels?.includes(id)).toBe(fast);
+  });
+
+  it("lists Fable 5.2 first at medium effort so it is the default for new threads", () => {
+    expect(claudeCapabilities.models[0]).toEqual({ id: "claude-fable-5-2", label: "Fable 5.2" });
     expect(claudeCapabilities.defaultEffort).toBe("medium");
     expect(claudeCapabilities.defaultHiddenModels).toEqual([
+      "claude-fable-5-1",
       "claude-fable-5",
+      "claude-opus-5",
       "claude-opus-4-8",
       "claude-opus-4-7",
       "claude-opus-4-6",
+      "claude-sonnet-5",
     ]);
   });
 
@@ -263,6 +279,9 @@ describe("claudeCapabilities", () => {
     expect(claudeCapabilities.efforts).not.toContain("ultracode");
     expect(claudeCapabilities.workflowLabel).toBe("Ultracode");
     expect(claudeCapabilities.workflowModels).toEqual([
+      "claude-fable-5-2",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
       "claude-fable-5-1",
       "claude-fable-5",
       "claude-opus-5",
@@ -270,6 +289,20 @@ describe("claudeCapabilities", () => {
       "claude-opus-4-7",
       "claude-sonnet-5",
     ]);
+  });
+});
+
+// ViscosityCode: `claude auth status --json` reports Max 20x as planTier "max_20x".
+describe("parseClaudeAuthStatusJson plan", () => {
+  it.each([
+    [{ subscriptionType: "max", planTier: "max_20x" }, "Ultra"],
+    [{ subscriptionType: "max", planTier: "max_5x" }, "Max"],
+    [{ subscriptionType: "max" }, "Max"],
+    [{ subscriptionType: "ultra" }, "Ultra"],
+    [{ subscriptionType: "pro", planTier: "pro" }, "Pro Subscription"],
+  ])("labels %j as %s", (auth, plan) => {
+    const parsed = parseClaudeAuthStatusJson(JSON.stringify({ loggedIn: true, ...auth }));
+    expect(parsed?.providerMetadata?.plan).toBe(plan);
   });
 });
 

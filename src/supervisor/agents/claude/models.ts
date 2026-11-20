@@ -1,10 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   claudeDefaultHiddenModels,
   formatClaudeModelLabel,
   isClaudeAutoCapable,
-  isLegacyClaudeModel,
   parseClaudeModel,
   sortClaudeModels,
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
   CLAUDE_FABLE_51_MODEL_ID,
   CLAUDE_FABLE_5_MODEL_ID,
   CLAUDE_OPUS_5_MODEL_ID,
@@ -23,9 +26,11 @@ export {
   claudeDefaultHiddenModels,
   formatClaudeModelLabel,
   isClaudeAutoCapable,
-  isLegacyClaudeModel,
   parseClaudeModel,
   sortClaudeModels,
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
   CLAUDE_FABLE_51_MODEL_ID,
   CLAUDE_FABLE_5_MODEL_ID,
   CLAUDE_OPUS_5_MODEL_ID,
@@ -42,6 +47,13 @@ const MIN_CLAUDE_FABLE_5_CLI = [2, 1, 170] as const;
 const MIN_CLAUDE_SONNET_5_CLI = [2, 1, 197] as const;
 const MIN_CLAUDE_OPUS_5_CLI = [2, 1, 219] as const;
 const MIN_CLAUDE_FABLE_51_CLI = [2, 1, 250] as const;
+// ViscosityCode: oldest local CLI verified to ship Fable 5.2, Opus 5.5 and Sonnet 5.5.
+const MIN_CLAUDE_GEN_55_CLI = [2, 1, 325] as const;
+const CLAUDE_GEN_55_MODEL_IDS = [
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
+] as const;
 
 const CLAUDE_SEMVER_RE = /(\d+)\.(\d+)\.(\d+)/;
 
@@ -55,6 +67,10 @@ export const CLAUDE_PREMIUM_EFFORT_TIERS: string[] = [...CLAUDE_EFFORT_TIERS];
  * threads and delegated runs.
  */
 export const CLAUDE_BUILTIN_MODELS: AgentCapability["models"] = [
+  // ViscosityCode: 5.5 generation; Fable 5.2 first, so it is the default.
+  { id: CLAUDE_FABLE_52_MODEL_ID, label: "Fable 5.2" },
+  { id: CLAUDE_OPUS_55_MODEL_ID, label: "Opus 5.5" },
+  { id: CLAUDE_SONNET_55_MODEL_ID, label: "Sonnet 5.5" },
   { id: CLAUDE_FABLE_51_MODEL_ID, label: "Fable 5.1" },
   { id: CLAUDE_FABLE_5_MODEL_ID, label: "Fable 5" },
   { id: CLAUDE_OPUS_5_MODEL_ID, label: "Opus 5" },
@@ -66,6 +82,10 @@ export const CLAUDE_BUILTIN_MODELS: AgentCapability["models"] = [
 ];
 
 export const CLAUDE_BUILTIN_MODEL_EFFORTS: AgentCapability["modelEfforts"] = {
+  // ViscosityCode: 5.5 generation.
+  [CLAUDE_FABLE_52_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
+  [CLAUDE_OPUS_55_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
+  [CLAUDE_SONNET_55_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
   [CLAUDE_FABLE_51_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
   [CLAUDE_FABLE_5_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
   [CLAUDE_OPUS_5_MODEL_ID]: CLAUDE_PREMIUM_EFFORT_TIERS,
@@ -78,6 +98,10 @@ export const CLAUDE_BUILTIN_MODEL_EFFORTS: AgentCapability["modelEfforts"] = {
 
 export const CLAUDE_BUILTIN_MODEL_CONTEXT_SIZES: NonNullable<AgentCapability["modelContextSizes"]> =
   {
+    // ViscosityCode: 5.5 generation.
+    [CLAUDE_FABLE_52_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
+    [CLAUDE_OPUS_55_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
+    [CLAUDE_SONNET_55_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
     [CLAUDE_FABLE_51_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
     [CLAUDE_FABLE_5_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
     [CLAUDE_OPUS_5_MODEL_ID]: CLAUDE_LONG_CONTEXT_SIZES,
@@ -90,6 +114,9 @@ export const CLAUDE_BUILTIN_MODEL_CONTEXT_SIZES: NonNullable<AgentCapability["mo
   };
 
 export const CLAUDE_BUILTIN_FAST_MODELS: NonNullable<AgentCapability["fastModels"]> = [
+  // ViscosityCode: the 2.1.329 SDK reports supportsFastMode for both.
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
   CLAUDE_OPUS_5_MODEL_ID,
   CLAUDE_OPUS_48_MODEL_ID,
   CLAUDE_OPUS_47_MODEL_ID,
@@ -122,15 +149,15 @@ function semverGte(
   return actual[2] >= minimum[2];
 }
 
-/** Hide model releases when the installed Claude Code predates their first catalog entry. */
-export function claudeCapabilitiesFromCliVersion(
-  version: string | undefined,
-): Partial<AgentCapability> | undefined {
-  if (!version) return undefined;
-  const triplet = parseSemverTriplet(version);
-  if (!triplet) return undefined;
-
+/** Built-in model ids the installed Claude Code predates (empty when the version is unknown). */
+function claudeCliHiddenModelIds(version: string | undefined): Set<string> {
   const hiddenModelIds = new Set<string>();
+  const triplet = version ? parseSemverTriplet(version) : null;
+  if (!triplet) return hiddenModelIds;
+  // ViscosityCode: hide the 5.5 generation on CLIs that predate it.
+  if (!semverGte(triplet, MIN_CLAUDE_GEN_55_CLI)) {
+    for (const modelId of CLAUDE_GEN_55_MODEL_IDS) hiddenModelIds.add(modelId);
+  }
   if (!semverGte(triplet, MIN_CLAUDE_OPUS_5_CLI)) {
     hiddenModelIds.add(CLAUDE_OPUS_5_MODEL_ID);
   }
@@ -149,6 +176,14 @@ export function claudeCapabilitiesFromCliVersion(
   if (!semverGte(triplet, MIN_CLAUDE_OPUS_47_CLI)) {
     hiddenModelIds.add(CLAUDE_OPUS_47_MODEL_ID);
   }
+  return hiddenModelIds;
+}
+
+/** Hide model releases when the installed Claude Code predates their first catalog entry. */
+export function claudeCapabilitiesFromCliVersion(
+  version: string | undefined,
+): Partial<AgentCapability> | undefined {
+  const hiddenModelIds = claudeCliHiddenModelIds(version);
   if (hiddenModelIds.size === 0) return undefined;
 
   const models = CLAUDE_BUILTIN_MODELS.filter((model) => !hiddenModelIds.has(model.id));
@@ -183,6 +218,7 @@ function poracodeEffortId(effort: string): string {
  */
 export function claudeCapabilitiesFromSdkModels(
   sdkModels: readonly ModelInfo[] | undefined,
+  cliVersion?: string,
 ):
   | Pick<
       AgentCapability,
@@ -196,14 +232,21 @@ export function claudeCapabilitiesFromSdkModels(
   | undefined {
   if (!sdkModels?.length) return undefined;
 
+  // ViscosityCode: seed only built-ins the installed CLI is known to run; the SDK
+  // loop below re-adds any gated id the SDK itself reports.
+  const unverified = claudeCliHiddenModelIds(cliVersion);
   const modelsMap = new Map<string, { id: string; label: string }>();
   for (const model of CLAUDE_BUILTIN_MODELS) {
-    modelsMap.set(model.id, { ...model });
+    if (!unverified.has(model.id)) modelsMap.set(model.id, { ...model });
   }
 
   const modelEfforts: Record<string, string[]> = { ...CLAUDE_BUILTIN_MODEL_EFFORTS };
   const modelContextSizes: Record<string, string[]> = { ...CLAUDE_BUILTIN_MODEL_CONTEXT_SIZES };
-  const fastModels = new Set(CLAUDE_BUILTIN_FAST_MODELS);
+  for (const modelId of unverified) {
+    delete modelEfforts[modelId];
+    delete modelContextSizes[modelId];
+  }
+  const fastModels = new Set(CLAUDE_BUILTIN_FAST_MODELS.filter((id) => !unverified.has(id)));
   let matched = false;
 
   // Keep the built-in selectable alias when the SDK resolves it to a native
@@ -233,6 +276,12 @@ export function claudeCapabilitiesFromSdkModels(
         sdkModel.value === "default" ? undefined : sdkModel.displayName,
       );
       modelsMap.set(modelId, { id: modelId, label });
+    } else if (modelId !== resolvedId && sdkModel.displayName?.trim()) {
+      // ViscosityCode: label the haiku alias with the release it resolves to ("Haiku 5.5").
+      modelsMap.set(modelId, {
+        id: modelId,
+        label: formatClaudeModelLabel(resolvedId, sdkModel.displayName),
+      });
     }
 
     if (sdkModel.supportsEffort === false) {
