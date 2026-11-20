@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, type ReactNode } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ChevronsDownUp, ChevronsUpDown, RefreshCw } from "lucide-react";
@@ -6,6 +7,7 @@ import { UsageProviderCardView } from "@/renderer/components/providers/UsageProv
 import { HostUsageStatus, useHostUsageView } from "@/renderer/components/providers/HostUsageView";
 import { HostUsageInfo } from "@/renderer/components/providers/HostUsageInfo";
 import { fetchHostUsage } from "@/renderer/components/providers/hostUsage";
+import { isHostProviderRefreshing, isWholeHostRefreshing } from "@/renderer/state/hostUsageStore";
 import { resolveHostUsageProviders } from "@/renderer/components/providers/usageProviders";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { SettingsPage } from "./SettingsForm";
@@ -49,10 +51,12 @@ export function HostUsageSettings(props: { connectionId: string; selector: React
             size="sm"
             variant="ghost"
             aria-label={t`Refresh`}
-            isDisabled={!view.canRefresh || view.usage.refreshing}
+            isDisabled={!view.canRefresh || isWholeHostRefreshing(view.usage)}
             onPress={() => void fetchHostUsage(connectionId, true, { force: true })}
           >
-            <RefreshCw className={`size-4 ${view.usage.refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`size-4 ${isWholeHostRefreshing(view.usage) ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
       }
@@ -122,7 +126,7 @@ export function HostUsageSettings(props: { connectionId: string; selector: React
                       ),
                     )
                   }
-                  refreshing={view.usage.refreshing}
+                  refreshing={isHostProviderRefreshing(view.usage, provider.id)}
                   refreshDisabled={!view.canRefresh}
                   onRefresh={() =>
                     void fetchHostUsage(connectionId, true, {

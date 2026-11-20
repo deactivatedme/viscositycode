@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { RemoteClientError } from "@/shared/remote/clientErrors";
 import { providerUsageResponseSchema, type ProviderUsagePayload } from "@/shared/contracts";
 import { useHostUsageStore } from "@/renderer/state/hostUsageStore";
@@ -15,7 +16,9 @@ export async function fetchHostUsage(
   const server = state.servers.find((candidate) => remoteConnectionKey(candidate) === connectionId);
   if (!server) return;
   const generation = currentRemoteServerGeneration(connectionId);
-  const request = useHostUsageStore.getState().begin(connectionId, refresh);
+  // ViscosityCode: a single-provider refresh marks only its providers busy.
+  const refreshed = refresh ? (payload.providerIds ?? []) : [];
+  const request = useHostUsageStore.getState().begin(connectionId, refresh, refreshed);
   const isCurrent = () =>
     currentRemoteServerGeneration(connectionId) === generation &&
     useRemoteServersStore
@@ -47,13 +50,19 @@ export async function fetchHostUsage(
     if (isCurrent())
       useHostUsageStore
         .getState()
-        .complete(connectionId, request, usage.snapshots, Boolean(payload.providerIds?.length));
+        .complete(
+          connectionId,
+          request,
+          usage.snapshots,
+          Boolean(payload.providerIds?.length),
+          refreshed,
+        );
   } catch (error) {
     // A localized error is shown by the view; do not expose provider/transport diagnostics or secrets.
     if (isCurrent())
       useHostUsageStore
         .getState()
-        .fail(connectionId, request, refresh && isUnsupportedUsageProcedure(error));
+        .fail(connectionId, request, refresh && isUnsupportedUsageProcedure(error), refreshed);
   }
 }
 

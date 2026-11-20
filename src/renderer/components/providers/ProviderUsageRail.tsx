@@ -1,5 +1,5 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
-import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useLayoutEffect, useRef, useState } from "react";
 // ViscosityCode: account pools — pooled accounts the host collects show as tracked.
 import { selectCollectedUsageDisabledProviders } from "@/renderer/viscosity/accountPools/usageTracking";
 import { useShallow } from "zustand/shallow";
@@ -303,11 +303,9 @@ function UsageRailStrip(props: {
  * keeps a fixed height as the sidebar is resized.
  */
 function UsageRailRow(
-  props: Omit<Parameters<typeof UsageRailStrip>[0], "shownCount" | "orientation"> & {
-    environmentSelector: ReactNode;
-  },
+  props: Omit<Parameters<typeof UsageRailStrip>[0], "shownCount" | "orientation">,
 ) {
-  const { providers, environmentSelector } = props;
+  const { providers } = props;
   const rowRef = useRef<HTMLDivElement | null>(null);
   const [slots, setSlots] = useState(0);
 
@@ -339,7 +337,6 @@ function UsageRailRow(
         <span className="shrink-0 whitespace-nowrap leading-4 font-semibold uppercase tracking-wider">
           <Trans>Usage</Trans>
         </span>
-        {environmentSelector}
       </div>
       <div ref={rowRef}>
         <UsageRailStrip
@@ -421,20 +418,18 @@ export function ProviderUsageRail(props: { orientation?: "row" | "column" }) {
 
   const showEnvironment = servers.length > 0;
   if (!showInSidebar || (providers.length === 0 && !showEnvironment)) return null;
-  const environmentSelector = showEnvironment ? (
-    <RemoteServerPicker
-      value={scope.effectiveId}
-      includeLocal={!scope.remoteSession}
-      onChange={setDesktopId}
-      buttonClassName={
-        orientation === "column"
-          ? "size-7 min-h-7 min-w-7 gap-0 p-0 [&>span:not(:first-child)]:hidden [&>svg:last-child]:hidden"
-          : "h-4 min-h-4 min-w-0 max-w-full gap-1 px-0 text-muted/70 [&>span:first-child]:size-2.5 [&>span:first-child>span]:size-[3px] [&>span]:text-[10px] [&>span]:leading-4 [&>svg]:my-0 [&>svg]:size-3"
-      }
-      {...(orientation === "row" ? { triggerClassName: "inline-flex min-w-0 items-center" } : {})}
-      opensUpward
-    />
-  ) : null;
+  // ViscosityCode: only the collapsed column keeps the host picker; the expanded row has none
+  // (it shows the host the Usage panel is scoped to: this one unless changed there).
+  const environmentSelector =
+    showEnvironment && orientation === "column" ? (
+      <RemoteServerPicker
+        value={scope.effectiveId}
+        includeLocal={!scope.remoteSession}
+        onChange={setDesktopId}
+        buttonClassName="size-7 min-h-7 min-w-7 gap-0 p-0 [&>span:not(:first-child)]:hidden [&>svg:last-child]:hidden"
+        opensUpward
+      />
+    ) : null;
 
   function handleReorder(orderedRenderedIds: readonly string[]) {
     // Splice the strip's new order back into the full order so hidden and
@@ -469,6 +464,6 @@ export function ProviderUsageRail(props: { orientation?: "row" | "column" }) {
       )}
     </div>
   ) : (
-    <UsageRailRow {...stripProps} environmentSelector={environmentSelector} />
+    <UsageRailRow {...stripProps} />
   );
 }

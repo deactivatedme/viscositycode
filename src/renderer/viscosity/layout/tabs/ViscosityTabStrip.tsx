@@ -7,7 +7,7 @@ import { useSidebarOverlayStore } from "@/renderer/state/sidebarOverlayStore";
 import { getThreadMap } from "@/renderer/state/useThread";
 import { RightSidebarToggle } from "../rightSidebar/RightSidebarToggle";
 import { startNavHistory } from "../topBar/navHistory";
-import { NavControls } from "../topBar/NavControls";
+import { HistoryControls, SidebarToggle } from "../topBar/NavControls";
 import { EditorTab } from "./EditorTab";
 import { startOpenTabsSync } from "./openTabsStore";
 import { RoundtableTab } from "./RoundtableTab";
@@ -29,10 +29,11 @@ function SessionTitle() {
 }
 
 /**
- * Slim top bar above the center split view (desktop shell): the nav controls
- * while the sidebar is collapsed, the session title, then the Editor and
- * Roundtable chips and the right sidebar toggle. Threads are opened from the
- * sidebar; the open-tabs store stays as a headless helper for other features.
+ * Slim top bar above the center split view (desktop shell): the sidebar toggle
+ * while the sidebar is collapsed, Back/Forward, the session title, then the
+ * Editor and Roundtable chips and the right sidebar toggle. Threads are opened
+ * from the sidebar; the open-tabs store stays as a headless helper for other
+ * features.
  */
 export function ViscosityTabStrip() {
   const { t } = useLingui();
@@ -46,7 +47,8 @@ export function ViscosityTabStrip() {
       data-vc-tabstrip=""
       className={`vc-tabstrip poracode-content-over-drag-region--drag ${macosTrafficLightPadClass} flex h-[var(--vc-tabstrip-height)] shrink-0 items-center`}
     >
-      {sidebarCollapsed ? <NavControls /> : null}
+      {sidebarCollapsed ? <SidebarToggle /> : null}
+      <HistoryControls />
       <SessionTitle />
       <div
         role="tablist"

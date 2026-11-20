@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useLingui } from "@lingui/react/macro";
 import type { ProjectLocation } from "@/shared/contracts";
 import {
@@ -470,7 +471,9 @@ function MdCodeBlockFrame({ text, children }: { text: string; children?: ReactNo
   return (
     <div className="group/codeblock relative">
       {children}
-      <div className="absolute right-1 top-1 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover/codeblock:opacity-100">
+      {/* ViscosityCode: centred on a one-line block (shorter than the button's
+          usual inset allows), top-right as before on taller ones. */}
+      <div className="absolute right-1 top-[min(0.25rem,calc((100%-1.5rem)/2))] z-10 flex opacity-0 transition-opacity focus-within:opacity-100 group-hover/codeblock:opacity-100">
         <CopyTextButton text={text} label={t`Copy code`} />
       </div>
     </div>

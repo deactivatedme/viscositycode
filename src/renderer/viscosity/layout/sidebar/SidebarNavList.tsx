@@ -121,11 +121,8 @@ export function SidebarNavList() {
   return (
     <>
       <nav aria-label={t`Sidebar`} className="vc-sidebar-nav">
-        <button
-          type="button"
-          className="vc-sidebar-nav__row vc-sidebar-nav__row--new"
-          onClick={openNewThreadTab}
-        >
+        {/* A plain row: the draft it opens is the highlighted "New thread" row in the list. */}
+        <button type="button" className="vc-sidebar-nav__row" onClick={openNewThreadTab}>
           <Plus className="vc-sidebar-nav__icon" />
           <span className="vc-sidebar-nav__label">{t`New`}</span>
         </button>

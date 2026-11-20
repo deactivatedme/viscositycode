@@ -3,7 +3,7 @@
    rail is gone; the activity registry feeds the nav list and the view switch. */
 
 html[data-vc-shell] {
-  /* The left sidebar's one header row (nav controls + view switch). It
+  /* The left sidebar's one header row (sidebar toggle + view switch). It
      replaces upstream's titlebar header row and sits in the title-bar zone. */
   --vc-sidebar-view-header-height: max(var(--vc-titlebar-height), env(titlebar-area-height, 0px));
   /* Compact icon buttons in that row and in the Projects row. */
@@ -55,8 +55,8 @@ html[data-vc-shell] .vc-sidebar-views > * {
   pointer-events: auto;
 }
 
-/* One row: nav controls (+ view accessory) on the left, the view switch on the
-   right. It sits at the window's top edge, so it drags the window like
+/* One row: the sidebar toggle (+ view accessory) on the left, the view switch on
+   the right. It sits at the window's top edge, so it drags the window like
    upstream's header row; the controls opt out through upstream's
    .poracode-overlay-header__controls. */
 html[data-vc-shell] .vc-sidebar-view-header {
@@ -99,7 +99,7 @@ html[data-vc-shell] .vc-sidebar-view-subtitle {
   white-space: nowrap;
 }
 
-/* === Nav controls (sidebar header and collapsed top bar) ================= */
+/* === Nav controls (sidebar toggle; Back/Forward in the top bar) ========== */
 
 html[data-vc-shell] .vc-nav-controls {
   display: flex;
@@ -121,6 +121,13 @@ html[data-vc-shell] .vc-nav-controls__button {
 html[data-vc-shell] .vc-nav-controls__button:hover {
   background: var(--vc-hover);
   color: var(--vc-text);
+}
+
+/* Disabled Back/Forward stay readable: the default 50% on the muted colour
+   all but hides them. */
+html[data-vc-shell] .vc-nav-controls__button:disabled,
+html[data-vc-shell] .vc-nav-controls__button[aria-disabled="true"] {
+  opacity: 0.7;
 }
 
 /* === View switch (Chats | Roundtable) ==================================== */
@@ -219,12 +226,6 @@ html[data-vc-shell] .vc-sidebar-nav__row[data-active] {
 html[data-vc-shell] .vc-sidebar-nav__row:focus-visible,
 html[data-vc-shell] .vc-sidebar-nav__row[data-focus-visible] {
   box-shadow: inset 0 0 0 1px var(--vc-focus-ring);
-}
-
-/* "+ New" stands out with a raised fill. */
-html[data-vc-shell] .vc-sidebar-nav__row--new {
-  background: var(--vc-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--vc-border-subtle);
 }
 
 html[data-vc-shell] .vc-sidebar-nav__icon {
@@ -435,15 +436,6 @@ html[data-vc-shell] .vc-sidebar-profile__name {
   min-width: 0;
   overflow: hidden;
   font-weight: var(--vc-font-weight-medium);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[data-vc-shell] .vc-sidebar-profile__plan {
-  flex: 0 100 auto;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--vc-text-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

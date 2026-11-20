@@ -9,7 +9,7 @@ import { panelHeaderIconButtonClass } from "@/renderer/components/layout/sidebar
 import { resolveDisplayedProviders } from "@/renderer/components/providers/usageProviders";
 import { useUsagePanelScope } from "@/renderer/components/providers/useUsagePanelScope";
 import { HostUsageInfo } from "@/renderer/components/providers/HostUsageInfo";
-import { useHostUsage } from "@/renderer/state/hostUsageStore";
+import { isWholeHostRefreshing, useHostUsage } from "@/renderer/state/hostUsageStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useUsageScopeStore } from "@/renderer/state/usageScopeStore";
 
@@ -35,8 +35,10 @@ export function UsagePanelHeaderActions(props: { dragControlClass: string }) {
   const canRefresh =
     scope.server?.scopes.includes("session:read") &&
     scope.server.scopes.includes("session:operate");
-  const refreshing = scope.remote ? usage.refreshing : isRefreshing;
-  const disabled = scope.remote ? !canRefresh || usage.refreshing : isRefreshing;
+  // ViscosityCode: a single card's refresh leaves the header idle.
+  const hostRefreshing = isWholeHostRefreshing(usage);
+  const refreshing = scope.remote ? hostRefreshing : isRefreshing;
+  const disabled = scope.remote ? !canRefresh || hostRefreshing : isRefreshing;
   const displayed = scope.remote
     ? (scope.server?.scopes.includes("session:read") ? usage.snapshots : []).map((snapshot) => ({
         id: snapshot.providerId,

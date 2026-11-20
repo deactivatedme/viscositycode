@@ -6,12 +6,15 @@
  * access is guarded; a missing, malformed, foreign-version or unavailable
  * document yields defaults. Only the owner's picks are stored: automatic
  * colours are derived (assignment.ts), so they follow newly installed agents.
+ *
+ * Version 2 turned the markers off by default. A version 1 document keeps its
+ * picks but not its switch: "on" there was the old default, not a choice.
  */
 import { create } from "zustand";
 import { isAgentColorId, type AgentColorId } from "./palette";
 
 export const AGENT_COLORS_STORAGE_KEY = "viscosity:agent-colors:v1";
-export const AGENT_COLORS_VERSION = 1;
+export const AGENT_COLORS_VERSION = 2;
 
 /** Bounds a corrupted or hostile document can not exceed. */
 const MAX_OVERRIDES = 256;
@@ -24,7 +27,7 @@ export interface AgentColorsPrefs {
   colors: Record<string, AgentColorId>;
 }
 
-export const DEFAULT_AGENT_COLORS_PREFS: AgentColorsPrefs = { enabled: true, colors: {} };
+export const DEFAULT_AGENT_COLORS_PREFS: AgentColorsPrefs = { enabled: false, colors: {} };
 
 function isStorableKind(kind: string): boolean {
   return kind.length > 0 && kind.length <= MAX_KIND_LENGTH;
@@ -56,7 +59,8 @@ export function readAgentColorsPrefs(): AgentColorsPrefs {
   try {
     const raw = localStorage.getItem(AGENT_COLORS_STORAGE_KEY);
     if (!raw) return normalizeAgentColorsPrefs(undefined);
-    const parsed = JSON.parse(raw) as { version?: unknown } | null;
+    const parsed = JSON.parse(raw) as { version?: unknown; colors?: unknown } | null;
+    if (parsed?.version === 1) return normalizeAgentColorsPrefs({ colors: parsed.colors });
     if (parsed?.version !== AGENT_COLORS_VERSION) return normalizeAgentColorsPrefs(undefined);
     return normalizeAgentColorsPrefs(parsed);
   } catch {

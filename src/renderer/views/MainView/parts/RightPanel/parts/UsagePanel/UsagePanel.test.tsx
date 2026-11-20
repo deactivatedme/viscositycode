@@ -488,6 +488,47 @@ describe("usage panel host ownership", () => {
       );
     },
   );
+  // ViscosityCode: a card's refresh collects, spins and disables only that card.
+  it("refreshes one remote card without marking its siblings or the header busy", () => {
+    useUsageScopeStore.setState({ desktopId: "a" });
+    const store = useHostUsageStore.getState();
+    store.complete("a", store.begin("a"), [
+      { providerId: "provider", status: "ok", windows: [], fetchedAt: Date.now() },
+      { providerId: "other", status: "ok", windows: [], fetchedAt: Date.now() },
+    ]);
+    render(
+      <>
+        <UsagePanelHeaderActions dragControlClass="" />
+        <UsagePanel />
+      </>,
+    );
+    const card = (id: string) => screen.getByRole("button", { name: `Refresh ${id}` });
+    fireEvent.click(card("provider"));
+    expect(fetchHostUsage).toHaveBeenLastCalledWith("a", true, {
+      providerIds: ["provider"],
+      force: true,
+    });
+    // The mocked fetch never reaches the store: begin the same scoped refresh it would.
+    let request = 0;
+    act(() => {
+      request = store.begin("a", true, ["provider"]);
+    });
+    expect(card("provider").hasAttribute("disabled")).toBe(true);
+    expect(card("provider").querySelector(".animate-spin")).toBeTruthy();
+    expect(card("other").hasAttribute("disabled")).toBe(false);
+    expect(card("other").querySelector(".animate-spin")).toBeNull();
+    expect(screen.getByTitle("Refresh").hasAttribute("disabled")).toBe(false);
+    expect(screen.getByTitle("Refresh").querySelector(".animate-spin")).toBeNull();
+    act(() => store.complete("a", request, [], true, ["provider"]));
+    expect(card("provider").hasAttribute("disabled")).toBe(false);
+    // The header refresh still collects, and marks, every card.
+    act(() => {
+      store.begin("a", true);
+    });
+    expect(card("other").querySelector(".animate-spin")).toBeTruthy();
+    expect(screen.getByTitle("Refresh").querySelector(".animate-spin")).toBeTruthy();
+  });
+
   it("renders cost-only and credit-only remote cards without falsely reporting no windows", () => {
     useUsageScopeStore.setState({ desktopId: "a" });
     const store = useHostUsageStore.getState();

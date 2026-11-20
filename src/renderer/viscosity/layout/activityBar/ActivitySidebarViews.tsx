@@ -2,8 +2,8 @@
  * ViscosityCode: the main Sidebar's switchable views.
  *
  * Renders, over the top of upstream's sidebar column, ONE header row (the
- * sidebar toggle and back/forward on the left, the view switch on the right;
- * the active view's title stays for screen readers; AppShell drops upstream's
+ * sidebar toggle on the left, the view switch on the right; Back/Forward live
+ * in the top bar; the active view's title stays for screen readers; AppShell drops upstream's
  * separate titlebar header row in the shell) and, for registry views, the view
  * body. The row sits at the window's top edge, so it is the window drag region
  * there and clears the macOS traffic lights. The Agents view is upstream's own column (the "host"
@@ -26,7 +26,7 @@ import {
 import { useActiveActivityViewId } from "./activityViewPreference";
 import { registerBuiltinActivityItems } from "./builtinActivityItems";
 import { ActivityViewSwitch } from "../sidebar/ActivityViewSwitch";
-import { NavControls } from "../topBar/NavControls";
+import { SidebarToggle } from "../topBar/NavControls";
 
 registerBuiltinActivityItems();
 
@@ -72,7 +72,7 @@ export function ActivitySidebarViews(props: {
           <div aria-hidden="true" className={macosTrafficLightGutterClass} />
         ) : null}
         <h2 className="sr-only">{title}</h2>
-        <NavControls />
+        <SidebarToggle />
         {HeaderAccessory ? <HeaderAccessory /> : null}
         <div aria-hidden="true" className="min-w-0 flex-1" />
         <ActivityViewSwitch />

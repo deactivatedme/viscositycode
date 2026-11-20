@@ -37,6 +37,7 @@ import { useScrollFade } from "@/renderer/hooks/useScrollFade";
 // ViscosityCode: usage surfaces list only detected agents (isUsageProviderShown).
 import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
+import { isHostProviderRefreshing, isWholeHostRefreshing } from "@/renderer/state/hostUsageStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useUsageLoginStateStore } from "@/renderer/state/usageLoginStateStore";
 import { useUsageScopeStore } from "@/renderer/state/usageScopeStore";
@@ -225,7 +226,8 @@ function UsagePanelContent(props: {
         {...common}
         snapshot={displayedSnapshots[provider.id]}
         showAccount
-        refreshing={hostView.usage.refreshing}
+        // ViscosityCode: a card's refresh spins and disables only that card.
+        refreshing={isHostProviderRefreshing(hostView.usage, provider.id)}
         refreshDisabled={!hostView.canRefresh}
         onRefresh={() =>
           void fetchHostUsage(effectiveDesktopId ?? "", true, {
@@ -253,8 +255,9 @@ function UsagePanelContent(props: {
 
   const openSettings = props.onOpenUsageSettings ?? openUsageSettings;
 
+  const hostRefreshing = isWholeHostRefreshing(hostView.usage);
   const refreshNow = () => {
-    if (remoteView ? !hostView.canRefresh || hostView.usage.refreshing : isRefreshing) return;
+    if (remoteView ? !hostView.canRefresh || hostRefreshing : isRefreshing) return;
     setIsRefreshing(true);
     requestRefresh();
     window.setTimeout(() => setIsRefreshing(false), 450);
@@ -390,13 +393,11 @@ function UsagePanelContent(props: {
           <MobileCircleButton
             className="pointer-events-auto"
             aria-label={t`Refresh`}
-            isDisabled={
-              remoteView ? !hostView.canRefresh || hostView.usage.refreshing : isRefreshing
-            }
+            isDisabled={remoteView ? !hostView.canRefresh || hostRefreshing : isRefreshing}
             onPress={refreshNow}
           >
             <RefreshCw
-              className={`size-4 ${(remoteView ? hostView.usage.refreshing : isRefreshing) ? "animate-spin" : ""}`}
+              className={`size-4 ${(remoteView ? hostRefreshing : isRefreshing) ? "animate-spin" : ""}`}
             />
           </MobileCircleButton>
         </div>

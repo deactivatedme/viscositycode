@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useShallow } from "zustand/shallow";
 import { useLingui } from "@lingui/react/macro";
-import { isMac, isWindows } from "@/renderer/bridge";
+import { isWindows } from "@/renderer/bridge";
 import {
   hasMacWindowChrome,
   hasNativeWindowChrome,
@@ -104,7 +104,8 @@ function MacCollapsedTracker({
 }) {
   const isCollapsed = useSidebarOverlayStore((s) => s.isCollapsed);
   useEffect(() => {
-    if (!isMac()) return;
+    // ViscosityCode: only a window with overlay traffic lights; the web client on a Mac has none.
+    if (!hasMacWindowChrome()) return;
     const el = shellRef.current;
     if (!el) return;
     if (isCollapsed && !forceSidebarExpanded) {

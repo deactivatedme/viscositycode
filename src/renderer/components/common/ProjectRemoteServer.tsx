@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { FolderOpen, House, Monitor } from "lucide-react";
 import { useShallow } from "zustand/shallow";
@@ -191,11 +192,13 @@ export function ProjectSelectorIcon(props: {
 
 const CHIP_NAME_CLASS = {
   /** The flat list's 10px row tags. */
-  xs: "max-w-20 text-muted/60",
+  xs: "max-w-20 shrink-0 text-muted/60",
   /** Dense sidebar rows, where the chip inherits a 10px tag. */
-  sm: "max-w-20 text-muted/60",
+  sm: "max-w-20 shrink-0 text-muted/60",
   /** Menu rows: own type scale for the name, but the same compact glyph. */
-  md: "max-w-24 text-xs text-muted/60",
+  md: "max-w-24 shrink-0 text-xs text-muted/60",
+  /** ViscosityCode: stacked rows show the whole name; it shrinks only when the line runs out. */
+  full: "min-w-0 text-muted/60",
 } as const;
 
 /**
@@ -214,7 +217,7 @@ export function ProjectRemoteServerChip(props: {
     <>
       <ProjectRemoteServerIcon info={info} />
       {info.serverName ? (
-        <span className={`shrink-0 truncate ${nameClassName}`}>{info.serverName}</span>
+        <span className={`truncate ${nameClassName}`}>{info.serverName}</span>
       ) : null}
     </>
   );

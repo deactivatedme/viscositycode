@@ -8,7 +8,7 @@ import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { ViscosityCenterFrame } from "@/renderer/viscosity/layout/tabs/ViscosityCenterFrame";
 import { acquireViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
 import { enterZenMode, exitZenMode, isZenModeActive } from "@/renderer/viscosity/zen/zenModeStore";
-import { isRightSidebarOpen } from "./rightSidebarActions";
+import { isRightSidebarOpen, toggleRightSidebar } from "./rightSidebarActions";
 
 vi.mock("@/renderer/actions/threadActions", () => ({
   openThread: vi.fn<(threadId: string) => void>(),
@@ -48,51 +48,55 @@ afterEach(() => {
   delete document.documentElement.dataset.windowKind;
 });
 
+function showButton(): HTMLElement | null {
+  return screen.queryByRole("button", { name: "Show right sidebar" });
+}
+
 describe("RightSidebarToggle", () => {
-  it("sits at the end of the tab strip and opens and hides the right sidebar", () => {
+  it("sits at the end of the tab strip, opens the right sidebar, and hides while it is open", () => {
     render(
       <ViscosityCenterFrame>
         <div />
       </ViscosityCenterFrame>,
     );
     const strip = document.querySelector("[data-vc-tabstrip]")!;
-    const button = screen.getByRole("button", { name: "Toggle right sidebar" });
-    expect(strip.lastElementChild?.contains(button)).toBe(true);
-    expect(button).toHaveAttribute("aria-pressed", "false");
+    const end = strip.lastElementChild!;
+    expect(end.contains(showButton())).toBe(true);
 
-    fireEvent.click(button);
+    fireEvent.click(showButton()!);
     expect(usePanelStore.getState()).toMatchObject({
       gitReviewContext: { projectId: "p1" },
       rightPanelTab: "git",
     });
-    expect(button).toHaveAttribute("aria-pressed", "true");
-    // The command reads the same state the button shows.
+    // The open panel's header has its own hide button, so the bar shows none.
+    expect(showButton()).toBeNull();
+    // The strip keeps its end inset, and the command still reads the open state.
+    expect(strip.lastElementChild).toBe(end);
     expect(isRightSidebarOpen()).toBe(true);
 
-    fireEvent.click(button);
+    act(() => toggleRightSidebar());
     expect(usePanelStore.getState().gitReviewContext).toBeNull();
-    expect(button).toHaveAttribute("aria-pressed", "false");
     expect(isRightSidebarOpen()).toBe(false);
+    expect(end.contains(showButton())).toBe(true);
   });
 
-  it("shows an open sidebar as closed while Zen hides it, and pressing leaves Zen", () => {
+  it("shows while Zen hides an open sidebar, and pressing leaves Zen", () => {
     render(
       <ViscosityCenterFrame>
         <div />
       </ViscosityCenterFrame>,
     );
-    const button = screen.getByRole("button", { name: "Toggle right sidebar" });
-    fireEvent.click(button);
-    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(showButton()!);
+    expect(showButton()).toBeNull();
 
     act(() => {
       enterZenMode();
     });
-    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(showButton()).not.toBeNull();
 
-    fireEvent.click(button);
+    fireEvent.click(showButton()!);
     expect(isZenModeActive()).toBe(false);
     expect(usePanelStore.getState().gitReviewContext).toMatchObject({ projectId: "p1" });
-    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(showButton()).toBeNull();
   });
 });

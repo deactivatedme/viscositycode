@@ -127,17 +127,13 @@ describe("sidebar host usage", () => {
     expect(openUsagePanelAtProvider).toHaveBeenCalledExactlyOnceWith("codex");
   });
 
-  it("shows the environment name when multiple environments are available", () => {
+  // ViscosityCode: the expanded rail has no host picker; the collapsed column keeps it.
+  it("shows the scoped host's rings in the expanded rail without a host picker", () => {
     seed("pc", 30);
     render(<ProviderUsageRail />);
-    expect(screen.getByText("Gaming PC")).toBeVisible();
-  });
-
-  it("shows the connected host name even when it is the only remote", () => {
-    useRemoteServersStore.setState((state) => ({ servers: state.servers.slice(0, 1) }));
-    seed("pc", 30);
-    render(<ProviderUsageRail />);
-    expect(screen.getByText("Gaming PC")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Codex usage — open usage panel" })).toBeVisible();
+    expect(screen.queryByText("Gaming PC")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Connections" })).toBeNull();
   });
 
   it("omits the environment dropdown when only Local is available", () => {
@@ -160,10 +156,16 @@ describe("sidebar host usage", () => {
     expect(useProviderUsageStore.getState().snapshots.codex?.windows[0]?.usedPercent).toBe(99);
   });
 
-  it("keeps environment switching available when the selected host has no usage", () => {
-    render(<ProviderUsageRail />);
-    expect(screen.getByText("Gaming PC")).toBeVisible();
+  it("keeps the collapsed column's environment switching when the selected host has no usage", () => {
+    const row = render(<ProviderUsageRail />);
     expect(screen.getByText("No data yet")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Connections" })).toBeNull();
+    row.unmount();
+    render(<ProviderUsageRail orientation="column" />);
+    expect(screen.getByRole("button", { name: "Connections" })).toHaveAttribute(
+      "title",
+      "Gaming PC",
+    );
   });
 
   it("preserves the provider's existing right-click ring selection", async () => {

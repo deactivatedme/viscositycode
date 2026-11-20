@@ -23,9 +23,24 @@ describe("agent colours store", () => {
     vi.restoreAllMocks();
   });
 
-  it("defaults to coloured panes with automatic colours", () => {
-    expect(DEFAULT_AGENT_COLORS_PREFS).toEqual({ enabled: true, colors: {} });
+  it("defaults to no markers, with automatic colours", () => {
+    expect(DEFAULT_AGENT_COLORS_PREFS).toEqual({ enabled: false, colors: {} });
     expect(readAgentColorsPrefs()).toEqual(DEFAULT_AGENT_COLORS_PREFS);
+  });
+
+  it("turns a version 1 document's markers off and keeps its picks", () => {
+    // Version 1 defaulted to on, and wrote the switch along with every pick.
+    localStorage.setItem(
+      AGENT_COLORS_STORAGE_KEY,
+      JSON.stringify({ version: 1, enabled: true, colors: { "agent-a": "pink", bad: "#fff" } }),
+    );
+    expect(readAgentColorsPrefs()).toEqual({ enabled: false, colors: { "agent-a": "pink" } });
+
+    // The owner can still turn them back on; that is saved as version 2 and sticks.
+    useAgentColors.setState(readAgentColorsPrefs());
+    useAgentColors.getState().setEnabled(true);
+    expect(stored()).toEqual({ version: 2, enabled: true, colors: { "agent-a": "pink" } });
+    expect(readAgentColorsPrefs()).toEqual({ enabled: true, colors: { "agent-a": "pink" } });
   });
 
   it("persists picks, resets and the switch under a versioned key", () => {
@@ -33,16 +48,16 @@ describe("agent colours store", () => {
     store.setColor("agent-a", "pink");
     store.setColor("agent-b", "teal");
     expect(stored()).toEqual({
-      version: 1,
-      enabled: true,
+      version: 2,
+      enabled: false,
       colors: { "agent-a": "pink", "agent-b": "teal" },
     });
     expect(readAgentColorsPrefs().colors).toEqual({ "agent-a": "pink", "agent-b": "teal" });
 
     useAgentColors.getState().resetColor("agent-a");
-    useAgentColors.getState().setEnabled(false);
+    useAgentColors.getState().setEnabled(true);
     expect(useAgentColors.getState().colors).toEqual({ "agent-b": "teal" });
-    expect(readAgentColorsPrefs()).toEqual({ enabled: false, colors: { "agent-b": "teal" } });
+    expect(readAgentColorsPrefs()).toEqual({ enabled: true, colors: { "agent-b": "teal" } });
   });
 
   it("skips writes that change nothing", () => {
@@ -50,14 +65,14 @@ describe("agent colours store", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     useAgentColors.getState().setColor("agent-a", "pink");
     useAgentColors.getState().resetColor("agent-unpicked");
-    useAgentColors.getState().setEnabled(true);
+    useAgentColors.getState().setEnabled(false);
     expect(setItem).not.toHaveBeenCalled();
   });
 
   it("ignores documents from another version and unreadable storage", () => {
     localStorage.setItem(
       AGENT_COLORS_STORAGE_KEY,
-      JSON.stringify({ version: 2, enabled: false, colors: { "agent-a": "pink" } }),
+      JSON.stringify({ version: 3, enabled: true, colors: { "agent-a": "pink" } }),
     );
     expect(readAgentColorsPrefs()).toEqual(DEFAULT_AGENT_COLORS_PREFS);
 
@@ -84,9 +99,9 @@ describe("agent colours store", () => {
         enabled: "yes",
         colors: { "agent-a": "pink", "agent-b": "#ff0000", "": "teal", "agent-c": 4 },
       }),
-    ).toEqual({ enabled: true, colors: { "agent-a": "pink" } });
-    expect(normalizeAgentColorsPrefs({ enabled: false, colors: ["pink"] })).toEqual({
-      enabled: false,
+    ).toEqual({ enabled: false, colors: { "agent-a": "pink" } });
+    expect(normalizeAgentColorsPrefs({ enabled: true, colors: ["pink"] })).toEqual({
+      enabled: true,
       colors: {},
     });
     expect(normalizeAgentColorsPrefs(null)).toEqual(DEFAULT_AGENT_COLORS_PREFS);

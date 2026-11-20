@@ -81,16 +81,14 @@ describe("fork shell stylesheets", () => {
     expect(overlayRow.get("app-region")).toBe("no-drag");
   });
 
-  it("lays nav rows out 30px tall, 2px apart, with a raised New row", () => {
+  it("lays nav rows out 30px tall, 2px apart, with no fill of its own on the New row", () => {
     const nav = declarationsFor(sheets.activityBar, "html[data-vc-shell] .vc-sidebar-nav");
     expect(nav.get("gap")).toBe("2px");
     const row = declarationsFor(sheets.activityBar, "html[data-vc-shell] .vc-sidebar-nav__row");
     expect(row.get("height")).toBe("var(--vc-row-height)");
-    const fresh = declarationsFor(
-      sheets.activityBar,
-      "html[data-vc-shell] .vc-sidebar-nav__row--new",
-    );
-    expect(fresh.get("background")).toBe("var(--vc-surface-raised)");
+    expect(row.get("background")).toBe("transparent");
+    // "New" never reads as selected: it is styled like every other row.
+    expect(sheets.activityBar).not.toContain("vc-sidebar-nav__row--new");
     const host = declarationsFor(sheets.activityBar, "html[data-vc-shell] .vc-sidebar-host-column");
     expect(host.get("padding-inline")).toBe("var(--vc-sidebar-padding-inline)");
     expect(

@@ -33,7 +33,13 @@ describe("installAgentColors", () => {
     useAgentColors.getState().reset();
   });
 
+  it("draws no markers by default", () => {
+    dispose = installAgentColors(document);
+    expect(document.documentElement.hasAttribute(AGENT_COLORS_ENABLED_ATTRIBUTE)).toBe(false);
+  });
+
   it("injects one stylesheet and the on flag, and removes both on dispose", () => {
+    useAgentColors.getState().setEnabled(true);
     dispose = installAgentColors(document);
     expect(document.querySelectorAll(`#${AGENT_COLORS_STYLE_ID}`)).toHaveLength(1);
     expect(styleText()).toContain('[data-vc-agent-kind="agent-a"]');
@@ -47,6 +53,8 @@ describe("installAgentColors", () => {
 
   it("follows the switch and the owner's picks", () => {
     dispose = installAgentColors(document);
+    useAgentColors.getState().setEnabled(true);
+    expect(document.documentElement.hasAttribute(AGENT_COLORS_ENABLED_ATTRIBUTE)).toBe(true);
     useAgentColors.getState().setEnabled(false);
     expect(document.documentElement.hasAttribute(AGENT_COLORS_ENABLED_ATTRIBUTE)).toBe(false);
     // The colours stay defined for features that use them outside panes and tabs.
@@ -76,7 +84,7 @@ describe("installAgentColors", () => {
     useAgentStatusesStore.setState({ hasCompletedDiscovery: true });
     // Same agents in a new array: the generated text is identical.
     useAgentStatusesStore.setState({ agentStatuses: [status("agent-a")] });
-    useAgentColors.getState().setEnabled(true);
+    useAgentColors.getState().setEnabled(false);
     return Promise.resolve().then(() => {
       observer.disconnect();
       expect(mutations).toBe(0);

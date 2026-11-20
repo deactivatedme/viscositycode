@@ -84,14 +84,14 @@ describe("AgentColorsSettings", () => {
     expect(screen.queryByText("Not Installed")).toBeNull();
   });
 
-  it("turns the pane and tab markers off and on", () => {
+  it("starts with the pane and tab markers off, and turns them on and off", () => {
     render(<AgentColorsSettings />);
     const name = "Colour panes and tabs by agent";
-    expect(screen.getByRole("switch", { name })).toBeChecked();
-    toggle(name);
-    expect(useAgentColors.getState().enabled).toBe(false);
+    expect(screen.getByRole("switch", { name })).not.toBeChecked();
     toggle(name);
     expect(useAgentColors.getState().enabled).toBe(true);
+    toggle(name);
+    expect(useAgentColors.getState().enabled).toBe(false);
   });
 
   it("picks a colour from the palette and resets it", async () => {

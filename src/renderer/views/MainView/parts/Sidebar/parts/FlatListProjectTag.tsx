@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { memo } from "react";
 import type { Project } from "@/shared/contracts";
 import { ProjectIcon } from "@/renderer/components/common/ProjectIcon";
@@ -27,7 +28,8 @@ function FlatListProjectTagInner(props: {
           custom icon reads as part of the 10px label. */}
       <ProjectIcon project={project} className="size-3 text-muted/70" />
       <span className="truncate">{project.name}</span>
-      <ProjectRemoteServerChip info={remote} size="xs" />
+      {/* ViscosityCode: the stacked line has room, so it shows the whole machine name. */}
+      <ProjectRemoteServerChip info={remote} size={stacked ? "full" : "xs"} />
       {/* Mirrors the grouped header's trailing WSL marker. */}
       {project.location.kind === "wsl" ? (
         <TuxIcon className="h-2.5 w-auto shrink-0 text-muted/60" />

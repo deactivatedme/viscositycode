@@ -11,7 +11,9 @@ import {
 import { VISCOSITY_SHELL_ATTRIBUTE } from "@/renderer/viscosity/shellFlag";
 import { AppShell } from "./AppShell";
 
-vi.mock("@/renderer/bridge", () => ({ isMac: () => false, isWindows: () => false }));
+// A Mac host in every test; only `macChrome` says the window has overlay traffic lights.
+const env = vi.hoisted(() => ({ macChrome: false }));
+vi.mock("@/renderer/bridge", () => ({ isMac: () => true, isWindows: () => false }));
 vi.mock("./parts/usePanelVisibility", () => ({
   usePanelVisibility: () => ({ rightPanelOpen: false, gitPanelOpen: false, sidePanelOpen: false }),
 }));
@@ -23,7 +25,7 @@ vi.mock("./parts/useSidebarOverlay", () => ({
 vi.mock("@/renderer/hooks/useTwoRafReady", () => ({ useTwoRafReady: (active: boolean) => active }));
 vi.mock("@/renderer/hooks/useGlassState", () => ({ useSidebarGlassActive: () => false }));
 vi.mock("@/renderer/components/layout/windowChrome", () => ({
-  hasMacWindowChrome: () => false,
+  hasMacWindowChrome: () => env.macChrome,
   hasNativeWindowChrome: () => false,
 }));
 vi.mock("./parts/useResizablePanels", () => ({
@@ -60,6 +62,7 @@ function shell(sidebar: React.ReactNode, forceSidebarExpanded = false) {
 }
 
 beforeEach(() => {
+  env.macChrome = false;
   document.documentElement.dataset.windowKind = "main";
   useSidebarOverlayStore.setState({
     isCollapsed: true,
@@ -109,6 +112,17 @@ it("skips the fork chrome when the sidebar is forced expanded", () => {
   render(shell(<MainSidebar />, true));
   expect(screen.queryByRole("navigation", { name: "Activity bar" })).toBeNull();
   expect(screen.getByText("rail mode")).toBeInTheDocument();
+});
+
+it("reserves the collapsed traffic-light pad only in a window that has traffic lights", () => {
+  // The web client paired with a Mac host: no overlay controls, so no pad marker.
+  const web = render(shell(<MainSidebar />));
+  expect(web.container.querySelector(".poracode-shell")).not.toHaveAttribute("data-mac-collapsed");
+  web.unmount();
+
+  env.macChrome = true;
+  const desktop = render(shell(<MainSidebar />));
+  expect(desktop.container.querySelector(".poracode-shell")).toHaveAttribute("data-mac-collapsed");
 });
 
 it("drops upstream's titlebar header row; the main Sidebar draws one merged row", () => {

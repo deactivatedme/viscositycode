@@ -94,8 +94,13 @@ describe("SidebarNavList", () => {
   it("runs New and the actions, with the toggle's state and badge", () => {
     render(<SidebarNavList />);
     const nav = within(screen.getByRole("navigation", { name: "Sidebar" }));
-    fireEvent.click(nav.getByRole("button", { name: "New" }));
+    const fresh = nav.getByRole("button", { name: "New" });
+    fireEvent.click(fresh);
     expect(tabActions.openNewThreadTab).toHaveBeenCalledTimes(1);
+    // New never looks selected: the same plain row as Search, with no state of its own.
+    expect(fresh.className).toBe(nav.getByRole("button", { name: "Search" }).className);
+    expect(fresh).not.toHaveAttribute("data-active");
+    expect(fresh).not.toHaveAttribute("aria-pressed");
     fireEvent.click(nav.getByRole("button", { name: "Search" }));
     expect(search).toHaveBeenCalledTimes(1);
     const mission = nav.getByRole("button", { name: "Mission Control (3)" });

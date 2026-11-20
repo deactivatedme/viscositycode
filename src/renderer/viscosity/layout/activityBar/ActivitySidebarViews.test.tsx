@@ -1,4 +1,4 @@
-// ViscosityCode: the main sidebar's header row (nav controls + view switch).
+// ViscosityCode: the main sidebar's header row (sidebar toggle + view switch).
 import { act, fireEvent, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("ActivitySidebarViews header", () => {
-  it("puts the sidebar toggle, back, forward and the view switch in one row, with no Home button", () => {
+  it("puts the sidebar toggle and the view switch in one row, with no Back/Forward or Home button", () => {
     const unregister = registerActivityBarItem({
       id: "test-room",
       label: msg`Roundtable`,
@@ -68,9 +68,10 @@ describe("ActivitySidebarViews header", () => {
 
     expect(row.querySelector("h2")).toHaveTextContent("Chats");
     expect(row.querySelector("h2")).toHaveClass("sr-only");
-    for (const name of ["Hide sidebar", "Back", "Forward"]) {
-      expect(row.contains(screen.getByRole("button", { name }))).toBe(true);
-    }
+    expect(row.contains(screen.getByRole("button", { name: "Hide sidebar" }))).toBe(true);
+    // Back/Forward live in the top bar, in both sidebar states.
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Forward" })).toBeNull();
     const viewSwitch = screen.getByRole("group", { name: "Sidebar view" });
     expect(row.lastElementChild).toBe(viewSwitch);
     expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute("aria-pressed", "true");
@@ -92,7 +93,6 @@ describe("ActivitySidebarViews header", () => {
   it("hides the view switch while only one view is registered", () => {
     render(<ActivitySidebarViews visible collapsed={false} />);
     expect(screen.queryByRole("group", { name: "Sidebar view" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
   });
 
   it("titles a registry view and keeps the actions beside it", () => {
@@ -107,7 +107,7 @@ describe("ActivitySidebarViews header", () => {
     render(<ActivitySidebarViews visible collapsed={false} />);
     const row = header();
     expect(row.querySelector("h2")).toHaveTextContent("Test view");
-    expect(row.contains(screen.getByRole("button", { name: "Back" }))).toBe(true);
+    expect(row.contains(screen.getByRole("button", { name: "Hide sidebar" }))).toBe(true);
     unregister();
   });
 

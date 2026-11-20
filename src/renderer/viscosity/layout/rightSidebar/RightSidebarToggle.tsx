@@ -1,12 +1,14 @@
 /**
- * ViscosityCode: the right sidebar's open/close button at the far right of
- * the tab strip. Its open state is upstream's own panel visibility, mirrored
- * for the toggle command (see `setRightSidebarOpenSnapshot`).
+ * ViscosityCode: the right sidebar's open button at the far right of the tab
+ * strip. It shows only while the sidebar is closed: the open panel's own
+ * header carries the hide button. The open state is upstream's own panel
+ * visibility, mirrored for the toggle command (see
+ * `setRightSidebarOpenSnapshot`), so this stays mounted either way.
  */
 import { useEffect } from "react";
 import { Button, Tooltip } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
-import { PanelRight, PanelRightClose } from "lucide-react";
+import { PanelRight } from "lucide-react";
 import { readBridge } from "@/renderer/bridge";
 import { formatCommandShortcut } from "@/renderer/commands/keybindingMatcher";
 import { useKeybindingStore } from "@/renderer/commands/keybindingStore";
@@ -42,34 +44,32 @@ export function RightSidebarToggle() {
     setRightSidebarOpenSnapshot(sidePanelOpen);
   }, [sidePanelOpen]);
 
-  const Icon = open ? PanelRightClose : PanelRight;
-  const hint = open ? t`Hide right sidebar` : t`Show right sidebar`;
+  const label = t`Show right sidebar`;
   return (
-    <div
-      className="vc-tabstrip__end poracode-overlay-header__controls flex shrink-0 items-center"
-      data-open={open ? "" : undefined}
-    >
-      <Tooltip delay={300}>
-        <Tooltip.Trigger>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            aria-label={t`Toggle right sidebar`}
-            aria-pressed={open}
-            className="vc-tabstrip__new size-6 min-w-0 shrink-0 p-0"
-            onPress={toggleRightSidebar}
-          >
-            <Icon className="size-3.5" />
-          </Button>
-        </Tooltip.Trigger>
-        <Tooltip.Content placement="bottom">
-          <span className="flex items-center gap-2">
-            {hint}
-            <ShortcutHint />
-          </span>
-        </Tooltip.Content>
-      </Tooltip>
+    // The wrapper stays so the strip keeps its end inset while the button is hidden.
+    <div className="vc-tabstrip__end poracode-overlay-header__controls flex shrink-0 items-center">
+      {open ? null : (
+        <Tooltip delay={300}>
+          <Tooltip.Trigger>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              aria-label={label}
+              className="vc-tabstrip__new size-6 min-w-0 shrink-0 p-0"
+              onPress={toggleRightSidebar}
+            >
+              <PanelRight className="size-3.5" />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content placement="bottom">
+            <span className="flex items-center gap-2">
+              {label}
+              <ShortcutHint />
+            </span>
+          </Tooltip.Content>
+        </Tooltip>
+      )}
     </div>
   );
 }

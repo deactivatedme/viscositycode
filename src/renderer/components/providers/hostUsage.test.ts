@@ -1,10 +1,15 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteDesktopClient } from "@/shared/remote/client";
 import { RemoteClientError } from "@/shared/remote/clientErrors";
 import type { UsageSnapshot } from "@/shared/contracts";
 import type { RemoteServersState, RemoteServerRecord } from "@/renderer/state/remoteServers/types";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
-import { useHostUsageStore } from "@/renderer/state/hostUsageStore";
+import {
+  isHostProviderRefreshing,
+  isWholeHostRefreshing,
+  useHostUsageStore,
+} from "@/renderer/state/hostUsageStore";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
 import { fetchHostUsage } from "./hostUsage";
 
@@ -83,6 +88,39 @@ describe("host-owned provider usage", () => {
       "new",
       "sibling",
     ]);
+  });
+
+  // ViscosityCode: a card's refresh is busy on its own, next to its siblings'.
+  it("marks only the refreshed provider busy and publishes side-by-side refreshes", async () => {
+    callRemoteProcedure.mockResolvedValueOnce({
+      snapshots: [snapshot("old"), snapshot("old-sibling", "other")],
+      fromCache: true,
+    });
+    await fetchHostUsage("a");
+    const replies: ((value: unknown) => void)[] = [];
+    callRemoteProcedure.mockImplementation(() => new Promise((done) => replies.push(done)));
+    const usage = () => useHostUsageStore.getState().hosts.a!;
+    const first = fetchHostUsage("a", true, { providerIds: ["provider"], force: true });
+    expect(isHostProviderRefreshing(usage(), "provider")).toBe(true);
+    expect(isHostProviderRefreshing(usage(), "other")).toBe(false);
+    expect(isWholeHostRefreshing(usage())).toBe(false);
+    const second = fetchHostUsage("a", true, { providerIds: ["other"], force: true });
+    expect(callRemoteProcedure).toHaveBeenLastCalledWith("refreshProviderUsage", {
+      providerIds: ["other"],
+      force: true,
+    });
+    replies[0]!({ snapshots: [snapshot("new")], fromCache: false });
+    await first;
+    expect(isHostProviderRefreshing(usage(), "provider")).toBe(false);
+    expect(isHostProviderRefreshing(usage(), "other")).toBe(true);
+    replies[1]!({ snapshots: [snapshot("new-sibling", "other")], fromCache: false });
+    await second;
+    expect(usage().snapshots.map((s) => s.authenticatedAs)).toEqual(["new", "new-sibling"]);
+    expect(usage()).toMatchObject({ pending: false, refreshing: false, refreshingProviders: [] });
+    // A whole-host refresh covers every provider.
+    void fetchHostUsage("a", true, { force: true });
+    expect(isWholeHostRefreshing(usage())).toBe(true);
+    expect(isHostProviderRefreshing(usage(), "other")).toBe(true);
   });
 
   it("does not let a late read replace a newer refresh", async () => {

@@ -1,7 +1,9 @@
 /**
- * ViscosityCode: sidebar toggle plus back/forward through recently focused
- * threads (./navHistory). Shown in the sidebar header and, while the sidebar
- * is collapsed, at the start of the top bar. Styles: ../activityBar.css.
+ * ViscosityCode: the sidebar toggle, and back/forward through recently focused
+ * threads (./navHistory). The toggle sits at the far top-left: in the sidebar
+ * header while the sidebar is open, at the start of the top bar while it is
+ * collapsed (the same spot, so it does not jump). Back/Forward always sit in
+ * the top bar, right before the session title. Styles: ../activityBar.css.
  */
 import { Button, Tooltip } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
@@ -9,6 +11,8 @@ import { ArrowLeft, ArrowRight, PanelLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { toggleSidebar, useSidebarOverlayStore } from "@/renderer/state/sidebarOverlayStore";
 import { navigateBack, navigateForward, useNavHistoryState } from "./navHistory";
+
+const GROUP_CLASS = "vc-nav-controls poracode-overlay-header__controls";
 
 function NavButton(props: {
   label: string;
@@ -36,15 +40,25 @@ function NavButton(props: {
   );
 }
 
-export function NavControls() {
+/** Sidebar header, and the start of the top bar while the sidebar is collapsed. */
+export function SidebarToggle() {
   const { t } = useLingui();
   const collapsed = useSidebarOverlayStore((state) => state.isCollapsed);
-  const { canBack, canForward } = useNavHistoryState();
   return (
-    <div className="vc-nav-controls poracode-overlay-header__controls">
+    <div className={GROUP_CLASS}>
       <NavButton label={collapsed ? t`Show sidebar` : t`Hide sidebar`} onPress={toggleSidebar}>
         <PanelLeft className="size-4" />
       </NavButton>
+    </div>
+  );
+}
+
+/** Back/Forward, in the top bar before the session title. */
+export function HistoryControls() {
+  const { t } = useLingui();
+  const { canBack, canForward } = useNavHistoryState();
+  return (
+    <div className={GROUP_CLASS}>
       <NavButton label={t`Back`} isDisabled={!canBack} onPress={navigateBack}>
         <ArrowLeft className="size-4" />
       </NavButton>

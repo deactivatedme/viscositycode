@@ -106,22 +106,31 @@ describe("ViscosityTabStrip (top bar)", () => {
       "true",
     );
     const bar = document.querySelector("[data-vc-tabstrip]")!;
-    expect(
-      bar.lastElementChild?.querySelector('[aria-label="Toggle right sidebar"]'),
-    ).not.toBeNull();
+    expect(bar.lastElementChild?.querySelector('[aria-label="Show right sidebar"]')).not.toBeNull();
   });
 
-  it("shows the nav controls only while the sidebar is collapsed", async () => {
+  it("always shows Back/Forward before the title, and the sidebar toggle first while collapsed", async () => {
     renderCenter();
-    const bar = () => document.querySelector("[data-vc-tabstrip]")!;
-    expect(bar().querySelector(".vc-nav-controls")).toBeNull();
+    const labels = () =>
+      [...document.querySelectorAll("[data-vc-tabstrip] .vc-nav-controls button")].map((button) =>
+        button.getAttribute("aria-label"),
+      );
+    const groupBeforeTitle = () =>
+      document.querySelector("[data-vc-session-title]")!.previousElementSibling!;
+    expect(labels()).toEqual(["Back", "Forward"]);
+    expect(groupBeforeTitle().contains(screen.getByRole("button", { name: "Forward" }))).toBe(true);
+
     await act(async () => useSidebarOverlayStore.setState({ isCollapsed: true }));
-    expect(bar().querySelector(".vc-nav-controls")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Show sidebar" })).toBeTruthy();
+    expect(labels()).toEqual(["Show sidebar", "Back", "Forward"]);
+    expect(groupBeforeTitle().contains(screen.getByRole("button", { name: "Forward" }))).toBe(true);
+    // Far left: the same spot the header's toggle has while the sidebar is open.
+    const bar = document.querySelector("[data-vc-tabstrip]")!;
+    expect(
+      bar.firstElementChild?.contains(screen.getByRole("button", { name: "Show sidebar" })),
+    ).toBe(true);
   });
 
   it("feeds back/forward from the focused thread", async () => {
-    useSidebarOverlayStore.setState({ isCollapsed: true });
     renderCenter();
     expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
     await act(async () =>

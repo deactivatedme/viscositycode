@@ -961,6 +961,25 @@ html[data-app-unfocused] .poracode-welcome-ring::after {
   transform: none;
 }
 
+/* ViscosityCode: popup triggers flip their chevron while open, as HeroUI's
+   select indicator does. Popover triggers carry no aria-haspopup, so they match
+   by slot class; a bare aria-expanded would also turn disclosure toggles.
+   `rotate` is the property Tailwind's rotate-180 sets, so a trigger that flips
+   itself is not turned twice; `@layer components` lets an icon's own utilities
+   still win. */
+@layer components {
+  :is(.popover__trigger, [aria-haspopup])[aria-expanded="true"]
+    :is(.lucide-chevron-down, .lucide-chevron-up) {
+    rotate: 180deg;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :is(.popover__trigger, [aria-haspopup]) :is(.lucide-chevron-down, .lucide-chevron-up) {
+      transition: rotate 150ms;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :is(
     .popover,
@@ -4824,6 +4843,13 @@ html[data-app-unfocused] .poracode-provider-icon--finished {
 
 .poracode-composer-toolbar--compact {
   padding: 0.1rem 0.6rem 0.6rem;
+}
+
+/* ViscosityCode: the shell's 28px action buttons centre on the 2.25rem control
+   row, level with the pickers and the context ring, instead of on its floor. */
+html[data-vc-shell] .poracode-composer-toolbar > .flex.shrink-0 {
+  min-height: 2.25rem;
+  align-items: center;
 }
 
 .poracode-composer-editor.textarea,
