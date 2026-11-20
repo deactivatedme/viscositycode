@@ -141,7 +141,7 @@ function normalizeMentionText(value: string): string {
   return lowerAligned(value).replace(/\s+/gu, " ").trim();
 }
 
-/** Leading words of one label part: "Claude Code" → "claude", "claude code". */
+/** Leading words of one label part: "Claude Code" → its lowercased first word and the whole lowercased part. */
 function wordPrefixes(part: string): string[] {
   const words = normalizeMentionText(part).split(" ").filter(Boolean);
   return words.map((_, index) => words.slice(0, index + 1).join(" "));

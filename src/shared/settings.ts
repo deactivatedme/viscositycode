@@ -516,7 +516,7 @@ export const sharedSettingsSchema = z.object({
   agentInstances: agentInstanceConfigMapSchema,
   // ViscosityCode: account pools.
   /**
-   * Account pools keyed by profile driver (`codex`, `claude`, …): the accounts
+   * Account pools keyed by profile driver (one key per provider driver id): the accounts
    * of one provider that new threads spread over and that a thread fails over
    * between when one runs out of usage. See `src/shared/accountPools.ts`.
    *

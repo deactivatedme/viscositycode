@@ -3,8 +3,8 @@
  *
  * The owner pays for several accounts of the same provider and wants work to
  * move to the next account when one runs out of usage. A pool groups the
- * profile agent kinds of one profile driver (e.g. "codex", "codex:work",
- * "codex:personal" — see src/shared/contracts/agentProfiles.ts) in the owner's
+ * profile agent kinds of one profile driver (e.g. "<driver>", "<driver>:work",
+ * "<driver>:personal" — see src/shared/contracts/agentProfiles.ts) in the owner's
  * preferred order. This module holds the provider-agnostic schema and pure
  * decisions; the host failover service and the renderer UI build on it.
  *
@@ -58,7 +58,7 @@ export const accountPoolSchema = z.object({
 });
 export type AccountPool = z.infer<typeof accountPoolSchema>;
 
-/** Pools keyed by profile driver id (e.g. "codex", "claude", "gemini"). */
+/** Pools keyed by profile driver id (one key per provider driver id). */
 export const accountPoolsSchema = z.record(z.string(), accountPoolSchema);
 export type AccountPools = z.infer<typeof accountPoolsSchema>;
 

@@ -1,7 +1,7 @@
 /**
  * ViscosityCode: shared usage-account resolution (fork of Poracode).
  *
- * Maps the agent kind a thread runs on (`codex`, `codex:work`, …) to the id of
+ * Maps the agent kind a thread runs on (`<driver>`, `<driver>:work`, …) to the id of
  * the usage snapshot that meters that account. It used to live only in the
  * renderer (`usageProviderIdForAgent` in
  * src/renderer/components/providers/usageProviders.ts, which now delegates
