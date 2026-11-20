@@ -20,6 +20,11 @@ and memory, and disassemble what is actually mapped.
 
 `re_environment` reports which are available and how to install what is missing.
 
+Linux is not a shipped desktop target, and its live tests do not run in CI (the
+hosted runner restricts ptrace). Known gap there: closing the server during a
+`waitFor` attach can leave `lldb-server` running, because only lldb-dap itself
+is killed.
+
 - **Debugger discovery:** `VISCOSITY_LIVE_RE_LLDB_DAP` (explicit path), then on
   macOS `xcrun -f lldb-dap`, then `lldb-dap` / `lldb-vscode` on `PATH`, then
   standard LLVM directories (`C:\Program Files\LLVM\bin`, `/usr/lib/llvm-*/bin`,

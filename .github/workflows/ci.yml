@@ -491,7 +491,14 @@ jobs:
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
 
       - name: Test
+        if: runner.os != 'Linux'
         run: cargo test --locked
+
+      # Linux is not a shipped target and the hosted runner restricts ptrace
+      # (yama scope 1), so only the unit tests run there; see the README.
+      - name: Test (unit only)
+        if: runner.os == 'Linux'
+        run: cargo test --locked --lib --bins
 
       - name: Check documentation
         run: cargo doc --no-deps --all-features --locked
