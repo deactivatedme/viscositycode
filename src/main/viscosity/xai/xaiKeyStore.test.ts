@@ -92,7 +92,12 @@ describe("xAI key store", () => {
     h.setEnv(`  ${ENV_KEY}  `);
     const store = h.store();
     expect(store.resolveKey()).toBe(ENV_KEY);
-    expect(store.keyStatus()).toEqual({ configured: true, source: "env", hint: "ENV1" });
+    expect(store.keyStatus()).toEqual({
+      configured: true,
+      source: "env",
+      hint: "ENV1",
+      hasStoredKey: true,
+    });
     // Storing while the env var is set still reports the env source.
     expect(store.setKey(STORED_KEY).source).toBe("env");
   });
@@ -113,7 +118,10 @@ describe("xAI key store", () => {
       const json = JSON.stringify(status);
       expect(json).not.toContain(STORED_KEY.slice(0, -4));
       expect(json).not.toContain(ENV_KEY.slice(0, -4));
-      expect(Object.keys(status).sort()).toEqual(["configured", "hint", "source"]);
+      expect(Object.keys(status).filter((key) => key !== "hasStoredKey")).toEqual(
+        expect.arrayContaining(["configured", "hint", "source"]),
+      );
+      expect(Object.keys(status)).toHaveLength("hasStoredKey" in status ? 4 : 3);
       expect(status.hint).toHaveLength(4);
     }
     for (const call of h.warn.mock.calls) expect(call.join(" ")).not.toContain(STORED_KEY);
@@ -188,11 +196,24 @@ describe("xAI key store", () => {
     expect(store.clearKey().source).toBe("env");
   });
 
+  it("reports a saved key while XAI_API_KEY wins, so it can still be removed", () => {
+    const h = harness();
+    h.setEnv(ENV_KEY);
+    const store = h.store();
+    expect(store.keyStatus()).not.toHaveProperty("hasStoredKey");
+    expect(store.setKey(STORED_KEY)).toMatchObject({ source: "env", hasStoredKey: true });
+    // A fresh process finds the file too.
+    expect(h.store().keyStatus()).toMatchObject({ source: "env", hasStoredKey: true });
+    expect(store.clearKey()).toEqual({ configured: true, source: "env", hint: "ENV1" });
+    expect(h.files.size).toBe(0);
+  });
+
   it("treats an undecryptable stored key as missing and warns without leaking", () => {
     const h = harness();
     h.files.set(xaiKeyFilePath(USER_DATA), Buffer.from("garbage-from-another-machine"));
     const store = h.store();
-    expect(store.keyStatus()).toEqual({ configured: false, source: "none" });
+    // Unusable, but still on disk: Settings can remove it.
+    expect(store.keyStatus()).toEqual({ configured: false, source: "none", hasStoredKey: true });
     expect(store.resolveKey()).toBeUndefined();
     expect(h.warn).toHaveBeenCalledTimes(1);
     expect(h.warn.mock.calls[0]?.[0]).not.toContain("garbage");
@@ -202,7 +223,11 @@ describe("xAI key store", () => {
     const h = harness();
     h.store().setKey(STORED_KEY);
     h.safeStorage.encryptionAvailable.mockReturnValue(false);
-    expect(h.store().keyStatus()).toEqual({ configured: false, source: "none" });
+    expect(h.store().keyStatus()).toEqual({
+      configured: false,
+      source: "none",
+      hasStoredKey: true,
+    });
     expect(h.safeStorage.decryptString).not.toHaveBeenCalled();
   });
 });

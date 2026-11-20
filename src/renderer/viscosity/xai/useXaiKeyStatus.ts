@@ -2,7 +2,7 @@
  * ViscosityCode: xAI API key status for Settings and brain pickers.
  *
  * One small store shared by every reader, so saving a key in Settings updates
- * the Bots / Roundtable pickers too. Only the status (source + last-4 hint)
+ * the Roundtable pickers too. Only the status (source + last-4 hint)
  * ever reaches the renderer; the key itself stays in the main process.
  */
 import { useEffect } from "react";

@@ -80,6 +80,8 @@ export function createXaiKeyStore(deps: XaiKeyStoreDeps): XaiKeyStore {
   const warn = deps.warn ?? ((message: string) => console.warn(message));
   // `undefined` = not read yet; `null` = read, nothing usable stored.
   let cachedStoredKey: string | null | undefined;
+  // Whether a key file exists, readable or not (known once `storedKey` ran).
+  let storedFilePresent = false;
 
   function envKey(): string | undefined {
     const value = deps.readEnv()?.trim();
@@ -92,8 +94,10 @@ export function createXaiKeyStore(deps: XaiKeyStoreDeps): XaiKeyStore {
     let cipher: Buffer;
     try {
       cipher = deps.fs.readFile(path);
+      storedFilePresent = true;
     } catch (error) {
-      if (!isMissingFile(error)) {
+      storedFilePresent = !isMissingFile(error);
+      if (storedFilePresent) {
         warn("[viscosity:xai] the stored xAI API key could not be read; it is ignored.");
       }
       cachedStoredKey = null;
@@ -116,17 +120,18 @@ export function createXaiKeyStore(deps: XaiKeyStoreDeps): XaiKeyStore {
   }
 
   function status(): XaiKeyStatus {
+    const fromStore = storedKey();
+    const stored = storedFilePresent ? { hasStoredKey: true } : {};
     const fromEnv = envKey();
     if (fromEnv) {
       const hint = hintFor(fromEnv);
-      return { configured: true, source: "env", ...(hint ? { hint } : {}) };
+      return { configured: true, source: "env", ...(hint ? { hint } : {}), ...stored };
     }
-    const fromStore = storedKey();
     if (fromStore) {
       const hint = hintFor(fromStore);
       return { configured: true, source: "stored", ...(hint ? { hint } : {}) };
     }
-    return { configured: false, source: "none" };
+    return { configured: false, source: "none", ...stored };
   }
 
   return {
@@ -147,6 +152,7 @@ export function createXaiKeyStore(deps: XaiKeyStoreDeps): XaiKeyStore {
         throw new XaiError("storage-failed");
       }
       cachedStoredKey = key;
+      storedFilePresent = true;
       return status();
     },
     clearKey() {
@@ -156,6 +162,7 @@ export function createXaiKeyStore(deps: XaiKeyStoreDeps): XaiKeyStore {
         if (!isMissingFile(error)) throw new XaiError("storage-failed");
       }
       cachedStoredKey = null;
+      storedFilePresent = false;
       return status();
     },
   };

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -22,7 +23,6 @@ import { runSettingsScenario } from "./smoke-settings.mjs";
 import { mockQuickComposerGate } from "./smoke-quick-composer.mjs";
 import { mockSideChatGate } from "./smoke-side-chat.mjs";
 import { mockDelegatedAgentRecoveryGate } from "./smoke-delegated-agent-recovery.mjs";
-import { runWelcomeDismissalScenario } from "./smoke-welcome.mjs";
 import { verifyProjectMcpImport } from "./smoke-mcp-import.mjs";
 import { mockEditorMediaGate } from "./smoke-editor-media.mjs";
 import { hasAccessibleControlLabel } from "./smoke-control-label.mjs";
@@ -214,9 +214,6 @@ async function runSmoke(plan) {
       (visibility) => visibility === "visible",
       "visible main window",
     );
-    await runScenario(report, "welcome-dismissal", () =>
-      runWelcomeDismissalScenario({ client, evaluate, waitForValue }),
-    );
     await installWindowErrorCollector(client);
     await runScenario(report, "baseline", () => baselineScenario(client));
     if (plan.automated.includes("settings")) {
@@ -308,7 +305,6 @@ async function baselineScenario(client) {
           poracodeBridge: typeof window.poracode,
           devBridge: typeof window.__poracodeDev,
           crash: /renderer crash|rendered more hooks/i.test(document.body?.innerText ?? ""),
-          welcomeVisible: Boolean(document.querySelector(".poracode-welcome-page.fixed")),
           draftComposer: Boolean(document.querySelector('textarea[placeholder], [contenteditable="true"], [data-composer-input-anchor]')),
           modelPicker: Boolean(document.querySelector('[aria-label="Select model"], [aria-label="Models"]')),
         }))()`,
@@ -325,7 +321,6 @@ async function baselineScenario(client) {
   assert(state.poracodeBridge === "object", "typed preload bridge is missing");
   assert(state.devBridge === "object", "DEV testing bridge is missing");
   assert(!state.crash, "renderer crash screen or hook-order failure detected");
-  assert(!state.welcomeVisible, "welcome screen still blocks the smoke test surface");
   const screenshotPath = join(outDir, "smoke-01-baseline.png");
   await screenshot(client, screenshotPath);
   return { ...state, screenshotPath };

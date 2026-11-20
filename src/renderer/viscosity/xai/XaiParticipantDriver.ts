@@ -1,5 +1,5 @@
 /**
- * ViscosityCode: a Roundtable / Bot participant whose brain is a Grok model on
+ * ViscosityCode: a Roundtable participant whose brain is a Grok model on
  * the xAI Responses API (`ParticipantBrain.kind === "xai"`).
  *
  * The conversation (role/content list) lives in memory per driver, i.e. per
@@ -8,7 +8,8 @@
  * from the session's finished turns for this participant. Requests run in the
  * main process (`getXaiBridge()`); this class never sees the API key.
  *
- * Streaming text reaches `onProgress` at most 8 times a second; no callback
+ * Streaming text reaches `onProgress` at most 8 times a second (2 in
+ * Lightweight mode, read per turn); no callback
  * fires after `sendTurn` settles. `stop()` cancels the request and settles the
  * turn as "stopped" at once.
  */
@@ -25,13 +26,12 @@ import {
   type XaiChatMessage,
   type XaiRegion,
 } from "@/shared/viscosity/xaiContract";
+import { DEFAULT_DRIVER_TIMING } from "@/renderer/viscosity/roundtable/engine/threadPort";
 import { XaiBridgeError, getXaiBridge, toXaiBridgeError } from "./xaiBridge";
 import { describeXaiError } from "./xaiErrorText";
 
-/** ≤ 8 Hz live preview (one throttled re-render per running turn). */
-export const XAI_PROGRESS_INTERVAL_MS = 125;
 /** Oldest messages are dropped beyond this many characters (~100k tokens). */
-export const XAI_MAX_HISTORY_CHARS = 400_000;
+const XAI_MAX_HISTORY_CHARS = 400_000;
 
 interface XaiBrainConfig {
   model: string;
@@ -43,9 +43,12 @@ export interface XaiParticipantDriverOptions {
   profile: ParticipantProfile;
   /** Finished turns seed the conversation when a driver is recreated. */
   session?: Pick<RoundtableSession, "turns">;
+  /** Current standing instructions, read per request (edits apply mid-chat). Default: the profile's. */
+  instructions?: () => string | undefined;
   /** Defaults to the window's bridge. */
   getBridge?: () => ViscosityXaiBridge;
   createRequestId?: () => string;
+  /** Default: the thread seats' live-preview interval, read per turn (Lightweight-aware). */
   progressIntervalMs?: number;
   maxHistoryChars?: number;
 }
@@ -91,23 +94,23 @@ export function trimXaiHistory(messages: XaiChatMessage[], maxChars: number): Xa
 
 export class XaiParticipantDriver implements ParticipantDriver {
   readonly participantId: string;
-  private readonly profile: ParticipantProfile;
+  private readonly instructions: () => string | undefined;
   private readonly brain: XaiBrainConfig;
   private readonly getBridge: () => ViscosityXaiBridge;
   private readonly createRequestId: () => string;
-  private readonly progressIntervalMs: number;
+  private readonly progressIntervalMs: number | undefined;
   private readonly maxHistoryChars: number;
   private history: XaiChatMessage[];
   private active: ActiveTurn | undefined;
   private disposed = false;
 
   constructor(options: XaiParticipantDriverOptions) {
-    this.profile = options.profile;
+    this.instructions = options.instructions ?? (() => options.profile.instructions);
     this.participantId = options.profile.id;
     this.brain = brainOf(options.profile);
     this.getBridge = options.getBridge ?? getXaiBridge;
     this.createRequestId = options.createRequestId ?? (() => crypto.randomUUID());
-    this.progressIntervalMs = options.progressIntervalMs ?? XAI_PROGRESS_INTERVAL_MS;
+    this.progressIntervalMs = options.progressIntervalMs;
     this.maxHistoryChars = options.maxHistoryChars ?? XAI_MAX_HISTORY_CHARS;
     this.history = seedHistory(options.profile, options.session);
   }
@@ -151,6 +154,7 @@ export class XaiParticipantDriver implements ParticipantDriver {
     const requestId = this.createRequestId();
     const userMessage: XaiChatMessage = { role: "user", content: prompt };
     const input = trimXaiHistory([...this.history, userMessage], this.maxHistoryChars);
+    const progressIntervalMs = this.progressIntervalMs ?? DEFAULT_DRIVER_TIMING.progressMs;
 
     return new Promise<TurnResult>((resolve) => {
       let text = "";
@@ -168,7 +172,7 @@ export class XaiParticipantDriver implements ParticipantDriver {
       };
       const scheduleProgress = () => {
         if (!onProgress || timer !== undefined) return;
-        const wait = lastEmitAt + this.progressIntervalMs - Date.now();
+        const wait = lastEmitAt + progressIntervalMs - Date.now();
         if (wait <= 0) emitProgress();
         else timer = setTimeout(emitProgress, wait);
       };
@@ -210,7 +214,7 @@ export class XaiParticipantDriver implements ParticipantDriver {
 
       this.active = { requestId, settle, partialText: () => text };
 
-      const instructions = this.profile.instructions?.trim();
+      const instructions = this.instructions()?.trim();
       bridge
         .respond({
           requestId,
@@ -247,12 +251,4 @@ export class XaiParticipantDriver implements ParticipantDriver {
     this.disposed = true;
     void this.stop();
   }
-}
-
-/** `ParticipantDriverFactory` for brains of kind "xai". */
-export function createXaiParticipantDriver(
-  profile: ParticipantProfile,
-  session: RoundtableSession,
-): ParticipantDriver {
-  return new XaiParticipantDriver({ profile, session });
 }

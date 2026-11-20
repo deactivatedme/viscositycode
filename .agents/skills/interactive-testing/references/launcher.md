@@ -47,7 +47,7 @@ them with copied runtime dependencies before launch.
 `poracode-cdp.mjs launch --new --root <unique root>` returns only after `READY`
 and prints the `sessionFile`, ports, URL, owner PIDs, and launch time. `--new`
 plus a fresh unique root is required so parallel agents cannot reuse or stop
-each other's apps. It skips the welcome gate and waits for a mounted root plus
+each other's apps. It waits for a mounted root plus
 the preload and DEV bridges. Once `READY`, individual CDP actions should finish
 in milliseconds; they do not inherit the cold-start budget.
 

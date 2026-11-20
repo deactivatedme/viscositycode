@@ -5,11 +5,12 @@ import type {
   RoundtableTurn,
 } from "@/renderer/viscosity/roundtable/types";
 import { createFakeXaiBridge, type FakeXaiBridge } from "./testing/fakeXaiBridge";
-import {
-  XaiParticipantDriver,
-  createXaiParticipantDriver,
-  trimXaiHistory,
-} from "./XaiParticipantDriver";
+import { XaiParticipantDriver, trimXaiHistory } from "./XaiParticipantDriver";
+
+let lightweight = false;
+vi.mock("@/renderer/viscosity/performance/lightweight", () => ({
+  isLightweightActive: () => lightweight,
+}));
 
 function profile(overrides: Partial<ParticipantProfile> = {}): ParticipantProfile {
   return {
@@ -128,6 +129,22 @@ describe("XaiParticipantDriver", () => {
     expect(progress).toEqual(["a", "abcd", "abcde"]);
   });
 
+  it("throttles live progress to 2 updates a second in Lightweight mode", async () => {
+    const driver = driverWith(bridge);
+    lightweight = true;
+    const progress: string[] = [];
+    const pending = driver.sendTurn("Go", (text) => progress.push(text));
+    lightweight = false;
+    bridge.emit({ requestId: "req-1", type: "delta", text: "a" });
+    bridge.emit({ requestId: "req-1", type: "delta", text: "b" });
+    vi.advanceTimersByTime(125);
+    expect(progress).toEqual(["a"]);
+    vi.advanceTimersByTime(375);
+    expect(progress).toEqual(["a", "ab"]);
+    bridge.emit({ requestId: "req-1", type: "done", text: "ab" });
+    await pending;
+  });
+
   it("ignores events for other requests", async () => {
     const driver = driverWith(bridge);
     const pending = driver.sendTurn("Go");
@@ -242,16 +259,32 @@ describe("XaiParticipantDriver", () => {
   });
 
   it("only accepts xAI brains", () => {
-    const session = { turns: [] } as unknown as RoundtableSession;
-    expect(() =>
-      createXaiParticipantDriver(
-        profile({
-          brain: { kind: "agent", agentKind: "any", model: "m", presentationMode: "gui" },
+    expect(
+      () =>
+        new XaiParticipantDriver({
+          profile: profile({
+            brain: { kind: "agent", agentKind: "any", model: "m", presentationMode: "gui" },
+          }),
+          getBridge: () => bridge,
         }),
-        session,
-      ),
     ).toThrow(/xAI brain/u);
-    expect(createXaiParticipantDriver(profile(), session).participantId).toBe("grok");
+    expect(driverWith(bridge).participantId).toBe("grok");
+  });
+
+  it("reads the instructions per request, so an edit or a removal applies mid-chat", () => {
+    let current: string | undefined = "Be terse.";
+    const driver = new XaiParticipantDriver({
+      profile: profile(),
+      instructions: () => current,
+      getBridge: () => bridge,
+    });
+    void driver.sendTurn("Q1");
+    expect(bridge.requests[0]?.instructions).toBe("Be terse.");
+    bridge.emit({ requestId: bridge.requests[0]!.requestId, type: "done", text: "A1" });
+
+    current = undefined;
+    void driver.sendTurn("Q2");
+    expect(bridge.requests[1]).not.toHaveProperty("instructions");
   });
 });
 

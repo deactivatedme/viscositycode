@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -234,7 +235,6 @@ try {
         cwd: repoRoot,
         env: {
           ...process.env,
-          ...(launchOnly ? { VITE_PORACODE_SKIP_WELCOME: "1" } : {}),
           PORACODE_BUILD_TARGET: "electron",
         },
         detached: process.platform !== "win32",
@@ -263,7 +263,6 @@ try {
       // Opt in only for an intentional live usage test, in either launch mode.
       PORACODE_DISABLE_USAGE_COLLECTION:
         process.env.PORACODE_DISABLE_USAGE_COLLECTION === "0" ? "0" : "1",
-      ...(launchOnly ? { VITE_PORACODE_SKIP_WELCOME: "1" } : {}),
       ...identityEnv,
     };
     rendererProcess = startSmokeRenderer({ repoRoot, runtime, env: appEnv, port: vitePort });

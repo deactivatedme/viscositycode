@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { join } from "node:path";
 import assert from "node:assert/strict";
 
@@ -15,7 +16,6 @@ export async function runSettingsScenario({
 }) {
   const mcpFixture = await startMcpProbeFixture();
   try {
-    // Context is independent of whether the launcher already dismissed Welcome.
     await evaluate(
       client,
       `(() => {

@@ -172,8 +172,7 @@ node .agents/skills/interactive-testing/scripts/poracode-integration-smoke.mjs r
 Exit `0`: automated scenarios and mock gates passed. Exit `1`: a scenario or the
 coverage audit failed. Exit `2`: `--mode real` with real manual gates remaining.
 
-The runner dismisses the welcome screen through its real primary action, then
-checks boot/render health, preload and DEV bridges, crash-screen markers,
+The runner checks boot/render health, preload and DEV bridges, crash-screen markers,
 runtime exceptions, unhandled rejections, console errors, and screenshots.
 Depending on the plan it walks every Settings section, opens thread search, runs
 the Browser harness, and executes mock IPC/project/provider/auth/terminal/runtime

@@ -30,6 +30,11 @@ export interface XaiKeyStatus {
   source: "env" | "stored" | "none";
   /** Last 4 characters only, for display. */
   hint?: string;
+  /**
+   * Additive: a key file is saved on this device but is not the key in use
+   * (XAI_API_KEY wins, or it cannot be decrypted), so Settings can offer to remove it.
+   */
+  hasStoredKey?: boolean;
 }
 
 export interface XaiChatMessage {
@@ -44,7 +49,7 @@ export interface XaiResponseRequest {
   region: XaiRegion;
   /** Conversation so far, sent as the Responses API `input`. */
   input: XaiChatMessage[];
-  /** Optional standing instructions (bot persona). */
+  /** Optional standing instructions (per-seat instructions). */
   instructions?: string;
   tools: { webSearch: boolean; xSearch: boolean };
 }

@@ -1,12 +1,11 @@
 /**
- * ViscosityCode: Settings → Bots (fork of Poracode).
+ * ViscosityCode: Settings → xAI API (fork of Poracode).
  *
- * The xAI API key for Grok bots (masked input, Save, Remove, and its status:
- * from the XAI_API_KEY environment variable or stored on this device, with
- * the last four characters), the defaults new Grok bots start with, and a
- * short note that bots on agent brains use the user's existing subscriptions.
- * A key saved on this device can be removed even while XAI_API_KEY wins over
- * it; the status says which one is in use.
+ * The xAI API key Grok seats in a Roundtable use (masked input, Save, Remove,
+ * and its status: from the XAI_API_KEY environment variable or stored on this
+ * device, with the last four characters). A key saved on this device can be
+ * removed even while XAI_API_KEY wins over it; the status says which one is
+ * in use.
  *
  * The key goes straight to the desktop main process, which encrypts it with
  * the OS (Electron safeStorage); this page never holds it after Save and
@@ -17,29 +16,16 @@ import { toast } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
 import { KeyRound, Trash2 } from "lucide-react";
 import type { XaiKeyStatus } from "@/shared/viscosity/xaiContract";
-import { Button, Input, Select } from "@/renderer/components/common";
+import { Button, Input } from "@/renderer/components/common";
 import { SettingRow, SettingsPage } from "@/renderer/views/SettingsOverlay/parts/SettingsForm";
-import {
-  removeXaiKey,
-  saveXaiKey,
-  useXaiKeyStatus,
-} from "@/renderer/viscosity/xai/useXaiKeyStatus";
-import { useBotsStore } from "../botStore";
-import { ToolCheckbox } from "../ui/ToolCheckbox";
-
-/**
- * The key status, with the additive `hasStoredKey` flag: main sets it when a
- * key is saved on this device, including while XAI_API_KEY takes precedence
- * (then `source` is "env" and the saved key is otherwise invisible here).
- */
-type XaiKeyStatusWithStore = XaiKeyStatus & { hasStoredKey?: boolean };
+import { removeXaiKey, saveXaiKey, useXaiKeyStatus } from "../useXaiKeyStatus";
 
 /** Whether a key is saved on this device, so Remove has something to delete. */
-function hasStoredXaiKey(status: XaiKeyStatusWithStore | undefined): boolean {
+function hasStoredXaiKey(status: XaiKeyStatus | undefined): boolean {
   return status?.source === "stored" || status?.hasStoredKey === true;
 }
 
-function useKeyStatusText(status: XaiKeyStatusWithStore | undefined): string {
+function useKeyStatusText(status: XaiKeyStatus | undefined): string {
   const { t } = useLingui();
   if (!status) return t`Checking…`;
   // Main sends no hint for very short keys; never render an empty "()".
@@ -59,14 +45,16 @@ function useKeyStatusText(status: XaiKeyStatusWithStore | undefined): string {
         ? t`Saved on this device, encrypted by your operating system (${hint}).`
         : t`Saved on this device, encrypted by your operating system.`;
     case "none":
-      return t`No key yet. Grok bots stay unavailable until you add one.`;
+      return status.hasStoredKey === true
+        ? t`A saved key can't be read on this device. Remove it or save a new one.`
+        : t`No key yet. Grok stays unavailable in Roundtables until you add one.`;
   }
 }
 
 function XaiKeyRow() {
   const { t } = useLingui();
   const { available, status: keyStatus, loading, error } = useXaiKeyStatus();
-  const status: XaiKeyStatusWithStore | undefined = keyStatus;
+  const status: XaiKeyStatus | undefined = keyStatus;
   const [draft, setDraft] = useState("");
   const statusText = useKeyStatusText(status);
   const canSave = available && !loading && draft.trim().length > 0;
@@ -101,9 +89,9 @@ function XaiKeyRow() {
   return (
     <div className="space-y-2">
       <SettingRow
-        anchorId="bots.xaiKey"
+        anchorId="xai.apiKey"
         title={t`xAI API key`}
-        description={t`Used only by Grok bots. Kept in the desktop app's main process, never in pages.`}
+        description={t`Used by Grok seats in a Roundtable. Kept in the desktop app's main process, never in pages.`}
       >
         <div className="flex shrink-0 items-center gap-1.5">
           <Input
@@ -141,78 +129,26 @@ function XaiKeyRow() {
         </div>
       </SettingRow>
       <p role="status" className="text-xs text-muted" data-vc-xai-key-status={status?.source ?? ""}>
-        {available ? (error ?? statusText) : t`Grok bots work only in the desktop app.`}
+        {available
+          ? (error ?? statusText)
+          : t`Grok over the xAI API works only in the desktop app.`}
       </p>
     </div>
   );
 }
 
-export function BotsSettings() {
+export function XaiSettings() {
   const { t } = useLingui();
-  const xaiDefaults = useBotsStore((state) => state.xaiDefaults);
-  const setXaiDefaults = useBotsStore((state) => state.setXaiDefaults);
-  const regionOptions = [
-    { id: "global", label: t`Global (api.x.ai)` },
-    { id: "us", label: t`United States only (us.api.x.ai)` },
-  ];
-
   return (
     <SettingsPage
-      title={t({ message: "Bots", comment: "Settings section: named AI teammates (bots)" })}
-      description={t`Named AI teammates with their own brain, instructions and memory.`}
+      title={t({
+        message: "xAI API",
+        comment: "Settings section: the xAI API key that Grok in a Roundtable uses",
+      })}
+      description={t`Grok models over the xAI API, billed to your xAI account. A Roundtable can seat them next to your agents.`}
       bodyClassName="space-y-6"
     >
-      <p role="note" className="rounded-lg border border-border px-3 py-2 text-xs text-muted">
-        {t`Bots on an agent brain run through the agents you already use, on your existing subscriptions and logins, with each agent's own approval settings. Nothing here is needed for them.`}
-      </p>
-
-      <section className="space-y-4" aria-label={t`Grok on the xAI API`}>
-        <div className="border-b border-border pb-3">
-          <h2 className="text-sm font-semibold text-foreground">{t`Grok on the xAI API`}</h2>
-          <p className="mt-1 text-xs text-muted">
-            {t`Bots can also think with a Grok model over the xAI API, billed to your xAI account.`}
-          </p>
-        </div>
-
-        <XaiKeyRow />
-
-        <SettingRow
-          anchorId="bots.defaultRegion"
-          title={t`Default region`}
-          description={t`Where new Grok bots send requests. The US endpoint serves text models only.`}
-        >
-          <Select
-            aria-label={t`Default region`}
-            className="w-56 shrink-0"
-            options={regionOptions}
-            value={xaiDefaults.region}
-            onChange={(value) => setXaiDefaults({ region: value === "us" ? "us" : "global" })}
-          />
-        </SettingRow>
-
-        <SettingRow
-          anchorId="bots.defaultTools"
-          title={t`Default tools`}
-          description={t`Server-side search tools new Grok bots start with.`}
-        >
-          <div className="flex shrink-0 items-center gap-4">
-            <ToolCheckbox
-              isSelected={xaiDefaults.tools.webSearch}
-              onChange={(webSearch) =>
-                setXaiDefaults({ tools: { ...xaiDefaults.tools, webSearch } })
-              }
-            >
-              {t`Web search`}
-            </ToolCheckbox>
-            <ToolCheckbox
-              isSelected={xaiDefaults.tools.xSearch}
-              onChange={(xSearch) => setXaiDefaults({ tools: { ...xaiDefaults.tools, xSearch } })}
-            >
-              {t`X search`}
-            </ToolCheckbox>
-          </div>
-        </SettingRow>
-      </section>
+      <XaiKeyRow />
     </SettingsPage>
   );
 }
