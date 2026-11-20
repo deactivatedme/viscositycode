@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IPC_EVENT_CHANNELS } from "@/shared/ipc";
 
@@ -12,6 +13,7 @@ const notificationState = vi.hoisted(() => ({
   instances: [] as FakeNotificationInstance[],
   isSupported: vi.fn<() => boolean>(() => true),
   showThrows: false,
+  focusedWindow: vi.fn<() => unknown>(() => null),
 }));
 
 vi.mock("electron", () => {
@@ -40,15 +42,26 @@ vi.mock("electron", () => {
 
     static isSupported = notificationState.isSupported;
   }
-  return { Notification: FakeNotification };
+  return {
+    Notification: FakeNotification,
+    BrowserWindow: { getFocusedWindow: notificationState.focusedWindow },
+  };
 });
 
 const threadWindows = vi.hoisted(() => ({
   find: vi.fn<(threadId: string) => unknown>(() => undefined),
+  isThreadWindow: vi.fn<(window: unknown) => boolean>(() => false),
 }));
-vi.mock("./window/threadWindows", () => ({ findThreadWindow: threadWindows.find }));
+vi.mock("./window/threadWindows", () => ({
+  findThreadWindow: threadWindows.find,
+  isThreadWindow: threadWindows.isThreadWindow,
+}));
 
-import { showOsNotification, showUserNotificationFallback } from "./osNotifications";
+import {
+  isUserViewingThread,
+  showOsNotification,
+  showUserNotificationFallback,
+} from "./osNotifications";
 
 function createFakeWindow() {
   return {
@@ -58,7 +71,10 @@ function createFakeWindow() {
     restore: vi.fn<() => void>(),
     show: vi.fn<() => void>(),
     focus: vi.fn<() => void>(),
-    webContents: { send: vi.fn<(channel: string, payload: unknown) => void>() },
+    webContents: {
+      send: vi.fn<(channel: string, payload: unknown) => void>(),
+      isDevToolsFocused: vi.fn<() => boolean>(() => false),
+    },
   };
 }
 
@@ -66,9 +82,11 @@ type FakeWindow = ReturnType<typeof createFakeWindow>;
 
 beforeEach(() => {
   threadWindows.find.mockReset().mockReturnValue(undefined);
+  threadWindows.isThreadWindow.mockReset().mockReturnValue(false);
   notificationState.instances.length = 0;
   notificationState.isSupported.mockReturnValue(true);
   notificationState.showThrows = false;
+  notificationState.focusedWindow.mockReset().mockReturnValue(null);
 });
 
 describe("showOsNotification", () => {
@@ -109,6 +127,44 @@ describe("showOsNotification", () => {
 
     expect(shown).toBe(false);
     expect(notificationState.instances).toHaveLength(0);
+  });
+
+  it("skips a thread shown in the main window while another app window has focus", () => {
+    const main = createFakeWindow();
+    notificationState.focusedWindow.mockReturnValue({});
+    const payload = { title: "P", body: "B", threadId: "t11", shownInMainWindow: true };
+
+    expect(showOsNotification(payload, () => main as never)).toBe(false);
+    // The main window's detached DevTools has focus: no BrowserWindow is focused.
+    notificationState.focusedWindow.mockReturnValue(null);
+    main.webContents.isDevToolsFocused.mockReturnValue(true);
+    expect(showOsNotification(payload, () => main as never)).toBe(false);
+    expect(notificationState.instances).toHaveLength(0);
+  });
+
+  it("shows a thread shown in the main window while another thread's window has focus", () => {
+    // That window can cover the main window, so the user may not see the thread.
+    const otherThreadWindow = {};
+    notificationState.focusedWindow.mockReturnValue(otherThreadWindow);
+    threadWindows.isThreadWindow.mockImplementation((window) => window === otherThreadWindow);
+    const shown = showOsNotification(
+      { title: "P", body: "B", threadId: "t13", shownInMainWindow: true },
+      () => createFakeWindow() as never,
+    );
+
+    expect(shown).toBe(true);
+    expect(notificationState.instances).toHaveLength(1);
+  });
+
+  it("still shows a thread shown in the main window while another app is in front", () => {
+    const main = createFakeWindow();
+    const shown = showOsNotification(
+      { title: "P", body: "B", threadId: "t12", shownInMainWindow: true },
+      () => main as never,
+    );
+
+    expect(shown).toBe(true);
+    expect(notificationState.instances).toHaveLength(1);
   });
 
   it("focuses the thread's own window instead of the main window when clicked", () => {
@@ -195,6 +251,28 @@ describe("showOsNotification", () => {
     const shown = showOsNotification({ title: "P", body: "B", threadId: "t6" }, () => win as never);
 
     expect(shown).toBe(false);
+  });
+});
+
+describe("isUserViewingThread", () => {
+  it("answers without native notification support, for the sound pack", () => {
+    notificationState.isSupported.mockReturnValue(false);
+    const main = createFakeWindow();
+    threadWindows.find.mockReturnValue({ ...createFakeWindow(), isFocused: () => true });
+    expect(isUserViewingThread({ threadId: "t1" }, () => main as never)).toBe(true);
+
+    threadWindows.find.mockReturnValue(undefined);
+    notificationState.focusedWindow.mockReturnValue({});
+    expect(
+      isUserViewingThread({ threadId: "t2", shownInMainWindow: true }, () => main as never),
+    ).toBe(true);
+    // Not shown in the main window: another app window having focus says nothing.
+    expect(isUserViewingThread({ threadId: "t2" }, () => main as never)).toBe(false);
+    // Another app in front: no app window is focused.
+    notificationState.focusedWindow.mockReturnValue(null);
+    expect(
+      isUserViewingThread({ threadId: "t2", shownInMainWindow: true }, () => main as never),
+    ).toBe(false);
   });
 });
 

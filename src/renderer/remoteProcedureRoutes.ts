@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { IpcProcedureName } from "@/shared/ipc";
 import { REMOTE_IPC_ADAPTER_SPECS } from "@/shared/remote";
 import {
@@ -81,6 +82,8 @@ export const NON_ROUTER_PROJECT_PROCEDURES = {
   openExternalNative: "local-shell: opens a URL via this machine's OS shell",
   openMicrophoneSettings: "local-shell: opens this machine's OS settings app",
   showNotification: "local-shell: OS notification",
+  // ViscosityCode: main-local focus check (no renderer caller since the sound pack was removed).
+  isUserViewingThread: "local-shell: asks this desktop's main process about its own window focus",
   getHomeScopeLocation: "local-shell: this machine's home directory as the default project parent",
   listLocalPorts: "local-shell: inspects this machine's listening sockets and process owners",
   closeLocalPort: "local-shell: stops a validated socket owner on this machine",
@@ -265,6 +268,14 @@ export const NON_ROUTER_PROJECT_PROCEDURES = {
   reloadAgentMcpServers: "local-shell: reloads CLI servers registered on this machine",
 
   // Cross-agent routing and memory — this device's config
+  // ViscosityCode: cloud agents inbox (v1 is desktop-only, not in the remote allowlist).
+  listCloudAgents:
+    "local-shell: v1 desktop inbox; cloud threads themselves sync through ordinary thread commands",
+  getCloudAgent:
+    "local-shell: v1 desktop inbox; cloud threads themselves sync through ordinary thread commands",
+  followCloudAgent:
+    "local-shell: v1 desktop inbox; cloud threads themselves sync through ordinary thread commands",
+
   getCrossagentRouting: "local-shell: this device's cross-agent routing config",
   cancelCrossagentRun: "local-shell: cancels this host's crossagent child runs",
   confirmCrossagentRoutingOverride: "local-shell: this device's routing override decision",

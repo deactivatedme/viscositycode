@@ -16,8 +16,7 @@ import {
 } from "@/renderer/browserNotificationPermission";
 import { i18n } from "@/renderer/i18n/i18n";
 import type { UserNotification, UserNotificationCategory } from "@/shared/threadNotification";
-// ViscosityCode: the fork's sound pack replaces this sound while it is on.
-import { isSoundPackHandlingSounds } from "@/renderer/fx/sounds/soundPackState";
+import { threadOnScreenOverride } from "@/renderer/viscosity/threadVisibilityHook"; // ViscosityCode: desktop shell's on-screen rule
 
 type NotificationCategory = UserNotificationCategory;
 
@@ -40,6 +39,8 @@ function getNotificationAudio(): HTMLAudioElement {
 }
 
 function isThreadInActivePanes(threadId: string): boolean {
+  const forked = threadOnScreenOverride(threadId); // ViscosityCode: Roundtable, overlays, Zen, side chat
+  if (forked !== undefined) return forked; // ViscosityCode
   // A pane of a thread with its own window is only a placeholder; the thread
   // itself is in that window, which may be in the background.
   if (livesInAnotherWindow(threadId)) return false;
@@ -83,7 +84,6 @@ function getStatusDetail(category: NotificationCategory, status: ThreadStatus): 
 function playSound(): void {
   const settings = useSharedSettings.getState();
   if (!settings.notificationSound) return;
-  if (isSoundPackHandlingSounds()) return; // ViscosityCode: no double sounds with the sound pack on
 
   try {
     void getNotificationAudio().play();
@@ -198,8 +198,17 @@ function showElectronNotification(
   const detail = getStatusDetail(category, status);
   const body = `${threadTitle}\n${detail}`;
 
+  // ViscosityCode: main drops the banner while another window of this app has focus.
+  const shownInMainWindow =
+    document.visibilityState === "visible" && isThreadInActivePanes(threadId);
+
   void readBridge()
-    .showNotification({ title: projectName, body, threadId })
+    .showNotification({
+      title: projectName,
+      body,
+      threadId,
+      ...(shownInMainWindow ? { shownInMainWindow } : {}), // ViscosityCode
+    })
     .then((shown) => {
       if (shown) playSound();
     })

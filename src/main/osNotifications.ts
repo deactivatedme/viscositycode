@@ -1,10 +1,11 @@
-import { Notification, type BrowserWindow } from "electron";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { BrowserWindow, Notification } from "electron"; // ViscosityCode: BrowserWindow.getFocusedWindow
 import { IPC_EVENT_CHANNELS } from "@/shared/ipc";
 import type { ShowNotificationPayload } from "@/shared/ipc/schemas";
 import type { ThreadStatus } from "@/shared/contracts";
 import type { UserNotification, UserNotificationCategory } from "@/shared/threadNotification";
 import { showAndFocusWindow } from "./window/showAndFocusWindow";
-import { findThreadWindow } from "./window/threadWindows";
+import { findThreadWindow, isThreadWindow } from "./window/threadWindows"; // ViscosityCode: isThreadWindow
 
 // Electron's Notification is a thin JS wrapper over a native object. If the
 // wrapper is garbage-collected before the user interacts, its "click" listener
@@ -26,8 +27,7 @@ export function showOsNotification(
   openThread?: (threadId: string) => void,
 ): boolean {
   if (!Notification.isSupported()) return false;
-  // The user is already looking at this thread in its own window.
-  if (findThreadWindow(payload.threadId)?.isFocused()) return false;
+  if (isUserViewingThread(payload, getMainWindow)) return false; // ViscosityCode
 
   let notification: Notification;
   try {
@@ -74,6 +74,32 @@ export function showOsNotification(
     return false;
   }
   return true;
+}
+
+/**
+ * ViscosityCode: the user is already looking at this thread, in its own
+ * focused window or in the main window while another window of this app has
+ * focus. Shared by the OS banner and the sound pack (only main can tell).
+ */
+export function isUserViewingThread(
+  payload: Pick<ShowNotificationPayload, "threadId" | "shownInMainWindow">,
+  getMainWindow: () => BrowserWindow | null,
+): boolean {
+  if (findThreadWindow(payload.threadId)?.isFocused()) return true;
+  return payload.shownInMainWindow === true && isAppWindowFocused(getMainWindow());
+}
+
+/**
+ * ViscosityCode: the renderer shows the thread in the main window but has lost
+ * document focus to another window of this app (the quick composer, DevTools).
+ * The user is still here, so no banner. A thread window does not count: it can
+ * cover the main window. Another app in front leaves every app window
+ * unfocused, and the banner shows.
+ */
+function isAppWindowFocused(main: BrowserWindow | null): boolean {
+  if (!main || main.isDestroyed() || main.isMinimized()) return false;
+  const focused = BrowserWindow.getFocusedWindow();
+  return (focused !== null && !isThreadWindow(focused)) || main.webContents.isDevToolsFocused();
 }
 
 /**

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   appState,
@@ -82,6 +83,7 @@ vi.mock("@/renderer/state/sharedSettingsStore", () => ({
 }));
 
 import { showUserNotification } from "./notifications";
+import { setThreadOnScreenOverride } from "@/renderer/viscosity/threadVisibilityHook";
 import type { UserNotification } from "@/shared/threadNotification";
 
 function notification(overrides: Partial<UserNotification> = {}): UserNotification {
@@ -217,6 +219,55 @@ describe("showUserNotification", () => {
     showUserNotification(notification({ category: "error", status: "error" }));
     expect(toastMock.danger).toHaveBeenCalledOnce();
   });
+
+  // ViscosityCode: the sound pack is gone, so the upstream sound always plays when it is on.
+  it("plays the notification sound whenever the sound setting is on", () => {
+    const play = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    vi.stubGlobal(
+      "Audio",
+      class {
+        volume = 1;
+        play = play;
+      },
+    );
+    sharedSettingsState.current.notificationSound = true;
+    showUserNotification(notification());
+    expect(toastMock.success).toHaveBeenCalledOnce();
+    expect(play).toHaveBeenCalledOnce();
+  });
+});
+
+describe("showUserNotification with the desktop shell's on-screen override", () => {
+  beforeEach(() => {
+    sharedSettingsState.current = {
+      notificationsEnabled: true,
+      notificationSound: false,
+      notificationFilter: "all",
+      notificationStatuses: { done: true, needsAttention: true, error: true },
+    };
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    toastMock.success.mockClear();
+    toastMock.warning.mockClear();
+  });
+
+  let unregister = () => {};
+  afterEach(() => unregister());
+
+  it("follows the override instead of the panes, and upstream again once removed", () => {
+    // A Roundtable participant: never in view.panes, but on screen in the panel.
+    unregister = setThreadOnScreenOverride((threadId) => threadId === "t1");
+    showUserNotification(notification({ threadId: "t1" }));
+    expect(toastMock.success).not.toHaveBeenCalled();
+
+    // A pane covered by an overlay: in view.panes, but hidden.
+    appState.current = { view: { kind: "thread", panes: ["t2"] }, projects: [], threads: [] };
+    showUserNotification(notification({ threadId: "t2", category: "needsAttention" }));
+    expect(toastMock.warning).toHaveBeenCalledOnce();
+
+    unregister();
+    showUserNotification(notification({ threadId: "t1" }));
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
 });
 
 describe("showUserNotification native path", () => {
@@ -242,6 +293,18 @@ describe("showUserNotification native path", () => {
       body: "Thread\nFinished · Waiting for your input",
       threadId: "thread-1",
     });
+  });
+
+  it("tells main when the thread is on screen in this visible window", () => {
+    appState.current = { view: { kind: "thread", panes: ["thread-1"] }, projects: [], threads: [] };
+    showUserNotification(notification());
+    expect(bridgeMock.showNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ threadId: "thread-1", shownInMainWindow: true }),
+    );
+
+    appState.current = { view: { kind: "thread", panes: ["other"] }, projects: [], threads: [] };
+    showUserNotification(notification());
+    expect(bridgeMock.showNotification.mock.lastCall?.[0]).not.toHaveProperty("shownInMainWindow");
   });
 
   it("hides the native OS notification when the host does not declare osNotifications", () => {
