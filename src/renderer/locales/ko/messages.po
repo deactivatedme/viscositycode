@@ -5368,8 +5368,8 @@ msgid "Cloud agents"
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
-msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
-msgstr ""
+#~ msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
+#~ msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cloud agents are paused after a provider error. Try again shortly."
@@ -5381,6 +5381,10 @@ msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/cloudAgentsActions.ts
 msgid "Cloud agents can only be followed on this computer's own host."
+msgstr ""
+
+#: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
+msgid "Cloud agents can't be listed here yet. Cloud threads still appear in your thread list."
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
@@ -6055,6 +6059,10 @@ msgstr "OpenCode가 사용할 수 있는 AI 공급자를 여기에서 연결하�
 #~ msgid "Connect to another Poracode desktop or a headless server to browse and manage its projects from here. Get its endpoint and pairing token from Settings → Remote Access on that machine."
 #~ msgstr "다른 Poracode 데스크톱이나 헤드리스 서버에 연결하면 여기에서 해당 프로젝트를 탐색하고 관리할 수 있습니다. 해당 기기의 설정 → 원격 액세스에서 엔드포인트와 페어링 토큰을 확인하세요."
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Connect to the host to change its MCP servers."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Connect to Your Desktop"
 #~ msgstr "데스크톱에 연결"
@@ -6616,11 +6624,13 @@ msgid "Could not sign in to {0}."
 msgstr "{0}에 로그인할 수 없습니다."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}: {message}"
 msgstr "{serverName}에 로그인할 수 없습니다: {message}"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}."
 msgstr "{serverName}에 로그인할 수 없습니다."
 
@@ -6631,6 +6641,7 @@ msgstr "{0}에서 로그아웃할 수 없습니다."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign out of {serverName}."
 msgstr "{serverName}에서 로그아웃할 수 없습니다."
 
@@ -10863,8 +10874,13 @@ msgstr ""
 #~ msgstr "xAI API의 Grok"
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
-msgid "Grok over the xAI API is only available in the desktop app."
-msgstr "xAI API를 통한 Grok은 데스크톱 앱에서만 사용할 수 있습니다."
+#~ msgid "Grok over the xAI API is only available in the desktop app."
+#~ msgstr "xAI API를 통한 Grok은 데스크톱 앱에서만 사용할 수 있습니다."
+
+#: src/renderer/viscosity/xai/settings/XaiSettings.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API isn't available here yet."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Grok over the xAI API needs an API key in Settings → xAI API."
@@ -10875,8 +10891,8 @@ msgstr ""
 #~ msgstr "xAI API를 통한 Grok을 사용하려면 설정에서 API 키를 추가해야 합니다."
 
 #: src/renderer/viscosity/xai/settings/XaiSettings.tsx
-msgid "Grok over the xAI API works only in the desktop app."
-msgstr ""
+#~ msgid "Grok over the xAI API works only in the desktop app."
+#~ msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
@@ -11155,8 +11171,8 @@ msgid "Hide password"
 msgstr "암호 숨기기"
 
 #: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
-msgid "Hide right sidebar"
-msgstr ""
+#~ msgid "Hide right sidebar"
+#~ msgstr ""
 
 #: src/renderer/components/thread/ThreadView.tsx
 msgid "Hide runtime debug panel"
@@ -11451,6 +11467,10 @@ msgstr "ID 파일 경로"
 msgid "Idle"
 msgstr "유휴"
 
+#: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
+msgid "Idle thread unloading and execution limits can't be changed in this window yet."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "If a role's agent is unavailable, its fallbacks run. Crew first may also use the next ranked agent."
 msgstr "역할 에이전트를 사용할 수 없으면 대체 항목이 실행됩니다. Crew 우선은 다음 순위 에이전트도 사용할 수 있습니다."
@@ -11645,7 +11665,11 @@ msgid "Imported sessions contribute only recorded usage. Deleted threads keep th
 msgstr "가져온 세션은 기록된 사용량만 반영합니다. 삭제된 스레드의 사용 기록은 유지됩니다. 호스트나 계정 간 중복 집계를 방지하기 위해 계정 대시보드 스냅샷과 외부 로그 추정액은 합산하지 않습니다."
 
 #: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
-msgid "Importing from a link is only available in the desktop app."
+#~ msgid "Importing from a link is only available in the desktop app."
+#~ msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link isn't available here yet. Download the theme file and use Import theme."
 msgstr ""
 
 #: src/renderer/components/changelog/ChangelogView.tsx
@@ -18440,6 +18464,10 @@ msgstr "프로필"
 msgid "Profiles and account pools for each provider"
 msgstr ""
 
+#: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+msgid "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet."
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -19803,6 +19831,7 @@ msgstr "제거 중…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Rename"
 msgstr "이름 바꾸기"
 
@@ -22630,6 +22659,11 @@ msgstr "로그인이 필요합니다"
 msgid "Sign in to {0}"
 msgstr "{0}에 로그인"
 
+#: src/renderer/components/mcp/McpServersManager.tsx
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Sign in to {serverName} from the app on the host machine."
+msgstr ""
+
 #: src/renderer/viscosity/grokBots/ui/GrokBotsSidebarView.tsx
 #~ msgid "Sign in to Cursor CLI to see your Grok bots. Run cursor-agent login."
 #~ msgstr ""
@@ -22690,10 +22724,12 @@ msgid "Signed in"
 msgstr "로그인됨"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed in to {serverName}."
 msgstr "{serverName}에 로그인했습니다."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed out of {serverName}."
 msgstr "{serverName}에서 로그아웃했습니다."
 
@@ -23213,6 +23249,7 @@ msgstr "템플릿으로 시작"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/newSession/NewSessionCenter.tsx
 msgid "Start from scratch"
 msgstr "처음부터 시작하세요"
 
@@ -25494,6 +25531,10 @@ msgstr "이 Hex 릴리스는 Linux에서 glibc 2.39 이상이 필요합니다. �
 msgid "This host"
 msgstr "이 호스트"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "This host can't edit MCP servers from here. Update ViscosityCode on the host."
+msgstr ""
+
 #: src/renderer/state/hostCatalogOrder.ts
 msgid "This host can't reorder threads across projects. Update it to enable that."
 msgstr "이 호스트는 프로젝트 간 스레드 순서를 바꿀 수 없습니다. 사용하려면 호스트를 업데이트하세요."
@@ -26245,7 +26286,6 @@ msgid "Toggle Quick Composer"
 msgstr "Quick Composer 전환"
 
 #: src/renderer/viscosity/commands/layoutCommands.ts
-#: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
 msgid "Toggle right sidebar"
 msgstr ""
 
@@ -27491,6 +27531,10 @@ msgstr "{0} 업데이트됨"
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
 msgid "Updated {updatedAgo}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Updates arrive as new {BRAND_NAME} installers. Install the latest release to update."
 msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
@@ -29175,6 +29219,7 @@ msgid "Your message was not sent: the chat thread is no longer available."
 msgstr "메시지가 전송되지 않았습니다. 채팅 스레드를 더 이상 사용할 수 없습니다."
 
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Your name"
 msgstr "이름"
 

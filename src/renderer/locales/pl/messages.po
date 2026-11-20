@@ -5368,8 +5368,8 @@ msgid "Cloud agents"
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
-msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
-msgstr ""
+#~ msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
+#~ msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cloud agents are paused after a provider error. Try again shortly."
@@ -5381,6 +5381,10 @@ msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/cloudAgentsActions.ts
 msgid "Cloud agents can only be followed on this computer's own host."
+msgstr ""
+
+#: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
+msgid "Cloud agents can't be listed here yet. Cloud threads still appear in your thread list."
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
@@ -6055,6 +6059,10 @@ msgstr "Połącz dostawców AI, których może używać OpenCode, i wyloguj się
 #~ msgid "Connect to another Poracode desktop or a headless server to browse and manage its projects from here. Get its endpoint and pairing token from Settings → Remote Access on that machine."
 #~ msgstr "Połącz się z innym komputerem z Poracode lub serwerem bez interfejsu, aby przeglądać i zarządzać jego projektami tutaj. Adres i token parowania znajdziesz w Ustawienia → Dostęp zdalny na tamtym urządzeniu."
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Connect to the host to change its MCP servers."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Connect to Your Desktop"
 #~ msgstr "Połącz z komputerem"
@@ -6616,11 +6624,13 @@ msgid "Could not sign in to {0}."
 msgstr "Nie można zalogować się do {0}."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}: {message}"
 msgstr "Nie udało się zalogować do {serverName}: {message}"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}."
 msgstr "Nie udało się zalogować do {serverName}."
 
@@ -6631,6 +6641,7 @@ msgstr "Nie można wylogować się z {0}."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign out of {serverName}."
 msgstr "Nie udało się wylogować z {serverName}."
 
@@ -10863,8 +10874,13 @@ msgstr ""
 #~ msgstr "Grok przez xAI API"
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
-msgid "Grok over the xAI API is only available in the desktop app."
-msgstr "Grok przez xAI API jest dostępny tylko w aplikacji desktopowej."
+#~ msgid "Grok over the xAI API is only available in the desktop app."
+#~ msgstr "Grok przez xAI API jest dostępny tylko w aplikacji desktopowej."
+
+#: src/renderer/viscosity/xai/settings/XaiSettings.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API isn't available here yet."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Grok over the xAI API needs an API key in Settings → xAI API."
@@ -10875,8 +10891,8 @@ msgstr ""
 #~ msgstr "Grok przez xAI API wymaga klucza API w Ustawieniach."
 
 #: src/renderer/viscosity/xai/settings/XaiSettings.tsx
-msgid "Grok over the xAI API works only in the desktop app."
-msgstr ""
+#~ msgid "Grok over the xAI API works only in the desktop app."
+#~ msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
@@ -11155,8 +11171,8 @@ msgid "Hide password"
 msgstr "Ukryj hasło"
 
 #: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
-msgid "Hide right sidebar"
-msgstr ""
+#~ msgid "Hide right sidebar"
+#~ msgstr ""
 
 #: src/renderer/components/thread/ThreadView.tsx
 msgid "Hide runtime debug panel"
@@ -11451,6 +11467,10 @@ msgstr "Ścieżka pliku tożsamości"
 msgid "Idle"
 msgstr "Bezczynny"
 
+#: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
+msgid "Idle thread unloading and execution limits can't be changed in this window yet."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "If a role's agent is unavailable, its fallbacks run. Crew first may also use the next ranked agent."
 msgstr "Jeśli agent roli jest niedostępny, uruchomią się jego rezerwy. Najpierw Crew może też użyć kolejnego agenta w rankingu."
@@ -11645,7 +11665,11 @@ msgid "Imported sessions contribute only recorded usage. Deleted threads keep th
 msgstr "Importowane sesje uwzględniają tylko zarejestrowane użycie. Usunięte wątki zachowują historię użycia. Migawki paneli kont i szacunki z zewnętrznych dzienników nie są dodawane, co zapobiega nakładaniu się sum między hostami lub kontami."
 
 #: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
-msgid "Importing from a link is only available in the desktop app."
+#~ msgid "Importing from a link is only available in the desktop app."
+#~ msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link isn't available here yet. Download the theme file and use Import theme."
 msgstr ""
 
 #: src/renderer/components/changelog/ChangelogView.tsx
@@ -18440,6 +18464,10 @@ msgstr "Profile"
 msgid "Profiles and account pools for each provider"
 msgstr ""
 
+#: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+msgid "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet."
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -19803,6 +19831,7 @@ msgstr "Usuwanie…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Rename"
 msgstr "Zmień nazwę"
 
@@ -22630,6 +22659,11 @@ msgstr "Wymagane zalogowanie się"
 msgid "Sign in to {0}"
 msgstr "Zaloguj się do {0}"
 
+#: src/renderer/components/mcp/McpServersManager.tsx
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Sign in to {serverName} from the app on the host machine."
+msgstr ""
+
 #: src/renderer/viscosity/grokBots/ui/GrokBotsSidebarView.tsx
 #~ msgid "Sign in to Cursor CLI to see your Grok bots. Run cursor-agent login."
 #~ msgstr ""
@@ -22690,10 +22724,12 @@ msgid "Signed in"
 msgstr "Zalogowano"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed in to {serverName}."
 msgstr "Zalogowano do {serverName}."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed out of {serverName}."
 msgstr "Wylogowano z {serverName}."
 
@@ -23213,6 +23249,7 @@ msgstr "Zacznij od szablonu"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/newSession/NewSessionCenter.tsx
 msgid "Start from scratch"
 msgstr "Zacznij od zera"
 
@@ -25494,6 +25531,10 @@ msgstr "Ta wersja Hex wymaga glibc 2.39 lub nowszego w systemie Linux. Użyj zam
 msgid "This host"
 msgstr "Ten host"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "This host can't edit MCP servers from here. Update ViscosityCode on the host."
+msgstr ""
+
 #: src/renderer/state/hostCatalogOrder.ts
 msgid "This host can't reorder threads across projects. Update it to enable that."
 msgstr "Ten host nie może zmieniać kolejności wątków między projektami. Zaktualizuj go, aby to włączyć."
@@ -26245,7 +26286,6 @@ msgid "Toggle Quick Composer"
 msgstr "Przełącz Quick Composer"
 
 #: src/renderer/viscosity/commands/layoutCommands.ts
-#: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
 msgid "Toggle right sidebar"
 msgstr ""
 
@@ -27491,6 +27531,10 @@ msgstr "Zaktualizowano {0}"
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
 msgid "Updated {updatedAgo}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Updates arrive as new {BRAND_NAME} installers. Install the latest release to update."
 msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
@@ -29175,6 +29219,7 @@ msgid "Your message was not sent: the chat thread is no longer available."
 msgstr "Twoja wiadomość nie została wysłana: wątek czatu nie jest już dostępny."
 
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Your name"
 msgstr "Twoje imię"
 

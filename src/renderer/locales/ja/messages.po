@@ -5367,8 +5367,8 @@ msgid "Cloud agents"
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
-msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
-msgstr ""
+#~ msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
+#~ msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cloud agents are paused after a provider error. Try again shortly."
@@ -5380,6 +5380,10 @@ msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/cloudAgentsActions.ts
 msgid "Cloud agents can only be followed on this computer's own host."
+msgstr ""
+
+#: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
+msgid "Cloud agents can't be listed here yet. Cloud threads still appear in your thread list."
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
@@ -6054,6 +6058,10 @@ msgstr "OpenCode が使用できる AI プロバイダーをここで接続し�
 #~ msgid "Connect to another Poracode desktop or a headless server to browse and manage its projects from here. Get its endpoint and pairing token from Settings → Remote Access on that machine."
 #~ msgstr "別の Poracode デスクトップまたはヘッドレスサーバーに接続すると、そのプロジェクトをここから参照・管理できます。エンドポイントとペアリングトークンは、その端末の「設定 → リモートアクセス」から取得してください。"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Connect to the host to change its MCP servers."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Connect to Your Desktop"
 #~ msgstr "デスクトップに接続"
@@ -6615,11 +6623,13 @@ msgid "Could not sign in to {0}."
 msgstr "{0} にログインできませんでした。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}: {message}"
 msgstr "{serverName} にサインインできませんでした: {message}"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}."
 msgstr "{serverName} にサインインできませんでした。"
 
@@ -6630,6 +6640,7 @@ msgstr "{0} からログアウトできませんでした。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign out of {serverName}."
 msgstr "{serverName} からサインアウトできませんでした。"
 
@@ -10862,8 +10873,13 @@ msgstr ""
 #~ msgstr "xAI API 経由の Grok"
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
-msgid "Grok over the xAI API is only available in the desktop app."
-msgstr "xAI API 経由の Grok はデスクトップアプリでのみ利用できます。"
+#~ msgid "Grok over the xAI API is only available in the desktop app."
+#~ msgstr "xAI API 経由の Grok はデスクトップアプリでのみ利用できます。"
+
+#: src/renderer/viscosity/xai/settings/XaiSettings.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API isn't available here yet."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Grok over the xAI API needs an API key in Settings → xAI API."
@@ -10874,8 +10890,8 @@ msgstr ""
 #~ msgstr "xAI API 経由の Grok を使うには、設定で APIキーを追加する必要があります。"
 
 #: src/renderer/viscosity/xai/settings/XaiSettings.tsx
-msgid "Grok over the xAI API works only in the desktop app."
-msgstr ""
+#~ msgid "Grok over the xAI API works only in the desktop app."
+#~ msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
@@ -11154,8 +11170,8 @@ msgid "Hide password"
 msgstr "パスワードを隠す"
 
 #: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
-msgid "Hide right sidebar"
-msgstr ""
+#~ msgid "Hide right sidebar"
+#~ msgstr ""
 
 #: src/renderer/components/thread/ThreadView.tsx
 msgid "Hide runtime debug panel"
@@ -11450,6 +11466,10 @@ msgstr "秘密鍵ファイルのパス"
 msgid "Idle"
 msgstr "アイドル状態"
 
+#: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
+msgid "Idle thread unloading and execution limits can't be changed in this window yet."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "If a role's agent is unavailable, its fallbacks run. Crew first may also use the next ranked agent."
 msgstr "ロールのエージェントが利用できない場合、フォールバックを実行します。Crew優先では次のランクのエージェントも使用できます。"
@@ -11644,7 +11664,11 @@ msgid "Imported sessions contribute only recorded usage. Deleted threads keep th
 msgstr "インポートしたセッションは記録済みの使用量のみを加算します。削除したスレッドの使用履歴は保持されます。ホストやアカウント間の重複集計を避けるため、アカウントダッシュボードのスナップショットや外部ログの推定額は加算しません。"
 
 #: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
-msgid "Importing from a link is only available in the desktop app."
+#~ msgid "Importing from a link is only available in the desktop app."
+#~ msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link isn't available here yet. Download the theme file and use Import theme."
 msgstr ""
 
 #: src/renderer/components/changelog/ChangelogView.tsx
@@ -18438,6 +18462,10 @@ msgstr "プロファイル"
 msgid "Profiles and account pools for each provider"
 msgstr ""
 
+#: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+msgid "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet."
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -19801,6 +19829,7 @@ msgstr "削除中…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Rename"
 msgstr "名前の変更"
 
@@ -22628,6 +22657,11 @@ msgstr "サインインが必要です"
 msgid "Sign in to {0}"
 msgstr "{0} にサインイン"
 
+#: src/renderer/components/mcp/McpServersManager.tsx
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Sign in to {serverName} from the app on the host machine."
+msgstr ""
+
 #: src/renderer/viscosity/grokBots/ui/GrokBotsSidebarView.tsx
 #~ msgid "Sign in to Cursor CLI to see your Grok bots. Run cursor-agent login."
 #~ msgstr ""
@@ -22688,10 +22722,12 @@ msgid "Signed in"
 msgstr "サインインしました"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed in to {serverName}."
 msgstr "{serverName} にサインインしました。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed out of {serverName}."
 msgstr "{serverName} からサインアウトしました。"
 
@@ -23211,6 +23247,7 @@ msgstr "テンプレートから始める"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/newSession/NewSessionCenter.tsx
 msgid "Start from scratch"
 msgstr "ゼロから始める"
 
@@ -25492,6 +25529,10 @@ msgstr "この Hex リリースは Linux で glibc 2.39 以降が必要です。
 msgid "This host"
 msgstr "このホスト"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "This host can't edit MCP servers from here. Update ViscosityCode on the host."
+msgstr ""
+
 #: src/renderer/state/hostCatalogOrder.ts
 msgid "This host can't reorder threads across projects. Update it to enable that."
 msgstr "このホストはプロジェクトをまたいでスレッドを並べ替えられません。有効にするにはホストを更新してください。"
@@ -26243,7 +26284,6 @@ msgid "Toggle Quick Composer"
 msgstr "Quick Composer を切り替え"
 
 #: src/renderer/viscosity/commands/layoutCommands.ts
-#: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
 msgid "Toggle right sidebar"
 msgstr ""
 
@@ -27489,6 +27529,10 @@ msgstr "{0}を更新しました"
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
 msgid "Updated {updatedAgo}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Updates arrive as new {BRAND_NAME} installers. Install the latest release to update."
 msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
@@ -29173,6 +29217,7 @@ msgid "Your message was not sent: the chat thread is no longer available."
 msgstr "メッセージは送信されませんでした。チャットスレッドは利用できなくなっています。"
 
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Your name"
 msgstr "あなたの名前"
 

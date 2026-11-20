@@ -5368,8 +5368,8 @@ msgid "Cloud agents"
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
-msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
-msgstr ""
+#~ msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
+#~ msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cloud agents are paused after a provider error. Try again shortly."
@@ -5381,6 +5381,10 @@ msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/cloudAgentsActions.ts
 msgid "Cloud agents can only be followed on this computer's own host."
+msgstr ""
+
+#: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
+msgid "Cloud agents can't be listed here yet. Cloud threads still appear in your thread list."
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
@@ -6055,6 +6059,10 @@ msgstr "在此连接 OpenCode 可使用的 AI 提供商，并退出登录。"
 #~ msgid "Connect to another Poracode desktop or a headless server to browse and manage its projects from here. Get its endpoint and pairing token from Settings → Remote Access on that machine."
 #~ msgstr "连接到另一台 Poracode 桌面端或无界面服务器，即可在此浏览和管理其项目。请在对方设备的“设置 → 远程访问”中获取其端点和配对令牌。"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Connect to the host to change its MCP servers."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Connect to Your Desktop"
 #~ msgstr "连接到你的桌面端"
@@ -6616,11 +6624,13 @@ msgid "Could not sign in to {0}."
 msgstr "无法登录 {0}。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}: {message}"
 msgstr "无法登录 {serverName}：{message}"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}."
 msgstr "无法登录 {serverName}。"
 
@@ -6631,6 +6641,7 @@ msgstr "无法退出 {0}。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign out of {serverName}."
 msgstr "无法退出 {serverName}。"
 
@@ -10863,8 +10874,13 @@ msgstr ""
 #~ msgstr "通过 xAI API 使用 Grok"
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
-msgid "Grok over the xAI API is only available in the desktop app."
-msgstr "通过 xAI API 使用 Grok 仅在桌面应用中可用。"
+#~ msgid "Grok over the xAI API is only available in the desktop app."
+#~ msgstr "通过 xAI API 使用 Grok 仅在桌面应用中可用。"
+
+#: src/renderer/viscosity/xai/settings/XaiSettings.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API isn't available here yet."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Grok over the xAI API needs an API key in Settings → xAI API."
@@ -10875,8 +10891,8 @@ msgstr ""
 #~ msgstr "通过 xAI API 使用 Grok 需要在设置中添加 API 密钥。"
 
 #: src/renderer/viscosity/xai/settings/XaiSettings.tsx
-msgid "Grok over the xAI API works only in the desktop app."
-msgstr ""
+#~ msgid "Grok over the xAI API works only in the desktop app."
+#~ msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
@@ -11155,8 +11171,8 @@ msgid "Hide password"
 msgstr "隐藏密码"
 
 #: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
-msgid "Hide right sidebar"
-msgstr ""
+#~ msgid "Hide right sidebar"
+#~ msgstr ""
 
 #: src/renderer/components/thread/ThreadView.tsx
 msgid "Hide runtime debug panel"
@@ -11451,6 +11467,10 @@ msgstr "身份文件路径"
 msgid "Idle"
 msgstr "空闲"
 
+#: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
+msgid "Idle thread unloading and execution limits can't be changed in this window yet."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "If a role's agent is unavailable, its fallbacks run. Crew first may also use the next ranked agent."
 msgstr "如果角色代理不可用，将运行备用代理。优先使用 Crew 时也可使用排名靠后的代理。"
@@ -11645,7 +11665,11 @@ msgid "Imported sessions contribute only recorded usage. Deleted threads keep th
 msgstr "导入的会话仅计入已记录的用量。已删除的线程会保留其用量历史。不添加账户仪表板快照和外部日志估算，以免跨主机或账户重复统计。"
 
 #: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
-msgid "Importing from a link is only available in the desktop app."
+#~ msgid "Importing from a link is only available in the desktop app."
+#~ msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link isn't available here yet. Download the theme file and use Import theme."
 msgstr ""
 
 #: src/renderer/components/changelog/ChangelogView.tsx
@@ -18439,6 +18463,10 @@ msgstr "配置文件"
 msgid "Profiles and account pools for each provider"
 msgstr ""
 
+#: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+msgid "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet."
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -19802,6 +19830,7 @@ msgstr "正在移除…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Rename"
 msgstr "重命名"
 
@@ -22629,6 +22658,11 @@ msgstr "需要登录"
 msgid "Sign in to {0}"
 msgstr "登录 {0}"
 
+#: src/renderer/components/mcp/McpServersManager.tsx
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Sign in to {serverName} from the app on the host machine."
+msgstr ""
+
 #: src/renderer/viscosity/grokBots/ui/GrokBotsSidebarView.tsx
 #~ msgid "Sign in to Cursor CLI to see your Grok bots. Run cursor-agent login."
 #~ msgstr ""
@@ -22689,10 +22723,12 @@ msgid "Signed in"
 msgstr "已登录"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed in to {serverName}."
 msgstr "已登录 {serverName}。"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed out of {serverName}."
 msgstr "已退出 {serverName}。"
 
@@ -23212,6 +23248,7 @@ msgstr "从模板开始"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/newSession/NewSessionCenter.tsx
 msgid "Start from scratch"
 msgstr "从头开始"
 
@@ -25493,6 +25530,10 @@ msgstr "此 Hex 版本在 Linux 上需要 glibc 2.39 或更高版本。请改用
 msgid "This host"
 msgstr "此主机"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "This host can't edit MCP servers from here. Update ViscosityCode on the host."
+msgstr ""
+
 #: src/renderer/state/hostCatalogOrder.ts
 msgid "This host can't reorder threads across projects. Update it to enable that."
 msgstr "此主机无法跨项目重新排序线程。请更新它以启用该功能。"
@@ -26244,7 +26285,6 @@ msgid "Toggle Quick Composer"
 msgstr "切换 Quick Composer"
 
 #: src/renderer/viscosity/commands/layoutCommands.ts
-#: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
 msgid "Toggle right sidebar"
 msgstr ""
 
@@ -27490,6 +27530,10 @@ msgstr "更新了{0}"
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
 msgid "Updated {updatedAgo}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Updates arrive as new {BRAND_NAME} installers. Install the latest release to update."
 msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
@@ -29174,6 +29218,7 @@ msgid "Your message was not sent: the chat thread is no longer available."
 msgstr "你的消息未发送：聊天线程已不可用。"
 
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Your name"
 msgstr "你的名字"
 

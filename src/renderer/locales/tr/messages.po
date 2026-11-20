@@ -5368,8 +5368,8 @@ msgid "Cloud agents"
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
-msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
-msgstr ""
+#~ msgid "Cloud agents are listed in the desktop app on the host computer. Cloud threads still appear in your thread list."
+#~ msgstr ""
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Cloud agents are paused after a provider error. Try again shortly."
@@ -5381,6 +5381,10 @@ msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/cloudAgentsActions.ts
 msgid "Cloud agents can only be followed on this computer's own host."
+msgstr ""
+
+#: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
+msgid "Cloud agents can't be listed here yet. Cloud threads still appear in your thread list."
 msgstr ""
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
@@ -6055,6 +6059,10 @@ msgstr "OpenCode'un kullanabileceği yapay zeka sağlayıcılarını buradan ba�
 #~ msgid "Connect to another Poracode desktop or a headless server to browse and manage its projects from here. Get its endpoint and pairing token from Settings → Remote Access on that machine."
 #~ msgstr "Projelerini buradan görüntülemek ve yönetmek için başka bir Poracode masaüstüne ya da arayüzsüz bir sunucuya bağlan. Uç noktasını ve eşleştirme jetonunu o makinede Ayarlar → Uzaktan Erişim'den al."
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Connect to the host to change its MCP servers."
+msgstr ""
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Connect to Your Desktop"
 #~ msgstr "Masaüstüne bağlan"
@@ -6616,11 +6624,13 @@ msgid "Could not sign in to {0}."
 msgstr "{0} için oturum açılamadı."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}: {message}"
 msgstr "{serverName} oturumu açılamadı: {message}"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign in to {serverName}."
 msgstr "{serverName} oturumu açılamadı."
 
@@ -6631,6 +6641,7 @@ msgstr "{0} için oturum kapatılamadı."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
 #: src/renderer/components/plugins/usePluginOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Could not sign out of {serverName}."
 msgstr "{serverName} oturumu kapatılamadı."
 
@@ -10863,8 +10874,13 @@ msgstr ""
 #~ msgstr "xAI API üzerinde Grok"
 
 #: src/renderer/viscosity/xai/xaiErrorText.ts
-msgid "Grok over the xAI API is only available in the desktop app."
-msgstr "xAI API üzerinden Grok yalnızca masaüstü uygulamasında kullanılabilir."
+#~ msgid "Grok over the xAI API is only available in the desktop app."
+#~ msgstr "xAI API üzerinden Grok yalnızca masaüstü uygulamasında kullanılabilir."
+
+#: src/renderer/viscosity/xai/settings/XaiSettings.tsx
+#: src/renderer/viscosity/xai/xaiErrorText.ts
+msgid "Grok over the xAI API isn't available here yet."
+msgstr ""
 
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Grok over the xAI API needs an API key in Settings → xAI API."
@@ -10875,8 +10891,8 @@ msgstr ""
 #~ msgstr "xAI API üzerinden Grok için Ayarlar'da bir API anahtarı gerekir."
 
 #: src/renderer/viscosity/xai/settings/XaiSettings.tsx
-msgid "Grok over the xAI API works only in the desktop app."
-msgstr ""
+#~ msgid "Grok over the xAI API works only in the desktop app."
+#~ msgstr ""
 
 #: src/renderer/views/MainView/parts/AppContent/AppContent.tsx
 msgid "Group"
@@ -11155,8 +11171,8 @@ msgid "Hide password"
 msgstr "Parolayı gizle"
 
 #: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
-msgid "Hide right sidebar"
-msgstr ""
+#~ msgid "Hide right sidebar"
+#~ msgstr ""
 
 #: src/renderer/components/thread/ThreadView.tsx
 msgid "Hide runtime debug panel"
@@ -11451,6 +11467,10 @@ msgstr "Kimlik dosyası yolu"
 msgid "Idle"
 msgstr "Boşta"
 
+#: src/renderer/views/SettingsOverlay/parts/ThreadSettings.tsx
+msgid "Idle thread unloading and execution limits can't be changed in this window yet."
+msgstr ""
+
 #: src/renderer/views/SettingsOverlay/parts/CrewsSettings.tsx
 msgid "If a role's agent is unavailable, its fallbacks run. Crew first may also use the next ranked agent."
 msgstr "Rolün ajanı kullanılamıyorsa yedekleri çalışır. Önce Crew, sıralamadaki sonraki ajanı da kullanabilir."
@@ -11645,7 +11665,11 @@ msgid "Imported sessions contribute only recorded usage. Deleted threads keep th
 msgstr "İçe aktarılan oturumlar yalnızca kaydedilen kullanımı içerir. Silinen konular kullanım geçmişini korur. Sunucular veya hesaplar arasında çakışan toplamları önlemek için hesap panosu anlık görüntüleri ve harici günlük tahminleri eklenmez."
 
 #: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
-msgid "Importing from a link is only available in the desktop app."
+#~ msgid "Importing from a link is only available in the desktop app."
+#~ msgstr ""
+
+#: src/renderer/theme/viscosity/ThemeUrlImportDialog.tsx
+msgid "Importing from a link isn't available here yet. Download the theme file and use Import theme."
 msgstr ""
 
 #: src/renderer/components/changelog/ChangelogView.tsx
@@ -18440,6 +18464,10 @@ msgstr "Profiller"
 msgid "Profiles and account pools for each provider"
 msgstr ""
 
+#: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
+msgid "Profiles, accounts, plugins and CLI MCP setup for this agent can't be managed in this window yet."
+msgstr ""
+
 #: src/renderer/commands/registry.ts
 #: src/renderer/commands/shortcutCatalog.ts
 #: src/renderer/components/common/MobileProjectPicker.tsx
@@ -19803,6 +19831,7 @@ msgstr "Kaldırılıyor…"
 #: src/renderer/views/MainView/parts/Sidebar/parts/ThreadContextMenu.tsx
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteServersSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Rename"
 msgstr "Yeniden adlandır"
 
@@ -22630,6 +22659,11 @@ msgstr "Oturum açmanız gerekiyor"
 msgid "Sign in to {0}"
 msgstr "{0} için oturum aç"
 
+#: src/renderer/components/mcp/McpServersManager.tsx
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "Sign in to {serverName} from the app on the host machine."
+msgstr ""
+
 #: src/renderer/viscosity/grokBots/ui/GrokBotsSidebarView.tsx
 #~ msgid "Sign in to Cursor CLI to see your Grok bots. Run cursor-agent login."
 #~ msgstr ""
@@ -22690,10 +22724,12 @@ msgid "Signed in"
 msgstr "Oturum açıldı"
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed in to {serverName}."
 msgstr "{serverName} oturumu açıldı."
 
 #: src/renderer/components/mcp/useMcpServerOauth.ts
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
 msgid "Signed out of {serverName}."
 msgstr "{serverName} oturumu kapatıldı."
 
@@ -23213,6 +23249,7 @@ msgstr "Bir şablonla başla"
 
 #: src/renderer/views/SettingsOverlay/parts/MobileRemoteProjectsSheet.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteServersSettings.tsx
+#: src/renderer/viscosity/newSession/NewSessionCenter.tsx
 msgid "Start from scratch"
 msgstr "Sıfırdan başla"
 
@@ -25494,6 +25531,10 @@ msgstr "Bu Hex sürümü Linux'ta glibc 2.39 veya üstünü gerektirir. Bunun ye
 msgid "This host"
 msgstr "Bu ana makine"
 
+#: src/renderer/views/SettingsOverlay/parts/McpServersSettings.tsx
+msgid "This host can't edit MCP servers from here. Update ViscosityCode on the host."
+msgstr ""
+
 #: src/renderer/state/hostCatalogOrder.ts
 msgid "This host can't reorder threads across projects. Update it to enable that."
 msgstr "Bu ana makine iş parçacıklarını projeler arasında yeniden sıralayamaz. Etkinleştirmek için güncelleyin."
@@ -26245,7 +26286,6 @@ msgid "Toggle Quick Composer"
 msgstr "Quick Composer'ı aç/kapat"
 
 #: src/renderer/viscosity/commands/layoutCommands.ts
-#: src/renderer/viscosity/layout/rightSidebar/RightSidebarToggle.tsx
 msgid "Toggle right sidebar"
 msgstr ""
 
@@ -27491,6 +27531,10 @@ msgstr "{0} güncellendi"
 
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentsPanel.tsx
 msgid "Updated {updatedAgo}"
+msgstr ""
+
+#: src/renderer/views/SettingsOverlay/parts/AboutSettings.tsx
+msgid "Updates arrive as new {BRAND_NAME} installers. Install the latest release to update."
 msgstr ""
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
@@ -29175,6 +29219,7 @@ msgid "Your message was not sent: the chat thread is no longer available."
 msgstr "Mesajınız gönderilmedi: sohbet konusu artık kullanılamıyor."
 
 #: src/renderer/views/ProfileOverlay/parts/EditProfileDialog.tsx
+#: src/renderer/viscosity/layout/sidebar/SidebarProfileRow.tsx
 msgid "Your name"
 msgstr "Adınız"
 
