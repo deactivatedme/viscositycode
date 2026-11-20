@@ -1,5 +1,5 @@
 /**
- * ViscosityCode: `@model` / `@bot` mentions in a chat composer.
+ * ViscosityCode: `@model` mentions in a chat composer.
  *
  * Mention items reuse upstream's crew-mention path: picking one inserts the
  * plain text `@<label> `. On submit the text is matched back against the same
@@ -7,9 +7,9 @@
  * Roundtable instead of the current thread (see `mentionRouting.ts`). Pure
  * functions only, so routing is testable without a composer.
  */
-import type { BotProfile } from "../../bots/api";
 import type { ReadyAgentBrain } from "../api";
-import { botSeatCandidates, modelSeatCandidates, type SeatCandidate } from "./participants";
+import { matchMentions } from "../engine/verdicts";
+import { modelSeatCandidates, type SeatCandidate } from "./participants";
 
 /** Mention list stays short: the default model and the next two per provider. */
 export const MAX_MODEL_MENTIONS_PER_PROVIDER = 3;
@@ -27,17 +27,15 @@ function normalizeSpaces(value: string): string {
   return value.replace(/ /gu, " ");
 }
 
-/** Bots first (named teammates), then ready models; a label is offered once. */
+/** Ready models; a label is offered once. */
 export function buildRoundtableMentionTargets(
   brains: readonly ReadyAgentBrain[],
-  bots: readonly BotProfile[],
 ): RoundtableMentionTarget[] {
   const seen = new Set<string>();
   const targets: RoundtableMentionTarget[] = [];
-  const candidates = [
-    ...botSeatCandidates(bots),
-    ...modelSeatCandidates(brains, { maxModelsPerBrain: MAX_MODEL_MENTIONS_PER_PROVIDER }),
-  ];
+  const candidates = modelSeatCandidates(brains, {
+    maxModelsPerBrain: MAX_MODEL_MENTIONS_PER_PROVIDER,
+  });
   for (const candidate of candidates) {
     const label = normalizeSpaces(candidate.label).trim();
     const key = label.toLowerCase();
@@ -48,44 +46,18 @@ export function buildRoundtableMentionTargets(
   return targets;
 }
 
-const WORD_CHAR = /[\p{L}\p{N}_]/u;
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-}
-
 /**
- * Targets mentioned as `@<label>` in `text`, in order of first appearance.
- * A mention needs a non-word character (or the edge of the text) on both
- * sides, so `me@host` or `@Bot2` never match `@Bot`. Longer labels win, so
- * `@Claude · Sonnet 4.5` is never also read as `@Claude · Sonnet`.
+ * Targets mentioned in `text`, in order of first appearance, by the inserted
+ * `@<label>` only, any case (`matchMentions`). Short provider or model names
+ * stay out: a mention moves the message out of this chat, and words like
+ * `@default` or `@qwen-code` turn up in ordinary messages. A mention needs a
+ * boundary on both sides, so `me@host` or `@Model2` never match `@Model`, and the
+ * longest label wins.
  */
 export function findRoundtableMentions(
   text: string,
   targets: readonly RoundtableMentionTarget[],
 ): RoundtableMentionTarget[] {
-  if (targets.length === 0 || !text.includes("@")) return [];
-  const haystack = normalizeSpaces(text);
-  const taken: Array<readonly [number, number]> = [];
-  const firstIndexById = new Map<string, { index: number; target: RoundtableMentionTarget }>();
-  const byLength = [...targets].sort((a, b) => b.label.length - a.label.length);
-  for (const target of byLength) {
-    const pattern = new RegExp(`@${escapeRegExp(normalizeSpaces(target.label))}`, "giu");
-    for (const match of haystack.matchAll(pattern)) {
-      const start = match.index;
-      const end = start + match[0].length;
-      const before = start > 0 ? haystack[start - 1] : undefined;
-      const after = end < haystack.length ? haystack[end] : undefined;
-      if (before !== undefined && WORD_CHAR.test(before)) continue;
-      if (after !== undefined && WORD_CHAR.test(after)) continue;
-      if (taken.some(([from, to]) => start < to && end > from)) continue;
-      taken.push([start, end]);
-      const existing = firstIndexById.get(target.id);
-      if (!existing || start < existing.index)
-        firstIndexById.set(target.id, { index: start, target });
-    }
-  }
-  return [...firstIndexById.values()]
-    .sort((a, b) => a.index - b.index)
-    .map((entry) => entry.target);
+  const byId = new Map(targets.map((target) => [target.id, target]));
+  return matchMentions(text, targets, { aliases: false }).map((id) => byId.get(id)!);
 }

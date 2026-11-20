@@ -3,6 +3,7 @@ import type { Project, Thread } from "@/shared/contracts";
 import { buildCommandRegistry } from "@/renderer/commands/registry";
 import { useAppStore } from "@/renderer/state/appStore";
 import { VISCOSITY_SHELL_ATTRIBUTE } from "@/renderer/viscosity/shellFlag";
+import { closeRoundtableSetup, useRoundtableViewStore } from "../ui/roundtableViewStore";
 import { closeRoundtableInvite, useRoundtableInviteStore } from "./inviteStore";
 import { INVITE_ROUNDTABLE_COMMAND_ID, NEW_ROUNDTABLE_COMMAND_ID } from "./paletteCommands";
 
@@ -24,6 +25,7 @@ function roundtableCommands() {
 
 beforeEach(() => {
   closeRoundtableInvite();
+  closeRoundtableSetup();
   useAppStore.setState({
     projects: [project],
     threads: [thread],
@@ -69,14 +71,12 @@ describe("Roundtable palette commands", () => {
     expect(useAppStore.getState().view).toEqual({ kind: "thread", panes: ["thread-1"] });
   });
 
-  it("opens a new Roundtable for the current project", async () => {
+  it("opens the full setup dialog for the current project", async () => {
     document.documentElement.setAttribute(VISCOSITY_SHELL_ATTRIBUTE, "");
     const create = roundtableCommands().find((command) => command.id === NEW_ROUNDTABLE_COMMAND_ID);
+    expect(create?.keywords).toEqual(expect.arrayContaining(["together", "team"]));
     await create?.run();
-    expect(useRoundtableInviteStore.getState().request).toEqual({
-      kind: "new",
-      projectId: "project-1",
-      task: "",
-    });
+    expect(useRoundtableViewStore.getState().setup?.request).toEqual({ projectId: "project-1" });
+    expect(useRoundtableInviteStore.getState().request).toBeNull();
   });
 });

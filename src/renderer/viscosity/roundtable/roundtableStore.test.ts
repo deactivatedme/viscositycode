@@ -1,17 +1,28 @@
 import { describe, expect, it, vi } from "vitest";
+import { planNextStep } from "./engine/planner";
 import { agentSeat, makeSession } from "./engine/testFixtures";
 import {
+  estimateCacheValueBytes,
+  MAX_BROWSER_METADATA_RECORD_BYTES,
+} from "@/renderer/state/browserMetadataCacheProjection";
+import { projectJsonBytes } from "@/renderer/state/remote/engine/jsonProjection";
+import { CLIENT_ENGINE_AUX_STRINGIFY_MAX_BYTES } from "@/renderer/state/remote/engine/protocol";
+import {
   capTurnForStorage,
+  compactOpenSession,
   MAX_STORED_SESSIONS,
+  OPEN_SESSION_BYTE_BUDGET,
   migrateRoundtableState,
   retainForStorage,
   ROUNDTABLE_STORE_NAME,
   ROUNDTABLE_STORE_VERSION,
   sanitizeSession,
+  STORED_BYTE_BUDGET,
+  storedBytes,
   useRoundtableStore,
   waitForRoundtableHydration,
 } from "./roundtableStore";
-import type { RoundtableSession, RoundtableTurn } from "./types";
+import type { ParticipantProfile, RoundtableSession, RoundtableTurn } from "./types";
 
 vi.mock("@/renderer/state/dbStorage", () => ({
   createDbStorage: () => ({
@@ -371,5 +382,390 @@ describe("roundtable store persistence", () => {
     );
     expect(Object.keys(merged.sessions)).toContain("ok");
     expect(Object.keys(merged.sessions)).not.toContain("bad");
+  });
+
+  it("loads an open chat written before Work together unchanged (pre-upgrade blob)", () => {
+    // Literal JSON as the build before Work together persisted it (store
+    // version 1): task equal to the first message, a stopped reply, per-seat
+    // instructions, none of the new optional fields.
+    const blob = JSON.parse(`{
+      "sessions": {
+        "chat": {
+          "id": "chat", "version": 1, "title": "Plan the login", "task": "Plan the login",
+          "pattern": "open", "projectId": "project-1",
+          "participants": [
+            { "id": "a", "label": "Alpha", "role": "member",
+              "brain": { "kind": "agent", "agentKind": "kind-a", "model": "m", "presentationMode": "gui" },
+              "instructions": "Focus on the backend." },
+            { "id": "b", "label": "Beta", "role": "member",
+              "brain": { "kind": "agent", "agentKind": "kind-b", "model": "m", "presentationMode": "gui" } }
+          ],
+          "threadIds": { "a": "thread-a" }, "maxRounds": 0, "status": "running",
+          "turns": [
+            { "id": "t1", "participantId": "a", "round": 0, "phase": "reply", "prompt": "p",
+              "status": "stopped", "startedAt": 2, "endedAt": 3, "noteId": "n1" }
+          ],
+          "notes": [{ "id": "n1", "text": "Plan the login", "createdAt": 1 }],
+          "createdAt": 1, "updatedAt": 3
+        }
+      }
+    }`);
+    const expected = structuredClone(blob.sessions);
+    const migrated = migrateRoundtableState(blob, ROUNDTABLE_STORE_VERSION);
+    expect(migrated.sessions).toEqual(expected);
+    // As before, the stopped reply is asked again; the duplicated topic is gone.
+    const plan = planNextStep(migrated.sessions.chat!);
+    expect(plan.kind).toBe("run");
+    const prompt = plan.kind === "run" ? plan.turns[0]!.prompt : "";
+    expect(plan.kind === "run" && plan.turns[0]!.participantId).toBe("a");
+    expect(prompt).not.toContain("The topic of this chat");
+    expect(prompt).toContain("Your own instructions:\nFocus on the backend.");
+    expect(prompt).toContain("The user's latest message:\nPlan the login");
+  });
+
+  it("keeps the Work together fields and drops malformed ones", () => {
+    const valid = makeSession("open", [{ ...seats[0]!, joinedAt: 5 }, seats[1]!], {
+      id: "valid",
+      instructions: "Be brief.",
+      instructionsUpdatedAt: 9,
+      instructionsUpdatedFor: { a: 9 },
+      notes: [{ id: "n1", text: "hi", createdAt: 1, halted: true }],
+      turns: [turn({ phase: "reply", status: "running", unsent: true, noteId: "n1" })],
+    });
+    expect(sanitizeSession(JSON.parse(JSON.stringify(valid)))).toEqual(valid);
+    const malformed = sanitizeSession({
+      ...valid,
+      instructions: 42,
+      instructionsUpdatedAt: "soon",
+      instructionsUpdatedFor: { a: "soon", b: Number.NaN } as never,
+      participants: [{ ...seats[0]!, joinedAt: "x", instructions: 7 }, seats[1]!],
+      notes: [{ id: "n1", text: "hi", createdAt: 1, halted: "yes" }],
+      turns: [turn({ unsent: "yes" as never })],
+    })!;
+    expect(malformed).not.toHaveProperty("instructions");
+    expect(malformed).not.toHaveProperty("instructionsUpdatedAt");
+    expect(malformed).not.toHaveProperty("instructionsUpdatedFor");
+    expect(
+      sanitizeSession({ ...valid, instructionsUpdatedFor: { a: 3, b: "x" } })!
+        .instructionsUpdatedFor,
+    ).toEqual({ a: 3 });
+    expect(sanitizeSession({ ...valid, instructionsUpdatedFor: [4] })).not.toHaveProperty(
+      "instructionsUpdatedFor",
+    );
+    expect(malformed.participants[0]).toEqual(seats[0]);
+    expect(malformed.notes?.[0]).toEqual({ id: "n1", text: "hi", createdAt: 1 });
+    expect(malformed.turns[0]).not.toHaveProperty("unsent");
+  });
+
+  it("loads a Roundtable written before Playbooks unchanged (pre-upgrade blob)", () => {
+    // Literal JSON as the build before Playbooks persisted it (store version
+    // 1): shared and per-seat instructions, no playbook fields.
+    const blob = JSON.parse(`{
+      "sessions": {
+        "rt": {
+          "id": "rt", "version": 1, "title": "Fix login", "task": "Fix login",
+          "pattern": "build-review", "projectId": "project-1",
+          "instructions": "Keep it small.", "instructionsUpdatedFor": { "a": 4 },
+          "participants": [
+            { "id": "a", "label": "Alpha", "role": "builder",
+              "brain": { "kind": "agent", "agentKind": "kind-a", "model": "m", "presentationMode": "gui" },
+              "instructions": "Backend only." },
+            { "id": "b", "label": "Beta", "role": "reviewer",
+              "brain": { "kind": "xai", "model": "grok", "region": "global",
+                "tools": { "webSearch": false, "xSearch": false } } }
+          ],
+          "threadIds": {}, "maxRounds": 4, "status": "running", "turns": [],
+          "createdAt": 1, "updatedAt": 4
+        }
+      }
+    }`);
+    const expected = structuredClone(blob.sessions);
+    const migrated = migrateRoundtableState(blob, ROUNDTABLE_STORE_VERSION);
+    expect(migrated.sessions).toEqual(expected);
+    expect(migrated.sessions.rt).not.toHaveProperty("playbookId");
+    expect(migrated.sessions.rt!.participants[0]).not.toHaveProperty("playbookId");
+  });
+
+  it("keeps the Playbooks fields and drops malformed ones", () => {
+    const valid = makeSession(
+      "open",
+      [
+        { ...seats[0]!, playbookId: "review" },
+        { ...seats[1]!, playbookId: null },
+      ],
+      { id: "valid", playbookId: "reversing" },
+    );
+    expect(sanitizeSession(JSON.parse(JSON.stringify(valid)))).toEqual(valid);
+    const malformed = sanitizeSession({
+      ...valid,
+      playbookId: "Not An Id",
+      participants: [
+        { ...seats[0]!, playbookId: 7 as never },
+        { ...seats[1]!, playbookId: "" },
+      ],
+    })!;
+    expect(malformed).not.toHaveProperty("playbookId");
+    expect(malformed.participants).toEqual(seats);
+  });
+
+  it("counts shared and per-seat instructions in the stored size", () => {
+    const plain = makeSession("open", seats);
+    const instructed = makeSession(
+      "open",
+      [{ ...seats[0]!, instructions: "x".repeat(500) }, seats[1]!],
+      {
+        instructions: "y".repeat(1_000),
+      },
+    );
+    // 2 bytes per character, plus the keys.
+    expect(storedBytes(instructed) - storedBytes(plain)).toBeGreaterThan(3_000);
+  });
+
+  it("keeps every open chat on disk, outside the finished count", () => {
+    // An idle chat, a stopped one, then more newer Ask-all compares than the cap.
+    const sessions: Record<string, RoundtableSession> = {
+      idle: makeSession("open", seats, { id: "idle", updatedAt: 0 }),
+      stopped: makeSession("open", seats, { id: "stopped", status: "stopped", updatedAt: 1 }),
+    };
+    for (let index = 0; index < MAX_STORED_SESSIONS + 2; index += 1) {
+      const id = `compare-${index}`;
+      sessions[id] = makeSession("compare", seats, { id, status: "done", updatedAt: index + 10 });
+    }
+    const kept = retainForStorage(sessions);
+    expect(kept.idle).toBeDefined();
+    expect(kept.stopped).toBeDefined();
+    expect(kept["compare-0"]).toBeUndefined();
+    expect(kept[`compare-${MAX_STORED_SESSIONS + 1}`]).toBeDefined();
+    expect(Object.keys(kept)).toHaveLength(MAX_STORED_SESSIONS + 2);
+  });
+
+  it("saves a long open chat without its oldest answered messages", () => {
+    const big = "z".repeat(15_000);
+    const notes = Array.from({ length: 120 }, (_, index) => ({
+      id: `n${index}`,
+      text: `message ${index}`,
+      createdAt: index,
+    }));
+    const turns = notes.map((note, index) =>
+      turn({ id: `t${index}`, phase: "reply", noteId: note.id, responseText: big }),
+    );
+    const session = makeSession("open", seats, { notes, turns });
+    const compacted = compactOpenSession(session);
+    expect(storedBytes(compacted)).toBeLessThanOrEqual(OPEN_SESSION_BYTE_BUDGET);
+    expect(compacted.notes!.at(-1)!.id).toBe("n119");
+    expect(compacted.notes![0]!.id).not.toBe("n0");
+    const keptNotes = new Set(compacted.notes!.map((note) => note.id));
+    expect(compacted.turns.every((item) => keptNotes.has(item.noteId!))).toBe(true);
+    expect(compactOpenSession(makeSession("open", seats))).toEqual(makeSession("open", seats));
+  });
+
+  it("leaves out old prompts before any message, but keeps xAI prompts", () => {
+    const grok: ParticipantProfile = {
+      ...agentSeat("g", "Grok"),
+      brain: {
+        kind: "xai",
+        model: "grok-4.7",
+        region: "global",
+        tools: { webSearch: false, xSearch: false },
+      },
+    };
+    const prompt = "p".repeat(8_000);
+    const notes = Array.from({ length: 120 }, (_, index) => ({
+      id: `n${index}`,
+      text: `message ${index}`,
+      createdAt: index,
+    }));
+    const turns = notes.flatMap((note, index) => [
+      turn({ id: `a${index}`, phase: "reply", noteId: note.id, prompt, responseText: "ok" }),
+      turn({ id: `b${index}`, participantId: "b", phase: "reply", noteId: note.id, prompt }),
+      turn({ id: `g${index}`, participantId: "g", phase: "reply", noteId: note.id, prompt }),
+    ]);
+    const session = makeSession("open", [...seats, grok], { notes, turns });
+    expect(storedBytes(session)).toBeGreaterThan(OPEN_SESSION_BYTE_BUDGET);
+    const compacted = compactOpenSession(session);
+    expect(storedBytes(compacted)).toBeLessThanOrEqual(OPEN_SESSION_BYTE_BUDGET);
+    expect(compacted.notes).toHaveLength(120);
+    expect(compacted.turns).toHaveLength(360);
+    expect(compacted.turns[0]!.prompt).toBe("");
+    expect(compacted.turns.filter((item) => item.participantId === "g")).toEqual(
+      turns.filter((item) => item.participantId === "g"),
+    );
+    expect(compacted.turns.at(-2)!.prompt).toBe(prompt);
+  });
+
+  /** Both backends refuse a write over 8 MiB: SQLite via the projection, the browser cache per record. */
+  function fitsBackendWrite(sessions: Record<string, RoundtableSession>): boolean {
+    const value = { state: { sessions }, version: ROUNDTABLE_STORE_VERSION };
+    return (
+      projectJsonBytes(value, CLIENT_ENGINE_AUX_STRINGIFY_MAX_BYTES).ok &&
+      estimateCacheValueBytes(value) <= MAX_BROWSER_METADATA_RECORD_BYTES
+    );
+  }
+
+  /** Code-heavy text: quotes, backslashes and newlines all need JSON escapes. */
+  const code = (length: number) =>
+    'if (a) { return "\\\\path\\n"; }\n\t'.repeat(Math.ceil(length / 30)).slice(0, length);
+
+  function finishedDebates(count: number): Record<string, RoundtableSession> {
+    const sessions: Record<string, RoundtableSession> = {};
+    for (let index = 0; index < count; index += 1) {
+      const id = `debate-${index}`;
+      sessions[id] = makeSession("debate", seats, {
+        id,
+        status: "done",
+        updatedAt: 100 + index,
+        turns: Array.from({ length: 6 }, (_, round) =>
+          turn({ id: `${id}-${round}`, round, prompt: code(2_000), responseText: code(18_000) }),
+        ),
+      });
+    }
+    return sessions;
+  }
+
+  function longChat(id: string, updatedAt: number, messages: number): RoundtableSession {
+    const notes = Array.from({ length: messages }, (_, index) => ({
+      id: `${id}-n${index}`,
+      text: `message ${index}`,
+      createdAt: index * 10,
+    }));
+    const turns = notes.map((note, index) =>
+      turn({
+        id: `${id}-t${index}`,
+        phase: "reply",
+        noteId: note.id,
+        responseText: code(15_000),
+        startedAt: index * 10 + 1,
+        endedAt: index * 10 + 2,
+      }),
+    );
+    return makeSession("open", seats, { id, updatedAt, notes, turns });
+  }
+
+  it("keeps every save under the backend's 8 MiB write limit, newest first", () => {
+    const sessions = {
+      ...finishedDebates(40),
+      chatA: longChat("chatA", 1, 60),
+      chatB: longChat("chatB", 2, 60),
+    };
+    expect(fitsBackendWrite(sessions)).toBe(false);
+    const kept = retainForStorage(sessions);
+    expect(fitsBackendWrite(kept)).toBe(true);
+    expect(storedBytes(kept)).toBeLessThanOrEqual(STORED_BYTE_BUDGET);
+    // The open chats stay; finished runs fill what is left, newest first.
+    expect(kept.chatA).toBeDefined();
+    expect(kept.chatB).toBeDefined();
+    expect(kept["debate-39"]).toBeDefined();
+    expect(kept["debate-0"]).toBeUndefined();
+  });
+
+  it("trims a blob an older build saved over the new budget on the next write (pre-upgrade)", () => {
+    // What the 6M-character budget let through: every record kept, over 8 MiB projected.
+    const blob = JSON.parse(
+      JSON.stringify({ sessions: { ...finishedDebates(40), chat: longChat("chat", 1, 40) } }),
+    );
+    const migrated = migrateRoundtableState(blob, ROUNDTABLE_STORE_VERSION);
+    expect(Object.keys(migrated.sessions)).toHaveLength(41);
+    expect(fitsBackendWrite(migrated.sessions)).toBe(false);
+    const kept = retainForStorage(migrated.sessions);
+    expect(fitsBackendWrite(kept)).toBe(true);
+    expect(kept.chat).toEqual(migrated.sessions.chat);
+    expect(kept["debate-39"]).toEqual(migrated.sessions["debate-39"]);
+  });
+
+  it("shortens the oldest open chats before leaving any session out", () => {
+    const chats: Record<string, RoundtableSession> = {};
+    for (let index = 0; index < 5; index += 1)
+      chats[`chat-${index}`] = longChat(`chat-${index}`, index, 50);
+    expect(storedBytes(chats["chat-0"])).toBeLessThan(OPEN_SESSION_BYTE_BUDGET);
+    const kept = retainForStorage(chats);
+    expect(Object.keys(kept).toSorted()).toEqual(Object.keys(chats).toSorted());
+    expect(fitsBackendWrite(kept)).toBe(true);
+    expect(kept["chat-4"]).toEqual(chats["chat-4"]);
+    expect(kept["chat-0"]!.notes!.length).toBeLessThan(50);
+    expect(kept["chat-0"]!.notes!.at(-1)!.id).toBe("chat-0-n49");
+
+    // Sessions that cannot be shortened: the oldest is left out, the rest still save.
+    const running: Record<string, RoundtableSession> = {};
+    for (let index = 0; index < 4; index += 1) {
+      const id = `run-${index}`;
+      running[id] = makeSession("debate", seats, {
+        id,
+        updatedAt: index,
+        turns: Array.from({ length: 60 }, (_, round) =>
+          turn({ id: `${id}-${round}`, round, responseText: code(18_000) }),
+        ),
+      });
+    }
+    const keptRunning = retainForStorage(running);
+    expect(fitsBackendWrite(keptRunning)).toBe(true);
+    expect(keptRunning["run-0"]).toBeUndefined();
+    expect(keptRunning["run-3"]).toBeDefined();
+  });
+
+  it("compacts an open chat without changing the prompts that follow", () => {
+    const task = "Plan the login";
+    const notes = Array.from({ length: 150 }, (_, index) => ({
+      id: `n${index}`,
+      text: index === 0 ? task : `message ${index}`,
+      createdAt: index * 10,
+      // Beta answers only message 1; every later one is for Alpha.
+      ...(index === 1 ? { mentions: ["b"] } : index > 1 ? { mentions: ["a"] } : {}),
+    }));
+    const turns = notes.map((note, index) =>
+      turn({
+        id: `t${index}`,
+        participantId: index === 1 ? "b" : "a",
+        phase: "reply",
+        noteId: note.id,
+        prompt: "",
+        responseText: code(15_000),
+        startedAt: index * 10 + 1,
+        endedAt: index * 10 + 2,
+      }),
+    );
+    const instructed = [
+      { ...seats[0]!, instructions: "Alpha rules." },
+      { ...seats[1]!, instructions: "Beta rules." },
+    ];
+    const full = makeSession("open", instructed, { task, notes, turns });
+    const compacted = compactOpenSession(full);
+    const keptIds = compacted.notes!.map((note) => note.id);
+    expect(keptIds).toContain("n0"); // the topic, so the task stays out of prompts
+    expect(keptIds).toContain("n1"); // Beta's only reply, so Beta is not new again
+    expect(keptIds).not.toContain("n2");
+    expect(keptIds.slice(-6)).toEqual(notes.slice(-6).map((note) => note.id));
+
+    const next = { id: "next", text: "What now?", createdAt: 10_000 };
+    const withNext = (session: RoundtableSession) => ({
+      ...session,
+      notes: [...session.notes!, next],
+    });
+    const promptsOf = (session: RoundtableSession) => {
+      const plan = planNextStep(session);
+      return plan.kind === "run" ? plan.turns.map((planned) => planned.prompt) : [];
+    };
+    const alphaPrompt = promptsOf(withNext(full));
+    expect(alphaPrompt).toHaveLength(1);
+    expect(promptsOf(withNext(compacted))).toEqual(alphaPrompt);
+    expect(alphaPrompt[0]).not.toContain("The topic of this chat");
+
+    const alphaAnswered = (session: RoundtableSession) => ({
+      ...withNext(session),
+      turns: [
+        ...session.turns,
+        turn({
+          id: "t-next",
+          phase: "reply",
+          noteId: "next",
+          responseText: "Alpha's answer",
+          startedAt: 10_001,
+          endedAt: 10_002,
+        }),
+      ],
+    });
+    const betaPrompt = promptsOf(alphaAnswered(full));
+    expect(betaPrompt).toHaveLength(1);
+    expect(promptsOf(alphaAnswered(compacted))).toEqual(betaPrompt);
+    expect(betaPrompt[0]).not.toContain("Beta rules.");
   });
 });

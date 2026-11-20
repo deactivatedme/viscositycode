@@ -15,15 +15,20 @@ import { i18n } from "@/renderer/i18n/i18n";
 import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { useAppStore } from "@/renderer/state/appStore";
 import { getThreadMap } from "@/renderer/state/useThread";
-import { createXaiParticipantDriver } from "@/renderer/viscosity/xai/XaiParticipantDriver";
-import type { StartRoundtableInput } from "../api";
+import { XaiParticipantDriver } from "@/renderer/viscosity/xai/XaiParticipantDriver";
+import type { ParticipantDriverFactory, StartRoundtableInput } from "../api";
+import {
+  resolveSeatPlaybook,
+  roundtablePlaybookCatalog,
+  withSeatPlaybookInstructions,
+} from "../playbooks";
 import { useRoundtableStore, waitForRoundtableHydration } from "../roundtableStore";
 import type { RoundtablePattern } from "../types";
 import { seedWorkspace } from "./compare";
 import { buildDemoSession, installRoundtableDevHook, type DemoSeat } from "./devHook";
 import { createRegisteredDriver, hasDriverFactory, registerDriverFactory } from "./driverRegistry";
 import { createLiveRaceAdapter, prepareWorkspace, readOriginContext } from "./liveServices";
-import { threadIdsToResume, type ThreadPresenceSource, waitForThreads } from "./resumeGate";
+import { resumeEachWhenListed, type ThreadPresenceSource } from "./resumeGate";
 import { RoundtableRunner, type RoundtableRepo } from "./runner";
 import { createSessionRecord, validateSeed, validateStartInput } from "./session";
 import { ThreadParticipantDriver } from "./threadDriver";
@@ -43,6 +48,26 @@ export const storeRepo: RoundtableRepo = {
   get: (sessionId) => useRoundtableStore.getState().sessions[sessionId],
   update: (sessionId, update) => useRoundtableStore.getState().updateSession(sessionId, update),
 };
+
+/**
+ * A Grok seat has no thread for the supervisor to brief, so its playbook's
+ * instructions follow its own. A running chat keeps its drivers: both are
+ * read from the saved session on every request, so edits apply mid-chat.
+ */
+export const createXaiDriver: ParticipantDriverFactory = (profile, session) =>
+  new XaiParticipantDriver({
+    profile,
+    session,
+    instructions: () => {
+      const saved = storeRepo.get(session.id);
+      const seat = saved ? saved.participants.find((entry) => entry.id === profile.id) : profile;
+      if (!seat) return undefined;
+      return withSeatPlaybookInstructions(
+        seat.instructions,
+        resolveSeatPlaybook(saved ?? session, seat),
+      );
+    },
+  });
 
 interface RoundtableRuntime {
   runner: RoundtableRunner;
@@ -102,8 +127,7 @@ export function getRoundtableRuntime(): RoundtableRuntime {
   // Grok seats (xAI API, main process): registered with the engine itself so
   // the factory exists before any session resumes after a reload. Startup
   // order elsewhere cannot fail a Grok turn for want of a driver.
-  // `registerXaiParticipantDriver()` stays a safe, idempotent alternative.
-  if (!hasDriverFactory("xai")) registerDriverFactory("xai", createXaiParticipantDriver);
+  if (!hasDriverFactory("xai")) registerDriverFactory("xai", createXaiDriver);
   const runner = new RoundtableRunner({
     repo: storeRepo,
     createDriver: createRegisteredDriver,
@@ -119,22 +143,24 @@ export function getRoundtableRuntime(): RoundtableRuntime {
     simulate,
   });
   if (isOrchestratorWindow()) {
-    void waitForRoundtableHydration()
+    void waitForRoundtableHydration().then(() => {
       // The host's thread catalog usually arrives after the saved sessions:
       // resuming before it would fail every in-flight turn as "removed".
-      .then(() =>
-        waitForThreads(
-          threadIdsToResume(Object.values(useRoundtableStore.getState().sessions)),
-          appThreadPresence,
-        ),
-      )
-      .then(() => runner.resumeAfterReload(Object.values(useRoundtableStore.getState().sessions)));
+      const saved = Object.values(useRoundtableStore.getState().sessions);
+      runner.holdForReload(saved.map((session) => session.id));
+      resumeEachWhenListed(
+        saved,
+        appThreadPresence,
+        (sessionId) => useRoundtableStore.getState().sessions[sessionId],
+        (session) => runner.resumeAfterReload([session]),
+      );
+    });
   }
   return runtime;
 }
 
 export async function startRoundtableSession(input: StartRoundtableInput): Promise<string> {
-  validateStartInput(input);
+  validateStartInput(input, roundtablePlaybookCatalog());
   if (!isOrchestratorWindow()) {
     throw new Error(i18n._(msg`Start a Roundtable from the main window.`));
   }

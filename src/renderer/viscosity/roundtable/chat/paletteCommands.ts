@@ -1,9 +1,10 @@
 /**
  * ViscosityCode: Roundtable commands for the command palette (Cmd/Ctrl+K).
  *
- * "Invite another model into this chat…" is also how terminal-presentation
- * threads reach the invite dialog, since `/roundtable` is a GUI-only local
- * command. Both commands open the dialog in place and never switch the view.
+ * "New Roundtable…" opens the full setup dialog. "Invite another model into
+ * this chat…" is also how terminal-presentation threads reach the invite
+ * dialog, since `/roundtable` is a GUI-only local command. Both open a dialog
+ * in place and never switch the view.
  * Outside the desktop shell they are not offered.
  */
 import { msg } from "@lingui/core/macro";
@@ -11,6 +12,7 @@ import type { AppCommand } from "@/renderer/commands/registry";
 import { getCurrentProjectId, resolveActivePaneId } from "@/renderer/actions/currentProject";
 import { useAppStore } from "@/renderer/state/appStore";
 import { parseDraftProjectId } from "@/shared/paneId";
+import { openRoundtableSetup } from "../ui/roundtableViewStore";
 import { isRoundtableChatAvailable } from "./availability";
 import { lastUserMessageText, openRoundtableInvite } from "./inviteStore";
 
@@ -26,10 +28,11 @@ function focusedThread(): { id: string; projectId: string } | undefined {
   return app.threads.find((thread) => thread.id === paneId);
 }
 
+/** The same full setup dialog as the sidebar's "New Roundtable" (instructions, first message). */
 export function openNewRoundtableFromPalette(): void {
   const projectId = focusedThread()?.projectId ?? getCurrentProjectId();
   if (!projectId) return;
-  openRoundtableInvite({ kind: "new", projectId, task: "" });
+  openRoundtableSetup({ projectId });
 }
 
 export function inviteIntoFocusedChatFromPalette(): void {
@@ -51,9 +54,19 @@ export function roundtableChatCommands(): AppCommand[] {
     {
       id: NEW_ROUNDTABLE_COMMAND_ID,
       title: msg`New Roundtable…`,
-      subtitle: msg`Seat several models on one task`,
+      subtitle: msg`Work with several AIs together`,
       group: msg`Roundtable`,
-      keywords: ["roundtable", "debate", "review", "relay", "race", "group chat", "models"],
+      keywords: [
+        "roundtable",
+        "together",
+        "team",
+        "group chat",
+        "models",
+        "debate",
+        "review",
+        "relay",
+        "race",
+      ],
       when: "hasProject",
       ...hidden,
       run: openNewRoundtableFromPalette,
@@ -63,7 +76,7 @@ export function roundtableChatCommands(): AppCommand[] {
       title: msg`Invite another model into this chat…`,
       subtitle: msg`Start a Roundtable from this chat`,
       group: msg`Roundtable`,
-      keywords: ["roundtable", "invite", "model", "bot", "mention", "second opinion"],
+      keywords: ["roundtable", "invite", "model", "mention", "second opinion"],
       when: "hasThread",
       ...hidden,
       run: inviteIntoFocusedChatFromPalette,

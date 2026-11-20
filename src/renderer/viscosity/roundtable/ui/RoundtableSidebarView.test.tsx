@@ -1,25 +1,31 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { acquireViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
 import type { RoundtableSession } from "../types";
-import { session, summaryOf } from "./roundtable.testFixtures";
+import { session, summaryOf, turn } from "./roundtable.testFixtures";
 import { RoundtableSidebarView } from "./RoundtableSidebarView";
 import { useRoundtableViewStore } from "./roundtableViewStore";
 
 const api = vi.hoisted(() => ({
   sessions: new Map<string, RoundtableSession>(),
+  deleteRoundtable: vi.fn<(id: string) => void>(),
+  stopRoundtable: vi.fn<(id: string) => Promise<void>>(),
 }));
 
 vi.mock("../api", () => ({
   useRoundtableList: () => [...api.sessions.values()].map(summaryOf),
   useRoundtableSession: (id: string | undefined) => (id ? api.sessions.get(id) : undefined),
+  deleteRoundtable: api.deleteRoundtable,
+  stopRoundtable: api.stopRoundtable,
 }));
 
 let releaseShell: (() => void) | undefined;
 
 beforeEach(() => {
   api.sessions.clear();
+  api.deleteRoundtable.mockReset();
+  api.stopRoundtable.mockReset().mockResolvedValue(undefined);
   useRoundtableViewStore.setState({ openSessionId: null, shown: false, setup: null });
   releaseShell = acquireViscosityShellFlag(document.documentElement);
 });
@@ -60,5 +66,39 @@ describe("RoundtableSidebarView", () => {
     expect(useRoundtableViewStore.getState()).toMatchObject({ openSessionId: "rt1", shown: true });
     rerender(<RoundtableSidebarView visible />);
     expect(screen.getByRole("listitem").querySelector('[aria-current="page"]')).not.toBeNull();
+  });
+
+  it("shows an idle team chat as ready", () => {
+    api.sessions.set(
+      "chat",
+      session({
+        id: "chat",
+        pattern: "open",
+        notes: [{ id: "n1", text: "Hi", createdAt: 1 }],
+        turns: [turn("t1", { round: 0, phase: "reply", noteId: "n1" })],
+      }),
+    );
+    render(<RoundtableSidebarView visible />);
+    const row = screen.getByRole("listitem");
+    expect(row.textContent).toContain("Ready");
+    expect(row.querySelector('.vc-rt-status-dot[data-tone="inactive"]')).not.toBeNull();
+  });
+
+  it("deletes a session after confirmation, stopping it first and closing its tab", async () => {
+    api.sessions.set("rt1", session({ status: "running" }));
+    useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true });
+    render(<RoundtableSidebarView visible />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Roundtable actions for Fix the login bug" }),
+    );
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete Roundtable" }));
+    expect(api.deleteRoundtable).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole("alertdialog");
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Delete Roundtable" }));
+    });
+    expect(api.stopRoundtable).toHaveBeenCalledWith("rt1");
+    expect(api.deleteRoundtable).toHaveBeenCalledWith("rt1");
+    expect(useRoundtableViewStore.getState().openSessionId).toBeNull();
   });
 });

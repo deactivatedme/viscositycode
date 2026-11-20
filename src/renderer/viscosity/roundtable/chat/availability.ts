@@ -1,7 +1,7 @@
 /**
  * ViscosityCode: where the in-chat Roundtable entry points apply.
  *
- * Roundtable chrome (composer toggle, `/roundtable`, model/bot mentions,
+ * Roundtable chrome (composer toggle, `/roundtable`, model mentions,
  * palette commands, the invite dialog) is desktop-shell only
  * (ARCHITECTURE_NOTES §8.9). The phone/PWA compact layout, the chat sidebar
  * surface and secondary windows keep upstream's composer untouched. These

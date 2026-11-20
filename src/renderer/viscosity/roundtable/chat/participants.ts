@@ -1,36 +1,28 @@
 /**
  * ViscosityCode: seat candidates for the in-chat Roundtable entry points.
  *
- * A candidate is either a ready model (any installed, signed-in provider the
- * engine reports through `useReadyAgentBrains`) or a saved bot. Everything here
+ * A candidate is a ready model (any installed, signed-in provider the
+ * engine reports through `useReadyAgentBrains`). Everything here
  * is provider-agnostic: presentation is chosen from the brain's declared
  * `presentationModes`, never from its kind.
  */
-import type { BotProfile } from "../../bots/api";
 import type { ReadyAgentBrain } from "../api";
 import type { ParticipantProfile, RoundtablePattern } from "../types";
 import { rolesForPattern } from "./patterns";
 
-export type SeatCandidate =
-  | {
-      kind: "model";
-      /** Stable participant id: one seat per provider + model. */
-      id: string;
-      /** `<provider> · <model>`, also the `@mention` text. */
-      label: string;
-      providerLabel: string;
-      modelLabel: string;
-      agentKind: string;
-      agentInstanceId?: string;
-      modelId: string;
-      presentationMode: "gui" | "terminal";
-    }
-  | {
-      kind: "bot";
-      id: string;
-      label: string;
-      bot: BotProfile;
-    };
+export interface SeatCandidate {
+  kind: "model";
+  /** Stable participant id: one seat per provider + model. */
+  id: string;
+  /** `<provider> · <model>`, also the `@mention` text. */
+  label: string;
+  providerLabel: string;
+  modelLabel: string;
+  agentKind: string;
+  agentInstanceId?: string;
+  modelId: string;
+  presentationMode: "gui" | "terminal";
+}
 
 export function modelParticipantId(agentKind: string, modelId: string): string {
   return `model:${agentKind}:${modelId}`;
@@ -72,36 +64,10 @@ export function modelSeatCandidates(
   );
 }
 
-export function botSeatCandidates(bots: readonly BotProfile[]): SeatCandidate[] {
-  return bots
-    .filter((bot) => bot.label.trim().length > 0)
-    .map((bot): SeatCandidate => ({ kind: "bot", id: bot.id, label: bot.label.trim(), bot }));
-}
-
-function botInstructions(bot: BotProfile): string | undefined {
-  const parts = [
-    bot.instructions?.trim(),
-    bot.memory?.trim() ? `Memory:\n${bot.memory.trim()}` : "",
-  ].filter((part): part is string => Boolean(part));
-  return parts.length > 0 ? parts.join("\n\n") : undefined;
-}
-
 export function candidateToProfile(
   candidate: SeatCandidate,
   role: ParticipantProfile["role"],
 ): ParticipantProfile {
-  if (candidate.kind === "bot") {
-    const { bot } = candidate;
-    const instructions = botInstructions(bot);
-    return {
-      id: bot.id,
-      label: candidate.label,
-      role,
-      brain: bot.brain,
-      ...(instructions ? { instructions } : {}),
-      ...(bot.avatar ? { avatar: bot.avatar } : {}),
-    };
-  }
   return {
     id: candidate.id,
     label: candidate.label,
@@ -158,10 +124,7 @@ export function originParticipantProfile(
   candidates: readonly SeatCandidate[],
   role: ParticipantProfile["role"],
 ): ParticipantProfile {
-  const sameProvider = candidates.filter(
-    (candidate): candidate is Extract<SeatCandidate, { kind: "model" }> =>
-      candidate.kind === "model" && candidate.agentKind === origin.agentKind,
-  );
+  const sameProvider = candidates.filter((candidate) => candidate.agentKind === origin.agentKind);
   const exact = sameProvider.find((candidate) => candidate.modelId === origin.model);
   const providerLabel = sameProvider[0]?.providerLabel;
   const label =

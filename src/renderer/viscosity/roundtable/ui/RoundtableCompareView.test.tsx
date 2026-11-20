@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Thread } from "@/shared/contracts";
 import { useAppStore } from "@/renderer/state/appStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { AGENT_KIND_ATTRIBUTE } from "@/renderer/viscosity/agentColors/api";
@@ -16,7 +17,10 @@ const api = vi.hoisted(() => ({
   debateRunning: false,
   startDebateFromComparison: vi.fn<(id: string) => Promise<string>>(),
 }));
-const actions = vi.hoisted(() => ({ continueWithThread: vi.fn<(threadId: string) => void>() }));
+const actions = vi.hoisted(() => ({
+  continueWithThread: vi.fn<(threadId: string) => void>(),
+  followUpMessage: () => "Earlier task: …",
+}));
 const toasts = vi.hoisted(() => ({
   success: vi.fn<(message: string) => void>(),
   danger: vi.fn<(message: string) => void>(),
@@ -91,6 +95,10 @@ function comparison(overrides: Partial<RoundtableSession> = {}): RoundtableSessi
   });
 }
 
+function liveThread(id: string, archived = false): Thread {
+  return { id, projectId: "p1", archived } as Thread;
+}
+
 function columns(): HTMLElement[] {
   return within(screen.getByRole("list", { name: "Answers" })).getAllByRole("listitem");
 }
@@ -103,7 +111,8 @@ beforeEach(() => {
   actions.continueWithThread.mockReset();
   toasts.success.mockReset();
   toasts.danger.mockReset();
-  useAppStore.setState({ threads: [], projects: [] });
+  // Both participant threads are live unless a test archives or deletes one.
+  useAppStore.setState({ threads: [liveThread("thread-a"), liveThread("thread-c")], projects: [] });
   useRoundtableViewStore.setState({ openSessionId: "cmp", shown: true, setup: null });
   releaseShell = acquireViscosityShellFlag(document.documentElement);
 });
@@ -148,6 +157,15 @@ describe("RoundtableCompareView", () => {
     });
     fireEvent.click(button);
     expect(actions.continueWithThread).toHaveBeenCalledWith("thread-a");
+  });
+
+  it("offers no Continue for a deleted or archived thread", () => {
+    // thread-a was archived and thread-c deleted.
+    useAppStore.setState({ threads: [liveThread("thread-a", true)] });
+    render(<RoundtableCompareView session={comparison()} />);
+    expect(screen.queryByRole("button", { name: "Continue with this one" })).toBeNull();
+    // The answers themselves stay.
+    expect(screen.getByText("Keep native constraint validation.")).toBeTruthy();
   });
 
   it("starts a debate from the answers and shows it", async () => {
@@ -215,11 +233,26 @@ describe("RoundtableCompareView", () => {
     expect(start.hasAttribute("disabled") || start.getAttribute("aria-disabled") === "true").toBe(
       true,
     );
-    expect(start.getAttribute("aria-describedby")).toBeTruthy();
-    expect(screen.getByText("Available once every model has answered.")).toBeTruthy();
+    // The progress line explains the wait; no extra hint while answers arrive.
+    expect(screen.queryByText("Available once every model has answered.")).toBeNull();
+    const followUp = screen.getByRole("button", { name: "Ask everyone a follow-up" });
+    expect(
+      followUp.hasAttribute("disabled") || followUp.getAttribute("aria-disabled") === "true",
+    ).toBe(true);
     const [first, second] = columns();
     expect(within(first!).getByText("Working")).toBeTruthy();
     expect(within(second!).getByText("Waiting to start…")).toBeTruthy();
+  });
+
+  it("asks everyone a follow-up in a team chat with the same AIs", () => {
+    render(<RoundtableCompareView session={comparison()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ask everyone a follow-up" }));
+    expect(useRoundtableViewStore.getState().setup?.request).toMatchObject({
+      projectId: "p1",
+      pattern: "open",
+      title: "Signup validation",
+      task: "Earlier task: …",
+    });
   });
 
   it("opens the debate already started from here instead of a second one", () => {

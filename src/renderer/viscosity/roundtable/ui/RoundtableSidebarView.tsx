@@ -1,27 +1,106 @@
 /**
  * ViscosityCode Roundtable UI: the activity bar's Roundtable sidebar view.
  * Lists the sessions (newest first) with their pattern, status and seats, and
- * offers "New Roundtable". Rows reuse the sidebar's `SidebarButton` pattern.
+ * offers "New Roundtable". Rows reuse the sidebar's `SidebarButton` pattern;
+ * each row's menu deletes its session after a confirmation. A team chat that
+ * only waits for a message shows as "Ready", not running.
  */
+import { useState, type SyntheticEvent } from "react";
+import { Dropdown, Label, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Plus, UsersRound } from "lucide-react";
+import { MoreHorizontal, Plus, Trash2, UsersRound } from "lucide-react";
+import { ConfirmDialog } from "@/renderer/components/common/ConfirmDialog";
 import { SidebarButton } from "@/renderer/components/common/SidebarButton";
 import type { ActivitySidebarViewProps } from "@/renderer/viscosity/layout/activityBar";
-import { type RoundtableSummary, useRoundtableList, useRoundtableSession } from "../api";
-import { ParticipantAvatarStack } from "./ParticipantAvatar";
-import { PATTERN_LABELS, SESSION_STATUS_LABELS, sessionTone } from "./patterns";
 import {
+  deleteRoundtable,
+  type RoundtableSummary,
+  stopRoundtable,
+  useRoundtableList,
+  useRoundtableSession,
+} from "../api";
+import { ParticipantAvatarStack } from "./ParticipantAvatar";
+import { isChatIdle, PATTERN_LABELS, SESSION_STATUS_LABELS, sessionTone } from "./patterns";
+import {
+  closeRoundtableView,
   isRoundtablePanelShown,
   openRoundtableSetup,
   openRoundtableView,
   useRoundtableViewStore,
 } from "./roundtableViewStore";
 
+function stopPropagation(event: SyntheticEvent): void {
+  event.stopPropagation();
+}
+
+/** Stops a live session first (deleting only forgets it), then forgets it and closes its tab. */
+async function removeRoundtable(summary: RoundtableSummary): Promise<void> {
+  if (summary.status === "running" || summary.status === "paused") {
+    await stopRoundtable(summary.id);
+  }
+  if (useRoundtableViewStore.getState().openSessionId === summary.id) closeRoundtableView();
+  deleteRoundtable(summary.id);
+}
+
+function DeleteRoundtableDialog(props: { summary: RoundtableSummary; onClose: () => void }) {
+  const { t } = useLingui();
+  const title = props.summary.title;
+  return (
+    <ConfirmDialog
+      isOpen
+      title={t`Delete ${title}?`}
+      body={t`The Roundtable is removed and any replies in progress stop. Its participant threads stay in your sidebar.`}
+      confirmLabel={t`Delete Roundtable`}
+      onClose={props.onClose}
+      onConfirm={() => {
+        props.onClose();
+        void removeRoundtable(props.summary).catch((error: unknown) =>
+          toast.danger(error instanceof Error ? error.message : String(error)),
+        );
+      }}
+    />
+  );
+}
+
+function RoundtableRowMenu(props: { summary: RoundtableSummary; onDelete: () => void }) {
+  const { t } = useLingui();
+  const title = props.summary.title;
+  const label = t`Roundtable actions for ${title}`;
+  return (
+    <Dropdown>
+      <Dropdown.Trigger
+        aria-label={label}
+        className="flex size-6 shrink-0 items-center justify-center rounded-3xl text-muted outline-none hover:bg-[var(--row-hover)] hover:text-foreground focus-visible:focus-ring"
+      >
+        <MoreHorizontal aria-hidden="true" className="size-3.5" />
+      </Dropdown.Trigger>
+      <Dropdown.Popover placement="bottom end">
+        <Dropdown.Menu
+          aria-label={label}
+          className="poracode-menu min-w-44"
+          onAction={(key) => {
+            if (key === "delete") props.onDelete();
+          }}
+        >
+          <Dropdown.Item id="delete" textValue={t`Delete Roundtable`} variant="danger">
+            <Trash2 aria-hidden="true" className="size-3.5" />
+            <Label>
+              <Trans>Delete Roundtable</Trans>
+            </Label>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
+}
+
 function RoundtableListRow(props: { summary: RoundtableSummary; active: boolean }) {
   const { summary } = props;
-  const { i18n } = useLingui();
+  const { i18n, t } = useLingui();
   const session = useRoundtableSession(summary.id);
-  const status = i18n._(SESSION_STATUS_LABELS[summary.status]);
+  const [deleting, setDeleting] = useState(false);
+  const idle = session ? isChatIdle(session) : false;
+  const status = idle ? t`Ready` : i18n._(SESSION_STATUS_LABELS[summary.status]);
   return (
     <div role="listitem" data-vc-roundtable-row={summary.id}>
       <SidebarButton
@@ -29,7 +108,10 @@ function RoundtableListRow(props: { summary: RoundtableSummary; active: boolean 
         isActive={props.active}
         isCurrentPage={props.active}
         icon={
-          <span className="vc-rt-status-dot" data-tone={sessionTone(summary.status)}>
+          <span
+            className="vc-rt-status-dot"
+            data-tone={idle ? "inactive" : sessionTone(summary.status)}
+          >
             <span className="sr-only">{status}</span>
           </span>
         }
@@ -41,13 +123,23 @@ function RoundtableListRow(props: { summary: RoundtableSummary; active: boolean 
             </span>
           </>
         }
-        suffix={<ParticipantAvatarStack participants={session?.participants ?? []} />}
+        suffix={
+          <>
+            <ParticipantAvatarStack participants={session?.participants ?? []} />
+            {/* The menu sits inside the row: its presses must not also open the session. */}
+            <span role="presentation" onClick={stopPropagation} onKeyDown={stopPropagation}>
+              <RoundtableRowMenu summary={summary} onDelete={() => setDeleting(true)} />
+            </span>
+          </>
+        }
         onPress={() => openRoundtableView(summary.id)}
       />
+      {deleting ? (
+        <DeleteRoundtableDialog summary={summary} onClose={() => setDeleting(false)} />
+      ) : null}
     </div>
   );
 }
-
 export function RoundtableSidebarView(_props: ActivitySidebarViewProps) {
   const { t } = useLingui();
   const sessions = useRoundtableList();
@@ -74,8 +166,7 @@ export function RoundtableSidebarView(_props: ActivitySidebarViewProps) {
           </p>
           <p className="text-xs text-muted">
             <Trans>
-              Seat two to five of your agents at one task and let them build, review and debate in
-              turns.
+              Put two to five of your AIs on the same conversation and let them work together.
             </Trans>
           </p>
         </div>

@@ -3,11 +3,14 @@
  *
  * Never persisted. Updates are throttled per turn to at most 8 per second, so
  * the one component that previews a live turn re-renders at most that often
- * and nothing else re-renders on streaming deltas.
+ * and nothing else re-renders on streaming deltas. Lightweight mode slows
+ * that to 2 per second, since each update re-parses the growing markdown.
  */
 import { create } from "zustand";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight";
 
 export const LIVE_TEXT_INTERVAL_MS = 125;
+export const LIGHTWEIGHT_LIVE_TEXT_INTERVAL_MS = 500;
 
 interface LiveTextState {
   textByTurn: Record<string, string>;
@@ -39,7 +42,7 @@ function write(key: string, text: string | undefined): void {
   });
 }
 
-/** Publishes a running turn's text so far (throttled to ≤ 8 Hz per turn). */
+/** Publishes a running turn's text so far (throttled to ≤ 8 Hz per turn, 2 Hz when lightweight). */
 export function setLiveTurnText(
   sessionId: string,
   turnId: string,
@@ -51,7 +54,10 @@ export function setLiveTurnText(
   entry.text = text;
   pending.set(key, entry);
   if (entry.timer !== undefined) return;
-  const wait = entry.lastAt + LIVE_TEXT_INTERVAL_MS - now;
+  const interval = isLightweightActive()
+    ? LIGHTWEIGHT_LIVE_TEXT_INTERVAL_MS
+    : LIVE_TEXT_INTERVAL_MS;
+  const wait = entry.lastAt + interval - now;
   if (wait <= 0) {
     entry.lastAt = now;
     write(key, text);

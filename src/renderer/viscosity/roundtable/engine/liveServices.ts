@@ -32,7 +32,7 @@ import { buildAgentThreadConfig } from "./agentBrains";
 import type { PlannerContext } from "./planner";
 import type { RaceAdapter } from "./runner";
 import type { ThreadEnginePort } from "./threadPort";
-import { findProjectAgentStatus } from "./threadPortLive";
+import { findProjectAgentStatus, seatPlaybookFor } from "./threadPortLive";
 
 function requireProject(projectId: string): Project {
   const project = useAppStore.getState().projects.find((item) => item.id === projectId);
@@ -104,7 +104,11 @@ export function createLiveRaceAdapter(): RaceAdapter {
           agentKind: brain.agentKind,
           ...(brain.agentInstanceId ? { agentInstanceId: brain.agentInstanceId } : {}),
           agentLabel: participant.label,
-          config: buildAgentThreadConfig(brain, findProjectAgentStatus(project, brain.agentKind)),
+          config: buildAgentThreadConfig(
+            brain,
+            findProjectAgentStatus(project, brain.agentKind),
+            seatPlaybookFor(project, session, participant),
+          ),
           presentationMode: brain.presentationMode,
         };
       });
@@ -185,6 +189,12 @@ export async function prepareWorkspace(
     // Setup script only: the git state is tracked once a participant thread registers the worktree.
     initializeCreatedWorktree(project, result.path, { trackGitState: false });
     return { worktreePath: result.path, worktreeBranch: branch };
+  }
+  if (input.worktree?.mode === "existing") {
+    return {
+      worktreePath: input.worktree.worktreePath,
+      ...(input.worktree.worktreeBranch ? { worktreeBranch: input.worktree.worktreeBranch } : {}),
+    };
   }
   if (input.originThreadId) {
     const origin = useAppStore

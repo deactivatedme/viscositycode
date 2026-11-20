@@ -3,8 +3,9 @@
  * session (additive, AA compare) — one column per participant (2–5) with its
  * model, accent colour, status, time taken and markdown answer. The columns
  * scroll together. "Continue with this one" opens that participant's thread
- * on its own; "Start a debate from here" starts a debate seeded
- * with these answers.
+ * on its own; "Ask everyone a follow-up" opens a team chat with the same AIs,
+ * prefilled with the question and their answers; "Start a debate from here"
+ * starts a debate seeded with these answers. Each answer has a Copy button.
  *
  * Only a running column subscribes to streaming text (through `TurnBody`)
  * and ticks its clock once a second; everything else renders from the
@@ -13,14 +14,16 @@
 import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
 import { Button, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowRightToLine, MessagesSquare, Timer } from "lucide-react";
+import { ArrowRightToLine, MessageCirclePlus, MessagesSquare, Timer } from "lucide-react";
 import type { AgentStatus } from "@/shared/contracts";
 import { resolveModelLabel } from "@/renderer/components/providers/modelDisplay";
+import { CopyTextButton } from "@/renderer/components/thread/ChatPane/parts/items/CopyTextButton";
 import { ItemMarkdown } from "@/renderer/components/thread/ChatPane/parts/items/ItemMarkdown";
 import { useHostAgentStatuses } from "@/renderer/hooks/useHostAgentStatuses";
 import { useProject } from "@/renderer/state/useThread";
 import { formatElapsed } from "@/renderer/utils/formatTime";
 import { agentKindAttribute } from "@/renderer/viscosity/agentColors/api";
+import { useIsOpenableThread } from "@/renderer/viscosity/layout/tabs/openTabsStore";
 import {
   type CompareAnswer,
   canSeedDebate,
@@ -30,7 +33,7 @@ import {
   useLatestSeededDebateId,
 } from "../api";
 import type { ParticipantProfile, RoundtableSession, RoundtableTurn } from "../types";
-import { continueWithThread } from "./compareActions";
+import { continueWithThread, followUpMessage } from "./compareActions";
 import {
   answerDurationMs,
   COMPARE_BODY_ATTRIBUTE,
@@ -40,6 +43,7 @@ import {
 import { ParticipantAvatar } from "./ParticipantAvatar";
 import { TURN_STATUS_LABELS } from "./patterns";
 import {
+  openRoundtableSetup,
   openRoundtableTab,
   openRoundtableView,
   useRoundtableViewStore,
@@ -101,9 +105,12 @@ function CompareColumn(props: {
   const { i18n, t } = useLingui();
   const headingId = useId();
   const name = participant.label;
-  const threadId = session.threadIds[participant.id];
+  const seatThreadId = session.threadIds[participant.id];
+  // A deleted or archived thread cannot be continued.
+  const threadId = useIsOpenableThread(seatThreadId) ? seatThreadId : undefined;
   const agentKind = participant.brain.kind === "agent" ? participant.brain.agentKind : undefined;
   const status = turn?.status;
+  const answerText = status === "done" ? turn?.responseText?.trim() : undefined;
   return (
     <section
       role="listitem"
@@ -146,18 +153,21 @@ function CompareColumn(props: {
           </p>
         )}
       </div>
-      {threadId ? (
+      {threadId || answerText ? (
         <footer className="vc-rt-compare__foot">
-          <Button
-            size="sm"
-            variant="secondary"
-            // The visible label stays the accessible name (voice control); the column names the model.
-            aria-describedby={headingId}
-            onPress={() => continueWithThread(threadId)}
-          >
-            <ArrowRightToLine aria-hidden="true" className="size-3.5" />
-            <Trans>Continue with this one</Trans>
-          </Button>
+          {answerText ? <CopyTextButton text={answerText} label={t`Copy answer`} /> : null}
+          {threadId ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              // The visible label stays the accessible name (voice control); the column names the model.
+              aria-describedby={headingId}
+              onPress={() => continueWithThread(threadId)}
+            >
+              <ArrowRightToLine aria-hidden="true" className="size-3.5" />
+              <Trans>Continue with this one</Trans>
+            </Button>
+          ) : null}
         </footer>
       ) : null}
     </section>
@@ -192,8 +202,9 @@ function DebateActions(props: { session: RoundtableSession; answered: number }) 
     }
   }
 
+  // While answers arrive, the progress line says enough.
   const hint = !ended
-    ? t`Available once every model has answered.`
+    ? null
     : props.answered < 2
       ? t`A debate needs at least two answers.`
       : debateRunning
@@ -212,6 +223,23 @@ function DebateActions(props: { session: RoundtableSession; answered: number }) 
           <Trans>Open debate</Trans>
         </Button>
       ) : null}
+      <Button
+        size="sm"
+        variant="secondary"
+        isDisabled={!ended || props.answered === 0}
+        onPress={() =>
+          openRoundtableSetup({
+            projectId: session.projectId,
+            pattern: "open",
+            participants: session.participants,
+            title: session.title,
+            task: followUpMessage(session),
+          })
+        }
+      >
+        <MessageCirclePlus aria-hidden="true" className="size-3.5" />
+        <Trans>Ask everyone a follow-up</Trans>
+      </Button>
       <Button
         size="sm"
         variant="tertiary"

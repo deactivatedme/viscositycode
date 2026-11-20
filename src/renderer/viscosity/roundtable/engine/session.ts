@@ -5,9 +5,11 @@
  */
 import { msg } from "@lingui/core/macro";
 import { makeThreadTitle } from "@/shared/threadTitle";
+import type { SavedPlaybook } from "@/shared/viscosity/playbook";
 import { i18n } from "@/renderer/i18n/i18n";
 import type { StartRoundtableInput } from "../api";
-import type { RoundtableSession } from "../types";
+import { findPlaybook, isPlaybookId, readOnlyEditingSeat } from "../playbooks";
+import type { ParticipantProfile, RoundtableSession } from "../types";
 import { seedDebateTurns, seedProblem, seedThreadIds } from "./compare";
 import { DEFAULT_MAX_ROUNDS, seatedJudge } from "./planner";
 
@@ -23,8 +25,15 @@ export class RoundtableInputError extends Error {
   }
 }
 
-/** Throws a {@link RoundtableInputError} with a user-facing message when the request cannot run. */
-export function validateStartInput(input: StartRoundtableInput): void {
+/**
+ * Throws a {@link RoundtableInputError} with a user-facing message when the
+ * request cannot run. `playbooks` is the catalog the table's playbook is
+ * looked up in.
+ */
+export function validateStartInput(
+  input: StartRoundtableInput,
+  playbooks: readonly SavedPlaybook[] = [],
+): void {
   if (!input.projectId)
     throw new RoundtableInputError(i18n._(msg`Choose a project for the Roundtable.`));
   if (input.pattern !== "open" && !input.task.trim()) {
@@ -61,6 +70,23 @@ export function validateStartInput(input: StartRoundtableInput): void {
   }
   if (input.seedFromSessionId !== undefined && input.pattern !== "debate") {
     throw new RoundtableInputError(i18n._(msg`Only a debate can start from a comparison.`));
+  }
+  if (input.playbookId !== undefined && !findPlaybook(playbooks, input.playbookId)) {
+    throw new RoundtableInputError(
+      i18n._(
+        msg`The playbook picked for this Roundtable is no longer available. Pick another one, or none.`,
+      ),
+    );
+  }
+  const blocked = readOnlyEditingSeat(input, playbooks);
+  if (blocked) {
+    const label = blocked.playbook.label;
+    const seat = blocked.seat.label;
+    throw new RoundtableInputError(
+      i18n._(
+        msg`The "${label}" playbook keeps ${seat} from editing files, and this pattern needs that seat to edit. Pick it for reviewer seats only, or choose another pattern.`,
+      ),
+    );
   }
 }
 
@@ -145,6 +171,8 @@ export function createSessionRecord(
     version: 1,
     title: resolveTitle(input),
     task: input.task.trim(),
+    ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}),
+    ...(isPlaybookId(input.playbookId) ? { playbookId: input.playbookId } : {}),
     pattern: input.pattern,
     projectId: input.projectId,
     ...(options.worktreePath ? { worktreePath: options.worktreePath } : {}),
@@ -162,5 +190,42 @@ export function createSessionRecord(
     ...(seed ? { seededFromSessionId: seed.id } : {}),
     createdAt: options.now,
     updatedAt: options.now,
+  };
+}
+
+/**
+ * Additive (Work together): seats `profiles` in a running or stopped open
+ * chat. Ids already seated are skipped; the newcomers carry `joinedAt`, so
+ * they only answer messages posted from now on. Throws a
+ * {@link RoundtableInputError} with a user-facing message when they cannot join.
+ */
+export function addParticipantsToSession(
+  session: RoundtableSession,
+  profiles: readonly ParticipantProfile[],
+  now: number,
+): RoundtableSession {
+  if (session.pattern !== "open") {
+    throw new RoundtableInputError(i18n._(msg`Only a team chat can take new participants.`));
+  }
+  const fresh = profiles.filter(
+    (profile, index) =>
+      !session.participants.some((seated) => seated.id === profile.id) &&
+      profiles.findIndex((other) => other.id === profile.id) === index,
+  );
+  if (fresh.length === 0) return session;
+  if (fresh.some((profile) => !profile.id || !profile.brain.model.trim())) {
+    throw new RoundtableInputError(i18n._(msg`Choose a model for every participant.`));
+  }
+  if (session.participants.length + fresh.length > MAX_PARTICIPANTS) {
+    throw new RoundtableInputError(
+      i18n._(msg`A Roundtable seats up to ${MAX_PARTICIPANTS} participants.`),
+    );
+  }
+  return {
+    ...session,
+    participants: [
+      ...session.participants,
+      ...fresh.map((profile) => ({ ...profile, joinedAt: now })),
+    ],
   };
 }

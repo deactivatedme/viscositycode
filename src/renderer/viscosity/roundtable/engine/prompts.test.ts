@@ -5,6 +5,7 @@ import {
   buildCrossReviewPrompt,
   buildJudgePrompt,
   buildOpenReplyPrompt,
+  buildRacePrompt,
   buildReviewerPrompt,
   PROMPT_BUDGET,
   TASK_CAP,
@@ -123,7 +124,7 @@ describe("role templates", () => {
       },
       { round: 0, maxRounds: 4, reviews: [] },
     );
-    expect(prompt).toContain("Your standing instructions:\nAlways write tests first.");
+    expect(prompt).toContain("Your own instructions:\nAlways write tests first.");
     expect(prompt).toContain("- Use the existing Switch component.");
     expect(prompt).toContain("Here is what Claude said");
     expect(prompt).toContain("> Earlier answer");
@@ -144,6 +145,46 @@ describe("role templates", () => {
     expect(prompt).toContain("Claude:\n> Zustand.");
     expect(prompt).toContain("The user's latest message:\nWhich state library?");
     expect(prompt).toContain("Reply as Codex");
+  });
+
+  it("gives every racer the whole team's instructions", () => {
+    const prompt = buildRacePrompt({
+      ...identity,
+      pattern: "race",
+      sharedInstructions: "Keep the public API stable.",
+    });
+    expect(prompt).toContain(
+      "Instructions from the user for the whole team:\nKeep the public API stable.",
+    );
+  });
+
+  it("keeps the question at the end of a long follow-up in the latest message", () => {
+    const quoted = "> earlier answer\n".repeat(1_000);
+    const prompt = buildOpenReplyPrompt(
+      { ...identity, pattern: "open", role: "member", selfLabel: "Codex", task: "" },
+      { transcript: [], userMessage: `Earlier task:\n${quoted}\nMy follow-up:\n\nWHICH ONE WINS?` },
+    );
+    const latest = prompt.slice(prompt.indexOf("The user's latest message:"));
+    expect(latest).toContain("Earlier task:");
+    expect(latest).toContain("WHICH ONE WINS?");
+  });
+
+  it("gives a racer its own instructions when it has them", () => {
+    const prompt = buildRacePrompt({
+      ...identity,
+      pattern: "race",
+      instructions: "Focus on performance.",
+    });
+    expect(prompt).toContain("Your own instructions:\nFocus on performance.");
+  });
+
+  it("has no topic block when the task is empty", () => {
+    const prompt = buildOpenReplyPrompt(
+      { ...identity, pattern: "open", role: "member", selfLabel: "Codex", task: "" },
+      { transcript: [], userMessage: "Hi" },
+    );
+    expect(prompt).not.toContain("The topic of this chat");
+    expect(prompt).toContain("The user's latest message:\nHi");
   });
 });
 

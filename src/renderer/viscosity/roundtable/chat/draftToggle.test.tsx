@@ -30,8 +30,12 @@ const brains: ReadyAgentBrain[] = [
 ];
 const candidates = modelSeatCandidates(brains);
 
-function renderDraft(canHost = true) {
-  return renderHook(() => useRoundtableDraft({ canHost }), { wrapper: I18nTestWrapper });
+function renderDraft(canHost = true, primaryId?: string) {
+  return renderHook(
+    (props: { primaryId?: string }) =>
+      useRoundtableDraft({ canHost, ...(props.primaryId ? { primaryId: props.primaryId } : {}) }),
+    { wrapper: I18nTestWrapper, initialProps: primaryId ? { primaryId } : {} },
+  );
 }
 
 beforeEach(() => {
@@ -83,7 +87,35 @@ describe("useRoundtableDraft (new-thread composer toggle)", () => {
       result.current.addSeat(candidates[2]!);
     });
     act(() => result.current.reset());
-    expect(result.current).toMatchObject({ enabled: false, seats: [], pattern: "build-review" });
+    expect(result.current).toMatchObject({ enabled: false, seats: [], pattern: "open" });
+  });
+
+  it("does not count a seat the composer's own model now takes, and brings it back after a switch", () => {
+    const { result, rerender } = renderDraft(true, "model:alpha:a1");
+    act(() => result.current.setEnabled(true));
+    act(() => result.current.addSeat(candidates[1]!));
+    expect(result.current.canStart).toBe(true);
+    // The composer switches to the seated model: Start would drop that seat.
+    rerender({ primaryId: candidates[1]!.id });
+    expect(result.current).toMatchObject({ seats: [], canStart: false });
+    rerender({ primaryId: "model:alpha:a1" });
+    expect(result.current.seats.map((seat) => seat.id)).toEqual([candidates[1]!.id]);
+  });
+
+  it("still caps the table when a hidden seat comes back", () => {
+    const { result, rerender } = renderDraft(true, "model:alpha:a1");
+    act(() => result.current.setEnabled(true));
+    act(() => result.current.addSeat(candidates[1]!));
+    rerender({ primaryId: candidates[1]!.id });
+    act(() => {
+      for (const candidate of [candidates[0]!, ...candidates.slice(2)]) {
+        result.current.addSeat(candidate);
+      }
+    });
+    expect(result.current.seats).toHaveLength(4);
+    rerender({ primaryId: "model:alpha:other" });
+    expect(result.current).toMatchObject({ isFull: true, canStart: true });
+    expect(result.current.seats).toHaveLength(4);
   });
 
   it("is not offered outside the desktop shell or where the composer cannot host it", () => {
@@ -147,6 +179,55 @@ describe("startDraftRoundtable", () => {
         expect.objectContaining({ id: "model:alpha:a2", role: "reviewer" }),
       ],
     });
+  });
+
+  it("makes the composer's playbook the table's", async () => {
+    await startDraftRoundtable({
+      projectId: "project-1",
+      task: "Map the binary",
+      pattern: "open",
+      primary: {
+        agentKind: "alpha",
+        agentLabel: "Alpha",
+        model: "a1",
+        modelLabel: "One",
+        presentationMode: "gui",
+      },
+      seats: [candidates[1]!],
+      newWorktree: false,
+      playbookId: "reversing",
+    });
+    expect(api.startRoundtable).toHaveBeenCalledWith(
+      expect.objectContaining({ playbookId: "reversing" }),
+    );
+  });
+
+  it("works in the existing worktree picked in the composer, not the main checkout", async () => {
+    await startDraftRoundtable({
+      projectId: "project-1",
+      task: "Speed up CI",
+      pattern: "open",
+      primary: {
+        agentKind: "alpha",
+        agentLabel: "Alpha",
+        model: "a1",
+        modelLabel: "One",
+        presentationMode: "gui",
+      },
+      seats: [candidates[1]!],
+      newWorktree: false,
+      existingWorktreePath: "/repo/.worktrees/feature-x",
+      existingWorktreeBranch: "feature-x",
+    });
+    expect(api.startRoundtable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        worktree: {
+          mode: "existing",
+          worktreePath: "/repo/.worktrees/feature-x",
+          worktreeBranch: "feature-x",
+        },
+      }),
+    );
   });
 
   it("posts the task as the first message of an open group chat", async () => {

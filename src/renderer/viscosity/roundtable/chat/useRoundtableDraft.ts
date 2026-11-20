@@ -60,9 +60,17 @@ export interface StartDraftRoundtableInput {
   seats: readonly SeatCandidate[];
   /** The draft asked for a new worktree; otherwise the current checkout is shared. */
   newWorktree: boolean;
+  /** An existing worktree picked in the composer's branch picker; the Roundtable works in it. */
+  existingWorktreePath?: string | undefined;
+  existingWorktreeBranch?: string | undefined;
+  /**
+   * Additive (Playbooks): the composer's playbook (`ThreadConfig.playbook`
+   * id) becomes the table's, so every seat's new thread gets it.
+   */
+  playbookId?: string | undefined;
 }
 
-export function startDraftRoundtable(input: StartDraftRoundtableInput): Promise<string> {
+export async function startDraftRoundtable(input: StartDraftRoundtableInput): Promise<string> {
   const primaryId = primarySeatId(input.primary);
   const seats = input.seats.filter((seat) => seat.id !== primaryId);
   const roles = rolesForPattern(input.pattern, seats.length + 1);
@@ -70,11 +78,20 @@ export function startDraftRoundtable(input: StartDraftRoundtableInput): Promise<
     task: input.task,
     pattern: input.pattern,
     projectId: input.projectId,
+    ...(input.playbookId ? { playbookId: input.playbookId } : {}),
     participants: [
       primaryProfile(input.primary, roles[0] ?? "member"),
       ...seatProfiles(input.pattern, seats, { originSeat: true }),
     ],
-    worktree: input.newWorktree ? { mode: "new-branch" } : { mode: "current" },
+    worktree: input.existingWorktreePath
+      ? {
+          mode: "existing",
+          worktreePath: input.existingWorktreePath,
+          ...(input.existingWorktreeBranch ? { worktreeBranch: input.existingWorktreeBranch } : {}),
+        }
+      : input.newWorktree
+        ? { mode: "new-branch" }
+        : { mode: "current" },
   });
 }
 
@@ -98,13 +115,22 @@ export interface RoundtableDraftState {
 
 const MAX_EXTRA_SEATS = MAX_ROUNDTABLE_PARTICIPANTS - 1;
 
-export function useRoundtableDraft(options: { canHost: boolean }): RoundtableDraftState {
+export function useRoundtableDraft(options: {
+  canHost: boolean;
+  /** The composer's own seat (`primarySeatId`): a seat with the same id is not counted. */
+  primaryId?: string;
+}): RoundtableDraftState {
   const { t } = useLingui();
   const shell = useRoundtableChatAvailable();
   const available = shell && options.canHost;
   const [enabledState, setEnabledState] = useState(false);
   const [pattern, setPattern] = useState<RoundtablePattern>(DEFAULT_ROUNDTABLE_PATTERN);
-  const [seats, setSeats] = useState<SeatCandidate[]>([]);
+  const [chosen, setSeats] = useState<SeatCandidate[]>([]);
+  // A seat the composer's model now duplicates is hidden (Start would drop it) and comes
+  // back when the composer switches model again; the cap applies after it returns.
+  const effective = (list: readonly SeatCandidate[]) =>
+    list.filter((seat) => seat.id !== options.primaryId);
+  const seats = effective(chosen).slice(0, MAX_EXTRA_SEATS);
   const enabled = available && enabledState;
   return {
     available,
@@ -121,7 +147,8 @@ export function useRoundtableDraft(options: { canHost: boolean }): RoundtableDra
     setPattern,
     addSeat: (candidate) =>
       setSeats((current) =>
-        current.length >= MAX_EXTRA_SEATS || current.some((seat) => seat.id === candidate.id)
+        effective(current).length >= MAX_EXTRA_SEATS ||
+        current.some((seat) => seat.id === candidate.id)
           ? current
           : [...current, candidate],
       ),

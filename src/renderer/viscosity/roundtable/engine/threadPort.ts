@@ -7,6 +7,7 @@
  */
 import type { PromptSegment, ThreadStatus } from "@/shared/contracts";
 import type { ParticipantProfile, RoundtableSession } from "../types";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight";
 
 export interface ThreadTurnSnapshot {
   status: ThreadStatus;
@@ -76,12 +77,15 @@ export interface DriverTiming {
   settleMs: number;
   /** Before a turn was seen running, how long an idle thread is still treated as "starting". */
   startGraceMs: { gui: number; terminal: number };
-  /** Live text sampling (≤ 8 Hz). */
+  /** Live text sampling (≤ 8 Hz), read when a turn starts. */
   progressMs: number;
 }
 
 export const DEFAULT_DRIVER_TIMING: DriverTiming = {
   settleMs: 750,
   startGraceMs: { gui: 2_000, terminal: 10_000 },
-  progressMs: 125,
+  // A getter so each turn picks up a Lightweight toggle (2 Hz while it is on).
+  get progressMs() {
+    return isLightweightActive() ? 500 : 125;
+  },
 };

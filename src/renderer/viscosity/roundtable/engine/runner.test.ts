@@ -384,6 +384,186 @@ describe("open group chat", () => {
   });
 });
 
+describe("work together (open) controls", () => {
+  const seats = [agentSeat("a", "Alpha"), agentSeat("b", "Beta"), agentSeat("c", "Gamma")];
+
+  it("Stop replies interrupts the reply, skips the rest, and keeps the chat open", async () => {
+    let alphaCalls = 0;
+    const session = makeSession("open", seats);
+    const {
+      runner,
+      session: current,
+      drivers,
+      log,
+    } = harness(session, {
+      a: () => (alphaCalls++ === 0 ? new Promise<TurnResult>(() => {}) : said("Alpha again")),
+      b: () => said("Beta"),
+      c: () => said("Gamma"),
+    });
+    runner.post(session.id, "Plan the login", undefined);
+    await vi.waitFor(() => expect(drivers.get("a")?.calls).toHaveLength(1));
+    await runner.interrupt(session.id);
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(drivers.get("a")!.stopCalls).toBe(1);
+    expect(current().status).toBe("running");
+    expect(current().notes![0]!.halted).toBe(true);
+    expect(current().turns.map((turn) => turn.status)).toEqual(["stopped"]);
+    expect(planNextStep(current()).kind).toBe("idle");
+
+    runner.post(session.id, "Now the tests", undefined);
+    await vi.waitFor(() => expect(current().turns).toHaveLength(4));
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(log.slice(1).map((call) => call.participantId)).toEqual(["a", "b", "c"]);
+    expect(current().notes![1]!.halted).toBeUndefined();
+  });
+
+  it("after a reload, a message waits for the resume instead of failing the in-flight reply", async () => {
+    const session = makeSession("open", seats.slice(0, 2), {
+      threadIds: { a: "thread-a" },
+      notes: [{ id: "n1", text: "Plan the login", createdAt: 1, deliveredTurnId: "t-1" }],
+      turns: [
+        {
+          id: "t-1",
+          participantId: "a",
+          round: 0,
+          phase: "reply",
+          noteId: "n1",
+          prompt: "p",
+          status: "running",
+          startedAt: 1,
+        },
+      ],
+    });
+    const away = deferred<TurnResult>();
+    const {
+      runner,
+      session: current,
+      drivers,
+    } = harness(
+      session,
+      { a: () => said("Alpha"), b: () => said("Beta") },
+      { awaitResults: { a: () => away.promise } },
+    );
+    runner.holdForReload([session.id]);
+    runner.post(session.id, "And the tests", undefined);
+    expect(runner.isActive(session.id)).toBe(false);
+    expect(drivers.size).toBe(0);
+
+    runner.resumeAfterReload([current()]);
+    away.resolve(said("finished while away"));
+    await vi.waitFor(() => expect(current().turns.length).toBeGreaterThan(1));
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(current().turns[0]).toMatchObject({
+      status: "done",
+      responseText: "finished while away",
+    });
+  });
+
+  it("after a reload, Stop replies before the resume stops the attached replies", async () => {
+    const session = makeSession("open", seats.slice(0, 2), {
+      threadIds: { a: "thread-a" },
+      notes: [{ id: "n1", text: "Plan the login", createdAt: 1, deliveredTurnId: "t-1" }],
+      turns: [
+        {
+          id: "t-1",
+          participantId: "a",
+          round: 0,
+          phase: "reply",
+          noteId: "n1",
+          prompt: "p",
+          status: "running",
+          startedAt: 1,
+        },
+      ],
+    });
+    const away = deferred<TurnResult>();
+    const {
+      runner,
+      session: current,
+      drivers,
+    } = harness(session, {}, { awaitResults: { a: () => away.promise } });
+    runner.holdForReload([session.id]);
+    await runner.interrupt(session.id);
+    expect(current().notes![0]!.halted).toBe(true);
+
+    runner.resumeAfterReload([current()]);
+    await vi.waitFor(() => expect(drivers.get("a")?.stopCalls).toBe(1));
+    away.resolve({ status: "stopped", text: "" });
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(drivers.has("b")).toBe(false);
+  });
+
+  it("a message reopens a stopped chat; what the stop cut off stays unanswered", async () => {
+    const session = makeSession("open", seats, {
+      status: "stopped",
+      notes: [{ id: "old", text: "Earlier", createdAt: 1 }],
+      turns: [
+        {
+          id: "t-old",
+          participantId: "a",
+          round: 0,
+          phase: "reply",
+          prompt: "p",
+          status: "stopped",
+          noteId: "old",
+        },
+      ],
+    });
+    const { runner, session: current, log } = harness(session, {});
+    runner.post(session.id, "@Beta continue", ["b"]);
+    await vi.waitFor(() => expect(current().turns).toHaveLength(2));
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(current().status).toBe("running");
+    expect(current().notes!.map((note) => note.halted)).toEqual([true, undefined]);
+    expect(log.map((call) => call.participantId)).toEqual(["b"]);
+  });
+
+  it("a message posted while Stop is still settling keeps the reopened chat's drivers", async () => {
+    const second = deferred<TurnResult>();
+    let alphaCalls = 0;
+    const session = makeSession("open", seats);
+    const {
+      runner,
+      session: current,
+      drivers,
+    } = harness(session, {
+      a: () => (alphaCalls++ === 0 ? new Promise<TurnResult>(() => {}) : second.promise),
+    });
+    runner.post(session.id, "@Alpha first", ["a"]);
+    await vi.waitFor(() => expect(drivers.get("a")?.calls).toHaveLength(1));
+    const first = drivers.get("a")!;
+    const stopGate = deferred<void>();
+    const stopDriver = first.stop.bind(first);
+    first.stop = async () => {
+      await stopDriver();
+      await stopGate.promise;
+    };
+    const stopping = runner.stop(session.id);
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+
+    runner.post(session.id, "@Alpha again", ["a"]);
+    await vi.waitFor(() => expect(drivers.get("a")).not.toBe(first));
+    await vi.waitFor(() => expect(drivers.get("a")!.calls).toHaveLength(1));
+    stopGate.resolve();
+    await stopping;
+    expect(runner.isActive(session.id)).toBe(true);
+    expect(drivers.get("a")!.disposed).toBe(false);
+
+    second.resolve(said("second answer"));
+    await vi.waitFor(() => expect(runner.isActive(session.id)).toBe(false));
+    expect(current().turns.at(-1)).toMatchObject({ status: "done", responseText: "second answer" });
+  });
+
+  it("a message does not reopen a stopped debate", async () => {
+    const session = makeSession("debate", seats, { status: "stopped" });
+    const { runner, session: current, log } = harness(session, {});
+    runner.post(session.id, "more", undefined);
+    expect(current().status).toBe("stopped");
+    expect(runner.isActive(session.id)).toBe(false);
+    expect(log).toHaveLength(0);
+  });
+});
+
 describe("controls", () => {
   const seats = () => [
     agentSeat("b", "Builder", "builder"),
@@ -502,6 +682,106 @@ describe("controls", () => {
       responseText: "finished while away",
     });
     expect(log.map((call) => call.participantId)).toEqual(["r"]);
+  });
+
+  it("after a reload, a paused session resumed mid-settle does not send the in-flight turn again", async () => {
+    const away = deferred<TurnResult>();
+    const session = makeSession("build-review", seats(), {
+      status: "paused",
+      threadIds: { b: "thread-b" },
+      turns: [
+        {
+          id: "t-1",
+          participantId: "b",
+          round: 0,
+          phase: "build",
+          prompt: "p",
+          status: "running",
+          startedAt: 1,
+        },
+      ],
+    });
+    const {
+      runner,
+      session: current,
+      log,
+    } = harness(
+      session,
+      { r: () => said("VERDICT: APPROVE") },
+      { awaitResults: { b: () => away.promise } },
+    );
+    runner.resumeAfterReload([session]);
+    runner.resume(session.id);
+    away.resolve(said("finished while away"));
+    await vi.waitFor(() => expect(current().status).toBe("done"));
+    expect(phases(current().turns)).toEqual(["b:build:0", "r:review:0"]);
+    expect(current().turns[0]).toMatchObject({
+      status: "done",
+      responseText: "finished while away",
+    });
+    expect(log.map((call) => call.participantId)).toEqual(["r"]);
+  });
+
+  it("after a reload, re-sends a turn whose prompt never went out instead of attaching", async () => {
+    const attach = vi.fn<() => TurnResult>(() => said("the previous answer"));
+    const session = makeSession("build-review", seats(), {
+      threadIds: { b: "thread-b" },
+      turns: [
+        {
+          id: "t-1",
+          participantId: "b",
+          round: 0,
+          phase: "build",
+          prompt: "p",
+          status: "running",
+          startedAt: 1,
+          unsent: true,
+        },
+      ],
+    });
+    const {
+      runner,
+      session: current,
+      log,
+    } = harness(
+      session,
+      {
+        b: (call) => {
+          call.options?.onSent?.();
+          return said("built now");
+        },
+        r: () => said("VERDICT: APPROVE"),
+      },
+      { awaitResults: { b: attach } },
+    );
+    runner.resumeAfterReload([session]);
+    await vi.waitFor(() => expect(current().status).toBe("done"));
+    expect(attach).not.toHaveBeenCalled();
+    expect(log.map((call) => call.participantId)).toEqual(["b", "r"]);
+    expect(current().turns.map((turn) => turn.status)).toEqual(["stopped", "done", "done"]);
+    expect(current().turns[1]).toMatchObject({ responseText: "built now" });
+    expect(current().turns.some((turn) => turn.unsent)).toBe(false);
+  });
+
+  it("a turn is saved as unsent until its prompt goes out", async () => {
+    const gate = deferred<TurnResult>();
+    let sent: (() => void) | undefined;
+    const session = makeSession("build-review", seats());
+    const { runner, session: current } = harness(session, {
+      b: (call) => {
+        sent = call.options?.onSent;
+        return gate.promise;
+      },
+      r: () => said("VERDICT: APPROVE"),
+    });
+    const loop = runner.kick(session.id);
+    await vi.waitFor(() => expect(sent).toBeDefined());
+    expect(current().turns[0]!.unsent).toBe(true);
+    sent!();
+    expect(current().turns[0]!.unsent).toBeUndefined();
+    gate.resolve(said("built"));
+    await loop;
+    expect(current().status).toBe("done");
   });
 
   it("marks a turn waiting for approval and back", async () => {

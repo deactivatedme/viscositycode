@@ -15,10 +15,9 @@ import {
   ThreadDockRow,
   ThreadDockSection,
 } from "@/renderer/components/thread/ThreadDockUI";
-import { useBots } from "../../bots/api";
 import { useReadyAgentBrains } from "../api";
 import { ParticipantAddMenu, PatternMenu, SeatIcon } from "./ParticipantControls";
-import { botSeatCandidates, modelSeatCandidates } from "./participants";
+import { modelSeatCandidates } from "./participants";
 import {
   primarySeatId,
   type RoundtableDraftPrimary,
@@ -34,8 +33,7 @@ export function RoundtableDraftPanel(props: {
   const { t } = useLingui();
   const { draft, primary } = props;
   const brains = useReadyAgentBrains(props.projectId);
-  const bots = useBots();
-  const candidates = [...botSeatCandidates(bots), ...modelSeatCandidates(brains)];
+  const candidates = modelSeatCandidates(brains);
   const primaryLabel = primary.modelLabel
     ? `${primary.agentLabel} · ${primary.modelLabel}`
     : primary.agentLabel;
@@ -108,11 +106,7 @@ export function RoundtableDraftPanel(props: {
             <SeatIcon candidate={seat} />
             <span className="min-w-0 flex-1 truncate leading-5 text-foreground">{seat.label}</span>
             <span className="shrink-0 truncate text-foreground-muted opacity-80">
-              {seat.kind === "bot"
-                ? t`Bot`
-                : seat.presentationMode === "terminal"
-                  ? t`CLI`
-                  : t`Chat`}
+              {seat.presentationMode === "terminal" ? t`CLI` : t`Chat`}
             </span>
           </ThreadDockActionRow>
         ))}

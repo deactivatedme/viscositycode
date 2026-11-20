@@ -107,6 +107,7 @@ export class ThreadParticipantDriver implements ParticipantDriver {
       if (!threadId) {
         const mention = contextIds.length > 0 && this.port.readThreadToolEnabled();
         turn.sent = true;
+        options?.onSent?.();
         threadId = await this.port.createAndLaunch(
           {
             session: this.session,
@@ -133,6 +134,7 @@ export class ThreadParticipantDriver implements ParticipantDriver {
         const mention =
           contextIds.length > 0 && this.port.snapshot(threadId)?.mentionToolsAvailable === true;
         turn.sent = true;
+        options?.onSent?.();
         await this.port.submit(
           threadId,
           prompt,

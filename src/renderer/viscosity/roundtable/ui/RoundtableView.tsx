@@ -9,6 +9,7 @@
 import { Button } from "@heroui/react";
 import { Trans } from "@lingui/react/macro";
 import { useRoundtableSession } from "../api";
+import { useRoundtablePlaybookTheme } from "@/renderer/viscosity/playbooks/theme/coverPlaybookTheme";
 import { patternIsAnswerOnly } from "./patterns";
 import { RoundtableCompareView } from "./RoundtableCompareView";
 import { RoundtableComposer, RoundtableControls } from "./RoundtableControls";
@@ -18,6 +19,8 @@ import { closeRoundtableView } from "./roundtableViewStore";
 
 export function RoundtableView(props: { sessionId: string }) {
   const session = useRoundtableSession(props.sessionId);
+  // The table's playbook theme shows while this Roundtable is on screen.
+  useRoundtablePlaybookTheme(session?.playbookId);
   if (!session) {
     return (
       <section className="vc-rt-view" data-vc-roundtable-view="">

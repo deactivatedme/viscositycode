@@ -22,7 +22,7 @@ import { useFileEditorStore } from "@/renderer/state/fileEditorStore";
 import { isViscosityShellActive } from "@/renderer/viscosity/shellFlag";
 import type { ParticipantProfile, RoundtablePattern } from "../types";
 
-/** Prefill for the setup dialog (in-chat entry points, Bots, "New Roundtable"). */
+/** Prefill for the setup dialog (in-chat entry points, "New Roundtable"). */
 export interface RoundtableSetupRequest {
   projectId?: string;
   title?: string;
@@ -118,8 +118,9 @@ export function isRoundtablePanelShown(state: RoundtableViewState): boolean {
 
 /**
  * Hide the panel when the user navigates elsewhere: opening a thread (any
- * `openThread`, which marks the pending active thread first), switching the
- * center view (draft, home, experiment, …) or showing the inline editor.
+ * `openThread`, which marks the pending active thread first), opening a
+ * new-thread draft, switching the center view (draft, home, experiment, …)
+ * or showing the inline editor.
  * Installed outside React by the center host; returns the unsubscribe.
  */
 export function startRoundtableViewSync(): () => void {
@@ -130,7 +131,21 @@ export function startRoundtableViewSync(): () => void {
     const openedThread =
       state.pendingActiveThreadId !== null &&
       state.pendingActiveThreadId !== previous.pendingActiveThreadId;
-    if (openedThread || state.view.kind !== previous.view.kind) hideRoundtablePanel();
+    // `draftVisit` moves on every new-thread draft (Cmd+N, the sidebar's New
+    // thread, a side-by-side draft pane), even when the view kind stays the same.
+    // Switching a draft's project (`moveDraft`) keeps both the kind and the visit.
+    const movedDraft =
+      state.view.kind === "draft" &&
+      previous.view.kind === "draft" &&
+      state.view.projectId !== previous.view.projectId;
+    if (
+      openedThread ||
+      movedDraft ||
+      state.draftVisit !== previous.draftVisit ||
+      state.view.kind !== previous.view.kind
+    ) {
+      hideRoundtablePanel();
+    }
   });
   return () => {
     unsubscribeEditor();

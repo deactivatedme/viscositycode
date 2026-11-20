@@ -139,3 +139,112 @@ describe("a debate seeded from a comparison", () => {
     expect(record.seededFromSessionId).toBeUndefined();
   });
 });
+
+describe("work together sessions", () => {
+  it("store trimmed shared instructions and omit blank ones; open needs no task", () => {
+    const record = (instructions?: string) =>
+      createSessionRecord(
+        input({
+          pattern: "open",
+          task: "",
+          ...(instructions === undefined ? {} : { instructions }),
+        }),
+        { id: "s", now: 1 },
+      );
+    expect(() => validateStartInput(input({ pattern: "open", task: "" }))).not.toThrow();
+    expect(record("  Be brief. ").instructions).toBe("Be brief.");
+    expect(record("   ")).not.toHaveProperty("instructions");
+    expect(record()).not.toHaveProperty("instructions");
+  });
+});
+
+describe("playbooks", () => {
+  const review = { id: "review", label: "Review", instructions: "Read.", readOnly: true as const };
+  const debug = { id: "debug", label: "Debug", instructions: "Repro first." };
+
+  it("refuses a read-only table playbook for a pattern whose seats must edit", () => {
+    const catalog = [review, debug];
+    for (const pattern of ["build-review", "relay", "race"] as const) {
+      expect(() => validateStartInput(input({ pattern, playbookId: "review" }), catalog)).toThrow(
+        /"Review" playbook/,
+      );
+    }
+    expect(() =>
+      validateStartInput(
+        input({ pattern: "debate", implementWinner: true, playbookId: "review" }),
+        catalog,
+      ),
+    ).toThrow(/"Review" playbook/);
+    expect(() =>
+      validateStartInput(input({ pattern: "debate", playbookId: "review" }), catalog),
+    ).not.toThrow();
+    expect(() =>
+      validateStartInput(input({ pattern: "build-review", playbookId: "debug" }), catalog),
+    ).not.toThrow();
+    // A read-only seat (a reviewer) is fine.
+    expect(() =>
+      validateStartInput(
+        input({
+          pattern: "build-review",
+          participants: [trio[0]!, { ...trio[1]!, playbookId: "review" }],
+        }),
+        catalog,
+      ),
+    ).not.toThrow();
+  });
+
+  it("refuses a table playbook that is no longer in the catalog", () => {
+    expect(() =>
+      validateStartInput(input({ pattern: "open", playbookId: "gone" }), [debug]),
+    ).toThrow(/no longer available/);
+    expect(() =>
+      validateStartInput(input({ pattern: "open", playbookId: "debug" }), [debug]),
+    ).not.toThrow();
+  });
+
+  it("checks each editing seat's own playbook, not only the table's", () => {
+    const catalog = [review, debug];
+    // No table playbook, but the builder (first seat without roles) is read-only.
+    expect(() =>
+      validateStartInput(
+        input({
+          pattern: "build-review",
+          participants: [{ ...trio[0]!, playbookId: "review" }, trio[1]!],
+        }),
+        catalog,
+      ),
+    ).toThrow(/"Review" playbook keeps Alpha/);
+    // Read-only table, but the builder overrides it.
+    expect(() =>
+      validateStartInput(
+        input({
+          pattern: "build-review",
+          playbookId: "review",
+          participants: [{ ...trio[0]!, playbookId: "debug" }, trio[1]!],
+        }),
+        catalog,
+      ),
+    ).not.toThrow();
+  });
+
+  it("keeps the table's playbook id and each seat's own choice in the record", () => {
+    const record = createSessionRecord(
+      input({
+        playbookId: "debug",
+        participants: [
+          { ...trio[0]!, playbookId: null },
+          { ...trio[1]!, playbookId: "review" },
+        ],
+      }),
+      { id: "s", now: 1 },
+    );
+    expect(record.playbookId).toBe("debug");
+    expect(record.participants.map((participant) => participant.playbookId)).toEqual([
+      null,
+      "review",
+    ]);
+    expect(
+      createSessionRecord(input({ playbookId: "Bad Id" }), { id: "s", now: 1 }),
+    ).not.toHaveProperty("playbookId");
+  });
+});

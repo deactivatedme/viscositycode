@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppView, Experiment } from "@/shared/contracts";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useExperimentStore } from "@/renderer/state/experimentStore";
-import { withoutViewSwitch } from "./liveServices";
+import { prepareWorkspace, withoutViewSwitch } from "./liveServices";
 
 // The race adapter's experiment and worktree actions are not exercised here.
 vi.mock("@/renderer/actions/experimentActions", () => ({
@@ -83,5 +83,30 @@ describe("withoutViewSwitch (race launches never switch the view)", () => {
       kind: "experiment",
       experimentId: "exp-a",
     });
+  });
+});
+
+describe("prepareWorkspace", () => {
+  it("uses an existing worktree as is, without creating one", async () => {
+    const { createWorktree } = await import("@/renderer/actions/worktreeLaunchActions");
+    useAppStore.setState({
+      projects: [{ id: "p1", location: "/repo" } as never],
+    });
+    const result = await prepareWorkspace(
+      {
+        task: "Fix it",
+        pattern: "open",
+        projectId: "p1",
+        participants: [],
+        worktree: {
+          mode: "existing",
+          worktreePath: "/repo/.wt/feature",
+          worktreeBranch: "feature",
+        },
+      },
+      "session-1",
+    );
+    expect(result).toEqual({ worktreePath: "/repo/.wt/feature", worktreeBranch: "feature" });
+    expect(createWorktree).not.toHaveBeenCalled();
   });
 });

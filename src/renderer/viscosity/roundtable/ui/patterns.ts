@@ -18,13 +18,22 @@ export const MIN_PARTICIPANTS = 2;
 export const MAX_PARTICIPANTS = 5;
 export const MAX_ROUNDS_LIMIT = 20;
 
+/** "Work together" first (the default), then compare; the competitive patterns follow. */
 export const ROUNDTABLE_PATTERNS: readonly RoundtablePattern[] = [
+  "open",
+  "compare",
   "build-review",
   "debate",
   "relay",
   "race",
-  "open",
-  "compare",
+];
+
+/** The patterns the setup dialog keeps under "More ways to work". */
+export const MORE_PATTERNS: readonly RoundtablePattern[] = [
+  "build-review",
+  "debate",
+  "relay",
+  "race",
 ];
 
 export const PATTERN_LABELS: Readonly<Record<RoundtablePattern, MessageDescriptor>> = {
@@ -32,7 +41,7 @@ export const PATTERN_LABELS: Readonly<Record<RoundtablePattern, MessageDescripto
   debate: msg`Debate → decide`,
   relay: msg`Relay`,
   race: msg`Race + cross-review`,
-  open: msg`Group chat`,
+  open: msg`Work together`,
   compare: msg`Ask all (compare)`,
 };
 
@@ -41,7 +50,7 @@ export const PATTERN_DESCRIPTIONS: Readonly<Record<RoundtablePattern, MessageDes
   debate: msg`Everyone proposes and critiques the others, then a judge or a vote decides.`,
   relay: msg`A chain of stages (plan, implement, test, review), one participant each.`,
   race: msg`Everyone builds on their own worktree, reviews the others, and the best is picked.`,
-  open: msg`A free group chat: @mention who should answer.`,
+  open: msg`Your AIs work on your messages as a team: each one sees and builds on what the others said. No rounds, no winner.`,
   compare: msg`Everyone answers once, side by side. No critique rounds, no verdict.`,
 };
 
@@ -207,6 +216,29 @@ export function turnFxState(status: TurnStatus | undefined): ParticipantFxState 
     default:
       return "idle";
   }
+}
+
+/**
+ * A running open chat ("Work together") with no reply pending, running or
+ * waiting for the user, and no message still waiting for its first reply: it
+ * only waits for the next message, so it is idle, not working.
+ */
+export function isChatIdle(
+  session: Pick<RoundtableSession, "pattern" | "status" | "turns" | "notes">,
+): boolean {
+  return (
+    session.pattern === "open" &&
+    session.status === "running" &&
+    !session.turns.some(
+      (turn) =>
+        turn.status === "pending" ||
+        turn.status === "running" ||
+        turn.status === "waiting-approval",
+    ) &&
+    !session.notes?.some(
+      (note) => !note.halted && !session.turns.some((turn) => turn.noteId === note.id),
+    )
+  );
 }
 
 /** The turn that is running or waiting for the user, newest first. */

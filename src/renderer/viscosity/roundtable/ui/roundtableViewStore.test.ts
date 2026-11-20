@@ -118,6 +118,34 @@ describe("roundtable view store", () => {
     }
   });
 
+  it("steps aside for a new-thread draft, even when the view kind does not change", () => {
+    const stop = startRoundtableViewSync();
+    try {
+      useAppStore.setState({ view: { kind: "draft" } as never });
+      openRoundtableView("rt1");
+      // Cmd+N or the sidebar's New thread on a draft view: same kind, new visit.
+      useAppStore.setState((state) => ({ draftVisit: state.draftVisit + 1 }));
+      expect(useRoundtableViewStore.getState()).toMatchObject({
+        openSessionId: "rt1",
+        shown: false,
+      });
+    } finally {
+      stop();
+    }
+  });
+
+  it("hides when the open draft moves to another project", () => {
+    const stop = startRoundtableViewSync();
+    try {
+      useAppStore.setState({ view: { kind: "draft", projectId: "p1" } });
+      openRoundtableView("rt1");
+      useAppStore.getState().moveDraft("p2");
+      expect(useRoundtableViewStore.getState().shown).toBe(false);
+    } finally {
+      stop();
+    }
+  });
+
   it("stays in front through store updates that are not navigation", () => {
     const stop = startRoundtableViewSync();
     try {

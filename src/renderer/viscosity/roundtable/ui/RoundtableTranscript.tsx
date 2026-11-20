@@ -1,18 +1,22 @@
 /**
  * ViscosityCode Roundtable UI: the group-chat transcript of a session — the
  * task card, the user's own messages, one bubble per turn (participant
- * avatar, name, phase or role, status, verdict, markdown answer), round
- * separators, the decision card and a failure notice.
+ * avatar, name, phase or role, status, verdict, markdown answer, Copy and
+ * Open thread), round separators, the decision card and a failure notice.
+ * A team chat ("open", "Work together") shows no rounds, phases or roles,
+ * and its collapsed shared instructions sit at the top.
  *
  * Only the running turn's preview subscribes to streaming text
  * (`useLiveTurnText`, throttled by the engine); every other bubble renders
  * from the session object, which changes on turn status, not on deltas.
  */
-import { type RefObject, useEffect, useId, useRef } from "react";
+import { type ReactNode, type RefObject, useEffect, useId, useRef } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button } from "@heroui/react";
-import { CircleAlert, Crown, ExternalLink } from "lucide-react";
+import { Button, Tooltip } from "@heroui/react";
+import { CircleAlert, CircleCheck, ExternalLink, TriangleAlert } from "lucide-react";
+import { CopyTextButton } from "@/renderer/components/thread/ChatPane/parts/items/CopyTextButton";
 import { ItemMarkdown } from "@/renderer/components/thread/ChatPane/parts/items/ItemMarkdown";
+import { useIsOpenableThread } from "@/renderer/viscosity/layout/tabs/openTabsStore";
 import { activateThreadTab } from "@/renderer/viscosity/layout/tabs/tabActions";
 import { useLiveTurnText } from "../api";
 import type {
@@ -22,16 +26,11 @@ import type {
   RoundtableTurn,
 } from "../types";
 import { ParticipantAvatar } from "./ParticipantAvatar";
-import {
-  displayMaxRounds,
-  OUTCOME_LABELS,
-  PHASE_LABELS,
-  ROLE_LABELS,
-  TURN_STATUS_LABELS,
-} from "./patterns";
+import { OUTCOME_LABELS, PHASE_LABELS, ROLE_LABELS, TURN_STATUS_LABELS } from "./patterns";
+import { displayRound } from "./RoundtableStatusItem";
 
 export type TranscriptEntry =
-  | { kind: "round"; key: string; round: number }
+  | { kind: "round"; key: string; round: number; turn: RoundtableTurn }
   | { kind: "turn"; key: string; turn: RoundtableTurn }
   | { kind: "note"; key: string; note: RoundtableNote };
 
@@ -41,12 +40,14 @@ function noteBelongsBefore(note: RoundtableNote, turn: RoundtableTurn): boolean 
 }
 
 /**
- * Turns in order with a separator whenever the round changes, and the user's
+ * Turns in order with a separator whenever the round changes (unless
+ * `separateRounds` is false: a team chat has no rounds), and the user's
  * messages placed before the first turn that answers, carries or follows them.
  */
 export function buildTranscriptEntries(
   turns: readonly RoundtableTurn[],
   notes: readonly RoundtableNote[] = [],
+  separateRounds = true,
 ): TranscriptEntry[] {
   const entries: TranscriptEntry[] = [];
   const queued = notes.toSorted((a, b) => a.createdAt - b.createdAt);
@@ -57,14 +58,31 @@ export function buildTranscriptEntries(
     for (const note of queued.splice(0, last + 1)) {
       entries.push({ kind: "note", key: `note:${note.id}`, note });
     }
-    if (turn.round !== round) {
+    if (separateRounds && turn.round !== round) {
       round = turn.round;
-      entries.push({ kind: "round", key: `round:${turn.round}:${turn.id}`, round: turn.round });
+      entries.push({
+        kind: "round",
+        key: `round:${turn.round}:${turn.id}`,
+        round: turn.round,
+        turn,
+      });
     }
     entries.push({ kind: "turn", key: turn.id, turn });
   }
   for (const note of queued) entries.push({ kind: "note", key: `note:${note.id}`, note });
   return entries;
+}
+
+/**
+ * Whether the task card adds anything: not when it is empty, nor in a team
+ * chat whose task is just its first message (shown as that message anyway).
+ */
+export function showsTaskCard(
+  session: Pick<RoundtableSession, "pattern" | "task" | "notes">,
+): boolean {
+  const task = session.task.trim();
+  if (!task) return false;
+  return !(session.pattern === "open" && session.notes?.[0]?.text.trim() === task);
 }
 
 /** The turn that explains the decision: the newest PICK of the winner, else the newest PICK. */
@@ -102,14 +120,14 @@ function VerdictBadge(props: {
   if (turn.verdict === "approve") {
     return (
       <span className="vc-rt-verdict" data-verdict="approve">
-        <Trans>Approve</Trans>
+        <Trans>Approved</Trans>
       </span>
     );
   }
   if (turn.verdict === "revise") {
     return (
       <span className="vc-rt-verdict" data-verdict="revise">
-        <Trans>Revise</Trans>
+        <Trans>Changes requested</Trans>
       </span>
     );
   }
@@ -118,7 +136,7 @@ function VerdictBadge(props: {
   )?.label;
   return (
     <span className="vc-rt-verdict" data-verdict="pick">
-      {picked ? <Trans>Pick → {picked}</Trans> : <Trans>Pick</Trans>}
+      {picked ? <Trans>Recommends {picked}</Trans> : <Trans>Recommendation</Trans>}
     </span>
   );
 }
@@ -150,7 +168,9 @@ function LiveTurnPreview(props: { sessionId: string; turnId: string }) {
 function OpenThreadButton(props: { threadId: string | undefined; label: string }) {
   const { t } = useLingui();
   const { threadId } = props;
-  if (!threadId) return null;
+  // A deleted or archived thread is not offered.
+  const openable = useIsOpenableThread(threadId);
+  if (!threadId || !openable) return null;
   const label = props.label;
   return (
     <Button
@@ -249,6 +269,17 @@ function NoteBubble(props: {
     ? nameOf(props.turns.find((turn) => turn.id === note.deliveredTurnId)?.participantId)
     : undefined;
   const to = mentioned.join(", ");
+  // "Stop replies" halts every note so far; only label the ones it actually cut short.
+  const noteTurns = props.turns.filter((turn) => turn.noteId === note.id);
+  const seated = props.participants
+    .filter((participant) => (participant.joinedAt ?? 0) <= note.createdAt)
+    .map((participant) => participant.id);
+  const mentionedIds = (note.mentions ?? []).filter((id) => nameOf(id) !== undefined);
+  const addressed = mentionedIds.length > 0 ? mentionedIds : seated;
+  const cutShort =
+    note.halted === true &&
+    (noteTurns.some((turn) => turn.status === "stopped") ||
+      addressed.some((id) => !noteTurns.some((turn) => turn.participantId === id)));
   return (
     <article
       className="vc-rt-turn vc-rt-turn--user"
@@ -275,33 +306,80 @@ function NoteBubble(props: {
             <Trans>Added to the next prompt of {delivered}</Trans>
           </p>
         ) : null}
+        {cutShort ? (
+          <p className="vc-rt-turn__note">
+            <Trans>You stopped the replies to this message.</Trans>
+          </p>
+        ) : null}
       </div>
     </article>
+  );
+}
+
+/** Copy the answer and open the participant's thread, once a turn has settled. */
+function TurnActions(props: { turn: RoundtableTurn; name: string; threadId: string | undefined }) {
+  const { turn, threadId } = props;
+  const { t } = useLingui();
+  const openable = useIsOpenableThread(threadId);
+  if (turn.status === "pending" || turn.status === "running") return null;
+  // Waiting turns already offer the thread in their callout; a deleted or archived one is gone.
+  const showThread = threadId !== undefined && openable && turn.status !== "waiting-approval";
+  const text = turn.responseText?.trim();
+  if (!text && !showThread) return null;
+  const name = props.name;
+  const openLabel = t`Open ${name} thread`;
+  return (
+    <div className="rt-view-turn-actions">
+      {text ? <CopyTextButton text={text} label={t`Copy answer`} /> : null}
+      {showThread ? (
+        <Tooltip delay={300}>
+          <Tooltip.Trigger>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              aria-label={openLabel}
+              className="size-6 min-w-6 text-muted"
+              onPress={() => activateThreadTab(threadId)}
+            >
+              <ExternalLink className="size-3.5" />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content placement="top">{openLabel}</Tooltip.Content>
+        </Tooltip>
+      ) : null}
+    </div>
   );
 }
 
 function TurnBubble(props: {
   sessionId: string;
   turn: RoundtableTurn;
-  participants: readonly ParticipantProfile[];
-  threadIds: Readonly<Record<string, string>>;
+  session: RoundtableSession;
 }) {
-  const { turn } = props;
+  const { turn, session } = props;
   const { i18n, t } = useLingui();
-  const participant = props.participants.find((candidate) => candidate.id === turn.participantId);
+  const open = session.pattern === "open";
+  const participant = session.participants.find((candidate) => candidate.id === turn.participantId);
   const name = participant?.label ?? t`Unknown participant`;
-  const round = turn.round;
-  const tag = turn.phase
-    ? i18n._(PHASE_LABELS[turn.phase])
-    : participant
-      ? i18n._(ROLE_LABELS[participant.role])
-      : null;
+  const threadId = participant ? session.threadIds[participant.id] : undefined;
+  // A team chat has no phases or roles: every turn is a reply.
+  const tag = open
+    ? null
+    : turn.phase
+      ? i18n._(PHASE_LABELS[turn.phase])
+      : participant
+        ? i18n._(ROLE_LABELS[participant.role])
+        : null;
+  const shownRound = open ? null : displayRound(turn, session.maxRounds);
+  const roundNumber = shownRound?.round;
+  const label = shownRound ? t`${name}, round ${roundNumber}` : tag ? `${name}, ${tag}` : name;
   return (
     <article
       className="vc-rt-turn"
       data-status={turn.status}
       data-vc-rt-turn={turn.id}
-      aria-label={t`${name}, round ${round}`}
+      aria-label={label}
     >
       {participant ? (
         <ParticipantAvatar participant={participant} />
@@ -317,15 +395,11 @@ function TurnBubble(props: {
               {i18n._(TURN_STATUS_LABELS[turn.status])}
             </span>
           )}
-          <VerdictBadge turn={turn} participants={props.participants} />
+          <VerdictBadge turn={turn} participants={session.participants} />
           <TurnTime at={turn.endedAt ?? turn.startedAt} />
         </header>
-        <TurnBody
-          sessionId={props.sessionId}
-          turn={turn}
-          name={name}
-          threadId={participant ? props.threadIds[participant.id] : undefined}
-        />
+        <TurnBody sessionId={props.sessionId} turn={turn} name={name} threadId={threadId} />
+        <TurnActions turn={turn} name={name} threadId={threadId} />
         {turn.prompt ? (
           <details className="vc-rt-turn__prompt">
             <summary>
@@ -339,20 +413,31 @@ function TurnBubble(props: {
   );
 }
 
-function RoundSeparator(props: { round: number; maxRounds: number }) {
-  const max = displayMaxRounds(props.maxRounds);
-  const round = props.round;
+function RoundSeparator(props: { turn: RoundtableTurn; maxRounds: number }) {
+  const { turn } = props;
+  const { i18n } = useLingui();
+  const shown = displayRound(turn, props.maxRounds);
+  const round = shown?.round;
+  const max = shown?.max;
+  let label: ReactNode;
+  if (shown) {
+    label =
+      max === null ? (
+        <Trans>Round {round}</Trans>
+      ) : (
+        <Trans>
+          Round {round} of {max}
+        </Trans>
+      );
+  } else if (turn.phase === "propose") {
+    label = <Trans>Proposals</Trans>;
+  } else {
+    label = turn.phase ? i18n._(PHASE_LABELS[turn.phase]) : null;
+  }
+  if (label === null) return null;
   return (
     <div className="vc-rt-round" role="separator">
-      <span className="vc-rt-round__label">
-        {max === null ? (
-          <Trans>Round {round}</Trans>
-        ) : (
-          <Trans>
-            Round {round} of {max}
-          </Trans>
-        )}
-      </span>
+      <span className="vc-rt-round__label">{label}</span>
     </div>
   );
 }
@@ -371,6 +456,20 @@ function TaskCard(props: { task: string }) {
   );
 }
 
+/** The shared instructions, collapsed: they matter, but the conversation comes first. */
+function InstructionsCard(props: { instructions: string }) {
+  return (
+    <details className="vc-rt-task rt-view-instructions">
+      <summary className="vc-rt-task__heading rt-view-instructions__summary">
+        <Trans>Instructions for everyone</Trans>
+      </summary>
+      <div className="vc-rt-turn__markdown">
+        <ItemMarkdown text={props.instructions} />
+      </div>
+    </details>
+  );
+}
+
 function DecisionCard(props: { session: RoundtableSession }) {
   const { session } = props;
   const { i18n, t } = useLingui();
@@ -385,13 +484,15 @@ function DecisionCard(props: { session: RoundtableSession }) {
     ? undefined
     : session.participants.find((participant) => participant.id === decision?.participantId)?.label;
   const winnerName = winner?.label;
+  // Running out of rounds is not a result to celebrate: the work was not approved.
+  const unapproved = outcome?.reason === "max-rounds";
+  const heading = unapproved ? t`Not approved yet` : t`Result`;
+  const Icon = unapproved ? TriangleAlert : CircleCheck;
   return (
-    <section className="vc-rt-decision" aria-label={t`Decision`}>
+    <section className="vc-rt-decision" aria-label={heading}>
       <header className="vc-rt-decision__header">
-        <Crown aria-hidden="true" className="size-4 shrink-0" />
-        <span>
-          <Trans>Decision</Trans>
-        </span>
+        <Icon aria-hidden="true" className="size-4 shrink-0" />
+        <span>{heading}</span>
       </header>
       {outcome ? (
         <p className="vc-rt-decision__reason">{i18n._(OUTCOME_LABELS[outcome.reason])}</p>
@@ -401,7 +502,7 @@ function DecisionCard(props: { session: RoundtableSession }) {
           <ParticipantAvatar participant={winner} />
           <span>
             <Trans>
-              Winner: <strong>{winnerName}</strong>
+              Recommended: <strong>{winnerName}</strong>
             </Trans>
           </span>
         </div>
@@ -413,6 +514,9 @@ function DecisionCard(props: { session: RoundtableSession }) {
           </p>
           <div className="vc-rt-turn__markdown">
             <ItemMarkdown text={rationale} />
+          </div>
+          <div className="rt-view-turn-actions">
+            <CopyTextButton text={rationale} label={t`Copy rationale`} />
           </div>
         </div>
       ) : null}
@@ -468,17 +572,19 @@ export function RoundtableTranscript(props: { session: RoundtableSession }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   useStickToBottom(scrollRef, contentRef);
-  const entries = buildTranscriptEntries(session.turns, session.notes);
+  const entries = buildTranscriptEntries(session.turns, session.notes, session.pattern !== "open");
+  const instructions = session.instructions?.trim();
 
   return (
     <div ref={scrollRef} className="vc-rt-transcript" role="log" aria-label={t`Transcript`}>
       <div ref={contentRef} className="vc-rt-transcript__content">
-        <TaskCard task={session.task} />
+        {instructions ? <InstructionsCard instructions={instructions} /> : null}
+        {showsTaskCard(session) ? <TaskCard task={session.task} /> : null}
         {entries.map((entry) => {
           switch (entry.kind) {
             case "round":
               return (
-                <RoundSeparator key={entry.key} round={entry.round} maxRounds={session.maxRounds} />
+                <RoundSeparator key={entry.key} turn={entry.turn} maxRounds={session.maxRounds} />
               );
             case "note":
               return (
@@ -495,8 +601,7 @@ export function RoundtableTranscript(props: { session: RoundtableSession }) {
                   key={entry.key}
                   sessionId={session.id}
                   turn={entry.turn}
-                  participants={session.participants}
-                  threadIds={session.threadIds}
+                  session={session}
                 />
               );
           }

@@ -31,12 +31,46 @@ describe("Roundtable stylesheet", () => {
     }
   });
 
+  it("sets every label in sentence case (no uppercase or tracked caps)", () => {
+    parse(css).walkDecls((decl) => {
+      expect([decl.prop, decl.value]).not.toEqual(["text-transform", "uppercase"]);
+      expect(decl.prop).not.toBe("letter-spacing");
+    });
+  });
+
+  it("drops the fx background blur hook (Effects is gone)", () => {
+    expect(css).not.toContain("data-vc-bg-blur");
+  });
+
   it("uses fork tokens instead of literal colours", () => {
     parse(css).walkDecls((decl) => {
       expect([decl.prop, decl.value]).not.toEqual([
         decl.prop,
         expect.stringMatching(/#[0-9a-f]{3,8}\b|\brgb\(|\bhsl\(/i),
       ]);
+    });
+  });
+
+  it("keeps pill radii for the status dots only (chips, seats, avatars are squared)", () => {
+    for (const rule of rules()) {
+      if (!rule.nodes.some((n) => n.type === "decl" && n.value.includes("--vc-radius-pill")))
+        continue;
+      for (const selector of rule.selectors) expect(selector).toMatch(/dot|typing/);
+    }
+  });
+
+  it("tints live participant seats with a border, not a glow", () => {
+    parse(css).walkDecls("box-shadow", (decl) => {
+      expect(decl.value).not.toContain("--vc-rt-state");
+    });
+    expect(css).toMatch(
+      /\.vc-rt-participant:not\(\[data-vc-fx-state="idle"\]\)\s*\{\s*border-color: color-mix\(in oklab, var\(--vc-rt-state\) 40%, var\(--vc-border-subtle\)\)/,
+    );
+  });
+
+  it("drives every animation and transition timing from the motion tokens", () => {
+    parse(css).walkDecls(/^(animation|transition)/, (decl) => {
+      expect(decl.value).not.toMatch(/(^|[\s(,])[\d.]+m?s\b/);
     });
   });
 

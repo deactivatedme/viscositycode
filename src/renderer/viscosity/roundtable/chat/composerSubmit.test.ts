@@ -21,7 +21,9 @@ const mocks = vi.hoisted(() => ({
   saveDraft: vi.fn<(...args: unknown[]) => void>(),
   startRoundtable: vi.fn<(input: unknown) => Promise<string>>(),
   postToRoundtable: vi.fn<(...args: unknown[]) => Promise<void>>(),
+  toastStarted: vi.fn<(sessionId: string, message?: string) => void>(),
 }));
+vi.mock("./startedToast", () => ({ toastRoundtableStarted: mocks.toastStarted }));
 vi.mock("@/renderer/components/thread/SideChat/sideChatActions", () => ({
   sideChatAvailable: () => false,
   openSideChat: vi.fn<() => Promise<boolean>>(),
@@ -119,7 +121,7 @@ function context(): ComposerSubmitContext {
     setHasContent: vi.fn<() => void>(),
     setIsSubmitting: vi.fn<() => void>(),
     requestOpenControl: vi.fn<() => void>(),
-    roundtableMentionTargets: buildRoundtableMentionTargets(brains, []),
+    roundtableMentionTargets: buildRoundtableMentionTargets(brains),
   };
 }
 
@@ -178,6 +180,26 @@ describe("composer submit with Roundtable hook-ins", () => {
     expect(mocks.steer).not.toHaveBeenCalled();
     expect(ctx.mentionRef.current!.clear).toHaveBeenCalled();
     expect(mocks.clearDraft).toHaveBeenCalledWith("parent");
+  });
+
+  it("tells the user where every routed message went, not only the first", async () => {
+    const first = context();
+    first.latestSegmentsRef.current = [{ kind: "text", content: "@Alpha · One take a look" }];
+    await submitComposerPrompt(first.latestSegmentsRef.current, first);
+    await settled();
+    const later = context();
+    later.latestSegmentsRef.current = [{ kind: "text", content: "@alpha · one and now?" }];
+    await submitComposerPrompt(later.latestSegmentsRef.current, later);
+    await settled();
+    expect(mocks.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(mocks.postToRoundtable).toHaveBeenLastCalledWith("rt-1", "@alpha · one and now?", {
+      mentions: ["model:alpha:a1"],
+    });
+    expect(mocks.toastStarted.mock.calls).toEqual([
+      ["rt-1", "Roundtable started with Alpha · One"],
+      ["rt-1", "Sent to the Roundtable for Alpha · One"],
+    ]);
+    expect(later.mentionRef.current!.clear).toHaveBeenCalled();
   });
 
   it("leaves a mention-free surface (no targets) on the normal path", async () => {

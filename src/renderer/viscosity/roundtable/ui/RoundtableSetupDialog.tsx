@@ -1,6 +1,12 @@
 /**
  * ViscosityCode Roundtable UI: the "New Roundtable" setup dialog.
  *
+ * "Work together" (open) is the default and first choice: a team chat with
+ * no rounds and no roles, where the first message is optional. Compare comes
+ * second; the review, debate, relay and race patterns sit under "More ways to
+ * work". Instructions for everyone, and per participant, go to the engine
+ * with the start (prefilled seats bring their own).
+ *
  * Additive (AA compare): the "Ask all (compare)" card seats every ready
  * provider (up to five); compare takes no roles, rounds or checkout choice.
  * Opened through "Ask all models…", the seats keep following the ready list
@@ -27,8 +33,9 @@ import {
   toast,
 } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Plus, Settings2, Sparkles, X } from "lucide-react";
+import { ChevronRight, Plus, Settings2, Sparkles, X } from "lucide-react";
 import { isHomeProject } from "@/shared/homeScope";
+import type { SavedPlaybook } from "@/shared/viscosity/playbook";
 import { XAI_US_TEXT_MODELS } from "@/shared/viscosity/xaiContract";
 import { getCurrentProjectId } from "@/renderer/actions/currentProject";
 import { Button } from "@/renderer/components/common/Button";
@@ -45,6 +52,9 @@ import { usePanelStore } from "@/renderer/state/panelStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useXaiKeyStatus } from "@/renderer/viscosity/xai/useXaiKeyStatus";
 import { type ReadyAgentBrain, startRoundtable, useReadyAgentBrains } from "../api";
+import { linkRoundtableToOriginChat } from "../chat/start";
+import { toastRoundtableStarted } from "../chat/startedToast";
+import { useRoundtablePlaybookCatalog } from "../playbooks";
 import type { ParticipantBrain, ParticipantRole, RoundtablePattern } from "../types";
 import { postOpeningMessage } from "./openingMessage";
 import { ParticipantAvatar } from "./ParticipantAvatar";
@@ -52,6 +62,7 @@ import {
   defaultMaxRounds,
   MAX_PARTICIPANTS,
   MAX_ROUNDS_LIMIT,
+  MORE_PATTERNS,
   PATTERN_DESCRIPTIONS,
   PATTERN_LABELS,
   patternIsAnswerOnly,
@@ -82,6 +93,7 @@ import {
   roundsApply,
   seatAllReady,
   seatFromProfile,
+  setSeatPlaybook,
   type SetupProblem,
   type SetupSeat,
   updateSeat,
@@ -97,8 +109,9 @@ export function findSetupBlocker(
   draft: RoundtableSetupDraft,
   ready: readonly ReadyAgentBrain[],
   xaiConfigured: boolean,
+  playbooks: readonly SavedPlaybook[] = [],
 ): SetupBlocker | null {
-  const problem = validateSetup(draft);
+  const problem = validateSetup(draft, playbooks);
   if (problem) return problem;
   const readyKinds = new Set(ready.map((brain) => brain.agentKind));
   for (const seat of draft.seats) {
@@ -130,12 +143,28 @@ function useBlockerMessage(blocker: SetupBlocker | null): string {
     case "agent-unavailable":
       return t`A participant's agent is not signed in for this project.`;
     case "xai-unavailable":
-      return t`Grok over the xAI API needs an API key in Settings.`;
+      return t`Grok over the xAI API needs an API key in Settings → xAI API.`;
+    case "read-only-playbook":
+      return t`A seat that must edit files has a read-only playbook. Give read-only playbooks to reviewer seats only, or choose another pattern.`;
   }
 }
 
+/** Seat playbook choice: the table's, none, or one playbook (ids never start with ":"). */
+const SEAT_PLAYBOOK_TABLE = ":table";
+const PLAYBOOK_NONE = ":none";
+
+function seatPlaybookValue(playbookId: string | null | undefined): string {
+  if (playbookId === undefined) return SEAT_PLAYBOOK_TABLE;
+  return playbookId ?? PLAYBOOK_NONE;
+}
+
+function seatPlaybookFromValue(value: string): string | null | undefined {
+  if (value === SEAT_PLAYBOOK_TABLE) return undefined;
+  return value === PLAYBOOK_NONE ? null : value;
+}
+
 function initialDraft(request: RoundtableSetupRequest): RoundtableSetupDraft {
-  const pattern = request.pattern ?? "build-review";
+  const pattern = request.pattern ?? "open";
   const projects = useAppStore.getState().projects;
   const projectId =
     request.projectId ??
@@ -144,6 +173,7 @@ function initialDraft(request: RoundtableSetupRequest): RoundtableSetupDraft {
   return {
     title: request.title ?? "",
     task: request.task ?? "",
+    instructions: "",
     projectId,
     pattern,
     seats: request.participants?.map(seatFromProfile) ?? [],
@@ -151,7 +181,7 @@ function initialDraft(request: RoundtableSetupRequest): RoundtableSetupDraft {
     worktreeMode: "current",
     branchName: "",
     ...(request.originThreadId ? { originThreadId: request.originThreadId } : {}),
-    // Seats that arrive with the request (bots, an invited chat) keep their roles.
+    // Seats that arrive with the request (a Roundtable continued as a team chat) keep their roles.
     rolesCustomized: (request.participants?.length ?? 0) > 0,
   };
 }
@@ -218,15 +248,22 @@ function SeatRow(props: {
   index: number;
   ready: readonly ReadyAgentBrain[];
   providers: ReturnType<typeof buildProviderModelMenuProviders>;
-  /** Roles do not apply to every pattern (compare: everyone answers). */
+  /** Roles do not apply to every pattern (work together, compare: everyone answers). */
   showRole: boolean;
   onBrainChange: (brain: ParticipantBrain) => void;
   onRoleChange: (role: ParticipantRole) => void;
+  onInstructionsChange: (instructions: string) => void;
+  playbooks: readonly SavedPlaybook[];
+  onPlaybookChange: (playbookId: string | null | undefined) => void;
   onRemove: () => void;
 }) {
   const { t, i18n } = useLingui();
   const { seat, ready } = props;
   const seatNumber = props.index + 1;
+  // Seats that arrive with instructions (an earlier Roundtable's seats) show them.
+  const [showInstructions, setShowInstructions] = useState(
+    Boolean(seat.instructions) || seat.playbookId !== undefined,
+  );
   const roleOptions = ROUNDTABLE_ROLES.map((role) => ({
     id: role,
     label: i18n._(ROLE_LABELS[role]),
@@ -244,54 +281,102 @@ function SeatRow(props: {
   }
 
   return (
-    <li className="vc-rt-seat" data-vc-rt-seat={seat.id} aria-label={t`Participant ${seatNumber}`}>
-      <span aria-hidden="true" className="vc-rt-seat__number">
-        {seatNumber}
-      </span>
-      <ParticipantAvatar
-        participant={{ label, brain: seat.brain, ...(seat.avatar ? { avatar: seat.avatar } : {}) }}
-      />
-      <div className="vc-rt-seat__brain">
-        {seat.brain.kind === "agent" ? (
-          <ProviderModelMenu
-            providers={props.providers}
-            triggerAppearance="field"
-            menuLabel={t`Provider and model for participant ${seatNumber}`}
-            currentAgentKind={seat.brain.agentKind}
-            currentModel={seat.brain.model}
-            presentationMode={seat.brain.presentationMode}
-            onChange={onProviderModelChange}
-          />
-        ) : (
-          <XaiSeatControls
-            brain={seat.brain}
-            seatNumber={seatNumber}
-            onChange={props.onBrainChange}
-          />
-        )}
-      </div>
-      {props.showRole ? (
-        <Select
-          aria-label={t`Role of participant ${seatNumber}`}
-          className="w-[116px] shrink-0"
-          options={roleOptions}
-          value={seat.role}
-          onChange={(value) => {
-            const role = ROUNDTABLE_ROLES.find((candidate) => candidate === value);
-            if (role) props.onRoleChange(role);
+    <li
+      className="vc-rt-seat vc-rt-setup__seat"
+      data-vc-rt-seat={seat.id}
+      aria-label={t`Participant ${seatNumber}`}
+    >
+      <div className="vc-rt-setup__seat-row">
+        <span aria-hidden="true" className="vc-rt-seat__number">
+          {seatNumber}
+        </span>
+        <ParticipantAvatar
+          participant={{
+            label,
+            brain: seat.brain,
+            ...(seat.avatar ? { avatar: seat.avatar } : {}),
           }}
         />
+        <div className="vc-rt-seat__brain">
+          {seat.brain.kind === "agent" ? (
+            <ProviderModelMenu
+              providers={props.providers}
+              triggerAppearance="field"
+              menuLabel={t`Provider and model for participant ${seatNumber}`}
+              currentAgentKind={seat.brain.agentKind}
+              currentModel={seat.brain.model}
+              presentationMode={seat.brain.presentationMode}
+              onChange={onProviderModelChange}
+            />
+          ) : (
+            <XaiSeatControls
+              brain={seat.brain}
+              seatNumber={seatNumber}
+              onChange={props.onBrainChange}
+            />
+          )}
+        </div>
+        {props.showRole ? (
+          <Select
+            aria-label={t`Role of participant ${seatNumber}`}
+            className="w-[116px] shrink-0"
+            options={roleOptions}
+            value={seat.role}
+            onChange={(value) => {
+              const role = ROUNDTABLE_ROLES.find((candidate) => candidate === value);
+              if (role) props.onRoleChange(role);
+            }}
+          />
+        ) : null}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="shrink-0 text-muted"
+          aria-expanded={showInstructions}
+          aria-label={t`Edit instructions for participant ${seatNumber}`}
+          onPress={() => setShowInstructions((shown) => !shown)}
+        >
+          <Trans>Instructions</Trans>
+        </Button>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          aria-label={t`Remove participant ${seatNumber}`}
+          className="text-muted"
+          onPress={props.onRemove}
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+      {showInstructions ? (
+        <Select
+          label={t`Playbook`}
+          aria-label={t`Playbook for participant ${seatNumber}`}
+          className="max-w-[280px]"
+          options={[
+            { id: SEAT_PLAYBOOK_TABLE, label: t`Same as everyone` },
+            { id: PLAYBOOK_NONE, label: t`No playbook` },
+            ...props.playbooks.map((playbook) => ({ id: playbook.id, label: playbook.label })),
+          ]}
+          value={seatPlaybookValue(seat.playbookId)}
+          onChange={(value) => props.onPlaybookChange(seatPlaybookFromValue(value))}
+        />
       ) : null}
-      <Button
-        isIconOnly
-        size="sm"
-        variant="ghost"
-        aria-label={t`Remove participant ${seatNumber}`}
-        className="text-muted"
-        onPress={props.onRemove}
-      >
-        <X className="size-3.5" />
-      </Button>
+      {showInstructions ? (
+        <TextField
+          aria-label={t`Instructions for participant ${seatNumber}`}
+          value={seat.instructions ?? ""}
+          onChange={props.onInstructionsChange}
+        >
+          <TextArea
+            autoSize
+            maxRows={6}
+            rows={2}
+            placeholder={t`Role or focus for this AI, e.g. backend, tests, reviewer`}
+          />
+        </TextField>
+      ) : null}
     </li>
   );
 }
@@ -333,6 +418,11 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
   const [seeded, setSeeded] = useState(draft.seats.length > 0);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  // The competitive patterns stay one click away; open when one is preselected.
+  const [showMore, setShowMore] = useState(false);
+  // A selected competitive pattern keeps its card on screen.
+  const moreSelected = MORE_PATTERNS.includes(draft.pattern);
+  const moreShown = showMore || moreSelected;
 
   // Every project a thread can run in, Home included (the current one is preselected).
   const projects = useAppStore((state) => state.projects);
@@ -343,6 +433,7 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
   // Only the key's status reaches the page; the key stays in the main process.
   const xaiKey = useXaiKeyStatus();
   const xaiConfigured = xaiKey.available && xaiKey.status?.configured === true;
+  const playbooks = useRoundtablePlaybookCatalog();
 
   // "Ask all models…" (compare, no seats in the request): the seats follow the
   // ready list while agent statuses are still arriving, until the user edits
@@ -380,10 +471,12 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
     },
   );
 
-  const blocker = findSetupBlocker(draft, ready, xaiConfigured);
+  const blocker = findSetupBlocker(draft, ready, xaiConfigured, playbooks);
   const blockerMessage = useBlockerMessage(blocker);
   const ownWorktrees = patternUsesOwnWorktrees(draft.pattern);
   const answerOnly = patternIsAnswerOnly(draft.pattern);
+  const together = draft.pattern === "open";
+  const showRounds = roundsApply(draft.pattern) || answerOnly;
 
   function edit(next: (current: RoundtableSetupDraft) => RoundtableSetupDraft) {
     setStartError(null);
@@ -413,10 +506,17 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
     try {
       sessionId = await startRoundtable(input);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Dismissed while starting: the dialog is gone, so say it here.
+      if (useRoundtableViewStore.getState().setup !== opening) {
+        toast.danger(message);
+        return;
+      }
       setStarting(false);
-      setStartError(error instanceof Error ? error.message : String(error));
+      setStartError(message);
       return;
     }
+    linkRoundtableToOriginChat(input, sessionId);
     // An open chat waits for messages: its task is the first one, so the
     // participants answer right away. The session has started either way, so
     // a failed post is only reported.
@@ -425,14 +525,35 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
         toast.danger(error instanceof Error ? error.message : String(error)),
       );
     }
-    // Dismissed while starting: the session runs and is listed, but the
-    // window does not jump to it.
+    // Never switch to the Roundtable by itself: the toast's Open action
+    // brings it forward when the user wants it.
+    toastRoundtableStarted(sessionId);
+    // Dismissed while starting: the session runs and is listed, but it does
+    // not take the tab.
     if (useRoundtableViewStore.getState().setup !== opening) return;
     closeRoundtableSetup();
-    // Never switch to the Roundtable by itself: its tab appears in the
-    // background and the user opens it when they want to.
     openRoundtableTab(sessionId);
-    toast.success(t`Roundtable started`);
+  }
+
+  function patternCard(pattern: RoundtablePattern) {
+    return (
+      <div
+        key={pattern}
+        className="vc-rt-pattern"
+        data-selected={draft.pattern === pattern || undefined}
+      >
+        <Radio className="group w-full cursor-pointer" value={pattern}>
+          <Radio.Content className="block w-full cursor-pointer px-3 py-2">
+            <span className="block text-sm font-medium text-foreground">
+              {i18n._(PATTERN_LABELS[pattern])}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted">
+              {i18n._(PATTERN_DESCRIPTIONS[pattern])}
+            </span>
+          </Radio.Content>
+        </Radio>
+      </div>
+    );
   }
 
   const footerMessage = startError ?? blockerMessage;
@@ -448,7 +569,15 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
               <Trans>New Roundtable</Trans>
             </Modal.Heading>
           </Modal.Header>
-          <Modal.Body className="flex flex-col gap-4 p-4">
+          <Modal.Body
+            className="flex flex-col gap-4 p-4"
+            onKeyDown={(event) => {
+              // Cmd/Ctrl+Enter starts from any field.
+              if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey)) return;
+              event.preventDefault();
+              void start();
+            }}
+          >
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,220px)]">
               <TextField
                 value={draft.title}
@@ -470,28 +599,13 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
               />
             </div>
 
-            <TextField
-              isRequired
-              value={draft.task}
-              onChange={(task) => edit((current) => ({ ...current, task }))}
-            >
-              <Label>
-                <Trans>Task</Trans>
-              </Label>
-              <TextArea
-                rows={4}
-                className="min-h-24 resize-y"
-                placeholder={t`What should the table work on?`}
-              />
-            </TextField>
-
             <fieldset className="vc-rt-setup__section">
               <legend className="vc-rt-setup__legend">
-                <Trans>Pattern</Trans>
+                <Trans>How should they work?</Trans>
               </legend>
               <RadioGroup
-                aria-label={t`Pattern`}
-                className="vc-rt-setup__patterns !grid gap-2 sm:grid-cols-2 [&_[data-slot=radio]]:!mt-0"
+                aria-label={t`How should they work?`}
+                className="vc-rt-setup__patterns !flex flex-col gap-2 [&_[data-slot=radio]]:!mt-0"
                 value={draft.pattern}
                 onChange={(value) => {
                   const pattern = ROUNDTABLE_PATTERNS.find((candidate) => candidate === value);
@@ -503,26 +617,60 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                   });
                 }}
               >
-                {ROUNDTABLE_PATTERNS.map((pattern: RoundtablePattern) => (
-                  <div
-                    key={pattern}
-                    className="vc-rt-pattern"
-                    data-selected={draft.pattern === pattern || undefined}
-                  >
-                    <Radio className="group w-full cursor-pointer" value={pattern}>
-                      <Radio.Content className="block w-full cursor-pointer px-3 py-2">
-                        <span className="block text-sm font-medium text-foreground">
-                          {i18n._(PATTERN_LABELS[pattern])}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-muted">
-                          {i18n._(PATTERN_DESCRIPTIONS[pattern])}
-                        </span>
-                      </Radio.Content>
-                    </Radio>
-                  </div>
-                ))}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {ROUNDTABLE_PATTERNS.filter((pattern) => !MORE_PATTERNS.includes(pattern)).map(
+                    patternCard,
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="vc-rt-setup__more w-fit text-muted"
+                  aria-expanded={moreShown}
+                  isDisabled={moreSelected}
+                  onPress={() => setShowMore((shown) => !shown)}
+                >
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-3.5"
+                    data-expanded={moreShown || undefined}
+                  />
+                  <Trans>More ways to work (review loops, debate, relay, race)</Trans>
+                </Button>
+                {moreShown ? (
+                  <div className="grid gap-2 sm:grid-cols-2">{MORE_PATTERNS.map(patternCard)}</div>
+                ) : null}
               </RadioGroup>
             </fieldset>
+
+            <Select
+              label={t`Playbook`}
+              className="max-w-[280px]"
+              options={[
+                { id: PLAYBOOK_NONE, label: t`No playbook` },
+                ...playbooks.map((playbook) => ({ id: playbook.id, label: playbook.label })),
+              ]}
+              value={draft.playbookId ?? PLAYBOOK_NONE}
+              onChange={(value) =>
+                edit(({ playbookId: _previous, ...current }) =>
+                  value === PLAYBOOK_NONE ? current : { ...current, playbookId: value },
+                )
+              }
+            />
+
+            <TextField
+              value={draft.instructions}
+              onChange={(instructions) => edit((current) => ({ ...current, instructions }))}
+            >
+              <Label>
+                <Trans>Instructions for everyone</Trans>
+              </Label>
+              <TextArea
+                rows={3}
+                className="resize-y"
+                placeholder={t`Context, rules or goals every AI should follow. You can change these later.`}
+              />
+            </TextField>
 
             <fieldset className="vc-rt-setup__section">
               <legend className="vc-rt-setup__legend">
@@ -540,17 +688,32 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
                       index={index}
                       ready={ready}
                       providers={providers}
-                      showRole={!answerOnly}
+                      showRole={!answerOnly && !together}
                       onBrainChange={(brain) =>
                         editSeats((current) => updateSeat(current, seat.id, { brain }))
                       }
                       onRoleChange={(role) =>
                         editSeats((current) => updateSeat(current, seat.id, { role }))
                       }
+                      onInstructionsChange={(instructions) =>
+                        editSeats((current) => updateSeat(current, seat.id, { instructions }))
+                      }
+                      playbooks={playbooks}
+                      onPlaybookChange={(playbookId) =>
+                        editSeats((current) => setSeatPlaybook(current, seat.id, playbookId))
+                      }
                       onRemove={() => editSeats((current) => removeSeat(current, seat.id))}
                     />
                   ))}
                 </ol>
+              ) : null}
+              {together && draft.seats.length > 1 ? (
+                <p className="text-xs text-muted">
+                  <Trans>
+                    They answer in this order, and each one sees the replies before it. @mention
+                    someone to ask only them.
+                  </Trans>
+                </p>
               ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -576,43 +739,60 @@ export function RoundtableSetupDialog(props: { request: RoundtableSetupRequest }
               </div>
             </fieldset>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="vc-rt-setup__section">
-                {roundsApply(draft.pattern) ? (
-                  <NumberField
-                    minValue={1}
-                    maxValue={MAX_ROUNDS_LIMIT}
-                    step={1}
-                    value={draft.maxRounds}
-                    onChange={(value) => {
-                      if (value === undefined || Number.isNaN(value)) return;
-                      edit((current) => ({ ...current, maxRounds: Math.floor(value) }));
-                    }}
-                  >
-                    <Label>
-                      <Trans>Max rounds</Trans>
-                    </Label>
-                    <NumberField.Group>
-                      <NumberField.DecrementButton />
-                      <NumberField.Input />
-                      <NumberField.IncrementButton />
-                    </NumberField.Group>
-                  </NumberField>
-                ) : (
-                  <>
-                    <span className="vc-rt-setup__legend">
-                      <Trans>Max rounds</Trans>
-                    </span>
-                    <p className="text-xs text-muted">
-                      {answerOnly ? (
+            <TextField
+              isRequired={!together}
+              value={draft.task}
+              onChange={(task) => edit((current) => ({ ...current, task }))}
+            >
+              <Label>
+                {together ? <Trans>First message (optional)</Trans> : <Trans>Task</Trans>}
+              </Label>
+              <TextArea
+                rows={4}
+                className="min-h-24 resize-y"
+                placeholder={
+                  together
+                    ? t`What should the team work on? @mention someone to ask only them.`
+                    : t`What should the table work on?`
+                }
+              />
+            </TextField>
+
+            <div className={showRounds ? "grid gap-3 sm:grid-cols-2" : "grid gap-3"}>
+              {showRounds ? (
+                <div className="vc-rt-setup__section">
+                  {roundsApply(draft.pattern) ? (
+                    <NumberField
+                      minValue={1}
+                      maxValue={MAX_ROUNDS_LIMIT}
+                      step={1}
+                      value={draft.maxRounds}
+                      onChange={(value) => {
+                        if (value === undefined || Number.isNaN(value)) return;
+                        edit((current) => ({ ...current, maxRounds: Math.floor(value) }));
+                      }}
+                    >
+                      <Label>
+                        <Trans>Max rounds</Trans>
+                      </Label>
+                      <NumberField.Group>
+                        <NumberField.DecrementButton />
+                        <NumberField.Input />
+                        <NumberField.IncrementButton />
+                      </NumberField.Group>
+                    </NumberField>
+                  ) : (
+                    <>
+                      <span className="vc-rt-setup__legend">
+                        <Trans>Max rounds</Trans>
+                      </span>
+                      <p className="text-xs text-muted">
                         <Trans>One answer from each participant.</Trans>
-                      ) : (
-                        <Trans>Unlimited: the chat runs until you stop it.</Trans>
-                      )}
-                    </p>
-                  </>
-                )}
-              </div>
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : null}
               <div className="vc-rt-setup__section">
                 <span className="vc-rt-setup__legend">
                   <Trans>Checkout</Trans>

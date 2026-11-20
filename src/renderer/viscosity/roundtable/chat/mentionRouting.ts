@@ -1,10 +1,11 @@
 /**
- * ViscosityCode: route a chat message that `@mentions` models or bots into an
+ * ViscosityCode: route a chat message that `@mentions` models into an
  * open-pattern Roundtable with the chat as its origin.
  *
  * The first such message starts the Roundtable (the chat's own agent holds
  * seat 0, which the engine binds to the chat thread; the mentioned
- * participants join) and every later one reuses it through the per-chat link.
+ * participants join) and every later one reuses it through the per-chat link;
+ * someone mentioned for the first time joins that Roundtable.
  * The message itself is always delivered with `postToRoundtable(…, { mentions })`:
  * in the open pattern only posted messages get replies, and only from the
  * participants they mention. Only engine calls from `../api` are used; the
@@ -12,7 +13,8 @@
  */
 import { msg } from "@lingui/core/macro";
 import { i18n } from "@/renderer/i18n/i18n";
-import { postToRoundtable, startRoundtable } from "../api";
+import { addRoundtableParticipants, postToRoundtable, startRoundtable } from "../api";
+import { RoundtableInputError } from "../engine/session";
 import type { ParticipantProfile } from "../types";
 import {
   forgetRoundtableChatLink,
@@ -53,45 +55,44 @@ export async function postMentionedRoundtableMessage(
 ): Promise<MentionedRoundtableResult> {
   const threadId = message.origin.id;
   const mentionIds = [...new Set(message.mentioned.map((target) => target.id))];
+  const mentionedSeats = message.mentioned.map((target) =>
+    candidateToProfile(target.candidate, "member"),
+  );
   const linked = getRoundtableChatLink(threadId);
   const reusable = linked && isReusableRoundtable(linked.sessionId) ? linked : undefined;
   if (linked && !reusable) forgetRoundtableChatLink(threadId);
-  let link = reusable;
 
-  if (reusable && mentionIds.every((id) => reusable.participants.some((seat) => seat.id === id))) {
+  if (reusable) {
+    // Someone new joins the chat's Roundtable (ViscosityCode: Work together),
+    // so everyone keeps their thread and context.
+    const participants = mergeSeats(reusable.participants, mentionedSeats);
+    assertSeatLimit(participants);
+    const joining = participants.slice(reusable.participants.length);
     try {
+      if (joining.length > 0) await addRoundtableParticipants(reusable.sessionId, joining);
       await postToRoundtable(reusable.sessionId, message.text, { mentions: mentionIds });
-      setRoundtableChatLink(threadId, { ...reusable, updatedAt: now() });
+      setRoundtableChatLink(threadId, { ...reusable, participants, updatedAt: now() });
       return { sessionId: reusable.sessionId, created: false };
-    } catch {
+    } catch (error) {
+      // Who cannot join (seat limit, missing model) is the user's to fix; a
+      // fresh session would leave this one running beside it.
+      if (error instanceof RoundtableInputError) throw error;
       // The linked session is gone or has ended (the
       // engine rejects such posts). Start a fresh one below so this message
       // is not lost.
       forgetRoundtableChatLink(threadId);
-      link = undefined;
     }
   }
 
-  // Someone new was mentioned (or there is no Roundtable yet). The engine API
-  // has no "add a seat" call, so seat everyone so far in a new open Roundtable,
-  // the chat's own agent first (with its current model).
+  // No Roundtable yet: seat the chat's own agent first (with its current
+  // model), then everyone mentioned, in a new open Roundtable.
   const origin = originParticipantProfile(
     message.origin,
     message.targets.map((target) => target.candidate),
     "member",
   );
-  const participants = mergeSeats(
-    [origin],
-    link?.participants ?? [],
-    message.mentioned.map((target) => candidateToProfile(target.candidate, "member")),
-  );
-  if (participants.length > MAX_ROUNDTABLE_PARTICIPANTS) {
-    throw new Error(
-      i18n._(
-        msg`A Roundtable seats up to ${MAX_ROUNDTABLE_PARTICIPANTS} participants, this chat included. Mention someone already seated, or start another chat.`,
-      ),
-    );
-  }
+  const participants = mergeSeats([origin], mentionedSeats);
+  assertSeatLimit(participants);
   const sessionId = await startRoundtable({
     task: message.text,
     pattern: "open",
@@ -103,4 +104,14 @@ export async function postMentionedRoundtableMessage(
   setRoundtableChatLink(threadId, { sessionId, participants, updatedAt: now() });
   await postToRoundtable(sessionId, message.text, { mentions: mentionIds });
   return { sessionId, created: true };
+}
+
+function assertSeatLimit(participants: readonly ParticipantProfile[]): void {
+  if (participants.length > MAX_ROUNDTABLE_PARTICIPANTS) {
+    throw new Error(
+      i18n._(
+        msg`A Roundtable seats up to ${MAX_ROUNDTABLE_PARTICIPANTS} participants, this chat included. Mention someone already seated, or start another chat.`,
+      ),
+    );
+  }
 }

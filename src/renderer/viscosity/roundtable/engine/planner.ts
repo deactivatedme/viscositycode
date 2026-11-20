@@ -159,9 +159,42 @@ class SessionView {
     );
   }
 
+  /**
+   * Whether this participant's next prompt carries the instructions: on its
+   * first finished turn (the origin seat too), and again once an edit changed
+   * its own or the shared instructions after its latest finished turn
+   * started. Not on every turn: thread drivers keep every prompt in the
+   * agent's own context. A race launch prompt is shared by every racer and
+   * cannot carry a racer's own instructions, so race turns do not count.
+   */
+  private instructionsDue(participantId: string): "first" | "edited" | false {
+    let latestStart: number | undefined;
+    for (const turn of this.session.turns) {
+      if (turn.participantId !== participantId || turn.status !== "done") continue;
+      if (turn.phase === "race") continue;
+      latestStart = Math.max(latestStart ?? 0, turn.startedAt ?? 0);
+    }
+    if (latestStart === undefined) return "first";
+    const own = this.session.instructionsUpdatedFor?.[participantId];
+    const stamp = Math.max(
+      typeof own === "number" ? own : 0,
+      this.session.instructionsUpdatedAt ?? 0,
+    );
+    return stamp > latestStart ? "edited" : false;
+  }
+
+  /** The task for prompts; empty for an open chat whose task is just its first message. */
+  private promptTask(): string {
+    const { session } = this;
+    const first = session.notes?.[0];
+    if (session.pattern === "open" && first && first.text.trim() === session.task.trim()) return "";
+    return session.task;
+  }
+
   /** Prompt identity for one participant's next turn. */
   identity(participant: ParticipantProfile, notes: readonly string[] = []): PromptIdentity {
     const first = !this.hasHistory(participant.id);
+    const refresh = this.instructionsDue(participant.id);
     const origin = this.context.origin;
     const originParticipant = this.session.participants[0];
     return {
@@ -169,8 +202,12 @@ class SessionView {
       role: participant.role,
       pattern: this.session.pattern,
       roster: this.session.participants.map((member) => this.label(member.id)),
-      task: this.session.task,
-      ...(first && participant.instructions ? { instructions: participant.instructions } : {}),
+      task: this.promptTask(),
+      ...(refresh && participant.instructions ? { instructions: participant.instructions } : {}),
+      ...(refresh && this.session.instructions
+        ? { sharedInstructions: this.session.instructions }
+        : {}),
+      ...(refresh === "edited" ? { instructionsEdited: true } : {}),
       notes,
       ...(first && origin && originParticipant && !this.isOriginParticipant(participant.id)
         ? {
@@ -251,6 +288,33 @@ export function seatedJudge(
   return participants.filter((participant) => participant !== judge).length >= 2
     ? judge
     : undefined;
+}
+
+/**
+ * Seats whose turns edit files, as the plans below pick them: the builder
+ * (build ↔ review), every relay stage, every racer, and every debater when the
+ * winner implements (any of them can win). Other patterns edit nothing.
+ */
+export function editingSeats(
+  session: Pick<RoundtableSession, "pattern" | "participants" | "implementWinner">,
+): ParticipantProfile[] {
+  const { participants } = session;
+  switch (session.pattern) {
+    case "build-review": {
+      const builder = firstWithRole(participants, "builder") ?? participants[0];
+      return builder ? [builder] : [];
+    }
+    case "relay":
+      return [...participants];
+    case "race":
+    case "debate": {
+      if (session.pattern === "debate" && !session.implementWinner) return [];
+      const judge = seatedJudge(participants);
+      return participants.filter((participant) => participant !== judge);
+    }
+    default:
+      return [];
+  }
 }
 
 // --- build ↔ review ------------------------------------------------------------
@@ -528,6 +592,7 @@ function planRace(view: SessionView): RoundtablePlan {
         roster: [],
         task: session.task,
         notes: notes.texts,
+        ...(session.instructions ? { sharedInstructions: session.instructions } : {}),
         ...(origin
           ? { origin: { label: "the original conversation", text: origin.text, mention: false } }
           : {}),
@@ -547,6 +612,8 @@ function planRace(view: SessionView): RoundtablePlan {
           roster: [],
           task: session.task,
           notes: notes.texts,
+          ...(session.instructions ? { sharedInstructions: session.instructions } : {}),
+          ...(racer.instructions ? { instructions: racer.instructions } : {}),
         });
         return { participantId: racer.id, round: 0, phase: "race" as const, prompt };
       }),
@@ -633,15 +700,24 @@ function planRace(view: SessionView): RoundtablePlan {
 
 // --- open group chat -----------------------------------------------------------
 
-/** The group conversation in time order: user notes and finished replies. */
-export function groupTranscript(session: RoundtableSession): ChatMessage[] {
+/**
+ * The group conversation in time order: user notes and finished replies.
+ * `uptoNoteId`: leave out the messages posted after that note (and replies to
+ * them), so a reply to it never sees a later question.
+ */
+export function groupTranscript(session: RoundtableSession, uptoNoteId?: string): ChatMessage[] {
   const labels = uniqueLabels(session.participants);
+  const notes = session.notes ?? [];
+  const cut = uptoNoteId === undefined ? -1 : notes.findIndex((note) => note.id === uptoNoteId);
+  const later = new Set(cut < 0 ? [] : notes.slice(cut + 1).map((note) => note.id));
   const entries: Array<{ at: number; order: number; message: ChatMessage }> = [];
-  (session.notes ?? []).forEach((note, index) => {
+  notes.forEach((note, index) => {
+    if (later.has(note.id)) return;
     entries.push({ at: note.createdAt, order: index, message: { name: "User", text: note.text } });
   });
   session.turns.forEach((turn, index) => {
     if (turn.phase !== "reply" || turn.status !== "done") return;
+    if (turn.noteId !== undefined && later.has(turn.noteId)) return;
     entries.push({
       at: turn.endedAt ?? turn.startedAt ?? 0,
       order: 100_000 + index,
@@ -659,13 +735,16 @@ export function groupTranscript(session: RoundtableSession): ChatMessage[] {
 function planOpen(view: SessionView): RoundtablePlan {
   const { session } = view;
   const byId = new Map(session.participants.map((participant) => [participant.id, participant]));
-  const candidates = session.participants.map((participant) => view.candidate(participant));
-  const transcript = groupTranscript(session).slice(-OPEN_TRANSCRIPT_MESSAGES);
-
   for (const note of session.notes ?? []) {
+    // The user stopped the replies to this message.
+    if (note.halted) continue;
+    // Participants added later never answer (or react to) earlier messages.
+    const seated = session.participants.filter(
+      (participant) => participant.joinedAt === undefined || participant.joinedAt <= note.createdAt,
+    );
+    const candidates = seated.map((participant) => view.candidate(participant));
     const mentioned = [...new Set(note.mentions ?? [])].filter((id) => byId.has(id));
-    let targets =
-      mentioned.length > 0 ? mentioned : session.participants.map((participant) => participant.id);
+    let targets = mentioned.length > 0 ? mentioned : seated.map((participant) => participant.id);
     let mentionedBy = new Map<string, QuotedOutput[]>();
     for (let round = 0; round <= OPEN_REACTION_ROUNDS && targets.length > 0; round += 1) {
       const replies: RoundtableTurn[] = [];
@@ -674,7 +753,7 @@ function planOpen(view: SessionView): RoundtablePlan {
         if (slot.state === "open") {
           const participant = byId.get(participantId)!;
           const prompt = buildOpenReplyPrompt(view.identity(participant), {
-            transcript,
+            transcript: groupTranscript(session, note.id).slice(-OPEN_TRANSCRIPT_MESSAGES),
             userMessage: note.text,
             ...(round > 0 ? { mentionedBy: mentionedBy.get(participantId) ?? [] } : {}),
           });
@@ -691,9 +770,7 @@ function planOpen(view: SessionView): RoundtablePlan {
         }
       }
       mentionedBy = next;
-      targets = session.participants
-        .map((participant) => participant.id)
-        .filter((id) => next.has(id));
+      targets = seated.map((participant) => participant.id).filter((id) => next.has(id));
     }
   }
   return { kind: "idle" };

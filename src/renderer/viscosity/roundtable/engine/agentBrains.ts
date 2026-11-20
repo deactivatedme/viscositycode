@@ -9,14 +9,18 @@
  * the Roundtable sends follow-ups to background threads.
  */
 import { authStateForPresentation } from "@/shared/agentSelection";
-import type {
-  AgentStatus,
-  ProjectDraftConfig,
-  ProviderDraftConfig,
-  ThreadConfig,
-  ThreadPresentationMode,
+import {
+  type AgentStatus,
+  type McpServer,
+  type ProjectDraftConfig,
+  type ProviderDraftConfig,
+  resolveComposerMcpScope,
+  type ThreadConfig,
+  type ThreadPresentationMode,
 } from "@/shared/contracts";
 import type { ProviderModelPreference } from "@/shared/settings";
+import type { SavedPlaybook } from "@/shared/viscosity/playbook";
+import { applyPlaybook } from "@/renderer/viscosity/playbooks/applyPlaybook";
 import {
   getProviderManifest,
   getProviderModelPickerRank,
@@ -99,13 +103,43 @@ export function selectReadyAgentBrains(input: ReadyAgentBrainsInput): ReadyAgent
     .map(({ rank: _rank, ...brain }) => brain);
 }
 
+/** A seat's resolved playbook and the MCP servers its names are matched against. */
+export interface SeatPlaybook {
+  definition: SavedPlaybook;
+  /** Global and project servers, merged (`mergeMcpServers`). */
+  mcpServers: readonly McpServer[];
+}
+
 /**
  * The thread config for an agent seat: the brain's model with the provider's
  * own effort/context/fast defaults for it. Mode, approval and sandbox are NOT
  * set, so the provider's defaults apply (peer output reaches these threads as
- * quoted context and must not run with elevated settings).
+ * quoted context and must not run with elevated settings) — a playbook never
+ * changes them either. With a playbook the thread is bound to its frozen
+ * copy, and the MCP servers it names that are off by default are switched on
+ * for this thread only (never the global flag).
  */
 export function buildAgentThreadConfig(
+  brain: Extract<ParticipantBrain, { kind: "agent" }>,
+  agent: AgentStatus | undefined,
+  playbook?: SeatPlaybook,
+): ThreadConfig {
+  const config = baseAgentThreadConfig(brain, agent);
+  if (!playbook) return config;
+  const browserAvailable =
+    agent !== undefined &&
+    resolveComposerMcpScope(
+      agentWithCapabilities(agent, brain.presentationMode).capabilities.mcpScope,
+      brain.presentationMode,
+    ) !== "none";
+  const { patch } = applyPlaybook(config, playbook.definition, {
+    servers: playbook.mcpServers,
+    browserAvailable,
+  });
+  return { ...config, ...patch };
+}
+
+function baseAgentThreadConfig(
   brain: Extract<ParticipantBrain, { kind: "agent" }>,
   agent: AgentStatus | undefined,
 ): ThreadConfig {

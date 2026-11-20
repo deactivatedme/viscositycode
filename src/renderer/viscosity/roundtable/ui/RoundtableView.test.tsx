@@ -17,6 +17,19 @@ const api = vi.hoisted(() => ({
   resumeRoundtable: vi.fn<(id: string) => void>(),
   postToRoundtable:
     vi.fn<(id: string, text: string, options?: { mentions?: string[] }) => Promise<void>>(),
+  interruptRoundtable: vi.fn<(id: string) => Promise<void>>(),
+  updateRoundtableInstructions:
+    vi.fn<
+      (
+        id: string,
+        update: { shared?: string; participants?: Record<string, string> },
+      ) => Promise<void>
+    >(),
+}));
+const toasts = vi.hoisted(() => ({
+  success: vi.fn<(message: string) => void>(),
+  danger: vi.fn<(message: string) => void>(),
+  info: vi.fn<(message: string) => void>(),
 }));
 const tabs = vi.hoisted(() => ({ activateThreadTab: vi.fn<(threadId: string) => void>() }));
 
@@ -27,8 +40,14 @@ vi.mock("../api", () => ({
   pauseRoundtable: api.pauseRoundtable,
   resumeRoundtable: api.resumeRoundtable,
   postToRoundtable: api.postToRoundtable,
+  interruptRoundtable: api.interruptRoundtable,
+  updateRoundtableInstructions: api.updateRoundtableInstructions,
 }));
 vi.mock("@/renderer/viscosity/layout/tabs/tabActions", () => tabs);
+vi.mock("@heroui/react", async () => {
+  const actual = await vi.importActual<typeof import("@heroui/react")>("@heroui/react");
+  return { ...actual, toast: toasts };
+});
 
 let releaseShell: (() => void) | undefined;
 
@@ -43,6 +62,9 @@ beforeEach(() => {
   api.pauseRoundtable.mockReset();
   api.resumeRoundtable.mockReset();
   api.postToRoundtable.mockReset().mockResolvedValue(undefined);
+  api.interruptRoundtable.mockReset().mockResolvedValue(undefined);
+  api.updateRoundtableInstructions.mockReset().mockResolvedValue(undefined);
+  toasts.success.mockReset();
   tabs.activateThreadTab.mockReset();
   useAppStore.setState({ threads: [], projects: [] });
   useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true, setup: null });
@@ -102,6 +124,81 @@ describe("RoundtableView header", () => {
     renderSession(session({ threadIds: { a: "thread-a" } }));
     const chip = document.querySelector('[data-vc-rt-participant="a"]');
     expect(chip?.getAttribute("data-vc-fx-state")).toBe("attention");
+  });
+
+  it("names each seat's playbook: its thread's binding, else the seat's or the table's", () => {
+    useAppStore.setState({
+      threads: [
+        {
+          id: "thread-a",
+          projectId: "p1",
+          status: "idle",
+          config: {
+            model: "model-a",
+            playbook: { version: 1, id: "debug", label: "Debug", instructions: "Repro." },
+          },
+        } as Thread,
+        { id: "thread-c", projectId: "p1", status: "idle", config: { model: "m" } } as Thread,
+      ],
+    });
+    renderSession(
+      session({
+        playbookId: "review",
+        participants: [
+          participant("a", { role: "builder" }),
+          participant("b", { role: "reviewer" }),
+          participant("c", { role: "reviewer", playbookId: null }),
+          participant("d", { role: "reviewer", playbookId: "reversing" }),
+        ],
+        threadIds: { a: "thread-a", c: "thread-c" },
+      }),
+    );
+    const meta = (id: string) =>
+      document.querySelector(`[data-vc-rt-participant="${id}"] .vc-rt-participant__meta`)
+        ?.textContent;
+    expect(meta("a")).toBe("Builder · model-a · Debug");
+    expect(meta("b")).toBe("Reviewer · model-b · Review");
+    expect(meta("c")).toBe("Reviewer · model-c");
+    expect(meta("d")).toBe("Reviewer · model-d · Reversing");
+  });
+
+  it("shows a team chat's chips without roles, and Ready while it waits", () => {
+    renderSession(
+      session({
+        pattern: "open",
+        maxRounds: 0,
+        notes: [{ id: "n1", text: "Hi", createdAt: 1 }],
+        turns: [turn("t1", { round: 0, phase: "reply", noteId: "n1", participantId: "a" })],
+      }),
+    );
+    const chip = document.querySelector<HTMLElement>('[data-vc-rt-participant="a"]')!;
+    expect(within(chip).getByText("model-a")).toBeTruthy();
+    expect(screen.getByText("Ready")).toBeTruthy();
+  });
+
+  it("edits the instructions and saves only what changed", async () => {
+    renderSession(
+      session({
+        instructions: "Be brief.",
+        participants: [participant("a", { instructions: "Backend" }), participant("b")],
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Instructions" }));
+    const dialog = await screen.findByRole("dialog");
+    const shared = within(dialog).getByRole("textbox", { name: "For everyone" });
+    expect((shared as HTMLTextAreaElement).value).toBe("Be brief.");
+    fireEvent.change(within(dialog).getByRole("textbox", { name: /Agent B/ }), {
+      target: { value: "Write the tests" },
+    });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    });
+    expect(api.updateRoundtableInstructions).toHaveBeenCalledWith("rt1", {
+      participants: { b: "Write the tests" },
+    });
+    expect(toasts.success).toHaveBeenCalledWith(
+      "Instructions updated. They apply from the next reply.",
+    );
   });
 
   it("closes the view from its header", () => {
@@ -169,7 +266,33 @@ describe("RoundtableView controls", () => {
     }
   });
 
+  it("stops only the replies of a team chat, and has no Pause", async () => {
+    renderSession(
+      session({
+        pattern: "open",
+        maxRounds: 0,
+        notes: [{ id: "n1", text: "Hi", createdAt: 1 }],
+        turns: [turn("t1", { round: 0, phase: "reply", noteId: "n1", status: "running" })],
+      }),
+    );
+    const toolbar = screen.getByRole("toolbar", { name: "Roundtable controls" });
+    expect(within(toolbar).queryByRole("button", { name: "Pause" })).toBeNull();
+    await act(async () => {
+      fireEvent.click(within(toolbar).getByRole("button", { name: "Stop replies" }));
+    });
+    expect(api.interruptRoundtable).toHaveBeenCalledWith("rt1");
+    expect(api.stopRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("has nothing to stop while a team chat waits for a message", () => {
+    renderSession(session({ pattern: "open", maxRounds: 0 }));
+    const stop = screen.getByRole("button", { name: "Stop replies" });
+    expect(stop.hasAttribute("disabled")).toBe(true);
+  });
+
   it("opens a participant's thread", () => {
+    // Only a live (loaded, not archived) thread is offered.
+    useAppStore.setState({ threads: [{ id: "thread-b", projectId: "p1" } as Thread] });
     renderSession(session({ threadIds: { b: "thread-b" } }));
     const toolbar = screen.getByRole("toolbar", { name: "Roundtable controls" });
     expect(within(toolbar).queryByRole("button", { name: "Open Agent A thread" })).toBeNull();
@@ -212,24 +335,48 @@ describe("RoundtableView composer", () => {
   });
 
   it.each([
-    ["done", "This Roundtable is finished. Start a new one to continue."],
-    ["stopped", "This Roundtable was stopped. Start a new one to continue."],
-    ["failed", "This Roundtable failed. Retry it to continue."],
-  ] as const)("disables the composer of a %s session with a hint", async (status, hint) => {
-    renderSession(session({ status, pattern: "open" }));
+    ["done", "open", "This Roundtable is finished. Start a new one to continue."],
+    ["stopped", "build-review", "This Roundtable was stopped. Start a new one to continue."],
+    ["failed", "open", "This Roundtable failed. Retry it to continue."],
+  ] as const)(
+    "disables the composer of a %s session with a hint",
+    async (status, pattern, hint) => {
+      renderSession(session({ status, pattern }));
+      const input = screen.getByRole("textbox", { name: "Message the Roundtable" });
+      expect(input.hasAttribute("disabled")).toBe(true);
+      const hintLine = screen.getByText(hint);
+      expect(hintLine.getAttribute("role")).toBe("status");
+      expect(input.getAttribute("aria-describedby")).toBe(hintLine.id);
+      expect(screen.getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(true);
+      const mention = screen.queryByRole("button", { name: "Mention Agent B" });
+      // Only a team chat shows mention chips (disabled once ended).
+      expect(mention?.hasAttribute("disabled") ?? null).toBe(pattern === "open" ? true : null);
+      await act(async () => {
+        fireEvent.keyDown(input, { key: "Enter" });
+      });
+      expect(api.postToRoundtable).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps a stopped team chat's composer open, since posting reopens it", () => {
+    renderSession(session({ status: "stopped", pattern: "open" }));
     const input = screen.getByRole("textbox", { name: "Message the Roundtable" });
-    expect(input.hasAttribute("disabled")).toBe(true);
-    const hintLine = screen.getByText(hint);
-    expect(hintLine.getAttribute("role")).toBe("status");
-    expect(input.getAttribute("aria-describedby")).toBe(hintLine.id);
-    expect(screen.getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(true);
-    expect(screen.getByRole("button", { name: "Mention Agent B" }).hasAttribute("disabled")).toBe(
-      true,
+    expect(input.hasAttribute("disabled")).toBe(false);
+    expect(screen.queryByText(/Start a new one to continue/)).toBeNull();
+  });
+
+  it("offers to continue a finished session as a team chat", () => {
+    renderSession(
+      session({
+        status: "done",
+        turns: [turn("t1", { participantId: "a", round: 0, responseText: "Shipped it" })],
+      }),
     );
-    await act(async () => {
-      fireEvent.keyDown(input, { key: "Enter" });
-    });
-    expect(api.postToRoundtable).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Continue as a team chat" }));
+    const request = useRoundtableViewStore.getState().setup?.request;
+    expect(request).toMatchObject({ projectId: "p1", pattern: "open", title: "Fix the login bug" });
+    expect(request?.participants?.map((entry) => entry.id)).toEqual(["a", "b"]);
+    expect(request?.task).toContain("Shipped it");
   });
 
   it("keeps the composer open with no hint while the session runs or is paused", () => {

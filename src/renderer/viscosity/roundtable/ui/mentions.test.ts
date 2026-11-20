@@ -27,6 +27,18 @@ describe("mentions", () => {
     expect(extractMentions("@unknown", handles)).toEqual([]);
   });
 
+  it("also finds a participant by label or an unambiguous provider or model name", () => {
+    const handles = mentionHandles([
+      { id: "a", label: "Claude Code · Opus 4.5" },
+      { id: "b", label: "Codex · GPT-5" },
+    ]);
+    expect(extractMentions("@Claude fix the tests", handles)).toEqual(["a"]);
+    expect(extractMentions("@codex · gpt-5 and @opus", handles)).toEqual(["b", "a"]);
+    expect(extractMentions("@claude-code-opus-4-5 fix", handles)).toEqual(["a"]);
+    // Two seats share "Claude · Opus": its words name neither one.
+    expect(extractMentions("@claude hi", mentionHandles(participants))).toEqual([]);
+  });
+
   it("inserts and removes mention tokens", () => {
     expect(insertMention("", "claude-opus")).toBe("@claude-opus ");
     expect(insertMention("hi", "claude-opus")).toBe("hi @claude-opus ");
@@ -34,5 +46,23 @@ describe("mentions", () => {
     expect(removeMention("@claude-opus please @claude-opus-2 review", "claude-opus")).toBe(
       "please @claude-opus-2 review",
     );
+  });
+
+  it("removes every form that names the participant, so its chip toggles off", () => {
+    const handles = mentionHandles([
+      { id: "a", label: "Claude Code · Opus 4.5" },
+      { id: "b", label: "Codex · GPT-5" },
+    ]);
+    const handle = handles.get("a")!;
+    for (const text of [
+      "@Claude hi",
+      "@Claude Code · Opus 4.5 hi",
+      "@claude-code-opus-4-5 hi @opus and @Codex · GPT-5",
+    ]) {
+      const removed = removeMention(text, handle, handles);
+      expect(extractMentions(removed, handles)).not.toContain("a");
+    }
+    expect(removeMention("@Claude hi", handle, handles)).toBe("hi");
+    expect(removeMention("ask @Claude, then @codex", handle, handles)).toBe("ask , then @codex");
   });
 });

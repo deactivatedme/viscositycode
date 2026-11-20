@@ -20,7 +20,10 @@
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { playbookIdSchema } from "@/shared/viscosity/playbook";
 import { createDbStorage } from "@/renderer/state/dbStorage";
+import { projectJsonBytes } from "@/renderer/state/remote/engine/jsonProjection";
+import { OPEN_TRANSCRIPT_MESSAGES } from "./engine/prompts";
 import { capText, RESPONSE_TEXT_CAP, STORED_PROMPT_CAP } from "./engine/text";
 import type { RoundtableNote, RoundtablePattern, RoundtableSession, RoundtableTurn } from "./types";
 
@@ -40,12 +43,48 @@ export const ROUNDTABLE_STORE_NAME = "poracode-viscosity-roundtables";
  *   stay host-owned either way, so only the compare cards are lost.
  * - No bump: older builds migrate any version through the same sanitizer, so
  *   a bump would not make them refuse the blob or keep the compare records.
+ *
+ * Still version 1 after the additive "Work together" fields: session
+ * `instructions`, `instructionsUpdatedAt` and `instructionsUpdatedFor`, participant `joinedAt`, note
+ * `halted` and turn `unsent`. No new pattern, phase, status or outcome.
+ * - Upgrade: records without them are valid as is (pre-upgrade test in roundtableStore.test.ts).
+ *   Malformed values are dropped here so they cannot reach a prompt.
+ * - Downgrade: older builds spread the raw record, so they load, carry and
+ *   ignore the fields. Costs: they re-ask a reply stopped with "Stop
+ *   replies", ask a participant added later to answer older messages, send no
+ *   shared instructions, and attach a reloaded turn that was never sent (the
+ *   old behaviour).
+ *
+ * Still version 1 after the additive Playbooks fields: session `playbookId`
+ * and participant `playbookId` (an id, or `null` for none on that seat).
+ * - Upgrade: records without them are valid as is (pre-upgrade test in
+ *   roundtableStore.test.ts). A value that is not a playbook id is dropped
+ *   here, so the seat falls back to the table's playbook (or none).
+ * - Downgrade: older builds spread the raw record, so they carry and ignore
+ *   the fields; threads already created keep their own `ThreadConfig.playbook`,
+ *   and only seats whose threads an older build creates start without one.
+ *
+ * Retention is not part of the format: sizes are now measured in projected
+ * write bytes (they were rough characters) and open chats no longer count
+ * against {@link MAX_STORED_SESSIONS}. A blob an older build saved over the
+ * new budget loads whole and is trimmed by the next write (pre-upgrade test).
  */
 export const ROUNDTABLE_STORE_VERSION = 1;
-/** Finished sessions kept on disk (newest first); running and paused ones are always kept. */
+/**
+ * Finished sessions kept on disk (newest first), besides the active ones and
+ * the open chats, which do not count against it.
+ */
 export const MAX_STORED_SESSIONS = 50;
-/** Rough character budget for the stored blob (the backend skips writes over 8 MiB). */
-export const STORED_CHARACTER_BUDGET = 6_000_000;
+/**
+ * Budget for the stored blob, measured the way the backend measures a write
+ * ({@link storedBytes}). Both the SQLite path (`dbStorage` refuses a write
+ * whose projection exceeds `CLIENT_ENGINE_AUX_STRINGIFY_MAX_BYTES`, 8 MiB) and
+ * the browser cache (8 MiB per record) skip an oversized write, so this keeps
+ * 2 MiB of headroom for the wrapper and keys.
+ */
+export const STORED_BYTE_BUDGET = 6 * 1024 * 1024;
+/** An open chat never ends: past this size its oldest answered messages are not saved. */
+export const OPEN_SESSION_BYTE_BUDGET = 2 * 1024 * 1024;
 
 export interface RoundtableStoreState {
   sessions: Record<string, RoundtableSession>;
@@ -95,14 +134,43 @@ function sanitizeTurn(value: unknown): RoundtableTurn | null {
   if (typeof value.id !== "string" || typeof value.participantId !== "string") return null;
   if (typeof value.round !== "number" || typeof value.prompt !== "string") return null;
   if (typeof value.status !== "string" || !TURN_STATUSES.includes(value.status)) return null;
-  return capTurnForStorage(value as unknown as RoundtableTurn);
+  const { unsent, ...turn } = value;
+  return capTurnForStorage({
+    ...(turn as unknown as RoundtableTurn),
+    ...(unsent === true ? { unsent } : {}),
+  });
 }
 
 function sanitizeNote(value: unknown): RoundtableNote | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || typeof value.text !== "string") return null;
   if (typeof value.createdAt !== "number") return null;
-  return value as unknown as RoundtableNote;
+  const { halted, ...note } = value;
+  return { ...(note as unknown as RoundtableNote), ...(halted === true ? { halted } : {}) };
+}
+
+function isPlaybookId(value: unknown): value is string {
+  return playbookIdSchema.safeParse(value).success;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+/** Drops malformed optional participant fields, so they cannot reach a prompt. */
+function sanitizeParticipant(
+  participant: RoundtableSession["participants"][number],
+): RoundtableSession["participants"][number] {
+  const { instructions, joinedAt, playbookId, ...rest } = participant as unknown as Record<
+    string,
+    unknown
+  >;
+  return {
+    ...(rest as unknown as RoundtableSession["participants"][number]),
+    ...(typeof instructions === "string" ? { instructions } : {}),
+    ...(isFiniteNumber(joinedAt) ? { joinedAt } : {}),
+    ...(playbookId === null || isPlaybookId(playbookId) ? { playbookId } : {}),
+  };
 }
 
 /** Validates one stored session; `null` drops it. */
@@ -124,6 +192,15 @@ export function sanitizeSession(value: unknown): RoundtableSession | null {
       (participant.brain.kind === "agent" || participant.brain.kind === "xai"),
   );
   if (participants.length !== value.participants.length) return null;
+  const { instructions, instructionsUpdatedAt, instructionsUpdatedFor, playbookId, ...record } =
+    value;
+  const stamps = isRecord(instructionsUpdatedFor)
+    ? Object.fromEntries(
+        Object.entries(instructionsUpdatedFor).filter((entry): entry is [string, number] =>
+          isFiniteNumber(entry[1]),
+        ),
+      )
+    : {};
   const threadIds = isRecord(value.threadIds)
     ? Object.fromEntries(
         Object.entries(value.threadIds).filter(
@@ -135,10 +212,14 @@ export function sanitizeSession(value: unknown): RoundtableSession | null {
     ? value.notes.map(sanitizeNote).filter((note): note is RoundtableNote => note !== null)
     : undefined;
   return {
-    ...(value as unknown as RoundtableSession),
+    ...(record as unknown as RoundtableSession),
     version: 1,
     title: typeof value.title === "string" ? value.title : "",
-    participants,
+    participants: participants.map(sanitizeParticipant),
+    ...(typeof instructions === "string" ? { instructions } : {}),
+    ...(isFiniteNumber(instructionsUpdatedAt) ? { instructionsUpdatedAt } : {}),
+    ...(Object.keys(stamps).length > 0 ? { instructionsUpdatedFor: stamps } : {}),
+    ...(isPlaybookId(playbookId) ? { playbookId } : {}),
     threadIds,
     maxRounds: typeof value.maxRounds === "number" ? value.maxRounds : 0,
     turns: value.turns.map(sanitizeTurn).filter((turn): turn is RoundtableTurn => turn !== null),
@@ -158,32 +239,166 @@ export function sanitizeSessions(value: unknown): Record<string, RoundtableSessi
   return sessions;
 }
 
-function approximateSize(session: RoundtableSession): number {
-  let size = 2_000 + session.task.length;
-  for (const turn of session.turns)
-    size += 300 + turn.prompt.length + (turn.responseText?.length ?? 0);
-  for (const note of session.notes ?? []) size += 100 + note.text.length;
-  return size;
+/**
+ * Projected write size, as the backend charges it (`projectJsonBytes`: 2 bytes
+ * per JSON character, escapes included, plus a per-container allowance).
+ * A value it cannot project is never written, so it costs everything.
+ */
+export function storedBytes(value: unknown): number {
+  const projection = projectJsonBytes(value, Number.MAX_SAFE_INTEGER);
+  return projection.ok ? projection.bytes : Number.POSITIVE_INFINITY;
 }
 
-/** What goes to disk: active sessions always, then the newest finished ones within budget. */
+function isUnsettledTurn(turn: RoundtableTurn): boolean {
+  return (
+    turn.status === "pending" || turn.status === "running" || turn.status === "waiting-approval"
+  );
+}
+
+/**
+ * The notes the last {@link OPEN_TRANSCRIPT_MESSAGES} transcript entries up
+ * to `notes.at(-1)` belong to, ordered like the planner's `groupTranscript`.
+ */
+function transcriptWindowNoteIds(
+  notes: readonly RoundtableNote[],
+  turns: readonly RoundtableTurn[],
+): string[] {
+  const included = new Set(notes.map((note) => note.id));
+  const entries = [
+    ...notes.map((note, index) => ({ at: note.createdAt, order: index, noteId: note.id })),
+    ...turns.flatMap((turn, index) =>
+      turn.phase === "reply" && turn.status === "done" && turn.noteId && included.has(turn.noteId)
+        ? [{ at: turn.endedAt ?? turn.startedAt ?? 0, order: 100_000 + index, noteId: turn.noteId }]
+        : [],
+    ),
+  ];
+  return entries
+    .toSorted((left, right) => left.at - right.at || left.order - right.order)
+    .slice(-OPEN_TRANSCRIPT_MESSAGES)
+    .map((entry) => entry.noteId);
+}
+
+/**
+ * Messages compaction never drops, so the planner builds the same prompts
+ * from the saved copy: the transcript a reply prompt quotes (for the newest
+ * message and for one still being answered), the latest message, the opening message when it is
+ * the chat's topic (prompts leave the task out only while it is the first
+ * message), and each seat's latest finished reply (without one a seat gets
+ * its first-turn instructions again).
+ */
+function pinnedNoteIds(session: RoundtableSession, turns: readonly RoundtableTurn[]): Set<string> {
+  const notes = session.notes ?? [];
+  const pinned = new Set(transcriptWindowNoteIds(notes, turns));
+  if (notes.length > 0) pinned.add(notes.at(-1)!.id);
+  const answering = notes.findIndex((note) =>
+    turns.some((turn) => turn.noteId === note.id && isUnsettledTurn(turn)),
+  );
+  if (answering >= 0) {
+    for (const id of transcriptWindowNoteIds(notes.slice(0, answering + 1), turns)) pinned.add(id);
+  }
+  if (notes[0] && notes[0].text.trim() === session.task.trim()) pinned.add(notes[0].id);
+  const latestDone = new Map<string, RoundtableTurn>();
+  for (const turn of turns) {
+    if (turn.status !== "done") continue;
+    const previous = latestDone.get(turn.participantId);
+    if (!previous || (turn.startedAt ?? 0) >= (previous.startedAt ?? 0)) {
+      latestDone.set(turn.participantId, turn);
+    }
+  }
+  for (const turn of latestDone.values()) if (turn.noteId) pinned.add(turn.noteId);
+  return pinned;
+}
+
+/**
+ * The saved copy of an open chat: over `budget` bytes, first the prompts of
+ * settled turns are left out (oldest first; xAI seats keep theirs, their
+ * history is rebuilt from them), then, if still over, its oldest messages
+ * together with their replies, so the planner never re-asks them. It keeps
+ * the latest messages, one still being answered and everything after it, and
+ * the {@link pinnedNoteIds}, so it can stay over `budget`.
+ */
+export function compactOpenSession(
+  session: RoundtableSession,
+  budget: number = OPEN_SESSION_BYTE_BUDGET,
+): RoundtableSession {
+  if (session.pattern !== "open" || !session.notes?.length) return session;
+  let size = storedBytes(session);
+  if (size <= budget) return session;
+  const xaiSeats = new Set(
+    session.participants
+      .filter((participant) => participant.brain.kind === "xai")
+      .map((participant) => participant.id),
+  );
+  const emptyString = storedBytes("");
+  const turns = session.turns.map((turn) => {
+    if (size <= budget || isUnsettledTurn(turn)) return turn;
+    if (!turn.prompt || xaiSeats.has(turn.participantId)) return turn;
+    size -= storedBytes(turn.prompt) - emptyString;
+    return { ...turn, prompt: "" };
+  });
+  if (size <= budget) return { ...session, turns };
+  const pinned = pinnedNoteIds(session, turns);
+  const dropped = new Set<string>();
+  for (const note of session.notes) {
+    if (size <= budget) break;
+    if (pinned.has(note.id)) continue;
+    const replies = turns.filter((turn) => turn.noteId === note.id);
+    // Still being answered, or not answered yet: keep it and everything after.
+    if (replies.some(isUnsettledTurn) || (replies.length === 0 && !note.halted)) break;
+    dropped.add(note.id);
+    for (const item of [note, ...replies]) size -= storedBytes(item) + 2; // + the comma
+  }
+  return {
+    ...session,
+    notes: session.notes.filter((note) => !dropped.has(note.id)),
+    turns: turns.filter((turn) => turn.noteId === undefined || !dropped.has(turn.noteId)),
+  };
+}
+
+/**
+ * What goes to disk, always within {@link STORED_BYTE_BUDGET}, so a save never
+ * stops: running and paused sessions and every open chat (the user still has
+ * them, idle or stopped), then the newest finished ones that fit. When
+ * the kept ones alone are over the budget, the oldest open chats lose more of
+ * their oldest messages, and only then are whole sessions left out, oldest
+ * first.
+ */
 export function retainForStorage(
   sessions: Record<string, RoundtableSession>,
 ): Record<string, RoundtableSession> {
-  const ordered = Object.values(sessions).toSorted(
-    (left, right) => right.updatedAt - left.updatedAt,
-  );
+  const ordered = Object.values(sessions)
+    .toSorted((left, right) => right.updatedAt - left.updatedAt)
+    .map((stored) => {
+      const session = compactOpenSession(stored);
+      return { session, cost: storedBytes(session) };
+    });
+  const isKeptAlways = ({ session }: { session: RoundtableSession }) =>
+    session.pattern === "open" || session.status === "running" || session.status === "paused";
+  const always = ordered.filter(isKeptAlways);
+  let size = always.reduce((total, entry) => total + entry.cost, 0);
+  for (const entry of always.toReversed()) {
+    if (size <= STORED_BYTE_BUDGET) break;
+    const session = compactOpenSession(entry.session, entry.cost - (size - STORED_BYTE_BUDGET));
+    const cost = storedBytes(session);
+    size -= entry.cost - cost;
+    entry.session = session;
+    entry.cost = cost;
+  }
+  const left = new Set<string>();
+  for (const entry of always.toReversed()) {
+    if (size <= STORED_BYTE_BUDGET) break;
+    left.add(entry.session.id);
+    size -= entry.cost;
+  }
   const kept: Record<string, RoundtableSession> = {};
-  let size = 0;
+  for (const { session } of always) if (!left.has(session.id)) kept[session.id] = session;
   let finished = 0;
-  for (const session of ordered) {
-    const active = session.status === "running" || session.status === "paused";
-    const cost = approximateSize(session);
-    if (!active && (finished >= MAX_STORED_SESSIONS || size + cost > STORED_CHARACTER_BUDGET))
-      continue;
-    if (!active) finished += 1;
-    size += cost;
-    kept[session.id] = session;
+  for (const entry of ordered) {
+    if (isKeptAlways(entry) || finished >= MAX_STORED_SESSIONS) continue;
+    if (size + entry.cost > STORED_BYTE_BUDGET) continue;
+    finished += 1;
+    size += entry.cost;
+    kept[entry.session.id] = entry.session;
   }
   return kept;
 }

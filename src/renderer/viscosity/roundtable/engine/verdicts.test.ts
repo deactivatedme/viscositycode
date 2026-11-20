@@ -66,4 +66,29 @@ describe("findMentions", () => {
     expect(findMentions("ask @codex (2) and @Claude Code · Opus", candidates)).toEqual(["a", "c"]);
     expect(findMentions("@Codexy is not a participant", candidates)).toEqual([]);
   });
+
+  it("accepts the handle and an unambiguous provider or model name, any case", () => {
+    const seats = [
+      { id: "a", label: "Claude Code · Opus 4.5" },
+      { id: "b", label: "Codex · GPT-5" },
+      { id: "c", label: "Codex · GPT-5 mini" },
+    ];
+    expect(findMentions("@Claude please fix", seats)).toEqual(["a"]);
+    expect(findMentions("@opus 4.5, thoughts?", seats)).toEqual(["a"]);
+    expect(findMentions("@codex-gpt-5 please review", seats)).toEqual(["b"]);
+    expect(findMentions("@gpt-5 mini and @Codex · GPT-5", seats)).toEqual(["b", "c"]);
+    // "Codex" and "GPT-5" name two seats, so they name nobody.
+    expect(findMentions("@Codex please review", seats)).toEqual([]);
+    expect(findMentions("mail me@claude", seats)).toEqual([]);
+  });
+
+  it("never reads an npm scope or a path as a mention", () => {
+    const seats = [
+      { id: "a", label: "Qwen Code · Coder" },
+      { id: "b", label: "Claude Code · Opus 4.5" },
+    ];
+    expect(findMentions("npm i -g @qwen-code/qwen-code", seats)).toEqual([]);
+    expect(findMentions("see @claude.ai or @claude/docs", seats)).toEqual([]);
+    expect(findMentions("thanks @Claude.", seats)).toEqual(["b"]);
+  });
 });

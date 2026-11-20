@@ -3,13 +3,19 @@ import type { PromptSegment } from "@/shared/contracts";
 import type { TurnResult } from "../types";
 import { agentSeat, makeSession } from "./testFixtures";
 import { ThreadParticipantDriver } from "./threadDriver";
-import type {
-  DriverTiming,
-  LastTurnRead,
-  ThreadEnginePort,
-  ThreadLaunchRequest,
-  ThreadTurnSnapshot,
+import {
+  DEFAULT_DRIVER_TIMING,
+  type DriverTiming,
+  type LastTurnRead,
+  type ThreadEnginePort,
+  type ThreadLaunchRequest,
+  type ThreadTurnSnapshot,
 } from "./threadPort";
+
+let lightweight = false;
+vi.mock("@/renderer/viscosity/performance/lightweight", () => ({
+  isLightweightActive: () => lightweight,
+}));
 
 const TIMING: DriverTiming = {
   settleMs: 100,
@@ -287,13 +293,36 @@ describe("ThreadParticipantDriver", () => {
     const { port, driver } = setup("thread-1");
     port.set("thread-1", { status: "working" });
     // The thread is busy with something else: stopping must not interrupt it.
-    const turn = track(driver.sendTurn("Go"));
+    const onSent = vi.fn<() => void>();
+    const turn = track(driver.sendTurn("Go", undefined, { onSent }));
     await vi.advanceTimersByTimeAsync(0);
     port.set("thread-1", { status: "needs_reply" });
     await driver.stop();
     await vi.advanceTimersByTimeAsync(0);
     expect(turn.result?.status).toBe("stopped");
     expect(port.submits).toHaveLength(0);
+    // Nothing went out: a reload must re-send this turn, not wait for an old answer.
+    expect(onSent).not.toHaveBeenCalled();
+  });
+
+  it("marks the turn sent before launching or submitting it", async () => {
+    const fresh = setup();
+    const launchedBefore: number[] = [];
+    void fresh.driver.sendTurn("First", undefined, {
+      onSent: () => launchedBefore.push(fresh.port.launches.length),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(launchedBefore).toEqual([0]);
+    expect(fresh.port.launches).toHaveLength(1);
+
+    const bound = setup("thread-1");
+    const submittedBefore: number[] = [];
+    void bound.driver.sendTurn("Next", undefined, {
+      onSent: () => submittedBefore.push(bound.port.submits.length),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(submittedBefore).toEqual([0]);
+    expect(bound.port.submits).toHaveLength(1);
   });
 
   it("reads a terminal thread's scrollback instead of chat items", async () => {
@@ -373,5 +402,44 @@ describe("ThreadParticipantDriver", () => {
     expect(turn.result).toEqual({ status: "done", text: "answer" });
     expect(port.submits).toHaveLength(0);
     expect(port.launches).toHaveLength(0);
+  });
+});
+
+describe("DEFAULT_DRIVER_TIMING", () => {
+  afterEach(() => {
+    lightweight = false;
+  });
+
+  it("samples live text every 125 ms, or every 500 ms in Lightweight mode", () => {
+    expect(DEFAULT_DRIVER_TIMING.progressMs).toBe(125);
+    lightweight = true;
+    expect(DEFAULT_DRIVER_TIMING.progressMs).toBe(500);
+  });
+
+  it("is re-read per turn by a driver built without explicit timing", async () => {
+    const port = new FakePort();
+    port.snapshots.set("thread-1", snapshot());
+    const profile = agentSeat("p1", "Builder", "builder");
+    const driver = new ThreadParticipantDriver(
+      profile,
+      makeSession("build-review", [profile]),
+      port,
+      {
+        lookupThreadId: () => "thread-1",
+        recordThreadId: () => {},
+      },
+    );
+    lightweight = true;
+    const progress: string[] = [];
+    const turn = track(driver.sendTurn("Go", (text) => progress.push(text)));
+    await vi.advanceTimersByTimeAsync(0);
+    port.liveText = "Hel";
+    await vi.advanceTimersByTimeAsync(125);
+    expect(progress).toEqual([]);
+    await vi.advanceTimersByTimeAsync(375);
+    expect(progress).toEqual(["Hel"]);
+    port.set("thread-1", { status: "idle" });
+    await vi.advanceTimersByTimeAsync(DEFAULT_DRIVER_TIMING.settleMs);
+    expect(turn.result?.status).toBe("done");
   });
 });

@@ -10,8 +10,10 @@
  * - pause: the running turns finish, then the loop waits;
  * - resume: a paused session continues; a failed one retries its failed turns;
  * - stop: running turns are interrupted and the session ends;
- * - post: a user message — open pattern: who should reply; others: steering
- *   added to the next participant's prompt.
+ * - interrupt (open pattern, "Stop replies"): running turns are interrupted,
+ *   nobody else answers the messages so far, and the chat stays open;
+ * - post: a user message — open pattern: who should reply (a stopped chat
+ *   reopens); others: steering added to the next participant's prompt.
  *
  * A participant waiting for a permission or an answer shows as
  * "waiting-approval" and holds the Roundtable until the user answers in the
@@ -100,13 +102,24 @@ function deliverNotes(
   };
 }
 
+/** Every note marked halted (nobody else answers them). */
+function haltNotes(notes: RoundtableNote[] | undefined): RoundtableNote[] {
+  return (notes ?? []).map((note) => (note.halted ? note : { ...note, halted: true as const }));
+}
+
 export class RoundtableRunner {
   private readonly runs = new Map<string, ActiveRun>();
+  /** Saved sessions a reload has not resumed yet (`holdForReload`): kicks wait for the resume. */
+  private readonly held = new Set<string>();
+  /** Held open chats whose replies were stopped meanwhile: stopped once attached. */
+  private readonly stopOnAttach = new Set<string>();
 
   constructor(private readonly deps: RunnerDeps) {}
 
   /** Starts (or nudges) the loop of a running session. Resolves when the loop goes idle. */
   kick(sessionId: string): Promise<void> {
+    // `resumeAfterReload` kicks it with whatever happened meanwhile.
+    if (this.held.has(sessionId)) return Promise.resolve();
     const run = this.ensureRun(sessionId);
     if (run.loop) {
       run.kickPending = true;
@@ -191,8 +204,39 @@ export class RoundtableRunner {
           }),
         ),
       );
-      if (!run.loop) this.release(sessionId);
+      // A message may have reopened the chat (a new run) while the drivers were stopping.
+      if (!run.loop && this.runs.get(sessionId) === run && this.isTerminal(sessionId)) {
+        this.release(sessionId);
+      }
     }
+  }
+
+  /**
+   * Open pattern ("Stop replies"): interrupts the running replies and marks
+   * every message so far as halted, so nobody else answers them. The chat
+   * stays running and the next message is answered as usual.
+   */
+  async interrupt(sessionId: string): Promise<void> {
+    const session = this.deps.repo.get(sessionId);
+    if (!session || session.pattern !== "open" || session.status !== "running") return;
+    this.deps.repo.update(sessionId, (current) => ({
+      ...current,
+      notes: haltNotes(current.notes),
+    }));
+    if (this.held.has(sessionId)) {
+      // The replies of the previous window are not attached yet.
+      this.stopOnAttach.add(sessionId);
+      return;
+    }
+    const run = this.runs.get(sessionId);
+    if (!run) return;
+    await Promise.all(
+      [...run.inFlight.values()].map((driver) =>
+        driver.stop().catch((error: unknown) => {
+          console.warn("[roundtable] could not stop a participant", error);
+        }),
+      ),
+    );
   }
 
   /** Forgets a session's runtime state (drivers are disposed; threads are left alone). */
@@ -216,23 +260,39 @@ export class RoundtableRunner {
       ...(valid.length > 0 ? { mentions: valid } : {}),
       createdAt: this.deps.now(),
     };
-    this.deps.repo.update(sessionId, (current) => ({
-      ...current,
-      notes: [...(current.notes ?? []), note],
-    }));
-    if (session.status === "running") void this.kick(sessionId);
+    // A stopped open chat continues; what was cut off by the stop stays unanswered.
+    const reopen = session.pattern === "open" && session.status === "stopped";
+    this.deps.repo.update(sessionId, (current) =>
+      reopen && current.status === "stopped"
+        ? { ...current, status: "running", notes: [...haltNotes(current.notes), note] }
+        : { ...current, notes: [...(current.notes ?? []), note] },
+    );
+    if (session.status === "running" || reopen) void this.kick(sessionId);
+  }
+
+  /**
+   * After a reload, until `resumeAfterReload` gets them: kicks for these
+   * sessions (a message, a Resume) wait, and "Stop replies" stops the
+   * replies of the previous window once they are attached.
+   */
+  holdForReload(sessionIds: readonly string[]): void {
+    for (const sessionId of sessionIds) this.held.add(sessionId);
   }
 
   /**
    * After a reload: running sessions continue; paused ones only settle the
-   * turns that were in flight.
+   * turns that were in flight (the loop settles first, then stops because the
+   * session is paused; a Resume meanwhile waits for that settle instead of
+   * sending the in-flight turns again).
    */
   resumeAfterReload(sessions: readonly RoundtableSession[]): void {
     for (const session of sessions) {
-      if (session.status === "running") void this.kick(session.id);
-      else if (session.status === "paused" && session.turns.some(isUnsettled)) {
-        const run = this.ensureRun(session.id);
-        void this.settleInFlight(session.id, run);
+      this.held.delete(session.id);
+      if (
+        session.status === "running" ||
+        (session.status === "paused" && session.turns.some(isUnsettled))
+      ) {
+        void this.kick(session.id);
       }
     }
   }
@@ -338,6 +398,8 @@ export class RoundtableRunner {
       prompt: plan.prompt,
       status: "running",
       startedAt: now,
+      // Cleared once the prompt goes out (`onSent`): a reload before that re-sends it.
+      unsent: true,
       ...(plan.noteId ? { noteId: plan.noteId } : {}),
     }));
     this.deps.repo.update(sessionId, (session) => ({
@@ -371,6 +433,7 @@ export class RoundtableRunner {
       const onProgress = (text: string) => setLiveTurnText(sessionId, turn.id, text);
       const options = {
         onAttention: (waiting: boolean) => this.markAttention(sessionId, turn.id, waiting),
+        onSent: () => this.markSent(sessionId, turn.id),
         ...(plan.contextThreadIds ? { contextThreadIds: plan.contextThreadIds } : {}),
       };
       if (mode === "await") {
@@ -404,6 +467,21 @@ export class RoundtableRunner {
     });
   }
 
+  private markSent(sessionId: string, turnId: string): void {
+    this.deps.repo.update(sessionId, (session) =>
+      session.turns.some((turn) => turn.id === turnId && turn.unsent)
+        ? {
+            ...session,
+            turns: session.turns.map((turn) => {
+              if (turn.id !== turnId) return turn;
+              const { unsent: _unsent, ...sent } = turn;
+              return sent;
+            }),
+          }
+        : session,
+    );
+  }
+
   private record(
     sessionId: string,
     turn: RoundtableTurn,
@@ -415,8 +493,9 @@ export class RoundtableRunner {
       if (!current) return session;
       const status = result.status;
       const interpretation = status === "done" ? interpretTurn(session, current, result.text) : {};
+      const { unsent: _unsent, ...settled } = current;
       const next: RoundtableTurn = {
-        ...current,
+        ...settled,
         status,
         endedAt: this.deps.now(),
         ...(result.text ? { responseText: result.text } : {}),
@@ -440,29 +519,48 @@ export class RoundtableRunner {
    * runs them again.
    */
   private async settleInFlight(sessionId: string, run: ActiveRun): Promise<void> {
+    const stopAttached = this.stopOnAttach.delete(sessionId);
     const session = this.deps.repo.get(sessionId);
     if (!session) return;
     const stale = session.turns.filter((turn) => isUnsettled(turn) && !run.inFlight.has(turn.id));
     if (stale.length === 0) return;
-    const attachable = stale.filter((turn) => session.threadIds[turn.participantId] !== undefined);
+    // Attach only to a prompt that went out: an unsent turn's thread still
+    // shows the answer to an earlier turn.
+    const attachable = stale.filter(
+      (turn) => !turn.unsent && session.threadIds[turn.participantId] !== undefined,
+    );
     const orphaned = new Set(
       stale.filter((turn) => !attachable.includes(turn)).map((turn) => turn.id),
     );
     if (orphaned.size > 0) {
-      // Never sent (no thread yet): the planner sends them again.
+      // Never sent (no thread yet, or not submitted): the planner sends them again.
       const now = this.deps.now();
       this.deps.repo.update(sessionId, (current) => ({
         ...current,
-        turns: current.turns.map((turn) =>
-          orphaned.has(turn.id) ? { ...turn, status: "stopped" as const, endedAt: now } : turn,
-        ),
+        turns: current.turns.map((turn) => {
+          if (!orphaned.has(turn.id)) return turn;
+          const { unsent: _unsent, ...settled } = turn;
+          return { ...settled, status: "stopped" as const, endedAt: now };
+        }),
       }));
     }
-    await Promise.all(
+    // Attaching registers the drivers synchronously.
+    const settling = Promise.all(
       attachable.map((turn) =>
         this.runTurn(sessionId, run, turn, { prompt: turn.prompt }, "await"),
       ),
     );
+    if (stopAttached) {
+      const attached = attachable.flatMap((turn) => run.inFlight.get(turn.id) ?? []);
+      await Promise.all(
+        attached.map((driver) =>
+          driver.stop().catch((error: unknown) => {
+            console.warn("[roundtable] could not stop a participant", error);
+          }),
+        ),
+      );
+    }
+    await settling;
   }
 
   private async launchRace(

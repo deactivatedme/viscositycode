@@ -1,13 +1,17 @@
 /**
  * ViscosityCode: the Roundtable engine's public API (contract).
  *
- * UI, in-chat entry points and Bots import ONLY from this module. Signatures
+ * UI and in-chat entry points import ONLY from this module. Signatures
  * are the contract and must not change without updating every caller.
  *
  * Additive extensions (RT1 engine): `StartRoundtableInput.implementWinner`;
  * see also the "Additive (RT1 engine)" fields in ./types.ts.
  * Additive extensions (AA compare): the "compare" pattern and
  * `StartRoundtableInput.seedFromSessionId`.
+ * Additive extensions (Work together): `StartRoundtableInput.instructions`,
+ * `updateRoundtableInstructions`, `interruptRoundtable`,
+ * `addRoundtableParticipants`; `postToRoundtable` reopens a stopped open chat.
+ * Additive extensions (Playbooks): `StartRoundtableInput.playbookId`.
  *
  * The engine (./engine) is renderer-orchestrated: it creates, sends to and
  * reads participant threads only through the existing renderer actions (the
@@ -27,6 +31,7 @@ import { answeredParticipants, hasActiveSeededDebate, latestSeededDebate } from 
 import { registerDriverFactory } from "./engine/driverRegistry";
 import { clearSessionLiveText, liveTurnKey, useRoundtableLiveText } from "./engine/liveText";
 import { getRoundtableRuntime, startRoundtableSession } from "./engine/runtime";
+import { addParticipantsToSession } from "./engine/session";
 import { useRoundtableStore, waitForRoundtableHydration } from "./roundtableStore";
 import type {
   ParticipantBrain,
@@ -48,7 +53,11 @@ export interface StartRoundtableInput {
    */
   maxRounds?: number;
   /** Sequential patterns share one checkout; race always uses one worktree per participant. */
-  worktree?: { mode: "current" } | { mode: "new-branch"; branchName?: string };
+  worktree?:
+    | { mode: "current" }
+    | { mode: "new-branch"; branchName?: string }
+    /** Additive: an existing worktree the user picked; sequential patterns share it. */
+    | { mode: "existing"; worktreePath: string; worktreeBranch?: string };
   /** Start from an existing thread: it becomes the first participant ("invite a model"). */
   originThreadId?: string;
   /**
@@ -65,6 +74,25 @@ export interface StartRoundtableInput {
    * that session (same ids) that answered.
    */
   seedFromSessionId?: string;
+  /**
+   * Additive (Work together): instructions for every participant (trimmed;
+   * blank is omitted). Per-participant ones go in `ParticipantProfile.instructions`.
+   */
+  instructions?: string;
+  /**
+   * Additive (Playbooks): the table's playbook id; seats override it with
+   * `ParticipantProfile.playbookId`. A read-only playbook is refused for a
+   * pattern whose seats must edit files.
+   */
+  playbookId?: string;
+}
+
+/** Additive (Work together): an edit of the instructions after start. */
+export interface RoundtableInstructionsUpdate {
+  /** Instructions for everyone; blank removes them. Omitted: unchanged. */
+  shared?: string;
+  /** Participant id → its own instructions; blank removes them. Unknown ids are ignored. */
+  participants?: Record<string, string>;
 }
 
 export interface RoundtableSummary {
@@ -146,10 +174,84 @@ export function resumeRoundtable(sessionId: string): void {
 }
 
 /**
+ * Additive (Work together): "Stop replies" in an open chat. Interrupts the
+ * running replies; nobody else answers the messages posted so far. The chat
+ * stays running, so the next message is answered as usual. No-op for other
+ * patterns and for a chat that is not running.
+ */
+export function interruptRoundtable(sessionId: string): Promise<void> {
+  return getRoundtableRuntime().runner.interrupt(sessionId);
+}
+
+/**
+ * Additive (Work together): changes the shared and/or per-participant
+ * instructions of any saved session. Each participant gets them again with
+ * its next turn when the edit changed its own or the shared instructions (the
+ * planner compares `instructionsUpdatedFor` with its last turn). Grok seats
+ * read their current instructions on every request. Rejects with a
+ * user-facing message when the session is gone.
+ */
+export async function updateRoundtableInstructions(
+  sessionId: string,
+  update: RoundtableInstructionsUpdate,
+): Promise<void> {
+  await waitForRoundtableHydration();
+  const store = useRoundtableStore.getState();
+  if (!store.sessions[sessionId]) throw new Error(i18n._(msg`This Roundtable no longer exists.`));
+  store.updateSession(sessionId, (session) => {
+    const { instructions: _shared, ...rest } = session;
+    const shared = update.shared === undefined ? session.instructions : update.shared.trim();
+    const sharedChanged = (shared ?? "") !== (session.instructions ?? "");
+    const edits = update.participants ?? {};
+    const now = Date.now();
+    const stamps = { ...session.instructionsUpdatedFor };
+    const participants = session.participants.map((participant): ParticipantProfile => {
+      if (!Object.hasOwn(edits, participant.id)) return participant;
+      const { instructions: _own, ...profile } = participant;
+      const own = edits[participant.id]!.trim();
+      return own ? { ...profile, instructions: own } : profile;
+    });
+    // Only seats whose instructions really changed are told again.
+    participants.forEach((participant, index) => {
+      const before = session.participants[index]!.instructions ?? "";
+      if (sharedChanged || (participant.instructions ?? "") !== before) {
+        stamps[participant.id] = now;
+      }
+    });
+    return {
+      ...rest,
+      ...(shared ? { instructions: shared } : {}),
+      participants,
+      ...(Object.keys(stamps).length > 0 ? { instructionsUpdatedFor: stamps } : {}),
+    };
+  });
+}
+
+/**
+ * Additive (Work together): seats more participants in an open chat (ids
+ * already seated are skipped). They answer the messages posted from now on,
+ * with their own threads. Rejects with a user-facing message when the session
+ * is gone, is not an open chat, or would seat more than the maximum.
+ */
+export async function addRoundtableParticipants(
+  sessionId: string,
+  participants: ParticipantProfile[],
+): Promise<void> {
+  await waitForRoundtableHydration();
+  const store = useRoundtableStore.getState();
+  const session = store.sessions[sessionId];
+  if (!session) throw new Error(i18n._(msg`This Roundtable no longer exists.`));
+  // Throws before anything is written when they cannot join.
+  const next = addParticipantsToSession(session, participants, Date.now());
+  store.updateSession(sessionId, () => next);
+}
+
+/**
  * Post a user message; `mentions` (participant ids) choose who replies in the
  * open pattern. In the other patterns the message steers the run: it is added
- * to the next participant's prompt. Rejects with a user-facing message when
- * the session is gone or has ended, since nobody would ever answer.
+ * to the next participant's prompt. A stopped open chat reopens (what the stop
+ * cut off stays unanswered). Rejects with a user-facing message when the
+ * session is gone or has ended, since nobody would ever answer.
  */
 export async function postToRoundtable(
   sessionId: string,
@@ -159,9 +261,11 @@ export async function postToRoundtable(
   const message = text.trim();
   if (!message) return;
   await waitForRoundtableHydration();
-  const status = useRoundtableStore.getState().sessions[sessionId]?.status;
-  if (status === undefined) throw new Error(i18n._(msg`This Roundtable no longer exists.`));
-  if (status === "done" || status === "stopped" || status === "failed") {
+  const session = useRoundtableStore.getState().sessions[sessionId];
+  if (session === undefined) throw new Error(i18n._(msg`This Roundtable no longer exists.`));
+  const { status } = session;
+  const reopens = session.pattern === "open" && status === "stopped";
+  if (!reopens && (status === "done" || status === "stopped" || status === "failed")) {
     throw new Error(i18n._(msg`This Roundtable has ended. Start a new one to continue.`));
   }
   getRoundtableRuntime().runner.post(sessionId, message, options?.mentions);
@@ -219,7 +323,7 @@ export function useReadyAgentBrains(projectId: string | undefined): ReadyAgentBr
   );
 }
 
-/** Registers the driver for a brain kind ("agent" is built in; Bots registers "xai"). */
+/** Registers the driver for a brain kind ("agent" is built in; the runtime registers "xai"). */
 export function registerParticipantDriverFactory(
   kind: ParticipantBrain["kind"],
   factory: ParticipantDriverFactory,

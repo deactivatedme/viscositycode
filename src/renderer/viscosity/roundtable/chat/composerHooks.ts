@@ -13,6 +13,7 @@ import { useAppStore } from "@/renderer/state/appStore";
 import { lastUserMessageText, openRoundtableInvite } from "./inviteStore";
 import { findRoundtableMentions, type RoundtableMentionTarget } from "./mentions";
 import { postMentionedRoundtableMessage } from "./mentionRouting";
+import { toastRoundtableStarted } from "./startedToast";
 
 export interface RoundtableComposerSurface {
   thread: {
@@ -67,7 +68,7 @@ export function openRoundtableFromComposer(surface: RoundtableComposerSurface, t
 }
 
 /**
- * A message that `@mentions` bots or ready models goes to the chat's open
+ * A message that `@mentions` ready models goes to the chat's open
  * Roundtable (started on the first mention) instead of the chat itself.
  * Returns `null` when the message mentions none of them.
  */
@@ -104,10 +105,14 @@ export function routeComposerRoundtableMentions(
   })
     .then((result) => {
       clearComposerIfUnchanged(surface, draftAtSubmit);
-      if (result.created) {
-        const names = mentioned.map((target) => target.label).join(", ");
-        toast.success(i18n._(msg`Roundtable started with ${names}`));
-      }
+      // The message leaves this chat, so every post says where it went.
+      const names = mentioned.map((target) => target.label).join(", ");
+      toastRoundtableStarted(
+        result.sessionId,
+        result.created
+          ? i18n._(msg`Roundtable started with ${names}`)
+          : i18n._(msg`Sent to the Roundtable for ${names}`),
+      );
     })
     .catch((error: unknown) => {
       toast.danger(friendlyError(error));

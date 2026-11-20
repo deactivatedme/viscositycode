@@ -19,6 +19,11 @@ export interface RoundtablePatternOption {
 
 export const ROUNDTABLE_PATTERN_OPTIONS: readonly RoundtablePatternOption[] = [
   {
+    id: "open",
+    label: msg`Work together`,
+    hint: msg`Everyone works on it together and builds on each other`,
+  },
+  {
     id: "build-review",
     label: msg`Build ↔ review`,
     hint: msg`One builds, the others review until they approve`,
@@ -38,14 +43,9 @@ export const ROUNDTABLE_PATTERN_OPTIONS: readonly RoundtablePatternOption[] = [
     label: msg`Race + cross-review`,
     hint: msg`All build in separate worktrees, review each other, best wins`,
   },
-  {
-    id: "open",
-    label: msg`Open group chat`,
-    hint: msg`Talk to everyone; @mention who should reply`,
-  },
 ];
 
-export const DEFAULT_ROUNDTABLE_PATTERN: RoundtablePattern = "build-review";
+export const DEFAULT_ROUNDTABLE_PATTERN: RoundtablePattern = "open";
 
 export function isRoundtablePattern(value: unknown): value is RoundtablePattern {
   return ROUNDTABLE_PATTERN_OPTIONS.some((option) => option.id === value);

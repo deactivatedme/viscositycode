@@ -8,8 +8,8 @@
  * behind `ParticipantDriver`, so the orchestrator and UI never branch on a
  * provider name (provider-isolation rule, ARCHITECTURE_NOTES.md §1).
  *
- * Codync-style Bots reuse the same engine: a bot is a saved participant
- * profile, and a bot group chat is a Roundtable in the "open" pattern.
+ * Group chats saved by the removed Bots feature are Roundtables in the
+ * "open" pattern; their seats keep the optional avatar and instructions.
  */
 
 /** How participants take turns. */
@@ -22,7 +22,13 @@ export type RoundtablePattern =
   | "relay"
   /** All build in parallel on separate worktrees, cross-review each other, best is crowned. */
   | "race"
-  /** Free group chat: the user (or a bot) @mentions who replies; everyone else may react. */
+  /**
+   * "Work together" (default): a continuous team chat. Each user message is
+   * answered by every seated participant in seat order (or only the ones it
+   * @mentions); each sees the replies before it, and a reply that @mentions a
+   * teammate hands it over. No rounds, no verdicts, no winner; it never
+   * finishes on its own. Bot group chats use it too.
+   */
   | "open"
   /**
    * Additive (AA compare): everyone answers the task once, independently and in
@@ -57,10 +63,26 @@ export interface ParticipantProfile {
   label: string;
   role: ParticipantRole;
   brain: ParticipantBrain;
-  /** Optional standing instructions (bots) prepended to this participant's first turn. */
+  /**
+   * Optional standing instructions (bots, or per-AI instructions): sent on the
+   * participant's first turn and again after the user edits them
+   * (`RoundtableSession.instructionsUpdatedFor`).
+   */
   instructions?: string;
   /** Avatar for bots: an emoji or 1–2 letters, plus an accent colour token or hex. */
   avatar?: { glyph: string; color: string };
+  /**
+   * Additive (Work together): when the participant joined a running open
+   * session (`addRoundtableParticipants`). It is not asked to answer messages
+   * posted before then. Absent: seated from the start.
+   */
+  joinedAt?: number;
+  /**
+   * Additive (Playbooks): this seat's playbook id, which overrides the
+   * table's (`RoundtableSession.playbookId`); `null` means none for this
+   * seat. Absent: the table's. Applied when the seat's thread is created.
+   */
+  playbookId?: string | null;
 }
 
 export type TurnStatus = "pending" | "running" | "waiting-approval" | "done" | "failed" | "stopped";
@@ -90,6 +112,13 @@ export interface RoundtableTurn {
   noteId?: string;
   /** Additive (RT1 engine): `responseText` was cut to the stored cap (a marker sits in the text). */
   truncated?: boolean;
+  /**
+   * Additive (Work together): the turn is saved but its prompt has not gone
+   * out yet. A reload re-sends such a turn instead of attaching to the
+   * thread (whose last answer belongs to an earlier turn). Absent on turns
+   * older builds wrote: those attach, as before.
+   */
+  unsent?: true;
 }
 
 /** Additive (RT1 engine): the step a turn belongs to, per pattern. */
@@ -134,6 +163,12 @@ export interface RoundtableNote {
   createdAt: number;
   /** Steering notes: the turn whose prompt carried this note. */
   deliveredTurnId?: string;
+  /**
+   * Additive (Work together): the user stopped the replies to this message
+   * ("Stop replies", or the chat was stopped and then continued); nobody
+   * else answers it.
+   */
+  halted?: true;
 }
 
 /** Additive (RT1 engine): why a Roundtable finished, for the UI to explain (localized there). */
@@ -193,6 +228,25 @@ export interface RoundtableSession {
    * continues in the same thread.
    */
   seededFromSessionId?: string;
+  /** Additive (Work together): instructions for every participant, editable after start. */
+  instructions?: string;
+  /**
+   * Additive (Work together), legacy: one stamp for every participant, written
+   * by builds before `instructionsUpdatedFor`. Still honoured when present.
+   */
+  instructionsUpdatedAt?: number;
+  /**
+   * Additive (Work together): participant id → when an edit after start last
+   * changed that participant's own or the shared instructions. Only those
+   * participants get them again on their next turn.
+   */
+  instructionsUpdatedFor?: Record<string, number>;
+  /**
+   * Additive (Playbooks): the playbook every seat's new thread is bound to,
+   * unless the seat overrides it. Resolved from the catalog when the thread
+   * is created; the thread then holds its own frozen copy.
+   */
+  playbookId?: string;
 }
 
 /** Live streaming callback: text so far for the running turn (throttled by the driver). */
@@ -212,6 +266,11 @@ export interface SendTurnOptions {
    * prompt already quotes the needed text).
    */
   contextThreadIds?: string[];
+  /**
+   * Additive (Work together): called right before the prompt goes out, so a
+   * reload can tell a sent turn from one that was only queued.
+   */
+  onSent?: () => void;
 }
 
 export interface TurnResult {

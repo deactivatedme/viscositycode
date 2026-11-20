@@ -1,11 +1,14 @@
 import { fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Thread } from "@/shared/contracts";
+import { useAppStore } from "@/renderer/state/appStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { participant, session, turn } from "./roundtable.testFixtures";
 import {
   buildTranscriptEntries,
   findDecisionTurn,
   RoundtableTranscript,
+  showsTaskCard,
 } from "./RoundtableTranscript";
 
 const api = vi.hoisted(() => ({
@@ -22,7 +25,17 @@ beforeEach(() => {
   api.useLiveTurnText.mockReset();
   api.useLiveTurnText.mockImplementation((_sessionId, turnId) => api.live[turnId] ?? "");
   tabs.activateThreadTab.mockReset();
+  // The participant threads are live (loaded, not archived) unless a test says otherwise.
+  setThreads(["thread-a", "thread-b", "thread-c"]);
 });
+
+function setThreads(ids: string[], archived: string[] = []): void {
+  useAppStore.setState({
+    threads: [...ids, ...archived].map(
+      (id) => ({ id, projectId: "p1", archived: archived.includes(id) }) as Thread,
+    ),
+  });
+}
 
 function bubble(turnId: string): HTMLElement {
   const element = document.querySelector<HTMLElement>(`[data-vc-rt-turn="${turnId}"]`);
@@ -54,6 +67,26 @@ describe("buildTranscriptEntries", () => {
       "t4",
       "note:n3",
     ]);
+  });
+
+  it("adds no round separators when asked not to", () => {
+    const turns = [turn("t1", { round: 0 }), turn("t2", { round: 1 })];
+    expect(buildTranscriptEntries(turns, [], false).map((entry) => entry.key)).toEqual([
+      "t1",
+      "t2",
+    ]);
+  });
+
+  it("hides an empty task, and a team chat's task that is just its first message", () => {
+    const note = { id: "n1", text: "Plan the release", createdAt: 1 };
+    expect(showsTaskCard({ pattern: "open", task: " ", notes: [] })).toBe(false);
+    expect(showsTaskCard({ pattern: "open", task: "Plan the release ", notes: [note] })).toBe(
+      false,
+    );
+    expect(showsTaskCard({ pattern: "open", task: "Topic", notes: [note] })).toBe(true);
+    expect(showsTaskCard({ pattern: "debate", task: "Plan the release", notes: [note] })).toBe(
+      true,
+    );
   });
 
   it("finds the decision turn of the winner first", () => {
@@ -106,8 +139,119 @@ describe("RoundtableTranscript", () => {
     expect(bubble("wait").getAttribute("data-status")).toBe("waiting-approval");
 
     const separators = screen.getAllByRole("separator").map((element) => element.textContent);
-    expect(separators).toEqual(["Round 1 of 4", "Round 2 of 4", "Round 3 of 4"]);
+    // The engine counts rounds from 0.
+    expect(separators).toEqual(["Round 2 of 4", "Round 3 of 4", "Round 4 of 4"]);
     expect(api.useLiveTurnText).not.toHaveBeenCalledWith("rt1", "done");
+  });
+
+  it("labels debate steps by what they are, not by raw round numbers", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          pattern: "debate",
+          maxRounds: 2,
+          turns: [
+            turn("p", { round: 0, phase: "propose" }),
+            turn("c1", { round: 1, phase: "critique" }),
+            turn("c2", { round: 2, phase: "critique" }),
+            turn("d", { round: 3, phase: "decide" }),
+          ],
+        })}
+      />,
+    );
+    const separators = screen.getAllByRole("separator").map((element) => element.textContent);
+    expect(separators).toEqual(["Proposals", "Round 1 of 2", "Round 2 of 2", "Decision"]);
+    expect(bubble("c2").getAttribute("aria-label")).toBe("Agent A, round 2");
+  });
+
+  it("shows a team chat as one conversation: no rounds, phases or duplicated task", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          pattern: "open",
+          maxRounds: 0,
+          task: "Plan the release",
+          instructions: "Answer in Portuguese.",
+          threadIds: { a: "thread-a" },
+          notes: [{ id: "n1", text: "Plan the release", createdAt: 1, halted: true }],
+          turns: [
+            turn("r0", { round: 0, phase: "reply", noteId: "n1", responseText: "Step one" }),
+            turn("r1", { round: 1, phase: "reply", noteId: "n1", participantId: "b" }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.queryAllByRole("separator")).toHaveLength(0);
+    expect(screen.queryByRole("heading", { name: "Task" })).toBeNull();
+    expect(screen.queryByText("Reply")).toBeNull();
+    expect(bubble("r0").getAttribute("aria-label")).toBe("Agent A");
+    expect(screen.getByText("Instructions for everyone")).toBeTruthy();
+    expect(screen.getByText("Answer in Portuguese.")).toBeTruthy();
+  });
+
+  it("labels only the messages a stop actually cut short", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          pattern: "open",
+          maxRounds: 0,
+          notes: [
+            { id: "n1", text: "First", createdAt: 1, halted: true },
+            { id: "n2", text: "Second", createdAt: 2, halted: true },
+            { id: "n3", text: "Third", createdAt: 3, halted: true },
+          ],
+          turns: [
+            turn("a1", { round: 0, phase: "reply", noteId: "n1", participantId: "a" }),
+            turn("b1", { round: 0, phase: "reply", noteId: "n1", participantId: "b" }),
+            turn("a2", { round: 0, phase: "reply", noteId: "n2", status: "stopped" }),
+            turn("a3", { round: 0, phase: "reply", noteId: "n3", participantId: "a" }),
+          ],
+        })}
+      />,
+    );
+    const label = "You stopped the replies to this message.";
+    const note = (id: string) => document.querySelector<HTMLElement>(`[data-vc-rt-note="${id}"]`)!;
+    expect(within(note("n1")).queryByText(label)).toBeNull();
+    expect(within(note("n2")).getByText(label)).toBeTruthy();
+    // Agent B never got to answer the third message.
+    expect(within(note("n3")).getByText(label)).toBeTruthy();
+  });
+
+  it("offers Copy and Open thread on a settled answer", () => {
+    render(
+      <RoundtableTranscript
+        session={session({
+          threadIds: { a: "thread-a" },
+          turns: [
+            turn("done", { participantId: "a", responseText: "Patched." }),
+            turn("run", { participantId: "a", status: "running" }),
+          ],
+        })}
+      />,
+    );
+    expect(within(bubble("done")).getByRole("button", { name: "Copy answer" })).toBeTruthy();
+    fireEvent.click(within(bubble("done")).getByRole("button", { name: "Open Agent A thread" }));
+    expect(tabs.activateThreadTab).toHaveBeenCalledWith("thread-a");
+    expect(within(bubble("run")).queryByRole("button", { name: "Copy answer" })).toBeNull();
+  });
+
+  it("offers no Open thread for a deleted or archived participant thread", () => {
+    setThreads([], ["thread-b"]);
+    render(
+      <RoundtableTranscript
+        session={session({
+          threadIds: { a: "thread-a", b: "thread-b" },
+          turns: [
+            turn("done", { participantId: "a", responseText: "Patched." }),
+            turn("wait", { participantId: "b", status: "waiting-approval" }),
+          ],
+        })}
+      />,
+    );
+    // thread-a was deleted, thread-b archived; the answer can still be copied.
+    expect(within(bubble("done")).getByRole("button", { name: "Copy answer" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Open Agent A thread" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open Agent B thread" })).toBeNull();
   });
 
   it("opens the waiting participant's thread from the approval callout", () => {
@@ -143,10 +287,10 @@ describe("RoundtableTranscript", () => {
     );
     const verdictOf = (id: string) => bubble(id).querySelector(".vc-rt-verdict");
     expect(verdictOf("ok")?.getAttribute("data-verdict")).toBe("approve");
-    expect(verdictOf("ok")?.textContent).toBe("Approve");
-    expect(verdictOf("redo")?.textContent).toBe("Revise");
-    expect(verdictOf("pick")?.textContent).toBe("Pick → Agent A");
-    expect(verdictOf("pick2")?.textContent).toBe("Pick");
+    expect(verdictOf("ok")?.textContent).toBe("Approved");
+    expect(verdictOf("redo")?.textContent).toBe("Changes requested");
+    expect(verdictOf("pick")?.textContent).toBe("Recommends Agent A");
+    expect(verdictOf("pick2")?.textContent).toBe("Recommendation");
   });
 
   it("shows the user's messages with their recipients", () => {
@@ -190,11 +334,20 @@ describe("RoundtableTranscript", () => {
         })}
       />,
     );
-    const decision = screen.getByRole("region", { name: "Decision" });
-    expect(within(decision).getByText("The judge picked a winner.")).toBeTruthy();
-    expect(decision.textContent).toContain("Winner: Agent A");
+    const decision = screen.getByRole("region", { name: "Result" });
+    expect(decision.textContent).toContain("Recommended: Agent A");
     expect(within(decision).getByText("Rationale from Agent J")).toBeTruthy();
     expect(within(decision).getByText("A handles the edge cases.")).toBeTruthy();
+    expect(within(decision).getByRole("button", { name: "Copy rationale" })).toBeTruthy();
+  });
+
+  it("does not present a run that ran out of rounds as a result", () => {
+    render(
+      <RoundtableTranscript
+        session={session({ status: "done", outcome: { reason: "max-rounds" } })}
+      />,
+    );
+    expect(screen.getByRole("region", { name: "Not approved yet" })).toBeTruthy();
   });
 
   it("prefers the engine's own rationale and explains a failure", () => {
@@ -206,7 +359,7 @@ describe("RoundtableTranscript", () => {
         })}
       />,
     );
-    const decision = screen.getByRole("region", { name: "Decision" });
+    const decision = screen.getByRole("region", { name: "Result" });
     expect(within(decision).getByText("A reviewer approved the work.")).toBeTruthy();
     expect(within(decision).getByText("Rationale")).toBeTruthy();
     expect(within(decision).getByText("Reviewer approved round 2.")).toBeTruthy();
@@ -214,7 +367,7 @@ describe("RoundtableTranscript", () => {
     rerender(
       <RoundtableTranscript session={session({ status: "failed", error: "Builder crashed" })} />,
     );
-    expect(screen.queryByRole("region", { name: "Decision" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Result" })).toBeNull();
     expect(screen.getByRole("alert").textContent).toBe("Builder crashed");
   });
 });

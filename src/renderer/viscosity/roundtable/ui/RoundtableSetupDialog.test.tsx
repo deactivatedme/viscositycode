@@ -1,3 +1,4 @@
+import { toast } from "@heroui/react";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project } from "@/shared/contracts";
@@ -7,6 +8,7 @@ import { usePanelStore } from "@/renderer/state/panelStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { acquireViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
 import type { ReadyAgentBrain, StartRoundtableInput } from "../api";
+import { getRoundtableChatLink } from "../chat/chatLinksStore";
 import { participant, readyBrain } from "./roundtable.testFixtures";
 import { RoundtableSetupDialog } from "./RoundtableSetupDialog";
 import { useRoundtableViewStore } from "./roundtableViewStore";
@@ -63,7 +65,9 @@ function startButton(): HTMLElement {
 }
 
 function typeTask(text: string) {
-  fireEvent.change(screen.getByRole("textbox", { name: /Task/ }), { target: { value: text } });
+  fireEvent.change(screen.getByRole("textbox", { name: /Task|First message/ }), {
+    target: { value: text },
+  });
 }
 
 beforeEach(() => {
@@ -87,8 +91,135 @@ afterEach(() => {
 });
 
 describe("RoundtableSetupDialog", () => {
-  it("seats two ready agents and keeps Start disabled until the task is described", () => {
+  it("starts on Work together: no roles or rounds, and the first message is optional", () => {
     renderDialog({ projectId: "p1" });
+    const radios = within(
+      screen.getByRole("radiogroup", { name: "How should they work?" }),
+    ).getAllByRole("radio");
+    expect(radios.map((radio) => radio.getAttribute("value"))).toEqual(["open", "compare"]);
+    expect(screen.getByRole("radio", { name: /Work together/ })).toHaveProperty("checked", true);
+    expect(screen.queryAllByLabelText(/Role of participant/)).toHaveLength(0);
+    expect(screen.queryByText("Max rounds")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "First message (optional)" })).toBeTruthy();
+    expect(screen.getByText(/They answer in this order/)).toBeTruthy();
+    expect(startButton().hasAttribute("disabled")).toBe(false);
+
+    // The competitive patterns are kept, one click away.
+    const more = screen.getByRole("button", { name: /More ways to work/ });
+    expect(more.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(more);
+    fireEvent.click(screen.getByRole("radio", { name: /Debate → decide/ }));
+    expect(screen.queryAllByLabelText(/Role of participant/)).toHaveLength(2);
+    expect(screen.getByText("Describe the task.")).toBeTruthy();
+    // The chosen card cannot be folded away.
+    expect(more.getAttribute("aria-expanded")).toBe("true");
+    expect(more.hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("radio", { name: /Debate → decide/ })).toHaveProperty("checked", true);
+  });
+
+  it("sends instructions for everyone and per participant", async () => {
+    api.ready = [readyBrain("kind-alpha"), readyBrain("kind-beta")];
+    renderDialog({
+      projectId: "p1",
+      participants: [
+        participant("alpha", { instructions: "You are the tester." }),
+        participant("beta"),
+      ],
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Instructions for everyone" }), {
+      target: { value: " Keep it short. " },
+    });
+    // A bot's instructions are shown prefilled; the other seat opens its own.
+    expect(screen.getByRole("textbox", { name: "Instructions for participant 1" })).toHaveProperty(
+      "value",
+      "You are the tester.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Edit instructions for participant 2" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Instructions for participant 2" }), {
+      target: { value: "Backend only" },
+    });
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    const input = api.startRoundtable.mock.calls[0]![0];
+    expect(input).toMatchObject({ pattern: "open", task: "", instructions: "Keep it short." });
+    expect(input.participants.map((entry) => entry.instructions)).toEqual([
+      "You are the tester.",
+      "Backend only",
+    ]);
+    // Nothing to post: the chat waits for the first message.
+    expect(api.postToRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("sends the table's playbook and a seat's own choice", async () => {
+    api.ready = [readyBrain("kind-alpha"), readyBrain("kind-beta")];
+    renderDialog({
+      projectId: "p1",
+      participants: [participant("alpha", { playbookId: "review" }), participant("beta")],
+    });
+    // A seat that arrives with its own playbook shows it.
+    expect(screen.getByRole("button", { name: /Playbook for participant 1/ })).toHaveTextContent(
+      "Review",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "No playbook Playbook" }));
+    fireEvent.click(screen.getByRole("option", { name: "Reversing" }));
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    const input = api.startRoundtable.mock.calls[0]![0];
+    expect(input.playbookId).toBe("reversing");
+    expect(input.participants.map((entry) => entry.playbookId)).toEqual(["review", undefined]);
+  });
+
+  it("starts with Cmd/Ctrl+Enter and offers to open the new Roundtable", async () => {
+    const success = vi.spyOn(toast, "success");
+    useRoundtableViewStore.setState({ setup: { nonce: 9, request: {} } });
+    renderDialog({ projectId: "p1" });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "First message (optional)" }), {
+        key: "Enter",
+        metaKey: true,
+      });
+    });
+    expect(api.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(useRoundtableViewStore.getState()).toMatchObject({
+      openSessionId: "rt-new",
+      shown: false,
+    });
+    const options = success.mock.calls.at(-1)![1] as { actionProps: { onPress: () => void } };
+    act(() => options.actionProps.onPress());
+    expect(useRoundtableViewStore.getState()).toMatchObject({
+      openSessionId: "rt-new",
+      shown: true,
+    });
+    success.mockRestore();
+  });
+
+  it("reports a failed start after the dialog was dismissed", async () => {
+    const danger = vi.spyOn(toast, "danger");
+    let reject: (error: Error) => void = () => undefined;
+    api.startRoundtable.mockReturnValueOnce(
+      new Promise<string>((_, fail) => {
+        reject = fail;
+      }),
+    );
+    useRoundtableViewStore.setState({ setup: { nonce: 8, request: {} } });
+    renderDialog({ projectId: "p1" });
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    act(() => {
+      useRoundtableViewStore.setState({ setup: null });
+    });
+    await act(async () => {
+      reject(new Error("Branch already exists"));
+    });
+    expect(danger).toHaveBeenCalledWith("Branch already exists");
+    danger.mockRestore();
+  });
+
+  it("seats two ready agents and keeps Start disabled until the task is described", () => {
+    renderDialog({ projectId: "p1", pattern: "build-review" });
     const seats = within(screen.getByRole("list", { name: "Participants" })).getAllByRole(
       "listitem",
     );
@@ -152,13 +283,13 @@ describe("RoundtableSetupDialog", () => {
     fireEvent.click(addGrok);
     fireEvent.click(addGrok);
     expect(screen.getAllByText("Grok (xAI API)")).toHaveLength(2);
-    expect(screen.queryByText("Max rounds")).toBeTruthy();
-    expect(screen.getByText("Unlimited: the chat runs until you stop it.")).toBeTruthy();
+    // A team chat has no rounds.
+    expect(screen.queryByText("Max rounds")).toBeNull();
     expect(startButton().hasAttribute("disabled")).toBe(false);
   });
 
   it("applies the pattern's round default and lets a seat change provider and model", () => {
-    renderDialog({ projectId: "p1", task: "Fix it" });
+    renderDialog({ projectId: "p1", task: "Fix it", pattern: "build-review" });
     const rounds = () => screen.getByRole("textbox", { name: "Max rounds" }) as HTMLInputElement;
     expect(rounds().value).toBe("4");
     fireEvent.click(screen.getByRole("radio", { name: /Debate → decide/ }));
@@ -168,7 +299,7 @@ describe("RoundtableSetupDialog", () => {
   });
 
   it("starts the Roundtable and adds its tab without switching to it", async () => {
-    renderDialog({ projectId: "p1", originThreadId: "t1" });
+    renderDialog({ projectId: "p1", originThreadId: "t1", pattern: "build-review" });
     typeTask("Make the build green");
     fireEvent.change(screen.getByRole("textbox", { name: "Title" }), {
       target: { value: "Green build" },
@@ -223,6 +354,14 @@ describe("RoundtableSetupDialog", () => {
       shown: false,
       setup: null,
     });
+  });
+
+  it("links an open Roundtable started from a chat to that chat", async () => {
+    renderDialog({ projectId: "p1", pattern: "open", originThreadId: "t1" });
+    await act(async () => {
+      fireEvent.click(startButton());
+    });
+    expect(getRoundtableChatLink("t1")?.sessionId).toBe("rt-new");
   });
 
   it("routes an @mention in an open chat's task to that participant", async () => {
@@ -425,7 +564,7 @@ describe("RoundtableSetupDialog", () => {
 
   it("seats the ready agents not seated yet when the compare card is picked", () => {
     api.ready = [readyBrain("alpha"), readyBrain("beta"), readyBrain("gamma")];
-    renderDialog({ projectId: "p1", task: "Fix it" });
+    renderDialog({ projectId: "p1", task: "Fix it", pattern: "build-review" });
     const list = () =>
       within(screen.getByRole("list", { name: "Participants" })).getAllByRole("listitem");
     expect(list()).toHaveLength(2);

@@ -12,7 +12,12 @@
 import { msg } from "@lingui/core/macro";
 import { stripAnsiPreservingLayout } from "@/shared/ansi";
 import { assistantDisplayText } from "@/shared/assistantMessageText";
-import { DEFAULT_TERMINAL_SIZE, type AgentStatus, type Project } from "@/shared/contracts";
+import {
+  DEFAULT_TERMINAL_SIZE,
+  mergeMcpServers,
+  type AgentStatus,
+  type Project,
+} from "@/shared/contracts";
 import type { PersistedRuntimeItem } from "@/shared/ipc/schemas";
 import { friendlyError } from "@/shared/messages";
 import { readThreadToolEnabled } from "@/shared/providerHandoff";
@@ -37,7 +42,9 @@ import { retainRuntimeThreadReader } from "@/renderer/state/runtimeInterestHydra
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { selectThreadHasActiveNativeSubAgent } from "@/renderer/state/subAgentSelectors";
 import { useThreadLiveWorkflowStore } from "@/renderer/state/threadLiveWorkflowStore";
-import { buildAgentThreadConfig } from "./agentBrains";
+import { resolveSeatPlaybook } from "../playbooks";
+import type { ParticipantProfile, RoundtableSession } from "../types";
+import { buildAgentThreadConfig, type SeatPlaybook } from "./agentBrains";
 import { keepHead, keepTail, RESPONSE_TEXT_CAP } from "./text";
 import type { LastTurnRead, ThreadEnginePort, ThreadTurnSnapshot } from "./threadPort";
 
@@ -58,6 +65,20 @@ export function findProjectAgentStatus(
   return selectLocationAgentStatuses(pools, project.location).find(
     (agent) => agent.kind === agentKind,
   );
+}
+
+/** The seat's playbook (its own, else the table's), resolved now, with the project's MCP servers. */
+export function seatPlaybookFor(
+  project: Project,
+  session: Pick<RoundtableSession, "playbookId">,
+  profile: Pick<ParticipantProfile, "playbookId">,
+): SeatPlaybook | undefined {
+  const definition = resolveSeatPlaybook(session, profile);
+  if (!definition) return undefined;
+  return {
+    definition,
+    mcpServers: mergeMcpServers(useSharedSettings.getState().mcpServers, project.mcpServers ?? []),
+  };
 }
 
 interface TurnTextAccumulator {
@@ -202,6 +223,7 @@ export function createLiveThreadEnginePort(): ThreadEnginePort {
       const config = buildAgentThreadConfig(
         brain,
         findProjectAgentStatus(project, brain.agentKind),
+        seatPlaybookFor(project, session, profile),
       );
       const hostThreadId = crypto.randomUUID();
       // A new row carries its project host's identity, whichever host that is.

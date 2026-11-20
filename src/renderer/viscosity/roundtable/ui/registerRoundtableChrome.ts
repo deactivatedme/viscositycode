@@ -10,8 +10,9 @@ import { UsersRound } from "lucide-react";
 import { registerActivityBarItem } from "@/renderer/viscosity/layout/activityBar/activityBarRegistry";
 import { registerStatusBarItem } from "@/renderer/viscosity/layout/statusBar/statusBarRegistry";
 import { useViscosityShellEnabled } from "@/renderer/viscosity/layout/tabs/shellGate";
-import { useRoundtableList } from "../api";
+import { useRoundtableStore } from "../roundtableStore";
 import { registerCompareCommands } from "./compareCommands";
+import { isChatIdle } from "./patterns";
 import { ROUNDTABLE_STATUS_ITEM_ID, RoundtableStatusItem } from "./RoundtableStatusItem";
 
 export const ROUNDTABLE_ACTIVITY_ITEM_ID = "roundtable";
@@ -25,10 +26,14 @@ function preloadSidebarView(): void {
   void loadSidebarView();
 }
 
-/** Running sessions, as the activity bar badge. */
+/** Running sessions, as the activity bar badge; a team chat waiting for the user is not running. */
 function useRunningRoundtableCount(): number | null {
-  const sessions = useRoundtableList();
-  const running = sessions.filter((session) => session.status === "running").length;
+  const running = useRoundtableStore(
+    (state) =>
+      Object.values(state.sessions).filter(
+        (session) => session.status === "running" && !isChatIdle(session),
+      ).length,
+  );
   return running > 0 ? running : null;
 }
 
@@ -42,7 +47,7 @@ export function registerRoundtableChrome(): void {
     id: ROUNDTABLE_ACTIVITY_ITEM_ID,
     label: msg`Roundtable`,
     icon: UsersRound,
-    // After Agents (100) and the Bots slot, before Explorer (200).
+    // After Agents (100) and Mission Control (110), before Explorer (200).
     order: 160,
     view: RoundtableSidebarView,
     onPreload: preloadSidebarView,

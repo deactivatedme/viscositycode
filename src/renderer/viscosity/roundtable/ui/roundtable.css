@@ -40,7 +40,7 @@ html[data-vc-shell] .vc-rt-pill {
   height: 18px;
   padding: 0 var(--vc-space-2);
   border: 1px solid var(--vc-border-subtle);
-  border-radius: var(--vc-radius-pill);
+  border-radius: var(--vc-radius-sm);
   color: var(--vc-text-muted);
   font-size: var(--vc-font-size-2xs);
   line-height: 1;
@@ -86,7 +86,7 @@ html[data-vc-shell] .vc-rt-avatar {
   width: var(--vc-rt-avatar-size);
   height: var(--vc-rt-avatar-size);
   border: 1px solid var(--vc-border-subtle);
-  border-radius: var(--vc-radius-pill);
+  border-radius: var(--vc-radius-md);
   background: color-mix(
     in oklab,
     var(--vc-rt-avatar-color, var(--vc-accent)) 18%,
@@ -153,7 +153,8 @@ html[data-vc-shell] .vc-rt-panel {
     var(--vc-panel-bg) calc(var(--vc-panel-alpha) * 100%),
     transparent
   );
-  backdrop-filter: blur(var(--vc-panel-blur));
+  /* Same backdrop as the shell panels: none while blur is off or Lightweight. */
+  backdrop-filter: var(--vc-panel-backdrop, none);
 }
 
 html[data-vc-shell] .vc-rt-view {
@@ -216,11 +217,9 @@ html[data-vc-shell] .vc-rt-participant {
   max-width: 280px;
   padding: var(--vc-space-1) var(--vc-space-3) var(--vc-space-1) var(--vc-space-1);
   border: 1px solid var(--vc-border-subtle);
-  border-radius: var(--vc-radius-pill);
+  border-radius: var(--vc-radius-md);
   background: var(--vc-surface);
-  transition:
-    border-color var(--vc-motion-base) var(--vc-ease-standard),
-    box-shadow var(--vc-motion-base) var(--vc-ease-standard);
+  transition: border-color var(--vc-motion-base) var(--vc-ease-standard);
 }
 
 html[data-vc-shell] .vc-rt-participant[data-vc-fx-state="working"] {
@@ -235,9 +234,9 @@ html[data-vc-shell] .vc-rt-participant[data-vc-fx-state="error"] {
   --vc-rt-state: var(--vc-state-error);
 }
 
+/* A live state tints the hairline border; no glow. */
 html[data-vc-shell] .vc-rt-participant:not([data-vc-fx-state="idle"]) {
-  border-color: color-mix(in oklab, var(--vc-rt-state) 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--vc-rt-state) 18%, transparent);
+  border-color: color-mix(in oklab, var(--vc-rt-state) 40%, var(--vc-border-subtle));
 }
 
 html[data-vc-shell] .vc-rt-participant__avatar {
@@ -321,8 +320,6 @@ html[data-vc-shell] .vc-rt-setup__legend {
   color: var(--vc-text-muted);
   font-size: var(--vc-font-size-xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 html[data-vc-shell] .vc-rt-round {
@@ -485,15 +482,15 @@ html[data-vc-shell] .vc-rt-typing > span {
   height: 5px;
   border-radius: var(--vc-radius-pill);
   background: var(--vc-state-working);
-  animation: vc-fx-dot-pulse 1.1s var(--vc-ease-standard) infinite;
+  animation: vc-fx-dot-pulse calc(var(--vc-motion-pulse) * 0.6) var(--vc-ease-standard) infinite;
 }
 
 html[data-vc-shell] .vc-rt-typing > span:nth-child(2) {
-  animation-delay: 0.18s;
+  animation-delay: calc(var(--vc-motion-pulse) * 0.1);
 }
 
 html[data-vc-shell] .vc-rt-typing > span:nth-child(3) {
-  animation-delay: 0.36s;
+  animation-delay: calc(var(--vc-motion-pulse) * 0.2);
 }
 
 html[data-vc-shell] .vc-rt-verdict {
@@ -505,8 +502,6 @@ html[data-vc-shell] .vc-rt-verdict {
   border-radius: var(--vc-radius-sm);
   font-size: var(--vc-font-size-2xs);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 html[data-vc-shell] .vc-rt-verdict[data-verdict="approve"] {
@@ -541,8 +536,6 @@ html[data-vc-shell] .vc-rt-decision__header {
   color: var(--vc-state-success);
   font-size: var(--vc-font-size-xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 html[data-vc-shell] .vc-rt-decision__reason,
@@ -634,7 +627,7 @@ html[data-vc-shell] .vc-rt-mention {
   gap: var(--vc-space-1);
   padding: 0 var(--vc-space-2) 0 2px;
   border: 1px solid var(--vc-border-subtle);
-  border-radius: var(--vc-radius-pill);
+  border-radius: var(--vc-radius-md);
   color: var(--vc-text-muted);
   font-size: var(--vc-font-size-xs);
 }
@@ -704,6 +697,27 @@ html[data-vc-shell] .vc-rt-seat {
   padding: var(--vc-space-2);
   border: 1px solid var(--vc-border-subtle);
   border-radius: var(--vc-radius-md);
+}
+
+/* A setup seat: its controls on one row, its instructions (when shown) below. */
+html[data-vc-shell] .vc-rt-setup__seat {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+html[data-vc-shell] .vc-rt-setup__seat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-width: 0;
+}
+
+html[data-vc-shell] .vc-rt-setup__more svg {
+  transition: transform var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-rt-setup__more svg[data-expanded] {
+  transform: rotate(90deg);
 }
 
 html[data-vc-shell] .vc-rt-seat__number {
@@ -923,10 +937,53 @@ html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-rt-typing > 
   animation-play-state: paused;
 }
 
+/* Lightweight mode: the dots keep their colour and hold still (!important: the
+   pulse rules' state selectors are more specific). */
+html[data-vc-shell][data-vc-lightweight] .vc-rt-status-dot,
+html[data-vc-shell][data-vc-lightweight] .vc-rt-participant__dot,
+html[data-vc-shell][data-vc-lightweight] .vc-rt-typing > span {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-vc-shell] .vc-rt-status-dot,
   html[data-vc-shell] .vc-rt-participant__dot,
   html[data-vc-shell] .vc-rt-typing > span {
     animation: none;
   }
+}
+
+/* Roundtable view: Copy / Open thread under a settled answer, shown on hover or focus. */
+html[data-vc-shell] .rt-view-turn-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-1);
+  margin-top: var(--vc-space-1);
+  opacity: 0;
+  transition: opacity var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-rt-turn:hover .rt-view-turn-actions,
+html[data-vc-shell] .vc-rt-turn:focus-within .rt-view-turn-actions,
+html[data-vc-shell] .vc-rt-decision:hover .rt-view-turn-actions,
+html[data-vc-shell] .vc-rt-decision:focus-within .rt-view-turn-actions {
+  opacity: 1;
+}
+
+/* The collapsed shared instructions at the top of the transcript. */
+html[data-vc-shell] .rt-view-instructions__summary {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+html[data-vc-shell] .rt-view-instructions[open] .rt-view-instructions__summary {
+  margin-bottom: var(--vc-space-2);
+}
+
+/* An ended session's hint with its "Continue as a team chat" action. */
+html[data-vc-shell] .rt-view-ended {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vc-space-2);
 }

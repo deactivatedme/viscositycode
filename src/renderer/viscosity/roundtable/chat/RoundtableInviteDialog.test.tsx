@@ -14,7 +14,6 @@ vi.mock("@/renderer/viscosity/roundtable/api", () => ({
   postToRoundtable: vi.fn<() => Promise<void>>(),
   useReadyAgentBrains: () => mocks.brains,
 }));
-vi.mock("@/renderer/viscosity/bots/api", () => ({ useBots: () => [] }));
 vi.mock("@/renderer/state/useThread", () => ({
   useThread: (threadId: string | undefined) =>
     threadId === "chat-1"
@@ -51,7 +50,7 @@ describe("inviteSeatLimits", () => {
 });
 
 describe("RoundtableInviteDialog", () => {
-  it("invites a picked model into the chat with the pattern's roles", async () => {
+  it("invites a picked model into the chat to work together, with instructions for everyone", async () => {
     const onStarted = vi.fn<() => void>();
     const request = {
       kind: "invite" as const,
@@ -70,33 +69,53 @@ describe("RoundtableInviteDialog", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Add participant" }).at(-1)!);
     fireEvent.click(await screen.findByRole("option", { name: /Alpha · One/ }));
     await waitFor(() => expect(start).not.toBeDisabled());
+    fireEvent.change(screen.getByRole("textbox", { name: "Instructions for everyone" }), {
+      target: { value: "  Keep the public API.  " },
+    });
     fireEvent.click(start);
 
     await waitFor(() => expect(mocks.startRoundtable).toHaveBeenCalled());
     expect(mocks.startRoundtable).toHaveBeenCalledWith({
       task: "Review the login fix",
-      pattern: "build-review",
+      pattern: "open",
       projectId: "project-1",
       originThreadId: "chat-1",
       worktree: { mode: "current" },
+      instructions: "Keep the public API.",
       participants: [
-        // The engine binds the origin chat to seat 0: its own agent builds.
+        // The engine binds the origin chat to seat 0.
         {
           id: "origin:chat-1",
           label: "Fix login",
-          role: "builder",
+          role: "member",
           brain: { kind: "agent", agentKind: "beta", model: "b1", presentationMode: "terminal" },
         },
         {
           id: "model:alpha:a1",
           label: "Alpha · One",
-          role: "reviewer",
+          role: "member",
           brain: { kind: "agent", agentKind: "alpha", model: "a1", presentationMode: "gui" },
         },
       ],
     });
     await waitFor(() => expect(onStarted).toHaveBeenCalled());
     expect(useRoundtableInviteStore.getState().request).toBeNull();
+  });
+
+  it("lets a team chat start without a first message", async () => {
+    const request = {
+      kind: "invite" as const,
+      projectId: "project-1",
+      originThreadId: "chat-1",
+      task: "",
+    };
+    render(<RoundtableInviteDialog request={request} />);
+    expect(screen.getByRole("textbox", { name: "First message (optional)" })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Add participant" }).at(-1)!);
+    fireEvent.click(await screen.findByRole("option", { name: /Alpha · One/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Start Roundtable" })).not.toBeDisabled(),
+    );
   });
 
   it("explains when no model is ready", () => {

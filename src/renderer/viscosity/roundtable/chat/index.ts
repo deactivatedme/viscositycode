@@ -13,6 +13,7 @@ registerRoundtableChatHost();
 
 export { RoundtableDraftPanel } from "./RoundtableDraftPanel";
 export {
+  primarySeatId,
   startDraftRoundtable,
   useRoundtableDraft,
   type RoundtableDraftPrimary,

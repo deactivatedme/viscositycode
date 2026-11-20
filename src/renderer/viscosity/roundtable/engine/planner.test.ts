@@ -82,6 +82,40 @@ describe("planNextStep", () => {
     expect(plan).toMatchObject({ kind: "race-launch", participantIds: ["a", "b"] });
   });
 
+  it("gives a re-run racer and its cross-review the racer's own instructions", () => {
+    const racers = [
+      { ...agentSeat("a", "A"), instructions: "Focus on performance." },
+      agentSeat("b", "B"),
+    ];
+    const rerun = planNextStep(
+      makeSession("race", racers, {
+        experimentId: "exp-1",
+        turns: [
+          doneTurn({ participantId: "a", phase: "race", status: "stopped", responseText: "" }),
+          doneTurn({ participantId: "b", phase: "race", responseText: "B's work" }),
+        ],
+      }),
+    );
+    expect(rerun.kind === "run" && rerun.turns[0]!.prompt).toContain(
+      "Your own instructions:\nFocus on performance.",
+    );
+
+    const review = planNextStep(
+      makeSession("race", racers, {
+        experimentId: "exp-1",
+        turns: [
+          doneTurn({ participantId: "a", phase: "race", startedAt: 1, responseText: "A's work" }),
+          doneTurn({ participantId: "b", phase: "race", startedAt: 1, responseText: "B's work" }),
+        ],
+      }),
+    );
+    expect(review.kind).toBe("run");
+    if (review.kind !== "run") return;
+    const forA = review.turns.find((turn) => turn.participantId === "a");
+    expect(forA?.phase).toBe("cross-review");
+    expect(forA?.prompt).toContain("Your own instructions:\nFocus on performance.");
+  });
+
   it("is idle in an open chat with no new message, and ignores unknown mentions", () => {
     const seats = [agentSeat("a", "A"), agentSeat("b", "B")];
     expect(planNextStep(makeSession("open", seats)).kind).toBe("idle");
@@ -264,5 +298,153 @@ describe("demo sessions (dev hook)", () => {
       name: "User",
       text: "How should the signup form show validation errors?",
     });
+  });
+});
+
+describe("planNextStep: work together (open)", () => {
+  const team = [
+    { ...agentSeat("a", "Alpha"), instructions: "Own the backend." },
+    agentSeat("b", "Beta"),
+  ];
+  const note = (id: string, text: string, createdAt: number) => ({ id, text, createdAt });
+
+  function promptOf(plan: ReturnType<typeof planNextStep>): string {
+    expect(plan.kind).toBe("run");
+    return plan.kind === "run" ? plan.turns[0]!.prompt : "";
+  }
+
+  it("frames the team, sends instructions on the first turn and again after an edit", () => {
+    const base = makeSession("open", team, {
+      task: "Plan the login",
+      instructions: "Use TypeScript.",
+      notes: [note("n1", "Plan the login", 1)],
+    });
+    const first = promptOf(planNextStep(base));
+    expect(first).not.toContain("(role:");
+    expect(first).toContain("working together");
+    expect(first).toContain("Instructions from the user for the whole team:\nUse TypeScript.");
+    expect(first).toContain("Your own instructions:\nOwn the backend.");
+    // The task is just the first message: no duplicated topic.
+    expect(first).not.toContain("The topic of this chat");
+
+    const answered = {
+      ...base,
+      notes: [...base.notes!, note("n2", "Next", 50)],
+      turns: [
+        doneTurn({ participantId: "a", phase: "reply", noteId: "n1", startedAt: 10, endedAt: 20 }),
+        doneTurn({ participantId: "b", phase: "reply", noteId: "n1", startedAt: 20, endedAt: 30 }),
+      ],
+    };
+    const later = promptOf(planNextStep(answered));
+    expect(later).not.toContain("Use TypeScript.");
+    expect(later).not.toContain("Own the backend.");
+
+    const edited = promptOf(planNextStep({ ...answered, instructionsUpdatedAt: 40 }));
+    expect(edited).toContain("Use TypeScript.");
+    expect(edited).toContain("Own the backend.");
+    expect(edited).toContain("they replace any earlier ones");
+    expect(first).not.toContain("replace any earlier ones");
+
+    // Clearing every instruction still tells the agent, whose thread holds the old ones.
+    const { instructions: _shared, ...withoutShared } = answered;
+    const cleared = promptOf(
+      planNextStep({
+        ...withoutShared,
+        instructionsUpdatedAt: 40,
+        participants: [agentSeat("a", "Alpha"), agentSeat("b", "Beta")],
+      }),
+    );
+    expect(cleared).not.toContain("Use TypeScript.");
+    expect(cleared).toContain("earlier instructions from the user no longer apply");
+  });
+
+  it("refreshes only the seats an edit changed, and says removed only to a seat that lost them", () => {
+    const answered = makeSession("open", team, {
+      notes: [note("n1", "Plan the login", 1), note("n2", "Next", 50)],
+      turns: [
+        doneTurn({ participantId: "a", phase: "reply", noteId: "n1", startedAt: 10, endedAt: 20 }),
+        doneTurn({ participantId: "b", phase: "reply", noteId: "n1", startedAt: 20, endedAt: 30 }),
+      ],
+    });
+    // Alpha answers the next message first; Beta after Alpha's reply to it.
+    const alphaReplied = {
+      ...answered,
+      turns: [
+        ...answered.turns,
+        doneTurn({ participantId: "a", phase: "reply", noteId: "n2", startedAt: 60, endedAt: 70 }),
+      ],
+    };
+    // Only Alpha's own instructions were edited.
+    const alpha = promptOf(planNextStep({ ...answered, instructionsUpdatedFor: { a: 40 } }));
+    expect(alpha).toContain("Own the backend.");
+    expect(alpha).toContain("they replace any earlier ones");
+    const beta = promptOf(planNextStep({ ...alphaReplied, instructionsUpdatedFor: { a: 40 } }));
+    expect(beta).not.toContain("no longer apply");
+    expect(beta).not.toContain("replace any earlier ones");
+
+    // Alpha's instructions were removed: only Alpha hears it.
+    const cleared = [agentSeat("a", "Alpha"), agentSeat("b", "Beta")];
+    const removedAlpha = promptOf(
+      planNextStep({ ...answered, participants: cleared, instructionsUpdatedFor: { a: 40 } }),
+    );
+    expect(removedAlpha).toContain("earlier instructions from the user no longer apply");
+    const removedBeta = promptOf(
+      planNextStep({ ...alphaReplied, participants: cleared, instructionsUpdatedFor: { a: 40 } }),
+    );
+    expect(removedBeta).not.toContain("no longer apply");
+  });
+
+  it("keeps a topic that differs from the first message (bot chats)", () => {
+    const session = makeSession("open", team, {
+      task: "Open group chat between bots",
+      notes: [note("n1", "Hello", 1)],
+    });
+    expect(promptOf(planNextStep(session))).toContain(
+      "The topic of this chat (from the user):\nOpen group chat between bots",
+    );
+  });
+
+  it("gives the origin seat its instructions too", () => {
+    const session = makeSession("open", team, {
+      originThreadId: "chat-1",
+      notes: [note("n1", "Hi", 1)],
+    });
+    expect(promptOf(planNextStep(session))).toContain("Your own instructions:\nOwn the backend.");
+  });
+
+  it("skips halted messages, even with a stopped reply", () => {
+    const session = makeSession("open", team, {
+      notes: [{ ...note("n1", "Hi", 1), halted: true as const }],
+      turns: [doneTurn({ participantId: "a", phase: "reply", noteId: "n1", status: "stopped" })],
+    });
+    expect(planNextStep(session).kind).toBe("idle");
+  });
+
+  it("never shows a reply a later message, and newcomers skip earlier messages", () => {
+    const session = makeSession("open", [...team, { ...agentSeat("c", "Gamma"), joinedAt: 5 }], {
+      notes: [note("n1", "First question", 1), note("n2", "Second question", 6)],
+      turns: [
+        doneTurn({ participantId: "a", phase: "reply", noteId: "n1", startedAt: 2, endedAt: 3 }),
+      ],
+    });
+    const plan = planNextStep(session);
+    expect(plan.kind === "run" && plan.turns[0]!.participantId).toBe("b");
+    const prompt = promptOf(plan);
+    expect(prompt).not.toContain("Second question");
+    expect(groupTranscript(session, "n1").map((message) => message.text)).toEqual([
+      "First question",
+      "text",
+    ]);
+    // Gamma joined after n1: once Beta answered, n2 goes to everyone, Gamma included.
+    const next = planNextStep({
+      ...session,
+      turns: [
+        ...session.turns,
+        doneTurn({ participantId: "b", phase: "reply", noteId: "n1", startedAt: 3, endedAt: 4 }),
+        doneTurn({ participantId: "a", phase: "reply", noteId: "n2", startedAt: 7, endedAt: 8 }),
+        doneTurn({ participantId: "b", phase: "reply", noteId: "n2", startedAt: 8, endedAt: 9 }),
+      ],
+    });
+    expect(next.kind === "run" && next.turns[0]!.participantId).toBe("c");
   });
 });

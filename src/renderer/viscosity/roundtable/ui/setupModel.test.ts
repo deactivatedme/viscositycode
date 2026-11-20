@@ -21,6 +21,8 @@ import {
   type RoundtableSetupDraft,
   roundsApply,
   seatAllReady,
+  seatFromProfile,
+  setSeatPlaybook,
   uniqueLabels,
   updateSeat,
   validateSetup,
@@ -33,6 +35,7 @@ function draft(overrides: Partial<RoundtableSetupDraft> = {}): RoundtableSetupDr
   return {
     title: "",
     task: "Ship it",
+    instructions: "",
     projectId: "p1",
     pattern: "build-review",
     seats: initialSeats(ready, "build-review"),
@@ -155,6 +158,10 @@ describe("validateSetup", () => {
     expect(validateSetup(draft(overrides as Partial<RoundtableSetupDraft>))).toBe(problem);
   });
 
+  it("lets an open chat start without a first message", () => {
+    expect(validateSetup(draft({ pattern: "open", task: "  " }))).toBeNull();
+  });
+
   it("ignores the round limit for the open pattern", () => {
     expect(validateSetup(draft({ pattern: "open", maxRounds: 0 }))).toBeNull();
   });
@@ -196,6 +203,20 @@ describe("buildStartInput", () => {
     expect("title" in input).toBe(false);
   });
 
+  it("passes trimmed instructions for everyone and per seat, and leaves blank ones out", () => {
+    const value = draft({ pattern: "open", task: "", instructions: "  Answer in Portuguese. " });
+    const edited = updateSeat(value, value.seats[0]!.id, { instructions: " Focus on tests " });
+    expect(edited.rolesCustomized).toBeUndefined();
+    const input = buildStartInput(
+      updateSeat(edited, value.seats[1]!.id, { instructions: "  " }),
+      ready,
+    );
+    expect(input).toMatchObject({ task: "", instructions: "Answer in Portuguese." });
+    expect(input.participants[0]!.instructions).toBe("Focus on tests");
+    expect("instructions" in input.participants[1]!).toBe(false);
+    expect("instructions" in buildStartInput(draft(), ready)).toBe(false);
+  });
+
   it("labels Grok seats and numbers repeated labels", () => {
     const seats = [createSeat(xaiBrain(), "member"), createSeat(xaiBrain(), "member")];
     const input = buildStartInput(draft({ pattern: "open", seats }), ready);
@@ -219,6 +240,24 @@ describe("ask all (compare)", () => {
     readyBrain("delta"),
     readyBrain("epsilon"),
   ];
+
+  it("seats a different provider before a second account of one already seated", () => {
+    const pooled = [
+      readyBrain(agentProfileKind(driver, "work")),
+      readyBrain(driver),
+      readyBrain("beta"),
+    ];
+    expect(
+      initialSeats(pooled, "open").map(
+        (seat) => seat.brain.kind === "agent" && seat.brain.agentKind,
+      ),
+    ).toEqual([agentProfileKind(driver, "work"), "beta"]);
+    const one = [createSeat(agentBrainFor(pooled[0]!), "member")];
+    expect(nextReadyBrain(pooled, one)?.agentKind).toBe("beta");
+    // Every provider seated: the unused second account comes before a repeat.
+    const two = [...one, createSeat(agentBrainFor(pooled[2]!), "member")];
+    expect(nextReadyBrain(pooled, two)?.agentKind).toBe(driver);
+  });
 
   it("seats every ready provider once (one account each), up to five", () => {
     const seats = initialSeats(many, "compare");
@@ -269,5 +308,54 @@ describe("ask all (compare)", () => {
     expect("maxRounds" in input).toBe(false);
     expect("worktree" in input).toBe(false);
     expect(input.participants.map((entry) => entry.role)).toEqual(["member", "member"]);
+  });
+});
+
+describe("playbooks", () => {
+  const review = { id: "review", label: "Review", instructions: "Read.", readOnly: true as const };
+
+  it("carries the table's playbook and each seat's own choice to the engine", () => {
+    const value = draft({ playbookId: "debug" });
+    const [first, second] = value.seats;
+    const edited = setSeatPlaybook(setSeatPlaybook(value, first!.id, "review"), second!.id, null);
+    const input = buildStartInput(edited, ready);
+    expect(input.playbookId).toBe("debug");
+    expect(input.participants.map((entry) => entry.playbookId)).toEqual(["review", null]);
+    // Back to the table's: the seat field is removed, not set to undefined.
+    const reset = setSeatPlaybook(edited, first!.id, undefined);
+    expect("playbookId" in reset.seats[0]!).toBe(false);
+    expect("playbookId" in buildStartInput(draft(), ready)).toBe(false);
+    expect(seatFromProfile(input.participants[1]!).playbookId).toBeNull();
+  });
+
+  it("blocks a read-only table playbook where seats must edit", () => {
+    expect(validateSetup(draft({ playbookId: "review" }), [review])).toBe("read-only-playbook");
+    expect(
+      validateSetup(draft({ pattern: "open", task: "", playbookId: "review" }), [review]),
+    ).toBeNull();
+    // Unknown to the catalog: nothing is bound, so nothing blocks.
+    expect(validateSetup(draft({ playbookId: "review" }))).toBeNull();
+    const [builderSeat, reviewerSeat] = draft().seats;
+    // The builder's own read-only playbook blocks; the reviewer's does not.
+    expect(
+      validateSetup(draft({ seats: [{ ...builderSeat!, playbookId: "review" }, reviewerSeat!] }), [
+        review,
+      ]),
+    ).toBe("read-only-playbook");
+    expect(
+      validateSetup(draft({ seats: [builderSeat!, { ...reviewerSeat!, playbookId: "review" }] }), [
+        review,
+      ]),
+    ).toBeNull();
+    // A read-only table is fine once the builder chooses none.
+    expect(
+      validateSetup(
+        draft({
+          playbookId: "review",
+          seats: [{ ...builderSeat!, playbookId: null }, reviewerSeat!],
+        }),
+        [review],
+      ),
+    ).toBeNull();
   });
 });

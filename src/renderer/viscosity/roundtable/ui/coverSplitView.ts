@@ -1,6 +1,6 @@
 /**
  * ViscosityCode UI: a panel drawn over the center split view (the open
- * Roundtable, a Grok bot's chat) takes the split view's place for keyboard
+ * Roundtable, Mission Control) takes the split view's place for keyboard
  * and assistive technology too, not only visually.
  *
  * While the panel is mounted, every other child of its container (the

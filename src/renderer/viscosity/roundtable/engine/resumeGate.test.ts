@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { threadIdsToResume, type ThreadPresenceSource, waitForThreads } from "./resumeGate";
+import {
+  resumeEachWhenListed,
+  threadIdsToResume,
+  type ThreadPresenceSource,
+  waitForThreads,
+} from "./resumeGate";
 import { agentSeat, makeSession } from "./testFixtures";
 
 function presence(initial: string[] = []) {
@@ -72,5 +77,26 @@ describe("resume gate after a reload", () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(resumed).toBe(true);
     expect(listeners.size).toBe(0);
+  });
+
+  it("resumes each session when its own threads are listed; a deleted thread delays only its session", async () => {
+    vi.useFakeTimers();
+    const { source } = presence(["t1"]);
+    const sessions = [
+      makeSession("open", seats, { id: "ok", threadIds: { a: "t1" } }),
+      makeSession("open", seats, { id: "deleted", threadIds: { a: "gone" } }),
+    ];
+    const resumed: string[] = [];
+    resumeEachWhenListed(
+      sessions,
+      source,
+      (id) => sessions.find((session) => session.id === id),
+      (session) => resumed.push(session.id),
+      1_000,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(resumed).toEqual(["ok"]);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(resumed).toEqual(["ok", "deleted"]);
   });
 });

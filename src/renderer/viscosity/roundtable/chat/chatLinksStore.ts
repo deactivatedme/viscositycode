@@ -1,7 +1,7 @@
 /**
  * ViscosityCode: which Roundtable a chat's `@mentions` go to.
  *
- * The first message that mentions models or bots starts an open-pattern
+ * The first message that mentions models starts an open-pattern
  * Roundtable with the chat as its origin; later mentions reuse it. The link
  * (chat thread id → Roundtable id + who is seated) is a per-viewer pointer,
  * not authoritative state: the engine owns the session, and a link whose
@@ -97,11 +97,13 @@ export function forgetRoundtableChatLink(threadId: string): void {
 // non-empty this run (before that the engine may still be hydrating). A
 // failed post also drops the link.
 
-let knownSessions: ReadonlyMap<string, RoundtableSummary["status"]> | null = null;
+let knownSessions: ReadonlyMap<string, Pick<RoundtableSummary, "status" | "pattern">> | null = null;
 let sawSessions = false;
 
 export function syncKnownRoundtables(list: readonly RoundtableSummary[]): void {
-  knownSessions = new Map(list.map((summary) => [summary.id, summary.status]));
+  knownSessions = new Map(
+    list.map((summary) => [summary.id, { status: summary.status, pattern: summary.pattern }]),
+  );
   if (list.length > 0) sawSessions = true;
 }
 
@@ -115,6 +117,8 @@ export function resetKnownRoundtables(): void {
 export function isReusableRoundtable(sessionId: string): boolean {
   if (knownSessions === null) return true;
   if (knownSessions.size === 0) return !sawSessions;
-  const status = knownSessions.get(sessionId);
-  return status !== undefined && status !== "stopped" && status !== "failed";
+  const known = knownSessions.get(sessionId);
+  if (known === undefined || known.status === "failed") return false;
+  // Posting reopens a stopped team chat, so its link stays usable.
+  return known.status !== "stopped" || known.pattern === "open";
 }

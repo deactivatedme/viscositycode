@@ -5,47 +5,40 @@
  * ("Claude · Opus" → `claude-opus`). The composer inserts `@handle` into the
  * message and sends the participant ids it finds as `mentions`.
  */
+import {
+  matchMentions,
+  mentionHandles as assignMentionHandles,
+  mentionSpans,
+  type MentionCandidate,
+} from "../engine/verdicts";
 import type { ParticipantProfile } from "../types";
 
-// "@" starts a mention only at a word boundary, so "me@host" is not one.
-const HANDLE_PATTERN = /(?<![\p{L}\p{N}_.@-])@([\p{L}\p{N}][\p{L}\p{N}_-]*)/gu;
-
-function slugify(label: string): string {
-  const slug = label
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "participant";
+/** Handles that also remember each label, so `extractMentions` accepts names too. */
+class ParticipantHandles extends Map<string, string> {
+  readonly labels = new Map<string, string>();
 }
 
 /** Participant id → unique handle (without the "@"), in participant order. */
 export function mentionHandles(
   participants: readonly Pick<ParticipantProfile, "id" | "label">[],
 ): Map<string, string> {
-  const handles = new Map<string, string>();
-  const taken = new Set<string>();
-  for (const participant of participants) {
-    const base = slugify(participant.label);
-    let handle = base;
-    for (let suffix = 2; taken.has(handle); suffix += 1) handle = `${base}-${suffix}`;
-    taken.add(handle);
-    handles.set(participant.id, handle);
-  }
+  const handles = new ParticipantHandles(assignMentionHandles(participants));
+  for (const participant of participants) handles.labels.set(participant.id, participant.label);
   return handles;
 }
 
-/** Participant ids mentioned in `text`, in first-mention order, without repeats. */
+function mentionCandidates(handles: ReadonlyMap<string, string>): MentionCandidate[] {
+  const labels = handles instanceof ParticipantHandles ? handles.labels : undefined;
+  return [...handles].map(([id, handle]) => ({ id, handle, label: labels?.get(id) ?? "" }));
+}
+
+/**
+ * Participant ids mentioned in `text`, in first-mention order, without
+ * repeats: by handle, and for handles from `mentionHandles` also by label or
+ * an unambiguous provider or model name (`matchMentions`).
+ */
 export function extractMentions(text: string, handles: ReadonlyMap<string, string>): string[] {
-  const idByHandle = new Map<string, string>();
-  for (const [id, handle] of handles) idByHandle.set(handle.toLowerCase(), id);
-  const ids: string[] = [];
-  for (const match of text.matchAll(HANDLE_PATTERN)) {
-    const id = idByHandle.get(match[1]!.toLowerCase());
-    if (id && !ids.includes(id)) ids.push(id);
-  }
-  return ids;
+  return matchMentions(text, mentionCandidates(handles));
 }
 
 /** Append `@handle ` to a draft, adding a separating space when needed. */
@@ -55,12 +48,23 @@ export function insertMention(text: string, handle: string): string {
   return /\s$/.test(text) ? `${text}${token}` : `${text} ${token}`;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Remove every `@handle` token (and one following space) from a draft. */
-export function removeMention(text: string, handle: string): string {
-  const token = new RegExp(`@${escapeRegExp(handle)}(?![\\p{L}\\p{N}_-]) ?`, "giu");
-  return text.replace(token, "");
+/**
+ * Remove every mention of the participant with `handle` (and one following
+ * space) from a draft. With `handles` from `mentionHandles` that includes the
+ * label and short names `extractMentions` reads, so the participant is no
+ * longer mentioned afterwards.
+ */
+export function removeMention(
+  text: string,
+  handle: string,
+  handles: ReadonlyMap<string, string> = new Map([[handle, handle]]),
+): string {
+  const id = [...handles].find(([, value]) => value === handle)?.[0];
+  let result = text;
+  for (const span of mentionSpans(text, mentionCandidates(handles)).toReversed()) {
+    if (span.id !== id) continue;
+    const end = result[span.end] === " " ? span.end + 1 : span.end;
+    result = result.slice(0, span.start) + result.slice(end);
+  }
+  return result;
 }

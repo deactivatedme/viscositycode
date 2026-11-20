@@ -3,8 +3,7 @@
  * Roundtable.
  *
  * The open pattern waits for user messages, so a group chat started from the
- * setup dialog (its task) or from Bots (its first message) posts that text
- * right after the start: the participants answer at once instead of sitting
+ * setup dialog posts its task right after the start: the participants answer at once instead of sitting
  * idle. Its @mentions pick who replies, exactly like the composer. Empty text
  * posts nothing.
  */

@@ -8,12 +8,14 @@ import {
   useRoundtableChatLinksStore,
 } from "./chatLinksStore";
 import { buildRoundtableMentionTargets } from "./mentions";
+import { RoundtableInputError } from "../engine/session";
 import { postMentionedRoundtableMessage } from "./mentionRouting";
 
 const api = vi.hoisted(() => ({
   startRoundtable: vi.fn<(input: unknown) => Promise<string>>(),
   postToRoundtable:
     vi.fn<(id: string, text: string, options?: { mentions?: string[] }) => Promise<void>>(),
+  addRoundtableParticipants: vi.fn<(id: string, participants: unknown[]) => Promise<void>>(),
 }));
 vi.mock("@/renderer/viscosity/roundtable/api", () => api);
 
@@ -33,7 +35,7 @@ const brains: ReadyAgentBrain[] = [
     presentationModes: ["terminal"],
   },
 ];
-const targets = buildRoundtableMentionTargets(brains, []);
+const targets = buildRoundtableMentionTargets(brains);
 const [alpha, beta] = targets;
 
 /** The chat the mentions are typed in: a Beta CLI chat on model b1. */
@@ -63,6 +65,7 @@ beforeEach(() => {
   let next = 0;
   api.startRoundtable.mockImplementation(async () => `rt-${++next}`);
   api.postToRoundtable.mockResolvedValue(undefined);
+  api.addRoundtableParticipants.mockResolvedValue(undefined);
 });
 
 describe("postMentionedRoundtableMessage", () => {
@@ -103,20 +106,22 @@ describe("postMentionedRoundtableMessage", () => {
     });
   });
 
-  it("seats everyone so far in a new Roundtable when someone new is mentioned", async () => {
+  it("adds someone newly mentioned to the chat's Roundtable instead of starting another", async () => {
     await postMentionedRoundtableMessage(message("@Alpha · One first"));
     const result = await postMentionedRoundtableMessage(message("@Beta · One join us", [beta!]));
-    expect(result).toEqual({ sessionId: "rt-2", created: true });
-    const input = api.startRoundtable.mock.calls[1]?.[0] as { participants: { id: string }[] };
-    expect(input.participants.map((seat) => seat.id)).toEqual([
+    expect(result).toEqual({ sessionId: "rt-1", created: false });
+    expect(api.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(api.addRoundtableParticipants).toHaveBeenCalledWith("rt-1", [
+      expect.objectContaining({ id: "model:beta:b1" }),
+    ]);
+    expect(api.postToRoundtable).toHaveBeenLastCalledWith("rt-1", "@Beta · One join us", {
+      mentions: ["model:beta:b1"],
+    });
+    expect(getRoundtableChatLink("chat-1")?.participants.map((seat) => seat.id)).toEqual([
       "origin:chat-1",
       "model:alpha:a1",
       "model:beta:b1",
     ]);
-    expect(api.postToRoundtable).toHaveBeenLastCalledWith("rt-2", "@Beta · One join us", {
-      mentions: ["model:beta:b1"],
-    });
-    expect(getRoundtableChatLink("chat-1")?.sessionId).toBe("rt-2");
   });
 
   it("drops a link the engine no longer lists and starts fresh", async () => {
@@ -177,35 +182,29 @@ describe("postMentionedRoundtableMessage", () => {
   });
 
   it("refuses to seat more than five, this chat included", async () => {
-    const many = buildRoundtableMentionTargets(
-      [
-        {
-          agentKind: "gamma",
-          label: "Gamma",
-          models: [1, 2, 3, 4, 5].map((index) => ({ id: `g${index}`, label: `G${index}` })),
-          defaultModel: "g1",
-          presentationModes: ["gui"],
-        },
-      ],
-      [],
-    );
+    const many = buildRoundtableMentionTargets([
+      {
+        agentKind: "gamma",
+        label: "Gamma",
+        models: [1, 2, 3, 4, 5].map((index) => ({ id: `g${index}`, label: `G${index}` })),
+        defaultModel: "g1",
+        presentationModes: ["gui"],
+      },
+    ]);
     const seated = [
       ...many,
-      ...buildRoundtableMentionTargets(
-        [
-          {
-            agentKind: "delta",
-            label: "Delta",
-            models: [
-              { id: "d1", label: "D1" },
-              { id: "d2", label: "D2" },
-            ],
-            defaultModel: "d1",
-            presentationModes: ["gui"],
-          },
-        ],
-        [],
-      ),
+      ...buildRoundtableMentionTargets([
+        {
+          agentKind: "delta",
+          label: "Delta",
+          models: [
+            { id: "d1", label: "D1" },
+            { id: "d2", label: "D2" },
+          ],
+          defaultModel: "d1",
+          presentationModes: ["gui"],
+        },
+      ]),
     ];
     await expect(
       postMentionedRoundtableMessage({
@@ -217,6 +216,18 @@ describe("postMentionedRoundtableMessage", () => {
       }),
     ).rejects.toThrow(/up to 5 participants/);
     expect(api.startRoundtable).not.toHaveBeenCalled();
+  });
+
+  it("reports who cannot join instead of starting a second Roundtable", async () => {
+    await postMentionedRoundtableMessage(message("@Alpha · One first"));
+    api.addRoundtableParticipants.mockRejectedValueOnce(
+      new RoundtableInputError("A Roundtable seats up to 5 participants."),
+    );
+    await expect(
+      postMentionedRoundtableMessage(message("@Beta · One join us", [beta!])),
+    ).rejects.toThrow(/up to 5 participants/);
+    expect(api.startRoundtable).toHaveBeenCalledTimes(1);
+    expect(getRoundtableChatLink("chat-1")?.sessionId).toBe("rt-1");
   });
 
   it("starts a fresh Roundtable when the linked one no longer takes messages", async () => {

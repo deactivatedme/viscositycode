@@ -1,5 +1,5 @@
 /**
- * ViscosityCode Roundtable UI: a participant's avatar. A bot's own glyph and
+ * ViscosityCode Roundtable UI: a participant's avatar. A seat's own glyph and
  * colour when it has one, otherwise the agent's provider icon from the shared
  * registry (never a provider-specific import), or an API glyph for a model
  * reached over an API.

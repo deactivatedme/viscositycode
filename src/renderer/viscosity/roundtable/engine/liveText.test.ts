@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearLiveTurnText,
   clearSessionLiveText,
+  LIGHTWEIGHT_LIVE_TEXT_INTERVAL_MS,
   LIVE_TEXT_INTERVAL_MS,
   liveTurnKey,
   setLiveTurnText,
   useRoundtableLiveText,
 } from "./liveText";
+import { usePerformanceSettings } from "@/renderer/viscosity/performance/performanceSettingsStore";
 
 function read(sessionId: string, turnId: string): string | undefined {
   return useRoundtableLiveText.getState().textByTurn[liveTurnKey(sessionId, turnId)];
@@ -18,6 +20,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clearSessionLiveText("s");
+  usePerformanceSettings.getState().setLightweight("auto");
   vi.useRealTimers();
 });
 
@@ -33,6 +36,16 @@ describe("live turn text", () => {
     expect(read("s", "t")).toBe("abc");
     expect(writes).toHaveBeenCalledTimes(2);
     unsubscribe();
+  });
+
+  it("publishes less often in lightweight mode", () => {
+    usePerformanceSettings.getState().setLightweight("on");
+    setLiveTurnText("s", "t", "a", Date.now());
+    setLiveTurnText("s", "t", "ab", Date.now());
+    vi.advanceTimersByTime(LIVE_TEXT_INTERVAL_MS);
+    expect(read("s", "t")).toBe("a");
+    vi.advanceTimersByTime(LIGHTWEIGHT_LIVE_TEXT_INTERVAL_MS - LIVE_TEXT_INTERVAL_MS);
+    expect(read("s", "t")).toBe("ab");
   });
 
   it("clears one turn or a whole session", () => {

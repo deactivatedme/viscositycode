@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { BotProfile } from "../../bots/api";
 import type { ReadyAgentBrain } from "../api";
 import {
   buildRoundtableMentionTargets,
@@ -29,30 +28,15 @@ const brains: ReadyAgentBrain[] = [
   },
 ];
 
-const bot: BotProfile = {
-  id: "bot-1",
-  label: "Scout",
-  role: "member",
-  brain: {
-    kind: "xai",
-    model: "grok-4.7",
-    region: "global",
-    tools: { webSearch: true, xSearch: false },
-  },
-  projectId: "p1",
-  createdAt: 1,
-};
-
-const targets = buildRoundtableMentionTargets(brains, [bot]);
+const targets = buildRoundtableMentionTargets(brains);
 
 function labels(text: string): string[] {
   return findRoundtableMentions(text, targets).map((target) => target.label);
 }
 
 describe("buildRoundtableMentionTargets", () => {
-  it("offers bots first, then each provider's default model and the next ones", () => {
+  it("offers each provider's default model and the next ones", () => {
     expect(targets.map((target) => target.label)).toEqual([
-      "Scout",
       "Alpha · Large",
       "Alpha · Small",
       "Alpha · Large 4.5",
@@ -69,35 +53,34 @@ describe("buildRoundtableMentionTargets", () => {
     expect(alpha.candidate).toMatchObject({ kind: "model", presentationMode: "gui" });
     const beta = targets.find((target) => target.label === "Beta · One")!;
     expect(beta.candidate).toMatchObject({ presentationMode: "terminal", agentKind: "beta:work" });
-    expect(targets[0]).toMatchObject({ id: "bot-1", kind: "bot" });
   });
 
   it("offers a label once", () => {
-    const twin = { ...bot, id: "bot-2" };
-    expect(buildRoundtableMentionTargets([], [bot, twin]).map((target) => target.id)).toEqual([
-      "bot-1",
+    const twin = { ...brains[1]!, agentKind: "beta:home" };
+    expect(buildRoundtableMentionTargets([brains[1]!, twin]).map((target) => target.id)).toEqual([
+      "model:beta:work:b-1",
     ]);
   });
 });
 
 describe("findRoundtableMentions", () => {
   it("finds inserted mentions in order of appearance, once each", () => {
-    expect(labels("@Beta · One and @Scout, then @Beta · One again")).toEqual([
+    expect(labels("@Beta · One and @Alpha · Small, then @Beta · One again")).toEqual([
       "Beta · One",
-      "Scout",
+      "Alpha · Small",
     ]);
   });
 
   it("returns nothing for ordinary messages", () => {
     expect(labels("no mentions here")).toEqual([]);
-    expect(labels("ask Scout about Alpha · Large")).toEqual([]);
+    expect(labels("ask Beta · One about Alpha · Large")).toEqual([]);
   });
 
   it("needs a boundary on both sides", () => {
-    expect(labels("mail me@Scout please")).toEqual([]);
-    expect(labels("@Scouting party")).toEqual([]);
-    expect(labels("(@Scout)")).toEqual(["Scout"]);
-    expect(labels("@Scout.")).toEqual(["Scout"]);
+    expect(labels("mail me@Beta · One please")).toEqual([]);
+    expect(labels("@Beta · Ones party")).toEqual([]);
+    expect(labels("(@Beta · One)")).toEqual(["Beta · One"]);
+    expect(labels("@Beta · One.")).toEqual(["Beta · One"]);
   });
 
   it("prefers the longest label and never double-reads it as a shorter one", () => {
@@ -106,6 +89,30 @@ describe("findRoundtableMentions", () => {
       "Alpha · Large 4.5",
       "Alpha · Large",
     ]);
+  });
+
+  it("ignores short provider or model names, which turn up in ordinary messages", () => {
+    expect(labels("@beta what do you think?")).toEqual([]);
+    expect(labels("@small and @large 4.5")).toEqual([]);
+    const shipped = buildRoundtableMentionTargets([
+      {
+        agentKind: "kimi",
+        label: "Kimi Code",
+        models: [{ id: "default", label: "Default" }],
+        defaultModel: "default",
+        presentationModes: ["gui"],
+      },
+      {
+        agentKind: "qwen",
+        label: "qwen-code",
+        models: [{ id: "q", label: "Coder" }],
+        defaultModel: "q",
+        presentationModes: ["gui"],
+      },
+    ]);
+    for (const text of ["/** @default 5 */", "npm i -g @qwen-code/qwen-code"]) {
+      expect(findRoundtableMentions(text, shipped)).toEqual([]);
+    }
   });
 
   it("tolerates non-breaking spaces and letter case from the editor", () => {

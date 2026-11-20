@@ -11,40 +11,14 @@ import type { RoundtablePattern } from "../types";
 import type { SeatCandidate } from "./participants";
 import { isRoundtablePattern, ROUNDTABLE_PATTERN_OPTIONS } from "./patterns";
 
-/** Bare theme token names such as `accent` or `project-icon-blue`. */
-const THEME_TOKEN_NAME = /^[a-z][a-z0-9-]*$/i;
-
-/**
- * A bot's accent: a CSS colour, a `var(...)`, a bare `--custom-property`, or a
- * theme palette token name — the form bots store (`accent`,
- * `project-icon-blue`, …), which is not a valid CSS colour on its own.
- */
-export function avatarBackground(color: string): string {
-  const trimmed = color.trim();
-  if (trimmed.startsWith("--")) return `var(${trimmed})`;
-  return THEME_TOKEN_NAME.test(trimmed) ? `var(--${trimmed})` : trimmed;
-}
-
 export function SeatIcon(props: { candidate: SeatCandidate }) {
   const { candidate } = props;
-  if (candidate.kind === "model") {
-    return (
-      <ProviderIcon
-        kind={candidate.agentKind}
-        fallbackLabel={candidate.providerLabel}
-        className="size-3.5 shrink-0"
-      />
-    );
-  }
-  const avatar = candidate.bot.avatar;
   return (
-    <span
-      aria-hidden
-      className="vc-roundtable-avatar inline-flex size-3.5 shrink-0 items-center justify-center rounded-full text-[9px] leading-none"
-      style={avatar ? { backgroundColor: avatarBackground(avatar.color) } : undefined}
-    >
-      {avatar?.glyph ?? candidate.label.slice(0, 1).toUpperCase()}
-    </span>
+    <ProviderIcon
+      kind={candidate.agentKind}
+      fallbackLabel={candidate.providerLabel}
+      className="size-3.5 shrink-0"
+    />
   );
 }
 
@@ -64,12 +38,7 @@ export function ParticipantAddMenu(props: {
     id: candidate.id,
     label: candidate.label,
     icon: <SeatIcon candidate={candidate} />,
-    hint:
-      candidate.kind === "bot"
-        ? t`Bot`
-        : candidate.presentationMode === "terminal"
-          ? t`CLI`
-          : t`Chat`,
+    hint: candidate.presentationMode === "terminal" ? t`CLI` : t`Chat`,
   }));
   return (
     <OptionMenu

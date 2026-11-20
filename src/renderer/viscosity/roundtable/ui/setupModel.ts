@@ -6,8 +6,10 @@
  * by what `useReadyAgentBrains` reports (kind, models, presentation modes).
  */
 import { parseAgentProfileKind } from "@/shared/contracts";
+import type { SavedPlaybook } from "@/shared/viscosity/playbook";
 import { XAI_DEFAULT_TEXT_MODEL } from "@/shared/viscosity/xaiContract";
 import type { ReadyAgentBrain, StartRoundtableInput } from "../api";
+import { readOnlyEditingSeat } from "../playbooks";
 import type {
   ParticipantBrain,
   ParticipantProfile,
@@ -31,15 +33,20 @@ export interface SetupSeat {
   id: string;
   brain: ParticipantBrain;
   role: ParticipantRole;
-  /** Optional carried-over profile fields (bots, prefilled seats). */
+  /** Optional carried-over profile fields (prefilled seats). */
   label?: string;
   instructions?: string;
   avatar?: ParticipantProfile["avatar"];
+  /** Additive (Playbooks): this seat's own playbook; `null` = none; absent = the table's. */
+  playbookId?: string | null;
 }
 
 export interface RoundtableSetupDraft {
   title: string;
+  /** The task; for the open pattern, the optional first message. */
   task: string;
+  /** Instructions for everyone (optional). */
+  instructions: string;
   projectId: string | undefined;
   pattern: RoundtablePattern;
   seats: SetupSeat[];
@@ -50,6 +57,8 @@ export interface RoundtableSetupDraft {
   originThreadId?: string;
   /** Set once the user picks a role by hand; until then roles follow the pattern. */
   rolesCustomized?: boolean;
+  /** Additive (Playbooks): the table's playbook id, if any. */
+  playbookId?: string;
 }
 
 export type SetupProblem =
@@ -58,7 +67,9 @@ export type SetupProblem =
   | "too-few-participants"
   | "too-many-participants"
   | "missing-model"
-  | "invalid-rounds";
+  | "invalid-rounds"
+  /** The table's playbook is read-only and the pattern needs edits. */
+  | "read-only-playbook";
 
 function newSeatId(): string {
   return globalThis.crypto.randomUUID();
@@ -96,17 +107,23 @@ export function xaiBrain(): ParticipantBrain {
 }
 
 /**
- * The agent for a new seat: the first ready agent nobody is using yet, so a
- * fresh table mixes subscriptions; once all are seated, start over.
+ * The agent for a new seat: the first ready provider nobody is using yet (two
+ * accounts of one provider count as one), so a fresh table mixes
+ * subscriptions; then an unused account; once all are seated, start over.
  */
 export function nextReadyBrain(
   ready: readonly ReadyAgentBrain[],
   seats: readonly SetupSeat[],
 ): ReadyAgentBrain | undefined {
-  const used = new Set(
+  const usedKinds = new Set(
     seats.flatMap((seat) => (seat.brain.kind === "agent" ? [seat.brain.agentKind] : [])),
   );
-  return ready.find((brain) => !used.has(brain.agentKind)) ?? ready[seats.length % ready.length];
+  const usedProviders = new Set([...usedKinds].map(providerOf));
+  return (
+    ready.find((brain) => !usedProviders.has(providerOf(brain.agentKind))) ??
+    ready.find((brain) => !usedKinds.has(brain.agentKind)) ??
+    ready[seats.length % ready.length]
+  );
 }
 
 export function createSeat(brain: ParticipantBrain, role: ParticipantRole): SetupSeat {
@@ -121,6 +138,7 @@ export function seatFromProfile(profile: ParticipantProfile): SetupSeat {
     label: profile.label,
     ...(profile.instructions ? { instructions: profile.instructions } : {}),
     ...(profile.avatar ? { avatar: profile.avatar } : {}),
+    ...(profile.playbookId !== undefined ? { playbookId: profile.playbookId } : {}),
   };
 }
 
@@ -188,6 +206,7 @@ export function initialSeats(
       {
         title: "",
         task: "",
+        instructions: "",
         projectId: undefined,
         pattern,
         seats: [],
@@ -261,7 +280,7 @@ export function removeSeat(draft: RoundtableSetupDraft, seatId: string): Roundta
 export function updateSeat(
   draft: RoundtableSetupDraft,
   seatId: string,
-  patch: Partial<Pick<SetupSeat, "brain" | "role">>,
+  patch: Partial<Pick<SetupSeat, "brain" | "role" | "instructions">>,
 ): RoundtableSetupDraft {
   return {
     ...draft,
@@ -270,15 +289,38 @@ export function updateSeat(
   };
 }
 
+/** A seat's own playbook: an id, `null` for none, `undefined` for the table's. */
+export function setSeatPlaybook(
+  draft: RoundtableSetupDraft,
+  seatId: string,
+  playbookId: string | null | undefined,
+): RoundtableSetupDraft {
+  return {
+    ...draft,
+    seats: draft.seats.map((seat) => {
+      if (seat.id !== seatId) return seat;
+      const { playbookId: _previous, ...rest } = seat;
+      return playbookId === undefined ? rest : { ...rest, playbookId };
+    }),
+  };
+}
+
 /** Whether the form asks for a round limit (not for the open chat, nor one-answer compare). */
 export function roundsApply(pattern: RoundtablePattern): boolean {
   return !patternIsAnswerOnly(pattern) && defaultMaxRounds(pattern) !== undefined;
 }
 
-/** First thing that keeps the form from starting, or null when it can start. */
-export function validateSetup(draft: RoundtableSetupDraft): SetupProblem | null {
+/**
+ * First thing that keeps the form from starting, or null when it can start.
+ * `playbooks` is the catalog the table's and seats' playbooks are looked up in.
+ */
+export function validateSetup(
+  draft: RoundtableSetupDraft,
+  playbooks: readonly SavedPlaybook[] = [],
+): SetupProblem | null {
   if (!draft.projectId) return "no-project";
-  if (draft.task.trim().length === 0) return "no-task";
+  // An open chat can start empty: it waits for the first message.
+  if (draft.pattern !== "open" && draft.task.trim().length === 0) return "no-task";
   if (draft.seats.length < MIN_PARTICIPANTS) return "too-few-participants";
   if (draft.seats.length > MAX_PARTICIPANTS) return "too-many-participants";
   if (draft.seats.some((seat) => seat.brain.model.trim().length === 0)) return "missing-model";
@@ -289,6 +331,10 @@ export function validateSetup(draft: RoundtableSetupDraft): SetupProblem | null 
       draft.maxRounds > MAX_ROUNDS_LIMIT)
   ) {
     return "invalid-rounds";
+  }
+  const participants = buildParticipants(draft.seats, []);
+  if (readOnlyEditingSeat({ ...draft, participants }, playbooks)) {
+    return "read-only-playbook";
   }
   return null;
 }
@@ -316,14 +362,18 @@ export function buildParticipants(
   ready: readonly ReadyAgentBrain[],
 ): ParticipantProfile[] {
   const labels = uniqueLabels(seats.map((seat) => seat.label ?? brainLabel(seat.brain, ready)));
-  return seats.map((seat, index) => ({
-    id: seat.id,
-    label: labels[index]!,
-    role: seat.role,
-    brain: seat.brain,
-    ...(seat.instructions ? { instructions: seat.instructions } : {}),
-    ...(seat.avatar ? { avatar: seat.avatar } : {}),
-  }));
+  return seats.map((seat, index) => {
+    const instructions = seat.instructions?.trim();
+    return {
+      id: seat.id,
+      label: labels[index]!,
+      role: seat.role,
+      brain: seat.brain,
+      ...(instructions ? { instructions } : {}),
+      ...(seat.avatar ? { avatar: seat.avatar } : {}),
+      ...(seat.playbookId !== undefined ? { playbookId: seat.playbookId } : {}),
+    };
+  });
 }
 
 /** The engine call for a valid draft (call `validateSetup` first). */
@@ -332,6 +382,7 @@ export function buildStartInput(
   ready: readonly ReadyAgentBrain[],
 ): StartRoundtableInput {
   const title = draft.title.trim();
+  const instructions = draft.instructions.trim();
   const branchName = draft.branchName.trim();
   // Race gives every participant its own worktree, and compare changes no
   // files, so neither takes a checkout choice.
@@ -350,5 +401,7 @@ export function buildStartInput(
     ...(roundsApply(draft.pattern) ? { maxRounds: draft.maxRounds } : {}),
     ...(worktree ? { worktree } : {}),
     ...(draft.originThreadId ? { originThreadId: draft.originThreadId } : {}),
+    ...(instructions ? { instructions } : {}),
+    ...(draft.playbookId ? { playbookId: draft.playbookId } : {}),
   };
 }

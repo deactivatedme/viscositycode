@@ -1,29 +1,37 @@
 /**
  * ViscosityCode Roundtable UI: the session header — title, pattern and status
  * chips, and one chip per participant (avatar, name, role, model, live state
- * in the fx state colours, provider usage meter).
+ * in the fx state colours, provider usage meter, playbook), and "Instructions", which
+ * edits the shared and per-AI instructions. A team chat ("open") shows no
+ * roles, and "Ready" while it only waits for a message.
  */
+import { useState } from "react";
 import { Button, Tooltip } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
-import { UsersRound, X } from "lucide-react";
+import { ScrollText, UsersRound, X } from "lucide-react";
 import type { AgentStatus, ThreadStatus } from "@/shared/contracts";
+import { type SavedPlaybook, threadPlaybookBinding } from "@/shared/viscosity/playbook";
 import { ProviderUsageCircle } from "@/renderer/components/providers/ProviderUsageCircle";
 import { resolveModelLabel } from "@/renderer/components/providers/modelDisplay";
 import { useHostProviderUsage } from "@/renderer/components/providers/useHostProviderUsage";
 import { useHostAgentStatuses } from "@/renderer/hooks/useHostAgentStatuses";
 import { useAppStore } from "@/renderer/state/appStore";
 import { getThreadMap, useProject } from "@/renderer/state/useThread";
+import { resolveSeatPlaybook, useRoundtablePlaybookCatalog } from "../playbooks";
 import type { ParticipantProfile, RoundtableSession, TurnStatus } from "../types";
 import { ParticipantAvatar } from "./ParticipantAvatar";
 import {
+  isChatIdle,
   latestTurnOf,
   type ParticipantFxState,
   PATTERN_LABELS,
+  patternIsAnswerOnly,
   ROLE_LABELS,
   SESSION_STATUS_LABELS,
   sessionTone,
   turnFxState,
 } from "./patterns";
+import { RoundtableInstructionsDialog } from "./RoundtableInstructionsDialog";
 import { closeRoundtableView } from "./roundtableViewStore";
 
 /**
@@ -75,6 +83,7 @@ function ParticipantChip(props: {
   session: RoundtableSession;
   agentStatuses: readonly AgentStatus[];
   remoteServerId: string | undefined;
+  playbooks: readonly SavedPlaybook[];
 }) {
   const { participant, session } = props;
   const { i18n } = useLingui();
@@ -82,6 +91,16 @@ function ParticipantChip(props: {
   const threadStatus = useAppStore((state) =>
     threadId ? getThreadMap(state.threads).get(threadId)?.status : undefined,
   );
+  // A seat with a thread shows what that thread is bound to (it may have been switched there).
+  const boundPlaybook = useAppStore((state) =>
+    threadId
+      ? (threadPlaybookBinding(getThreadMap(state.threads).get(threadId)?.config)?.label ?? null)
+      : undefined,
+  );
+  const playbookLabel =
+    boundPlaybook === undefined
+      ? resolveSeatPlaybook(session, participant, props.playbooks)?.label
+      : (boundPlaybook ?? undefined);
   const fxState = participantFxState(
     latestTurnOf(session.turns, participant.id)?.status,
     threadStatus,
@@ -94,14 +113,19 @@ function ParticipantChip(props: {
           brain.model,
         ) ?? brain.model)
       : brain.model;
-  const role = i18n._(ROLE_LABELS[participant.role]);
+  // A team chat has no roles: the chip names the model only.
+  const meta = [
+    ...(session.pattern === "open" ? [] : [i18n._(ROLE_LABELS[participant.role])]),
+    modelLabel,
+    ...(playbookLabel ? [playbookLabel] : []),
+  ].join(" · ");
   return (
     <div
       role="listitem"
       className="vc-rt-participant"
       data-vc-rt-participant={participant.id}
       data-vc-fx-state={fxState}
-      title={`${participant.label} · ${role} · ${modelLabel}`}
+      title={`${participant.label} · ${meta}`}
     >
       <span className="vc-rt-participant__avatar">
         <ParticipantAvatar participant={participant} />
@@ -109,9 +133,7 @@ function ParticipantChip(props: {
       </span>
       <span className="vc-rt-participant__text">
         <span className="vc-rt-participant__name">{participant.label}</span>
-        <span className="vc-rt-participant__meta">
-          {role} · {modelLabel}
-        </span>
+        <span className="vc-rt-participant__meta">{meta}</span>
       </span>
       {brain.kind === "agent" ? (
         <ParticipantUsage
@@ -131,7 +153,11 @@ export function RoundtableHeader(props: { session: RoundtableSession }) {
   const agentStatuses = useHostAgentStatuses(project?.remoteServerId, project?.location, {
     installedOnly: true,
   });
+  const playbooks = useRoundtablePlaybookCatalog();
+  const [editingInstructions, setEditingInstructions] = useState(false);
   const closeLabel = t`Close Roundtable`;
+  const instructionsLabel = t`Instructions`;
+  const idle = isChatIdle(session);
   return (
     <header className="vc-rt-header">
       <div className="vc-rt-header__top">
@@ -142,10 +168,28 @@ export function RoundtableHeader(props: { session: RoundtableSession }) {
         <span className="vc-rt-pill" data-kind="pattern">
           {i18n._(PATTERN_LABELS[session.pattern])}
         </span>
-        <span className="vc-rt-pill" data-tone={sessionTone(session.status)}>
-          {i18n._(SESSION_STATUS_LABELS[session.status])}
+        <span className="vc-rt-pill" data-tone={idle ? "inactive" : sessionTone(session.status)}>
+          {idle ? t`Ready` : i18n._(SESSION_STATUS_LABELS[session.status])}
         </span>
         <span aria-hidden="true" className="min-w-0 flex-1" />
+        {/* Everyone answers a comparison once: there is no next reply to instruct. */}
+        {patternIsAnswerOnly(session.pattern) ? null : (
+          <Tooltip delay={300}>
+            <Tooltip.Trigger>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label={instructionsLabel}
+                className="size-6 min-w-0 text-muted hover:text-foreground"
+                onPress={() => setEditingInstructions(true)}
+              >
+                <ScrollText className="size-3.5" />
+              </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content placement="bottom">{instructionsLabel}</Tooltip.Content>
+          </Tooltip>
+        )}
         <Tooltip delay={300}>
           <Tooltip.Trigger>
             <Button
@@ -170,9 +214,16 @@ export function RoundtableHeader(props: { session: RoundtableSession }) {
             session={session}
             agentStatuses={agentStatuses}
             remoteServerId={project?.remoteServerId}
+            playbooks={playbooks}
           />
         ))}
       </div>
+      {editingInstructions ? (
+        <RoundtableInstructionsDialog
+          session={session}
+          onClose={() => setEditingInstructions(false)}
+        />
+      ) : null}
     </header>
   );
 }

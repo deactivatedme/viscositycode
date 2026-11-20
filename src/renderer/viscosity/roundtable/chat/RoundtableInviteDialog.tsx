@@ -1,26 +1,25 @@
 /**
  * ViscosityCode: the compact "seat a Roundtable" dialog behind `/roundtable`
  * and the "New Roundtable…" / "Invite another model into this chat…" palette
- * commands. Picks participants (ready models or bots) and a pattern, then
+ * commands. Picks participants (ready models) and a pattern, then
  * calls the engine's `startRoundtable`. It never navigates: the user stays on
  * the chat they were in, and the engine owns where the Roundtable shows up.
  */
 import { useState } from "react";
-import { Label, Modal, TextField, toast } from "@heroui/react";
+import { Label, Modal, TextField } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import { friendlyError } from "@/shared/messages";
 import { Button } from "@/renderer/components/common/Button";
 import { TextArea } from "@/renderer/components/common/TextArea";
 import { useThread } from "@/renderer/state/useThread";
-import { useBots } from "../../bots/api";
 import { useReadyAgentBrains } from "../api";
 import type { RoundtablePattern } from "../types";
 import { closeRoundtableInvite, type RoundtableInviteRequest } from "./inviteStore";
 import { startRoundtableFromChat } from "./start";
+import { toastRoundtableStarted } from "./startedToast";
 import { ParticipantAddMenu, PatternMenu, SeatIcon } from "./ParticipantControls";
 import {
-  botSeatCandidates,
   invitedSeatProfiles,
   modelSeatCandidates,
   seatProfiles,
@@ -49,7 +48,6 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
   const { request } = props;
   const { t } = useLingui();
   const brains = useReadyAgentBrains(request.projectId);
-  const bots = useBots();
   const originThread = useThread(request.kind === "invite" ? request.originThreadId : undefined);
   // The engine binds the origin chat to seat 0, so its own agent and model sit first.
   const origin: OriginChat | undefined = originThread
@@ -63,16 +61,18 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
     : undefined;
   const originTitle = originThread?.title.trim();
   const [task, setTask] = useState(request.task);
+  const [instructions, setInstructions] = useState("");
   const [pattern, setPattern] = useState<RoundtablePattern>(DEFAULT_ROUNDTABLE_PATTERN);
   const [seats, setSeats] = useState<SeatCandidate[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const limits = inviteSeatLimits(request.kind);
-  const candidates = [...botSeatCandidates(bots), ...modelSeatCandidates(brains)];
+  const candidates = modelSeatCandidates(brains);
   const canStart =
     !pending &&
     (request.kind === "new" || origin !== undefined) &&
-    task.trim().length > 0 &&
+    // An open chat can start empty and wait for the first message.
+    (pattern === "open" || task.trim().length > 0) &&
     seats.length >= limits.min &&
     seats.length <= limits.max;
 
@@ -84,8 +84,9 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
     if (!canStart) return;
     setPending(true);
     setError(undefined);
+    const shared = instructions.trim();
     try {
-      await startRoundtableFromChat({
+      const sessionId = await startRoundtableFromChat({
         task: task.trim(),
         pattern,
         projectId: request.projectId,
@@ -94,10 +95,11 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
           : seatProfiles(pattern, seats),
         worktree: { mode: "current" },
         ...(request.kind === "invite" ? { originThreadId: request.originThreadId } : {}),
+        ...(shared ? { instructions: shared } : {}),
       });
       request.onStarted?.();
       closeRoundtableInvite();
-      toast.success(t`Roundtable started`);
+      toastRoundtableStarted(sessionId);
     } catch (cause) {
       setError(friendlyError(cause));
     } finally {
@@ -123,12 +125,12 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
             <p className="text-sm text-muted">
               {request.kind === "invite" ? (
                 <Trans>
-                  This chat keeps its seat. Pick 1–4 more participants and how everyone takes turns.
-                  Approvals still come to you.
+                  This chat keeps its seat. Pick 1–4 more participants and how you all work
+                  together. Approvals still come to you.
                 </Trans>
               ) : (
                 <Trans>
-                  Pick 2–5 participants and how they take turns. Approvals still come to you.
+                  Pick 2–5 participants and how they work together. Approvals still come to you.
                 </Trans>
               )}
             </p>
@@ -139,9 +141,20 @@ export function RoundtableInviteDialog(props: { request: RoundtableInviteRequest
             ) : null}
             <TextField value={task} onChange={setTask} isDisabled={pending}>
               <Label>
-                <Trans>Task</Trans>
+                {pattern === "open" ? <Trans>First message (optional)</Trans> : <Trans>Task</Trans>}
               </Label>
               <TextArea autoSize maxRows={6} rows={3} placeholder={t`What should they work on?`} />
+            </TextField>
+            <TextField value={instructions} onChange={setInstructions} isDisabled={pending}>
+              <Label>
+                <Trans>Instructions for everyone</Trans>
+              </Label>
+              <TextArea
+                autoSize
+                maxRows={6}
+                rows={2}
+                placeholder={t`Context, rules or goals every AI should follow. You can change these later.`}
+              />
             </TextField>
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium text-foreground">

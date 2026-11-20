@@ -56,3 +56,22 @@ export function waitForThreads(
     if (allListed()) finish();
   });
 }
+
+/**
+ * Resumes each session once its own threads are listed, so one deleted thread
+ * delays only its session. `resume` gets the session as it is by then.
+ */
+export function resumeEachWhenListed(
+  sessions: readonly RoundtableSession[],
+  source: ThreadPresenceSource,
+  current: (sessionId: string) => RoundtableSession | undefined,
+  resume: (session: RoundtableSession) => void,
+  timeoutMs = RESUME_THREAD_WAIT_MS,
+): void {
+  for (const saved of sessions) {
+    void waitForThreads(threadIdsToResume([saved]), source, timeoutMs).then(() => {
+      const session = current(saved.id);
+      if (session) resume(session);
+    });
+  }
+}
