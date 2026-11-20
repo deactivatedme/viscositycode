@@ -489,10 +489,11 @@ mod tests {
         assert_eq!(layout.server, Path::new("/s/lib/server.cjs"));
         assert!(layout.node.starts_with("/s/runtime"));
         let args = serve_args(&layout.server, 49380);
+        // Path equality is per component; the joined string uses the OS separator.
+        assert_eq!(Path::new(&args[0]), Path::new("/s/lib/server.cjs"));
         assert_eq!(
-            args,
+            args[1..],
             [
-                "/s/lib/server.cjs",
                 "serve",
                 "--no-open",
                 "--host",

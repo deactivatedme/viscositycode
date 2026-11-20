@@ -137,7 +137,8 @@ jobs:
 
       # By pattern, not this attempt's name: "Re-run failed jobs" bumps
       # run_attempt but keeps the server job's artifacts from its own attempt.
-      # Each match lands in its own folder named after the artifact.
+      # Several matches land in folders named after each artifact; a single
+      # match is extracted straight into the path.
       - name: Download the standalone archive
         uses: actions/download-artifact@v7
         with:
@@ -151,11 +152,14 @@ jobs:
           node -e '
             const { appendFileSync, readdirSync } = require("node:fs");
             const { join } = require("node:path");
+            const root = process.env.DOWNLOAD_DIR;
+            const entries = readdirSync(root, { withFileTypes: true });
+            if (!entries.length) throw new Error("no standalone archive was downloaded");
             const attempt = (name) => Number(name.split("-").pop());
-            const [newest] = readdirSync(process.env.DOWNLOAD_DIR).sort((a, b) => attempt(b) - attempt(a));
-            if (!newest) throw new Error("no standalone archive was downloaded");
-            console.log(`using ${newest}`);
-            appendFileSync(process.env.GITHUB_ENV, `ARCHIVE_DIR=${join(process.env.DOWNLOAD_DIR, newest)}\n`);
+            const [newest] = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort((a, b) => attempt(b) - attempt(a));
+            const dir = newest ? join(root, newest) : root;
+            console.log(`using ${dir}`);
+            appendFileSync(process.env.GITHUB_ENV, `ARCHIVE_DIR=${dir}\n`);
           '
 
       - name: Stage the standalone archive (macOS)

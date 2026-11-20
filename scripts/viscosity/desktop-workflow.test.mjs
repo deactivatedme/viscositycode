@@ -1,7 +1,7 @@
 // ViscosityCode: guards the fork's desktop installer workflow (Tauri shell).
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -60,6 +60,17 @@ void test("a re-run of only the failed legs still finds the server job's archive
       await readFile(envFile, "utf8"),
       `ARCHIVE_DIR=${join(downloads, "viscosity-server-standalone-darwin-arm64-10")}\n`,
     );
+    // A single matching artifact is extracted straight into the download path.
+    const single = join(dir, "single");
+    await mkdir(single, { recursive: true });
+    await writeFile(join(single, "poracode-2.0.0-darwin-arm64.tar.gz"), "");
+    const singleEnv = join(dir, "single-env");
+    const pickedSingle = spawnSync("bash", ["-c", step("Pick the newest attempt's archive").run], {
+      env: { ...process.env, DOWNLOAD_DIR: single, GITHUB_ENV: singleEnv },
+      encoding: "utf8",
+    });
+    assert.equal(pickedSingle.status, 0, pickedSingle.stderr);
+    assert.equal(await readFile(singleEnv, "utf8"), `ARCHIVE_DIR=${single}\n`);
     for (const name of [
       "Stage the standalone archive (macOS)",
       "Stage the standalone archive (Windows)",
