@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { IPty } from "node-pty";
 import type {
   AgentKind,
@@ -95,6 +96,8 @@ export interface SessionRuntime {
   config: ThreadConfig;
   /** Fingerprint last delivered with an admitted structured prompt. */
   crewBriefDelivered?: string | undefined;
+  /** ViscosityCode: playbook fingerprint last delivered (structured brief or terminal pointer). */
+  playbookBriefDelivered?: string | undefined;
   /**
    * The crew lead edited files itself since its last submitted prompt; the
    * next prompt carries a one-time reminder to delegate. In memory only; a

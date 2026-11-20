@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { normalizeTurnClientContextUrl } from "@/shared/turnClientContextUrl";
 import {
   resolveComposerMcpScope,
@@ -21,6 +22,7 @@ import {
   crewSetBriefText,
 } from "@/supervisor/crossagentMcp/crewBrief";
 import type { StartTurnOptions, StructuredSessionHandle } from "../agents/base";
+import { playbookBriefForConfig } from "./playbookBrief"; // ViscosityCode
 
 const TURN_CLIENT_CONTEXT_PREFIX = "[client context] ";
 
@@ -123,6 +125,9 @@ export interface TurnContextTarget {
   presentationMode?: ThreadPresentationMode | undefined;
   crewBriefDelivered?: string | undefined;
   onCrewBriefDelivered?: ((fingerprint: string) => void) | undefined;
+  // ViscosityCode: playbook fingerprint last delivered with an admitted prompt.
+  playbookBriefDelivered?: string | undefined;
+  onPlaybookBriefDelivered?: ((fingerprint: string) => void) | undefined;
   /** Set when the lead edited files itself; consumed by the next submitted prompt. */
   crewLeadEditedFiles?: boolean | undefined;
   crossagentsMcpAvailable?: boolean | undefined;
@@ -164,11 +169,16 @@ export function structuredTurnTextOptions(
   const invokesCommand = invokesAdvertisedCommand(turn.prompt, target?.slashCommands);
   const inheritedInstructions = invokesCommand ? undefined : target?.pendingInitialInstructions;
   const crewBrief = invokesCommand ? undefined : crewBriefForTurn(target, turn);
+  // ViscosityCode: the playbook brief needs no Crossagents; it rides the same channel.
+  const playbookBrief =
+    invokesCommand || !target
+      ? undefined
+      : playbookBriefForConfig(turn.config ?? target.config, target.playbookBriefDelivered);
   const editNudge =
     invokesCommand || delivery.steersRunningTurn ? undefined : crewEditNudgeForTurn(target, turn);
   const turnInstructions = joinInstructions(inheritedInstructions, turn.inlineInstructions);
   const onPromptSubmitted =
-    target && (inheritedInstructions || crewBrief || editNudge)
+    target && (inheritedInstructions || crewBrief || editNudge || playbookBrief)
       ? () => {
           if (
             inheritedInstructions &&
@@ -182,12 +192,17 @@ export function structuredTurnTextOptions(
             target.onCrewBriefDelivered?.(crewBrief.fingerprint);
           }
           if (editNudge) target.crewLeadEditedFiles = undefined;
+          if (playbookBrief) {
+            target.playbookBriefDelivered = playbookBrief.fingerprint;
+            target.onPlaybookBriefDelivered?.(playbookBrief.fingerprint);
+          }
         }
       : undefined;
   const admission = onPromptSubmitted ? { onPromptSubmitted } : {};
   const turnContextWithCrew = joinInstructions(
     turn.turnContext,
     invokesCommand ? undefined : target?.mcpAppContext?.(),
+    playbookBrief?.text,
     crewBrief?.text,
     editNudge?.text,
   );

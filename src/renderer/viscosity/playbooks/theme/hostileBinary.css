@@ -1,0 +1,51 @@
+/*
+ * ViscosityCode: Hostile Binary theme accents.
+ *
+ * Colours come from the "hostile-binary" preset (theme/themePresets.ts); these
+ * rules add what tokens cannot: hazard stripes on the active tab and the
+ * playbook chip, red focus rings and monospace headings. Desktop shell only. Unlayered, and html[...][...] outranks the
+ * shell and token rules.
+ */
+html[data-vc-shell][data-theme-preset="hostile-binary"] {
+  --vc-hazard-amber: #ffb020;
+  --vc-hazard: repeating-linear-gradient(
+    -45deg,
+    var(--vc-hazard-amber) 0 6px,
+    var(--background) 6px 12px
+  );
+  --focus: var(--accent);
+  --vc-focus-ring: color-mix(in oklab, var(--accent) 90%, transparent);
+  --vc-shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--accent) 60%, transparent),
+    0 0 14px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+/* Active tab: a hazard band along the top edge instead of the accent line. */
+html[data-vc-shell][data-theme-preset="hostile-binary"] .vc-tab[data-selected] {
+  box-shadow: none;
+  background-image: var(--vc-hazard);
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: top;
+}
+
+/* The composer's playbook chip (PlaybookChip.tsx), while a playbook is set. */
+html[data-vc-shell][data-theme-preset="hostile-binary"] .vc-playbook-chip[data-playbook] {
+  background-image: var(--vc-hazard);
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+}
+html[data-vc-shell][data-theme-preset="hostile-binary"]
+  .vc-playbook-chip[data-playbook]
+  .poracode-composer-menu {
+  color: var(--accent);
+  font-family: var(--vc-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+html[data-vc-shell][data-theme-preset="hostile-binary"] :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--vc-font-mono);
+  letter-spacing: 0.02em;
+}

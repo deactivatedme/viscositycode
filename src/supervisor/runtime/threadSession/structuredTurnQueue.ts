@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import type {
   PromptSegment,
@@ -106,7 +107,13 @@ export class StructuredTurnQueue {
     this.ctx.beginFailureEpisode(session);
     const prompt = session.pendingLaunchPrompt;
     session.pendingLaunchPrompt = undefined;
-    void session.structuredSession.startTurn(prompt, session.config).catch((error) => {
+    // ViscosityCode: the queued first turn carries the playbook (and crew) brief like any other turn.
+    const textOptions = structuredTurnTextOptions(session, { prompt });
+    const started =
+      Object.keys(textOptions).length > 0
+        ? session.structuredSession.startTurn(prompt, session.config, undefined, textOptions)
+        : session.structuredSession.startTurn(prompt, session.config);
+    void started.catch((error) => {
       if (this.ctx.sessions.get(session.threadId)?.instanceId !== session.instanceId) {
         return;
       }

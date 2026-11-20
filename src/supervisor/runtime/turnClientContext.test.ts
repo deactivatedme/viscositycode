@@ -1,7 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { turnClientContextSchema, type AgentSlashCommand } from "@/shared/contracts";
 import { crewFingerprint, threadCrewBinding } from "@/shared/crew";
 import { crewLeadEditNudgeText, crewPlaybookText } from "@/supervisor/crossagentMcp/crewBrief";
+import { playbookFingerprint } from "@/shared/viscosity/playbook";
+import { PLAYBOOK_REMOVED_BRIEF_TEXT, resumedPlaybookDelivered } from "./playbookBrief";
 import {
   formatTurnClientContext,
   invokesAdvertisedCommand,
@@ -499,5 +502,143 @@ describe("structured turn crew edit nudge", () => {
     expect(
       structuredTurnTextOptions(inline, { prompt: "go", config: { model: "m", crew } }),
     ).toMatchObject({ inlineInstructions: nudge });
+  });
+});
+
+// ViscosityCode: playbook briefs ride the crew-brief channel.
+describe("structured turn playbook briefs", () => {
+  const reversing = {
+    version: 1 as const,
+    id: "reversing",
+    label: "Reversing",
+    instructions: "Triage first.",
+  };
+  const review = { ...reversing, id: "review", label: "Review", readOnly: true as const };
+
+  it("sends SET once, re-sends after a rejected prompt, then CHANGED and REMOVED", () => {
+    const target: TurnContextTarget = {
+      structuredSession: { placesTurnContext: true },
+      config: { model: "m" },
+    };
+    const set = structuredTurnTextOptions(target, {
+      prompt: "go",
+      config: { model: "m", playbook: reversing },
+    });
+    expect(set.turnContext).toBe(
+      '[playbook] This chat uses the "Reversing" playbook. Follow these standing instructions until told the playbook changed; they replace any earlier playbook instructions in this conversation:\nTriage first.',
+    );
+    // Not admitted yet: the next attempt carries it again.
+    expect(
+      structuredTurnTextOptions(target, {
+        prompt: "go",
+        config: { model: "m", playbook: reversing },
+      }).turnContext,
+    ).toBe(set.turnContext);
+    set.onPromptSubmitted?.();
+    expect(target.playbookBriefDelivered).toBe(playbookFingerprint(reversing));
+    expect(
+      structuredTurnTextOptions(target, {
+        prompt: "again",
+        config: { model: "m", playbook: { ...reversing, icon: "binary", mcpServerIds: ["g"] } },
+      }),
+    ).toEqual({});
+
+    const changed = structuredTurnTextOptions(target, {
+      prompt: "next",
+      config: { model: "m", playbook: review },
+    });
+    expect(changed.turnContext).toContain(
+      '[playbook] The playbook changed to "Review". Drop the previous playbook\'s instructions and follow these:\nTriage first.\n\nDo not create, edit or delete project files',
+    );
+    changed.onPromptSubmitted?.();
+
+    const removed = structuredTurnTextOptions(target, {
+      prompt: "next",
+      config: { model: "m", playbook: null },
+    });
+    expect(removed.turnContext).toBe(
+      "[playbook] The user removed this chat's playbook. Its instructions no longer apply.",
+    );
+    removed.onPromptSubmitted?.();
+    expect(target.playbookBriefDelivered).toBe("");
+    expect(
+      structuredTurnTextOptions(target, { prompt: "x", config: { model: "m", playbook: null } }),
+    ).toEqual({});
+  });
+
+  it("after a resume, retracts a cleared playbook once and replaces a switched one", () => {
+    const cleared: TurnContextTarget = {
+      structuredSession: { placesTurnContext: true },
+      playbookBriefDelivered: resumedPlaybookDelivered({ playbook: null }),
+    };
+    const removed = structuredTurnTextOptions(cleared, {
+      prompt: "go",
+      config: { model: "m", playbook: null },
+    });
+    expect(removed.turnContext).toBe(PLAYBOOK_REMOVED_BRIEF_TEXT);
+    removed.onPromptSubmitted?.();
+    expect(
+      structuredTurnTextOptions(cleared, { prompt: "x", config: { model: "m", playbook: null } }),
+    ).toEqual({});
+
+    // A switch before the resume: the fresh set text says it replaces earlier instructions.
+    const switched: TurnContextTarget = { structuredSession: { placesTurnContext: true } };
+    expect(
+      structuredTurnTextOptions(switched, {
+        prompt: "go",
+        config: { model: "m", playbook: reversing },
+      }).turnContext,
+    ).toContain("they replace any earlier playbook instructions in this conversation");
+  });
+
+  it("adds the read-only line only for read-only playbooks and ignores future versions", () => {
+    const text = (playbook: TurnContextTarget["config"]) =>
+      structuredTurnTextOptions(
+        { structuredSession: { placesTurnContext: true } },
+        { prompt: "go", config: playbook },
+      ).turnContext;
+    expect(text({ model: "m", playbook: reversing })).not.toContain("Do not create, edit");
+    expect(text({ model: "m", playbook: review })).toContain("Do not create, edit");
+    expect(text({ model: "m", playbook: { version: 2, id: "future" } })).toBeUndefined();
+  });
+
+  it("falls back to inline instructions, precedes the crew brief and waits out commands", () => {
+    const crew = {
+      version: 1 as const,
+      name: "Ship crew",
+      policy: "crew-only" as const,
+      roles: [{ id: "builder", label: "Builder", selection: { agentKind: "a", model: "b" } }],
+    };
+    const target: TurnContextTarget = {
+      config: { model: "m" },
+      launchConfig: { model: "m", crossagentMcp: true },
+      adapter: { capabilities: { presentationMode: "gui", mcpScope: { gui: "launch" } } },
+      presentationMode: "gui",
+      slashCommands: [{ id: "clear", label: "clear", description: "Clear" }],
+    };
+    const config = { model: "m", playbook: reversing, crew };
+    expect(structuredTurnTextOptions(target, { prompt: "/clear", config })).toEqual({});
+    const options = structuredTurnTextOptions(target, {
+      prompt: "go",
+      config,
+      inlineInstructions: "skill text",
+    });
+    expect(options.turnContext).toBeUndefined();
+    const inline = options.inlineInstructions!;
+    expect(inline.startsWith("[playbook] This chat uses")).toBe(true);
+    expect(inline.indexOf("[playbook]")).toBeLessThan(inline.indexOf("[crew]"));
+    expect(inline.endsWith("skill text")).toBe(true);
+  });
+
+  it("is delivered without Crossagents attached", () => {
+    const target: TurnContextTarget = {
+      config: { model: "m" },
+      crossagentsMcpAvailable: false,
+      adapter: { capabilities: { presentationMode: "gui", mcpScope: { gui: "none" } } },
+    };
+    expect(
+      structuredTurnTextOptions(target, { prompt: "go", config: { model: "m", playbook: review } })
+        .inlineInstructions,
+    ).toContain('"Review" playbook');
   });
 });

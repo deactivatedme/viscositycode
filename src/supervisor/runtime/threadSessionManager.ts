@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import type {
   ControlThreadExecutionPayload,
@@ -9,6 +10,13 @@ import { toError } from "@/shared/errorMessage";
 import { msg } from "@/shared/messages";
 import { ThreadSessionAbsenceRefusalError } from "@/shared/threadSessionRefusal";
 import { retainThreadToolOverrides } from "@/shared/contracts/config";
+// ViscosityCode: playbook pointer for terminal chats.
+import {
+  leadsWithTerminalCommand,
+  terminalPlaybookPointer,
+  withPlaybookPointerSegment,
+  withPlaybookPointerText,
+} from "./playbookBrief";
 import type {
   ListThreadSessionActionsPayload,
   InvokeThreadSessionActionPayload,
@@ -1484,16 +1492,34 @@ export class ThreadSessionManager {
       const pty = requireSessionPty(session);
       // Terminal skills fallback: skill segments the CLI can't resolve natively
       // become short path-hint text before the prompt is typed into the PTY.
-      const terminalSegments = await this.resolveTerminalSkillSegments(session, effectiveSegments);
+      // ViscosityCode: the first app-sent prompt after a playbook change leads with its pointer.
+      const playbookPointer = leadsWithTerminalCommand(prompt, effectiveSegments)
+        ? undefined
+        : await terminalPlaybookPointer(
+            effectiveConfig,
+            session.playbookBriefDelivered,
+            session.projectLocation,
+            {
+              workspaceLocal:
+                session.adapter.capabilities.requiresWorkspaceLocalAttachments === true,
+            },
+          );
+      const terminalSegments = withPlaybookPointerSegment(
+        playbookPointer?.text,
+        await this.resolveTerminalSkillSegments(session, effectiveSegments),
+      );
       // Workspace-sandboxed agents (e.g. Command Code) can't read attachments that
       // live outside the project, so copy them in and re-format with the new paths.
       // localizeWorkspaceAttachments returns the same array when it's a no-op, so
       // reuse the already-formatted prompt unless paths actually changed.
       const ptySegments = await this.localizeWorkspaceAttachments(session, terminalSegments);
-      const ptyPrompt =
+      const ptyPrompt = withPlaybookPointerText(
+        playbookPointer?.text,
+        ptySegments,
         ptySegments === effectiveSegments
           ? prompt
-          : this.formatSegmentsForPrompt(session, ptySegments, payload.prompt);
+          : this.formatSegmentsForPrompt(session, ptySegments, payload.prompt),
+      );
       this.executionControl.assertUnowned(payload.threadId);
       await writeSubmittedPrompt(
         pty,
@@ -1505,6 +1531,7 @@ export class ThreadSessionManager {
         ) ?? [ptyPrompt, "\r"],
         session.projectLocation,
       );
+      if (playbookPointer) session.playbookBriefDelivered = playbookPointer.fingerprint; // ViscosityCode
 
       // Optimistic working edge for CLI-hook agents with no turn-START event
       // (Command Code): show `working` the instant the prompt is sent. Gated on

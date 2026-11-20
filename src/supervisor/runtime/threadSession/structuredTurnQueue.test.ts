@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it, vi } from "vitest";
 import { messageItemPayloadSchema } from "@/shared/contracts";
+import { playbookFingerprint } from "@/shared/viscosity/playbook";
 import { StructuredTurnQueue, type StructuredTurnQueueContext } from "./structuredTurnQueue";
 import { createFollowUpQueueHarness } from "../threadSessionManager.followUpQueueTestHarness";
 
@@ -78,5 +80,49 @@ describe("StructuredTurnQueue answer metadata", () => {
     expect(messageItemPayloadSchema.parse(JSON.parse(JSON.stringify(event.event.payload)))).toEqual(
       event.event.payload,
     );
+  });
+});
+
+// ViscosityCode: a launch-queued first turn (server-controlled terminal chats) carries the playbook.
+describe("StructuredTurnQueue launch-queued prompt", () => {
+  it("sends the playbook brief and records its delivery", () => {
+    const queue = new StructuredTurnQueue({
+      emit: vi.fn<StructuredTurnQueueContext["emit"]>(),
+      emitTurnContinuation: vi.fn<StructuredTurnQueueContext["emitTurnContinuation"]>(),
+      sessions: new Map(),
+      outputPipeline: {
+        updateState: vi.fn<StructuredTurnQueueContext["outputPipeline"]["updateState"]>(),
+      },
+      beginFailureEpisode: vi.fn<StructuredTurnQueueContext["beginFailureEpisode"]>(),
+      failStructuredSession: vi.fn<StructuredTurnQueueContext["failStructuredSession"]>(),
+    });
+    const startTurn = vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined);
+    const playbook = {
+      version: 1 as const,
+      id: "reversing",
+      label: "Reversing",
+      instructions: "Triage first.",
+    };
+    const session = {
+      threadId: "t1",
+      instanceId: "i1",
+      config: { model: "m", playbook },
+      pendingLaunchPrompt: "find main",
+      structuredSession: { startTurn, placesTurnContext: true },
+    } as unknown as Parameters<StructuredTurnQueue["startQueuedLaunchPrompt"]>[0];
+
+    queue.startQueuedLaunchPrompt(session);
+
+    expect(startTurn).toHaveBeenCalledOnce();
+    const [prompt, config, segments, options] = startTurn.mock.calls[0] as [
+      string,
+      unknown,
+      unknown,
+      { turnContext?: string; onPromptSubmitted?: () => void },
+    ];
+    expect([prompt, config, segments]).toEqual(["find main", session.config, undefined]);
+    expect(options.turnContext).toContain('[playbook] This chat uses the "Reversing" playbook.');
+    options.onPromptSubmitted?.();
+    expect(session.playbookBriefDelivered).toBe(playbookFingerprint(playbook));
   });
 });
