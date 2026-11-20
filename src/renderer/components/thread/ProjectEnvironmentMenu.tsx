@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Description, Dropdown, Label } from "@heroui/react";
@@ -43,6 +44,11 @@ export function ProjectEnvironmentMenu(
      * machines). The current row always stays; offline handling is unchanged.
      */
     filterProject?: ((projectId: string) => boolean) | undefined;
+    /**
+     * ViscosityCode: the New session device picker. Always a menu, even with
+     * one device; a device without this project opens the project given here.
+     */
+    devices?: readonly ProjectEnvironmentMachine[] | undefined;
   } & SwitchDraftProjectOptions,
 ) {
   const { currentProjectId } = props;
@@ -60,7 +66,7 @@ export function ProjectEnvironmentMenu(
   // Same membership as the project switcher: the active workspace's enabled
   // rows. Home's disabled flag is an internal marker, not a disabled project.
   // The current row always stays, even if it is filed elsewhere.
-  const environments = (group?.members ?? []).flatMap((member) => {
+  const memberEnvironments = (group?.members ?? []).flatMap((member) => {
     const isCurrent = member.id === currentProjectId;
     if (!isCurrent && ((member.disabled && !isHomeProject(member)) || !isInWorkspace(member))) {
       return [];
@@ -71,10 +77,25 @@ export function ProjectEnvironmentMenu(
     const entry = machineFor(member);
     return entry ? [entry] : [];
   });
+  // ViscosityCode: `devices` list in their own stable order. A device that has
+  // this project keeps it; members off that list (an offline machine) follow.
+  const { devices } = props;
+  const environments = devices
+    ? [
+        ...devices.map(
+          (device) =>
+            memberEnvironments.find((entry) => entry.machine.id === device.machine.id) ?? device,
+        ),
+        ...memberEnvironments.filter(
+          (entry) => !devices.some((device) => device.machine.id === entry.machine.id),
+        ),
+      ]
+    : memberEnvironments;
+  const alwaysMenu = devices !== undefined; // ViscosityCode: New session device picker
   const current = environments.find((entry) => entry.project.id === currentProjectId);
   if (!current) return null;
 
-  if (environments.length < 2) {
+  if (environments.length < 2 && !alwaysMenu) {
     if (current.machine.ref.host === "local") return null;
     return (
       <span
@@ -106,8 +127,9 @@ export function ProjectEnvironmentMenu(
     <>
       <MachineIcon machine={current.machine} className="size-3.5" />
       <span className="min-w-0 truncate">{currentLabel}</span>
-      {environments.length > 2 ? (
-        <ChevronDown className="size-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+      {environments.length > 2 || alwaysMenu ? (
+        // ViscosityCode: the chevron flips while the menu is open.
+        <ChevronDown className="size-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 group-aria-expanded:rotate-180" />
       ) : null}
     </>
   );
@@ -119,7 +141,7 @@ export function ProjectEnvironmentMenu(
   // Match the worktree control: two choices switch directly on every surface.
   // Use the same React Aria button and styles as Dropdown.Trigger, without
   // introducing menu semantics or the full-size HeroUI Button defaults.
-  if (environments.length === 2) {
+  if (environments.length === 2 && !alwaysMenu) {
     const alternative = environments.find((entry) => entry !== current)!;
     return (
       <Button

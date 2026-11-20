@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { Check, ChevronDown, House } from "lucide-react";
 import { Dropdown, Label } from "@heroui/react";
@@ -17,6 +18,7 @@ import {
 import type { ProjectGroupRow } from "@/renderer/state/projectGroups/projectGroups";
 import {
   ProjectEnvironmentIndicator,
+  type ProjectEnvironmentMachine,
   useProjectEnvironmentMachineLookup,
 } from "@/renderer/components/common/ProjectEnvironment";
 import { type ProjectSwitchEntry, useProjectSwitchEntries } from "./projectSwitchGroups";
@@ -30,6 +32,8 @@ export function ProjectSwitchMenu(props: {
   paneId?: string;
   /** Keeps project selection local to an embedding surface such as Quick Composer. */
   onSelectProject?: (projectId: string) => void;
+  /** ViscosityCode: see `ProjectEnvironmentMenu`'s `devices`. */
+  devices?: readonly ProjectEnvironmentMachine[];
 }) {
   const { currentProjectId, variant, paneId, onSelectProject } = props;
   const { t } = useLingui();
@@ -69,6 +73,7 @@ export function ProjectSwitchMenu(props: {
       currentProjectId={currentProjectId}
       {...(paneId ? { paneId } : {})}
       {...(onSelectProject ? { onSelectProject } : {})}
+      devices={props.devices} // ViscosityCode
     />
   );
 

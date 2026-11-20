@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { ChevronDown, Monitor } from "lucide-react";
 import { Button, Dropdown, Label, Separator } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -21,6 +22,8 @@ export function ProjectRuntimePicker(props: {
   readonly runtimeKey: string;
   readonly distros: readonly string[];
   readonly machines: readonly ProjectMachine[];
+  /** ViscosityCode: a browser client has no disk of its own, so only paired machines list. */
+  readonly hideLocal?: boolean;
   readonly onChange: (runtimeKey: string) => void;
 }) {
   const { t } = useLingui();
@@ -58,17 +61,19 @@ export function ProjectRuntimePicker(props: {
             selectedKeys={[props.runtimeKey]}
             onAction={(key) => props.onChange(String(key))}
           >
-            <Dropdown.Item id="native" textValue={localLabel}>
-              <Monitor className="size-4 shrink-0 text-muted" />
-              <Label>{localLabel}</Label>
-            </Dropdown.Item>
+            {props.hideLocal ? null : (
+              <Dropdown.Item id="native" textValue={localLabel}>
+                <Monitor className="size-4 shrink-0 text-muted" />
+                <Label>{localLabel}</Label>
+              </Dropdown.Item>
+            )}
             {props.distros.map((distro) => (
               <Dropdown.Item key={distro} id={distro} textValue={distro}>
                 <TuxIcon className="size-4 shrink-0 text-muted" />
                 <Label>{distro}</Label>
               </Dropdown.Item>
             ))}
-            {props.machines.length > 0 ? <Separator /> : null}
+            {props.machines.length > 0 && !props.hideLocal ? <Separator /> : null}
             {props.machines.map((option) => (
               <Dropdown.Item
                 key={option.connectionKey}

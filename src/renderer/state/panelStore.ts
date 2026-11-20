@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useCommandPaletteStore } from "@/renderer/commands/commandPaletteStore";
 import type { ProjectSettingsSection } from "./projectSettings/sections";
 import { create } from "zustand";
@@ -191,6 +192,11 @@ interface PanelState {
   threadListLayout: ThreadListLayout;
   /** Whether the "New project" create-project modal is open. */
   createProjectModalOpen: boolean;
+  /**
+   * ViscosityCode: runtime key the create dialog opens on (`machineConnectionKey`
+   * in `projectMachines.ts`); null = this computer.
+   */
+  createProjectModalRuntimeKey: string | null;
   /** Whether the "Clone a repository" modal is open. */
   cloneProjectModalOpen: boolean;
   /**
@@ -245,7 +251,7 @@ interface PanelState {
   closeSettings: () => void;
   openProjectSettings: (projectId: string, section?: ProjectSettingsSection) => void;
   closeProjectSettings: () => void;
-  openCreateProjectModal: () => void;
+  openCreateProjectModal: (runtimeKey?: string) => void; // ViscosityCode: optional device
   closeCreateProjectModal: () => void;
   openCloneProjectModal: () => void;
   closeCloneProjectModal: () => void;
@@ -392,6 +398,7 @@ export const usePanelStore = create<PanelState>()((set) => ({
   threadSortMode: sanitizeThreadSortMode(initialPersisted?.threadSortMode),
   threadListLayout: sanitizeThreadListLayout(initialPersisted?.threadListLayout),
   createProjectModalOpen: false,
+  createProjectModalRuntimeKey: null,
   cloneProjectModalOpen: false,
   remoteFolderPickerConnectionKey: null,
   mobileUtilityPage: null,
@@ -763,8 +770,13 @@ export const usePanelStore = create<PanelState>()((set) => ({
       ...(state.projectSettingsSection !== null ? { projectSettingsSection: null } : {}),
       ...(state.mobileUtilityPage === "projectSettings" ? { mobileUtilityPage: null } : {}),
     })),
-  openCreateProjectModal: () =>
-    set((state) => (state.createProjectModalOpen ? {} : { createProjectModalOpen: true })),
+  // ViscosityCode: remembers the device the caller wants the dialog to open on.
+  openCreateProjectModal: (runtimeKey) =>
+    set((state) =>
+      state.createProjectModalOpen
+        ? {}
+        : { createProjectModalOpen: true, createProjectModalRuntimeKey: runtimeKey ?? null },
+    ),
   closeCreateProjectModal: () =>
     set((state) => (state.createProjectModalOpen ? { createProjectModalOpen: false } : {})),
   openCloneProjectModal: () =>

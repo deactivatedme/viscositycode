@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useState } from "react";
 import { FolderOpen } from "lucide-react";
 import { Button, Label, Modal } from "@heroui/react";
@@ -14,6 +15,7 @@ import {
 } from "@/shared/createProject";
 import { getProjectFsPath } from "@/shared/wsl";
 import { readBridge } from "@/renderer/bridge";
+import { hasClientCapability } from "@/renderer/clientRuntime";
 import { loadHomeScopeLocation } from "@/renderer/actions/projectActions";
 import {
   commitCreateProject,
@@ -59,10 +61,18 @@ function CreateProjectForm() {
   const lastUsedProjectDirs = useSharedSettings((s) => s.lastUsedProjectDirs);
 
   const [distros, setDistros] = useState<string[]>([]);
-  const [runtimeKey, setRuntimeKey] = useState("native");
+  // ViscosityCode: opens on the device the caller named, else this computer.
+  const [runtimeKey, setRuntimeKey] = useState(
+    () => usePanelStore.getState().createProjectModalRuntimeKey ?? "native",
+  );
   // Seeded from the mount-time override (or empty until the async home probe
   // below resolves); later runtime/override changes re-seed during render.
-  const [defaultDir, setDefaultDir] = useState(() => lastUsedProjectDirs.native ?? "");
+  const [defaultDir, setDefaultDir] = useState(
+    () =>
+      lastUsedProjectDirs[runtimeKey] ??
+      // ViscosityCode: same seed as the runtime switch below, for a WSL start.
+      (runtimeKey === "native" || machineConnectionKey(runtimeKey) ? "" : wslHomeDir(runtimeKey)),
+  );
   const [dir, setDir] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -225,6 +235,7 @@ function CreateProjectForm() {
             runtimeKey={runtimeKey}
             distros={distros}
             machines={machines}
+            hideLocal={!hasClientCapability("localBackend")} // ViscosityCode
             onChange={setRuntimeKey}
           />
         ) : null}
