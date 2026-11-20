@@ -11,7 +11,6 @@ import { resetAdaptiveLayoutForTest } from "@/renderer/adaptiveLayout";
 const statusesState = {
   agentStatuses: [] as AgentStatus[],
   wslAgentStatuses: [] as AgentStatus[],
-  inFirstLaunchDiscovery: false,
 };
 
 const appState = {

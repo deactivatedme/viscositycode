@@ -1,6 +1,12 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { composerDraftStorage } from "@/renderer/state/composerDraftStorage";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+// ViscosityCode: the draft's playbook lives beside its config, like the crew; never a provider default.
+import {
+  draftPlaybookFields,
+  splitDraftPlaybookPatch,
+  type DraftPlaybookFields,
+} from "@/renderer/viscosity/playbooks/applyPlaybook";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "@heroui/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -57,7 +63,6 @@ import { i18n } from "@/renderer/i18n/i18n";
 import { machineKeyForLocation } from "@/shared/machines";
 import {
   agentWithCapabilities,
-  formatAgentList,
   resolveContextSizeValue,
   resolveEffortValue,
   resolveFastValue,
@@ -87,6 +92,7 @@ import { NewsLine } from "@/renderer/components/newsLine/NewsLine";
 import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { PresentationModeTabs } from "./PresentationModeTabs";
 import { ProjectSwitchMenu } from "./ProjectSwitchMenu";
+import { NoAgentsComposerHint } from "./NoAgentsComposerHint"; // ViscosityCode: zero-agent hint
 import {
   ThreadDraftComposerArea,
   type DraftStartInput,
@@ -264,9 +270,9 @@ export function ThreadDraftView(props: {
   agentStatuses: AgentStatus[];
   /**
    * True when the supervisor hasn't yet returned agent statuses for this
-   * project's environment (first launch, no cache).  The composer shows a
-   * "Detecting agents…" placeholder instead of the "No supported agents"
-   * prompt while this is true.
+   * project's environment (first launch, no cache). With no installed agent,
+   * the composer slot shows "Looking for installed agents…" instead of the
+   * "No agents found yet" hint while this is true.
    */
   isDetectingAgents?: boolean;
   lastDraftConfig?: ProjectDraftConfig;
@@ -296,6 +302,11 @@ export function ThreadDraftView(props: {
   chatOnly?: boolean;
   quickComposer?: boolean;
   composerPlaceholder?: string;
+  /**
+   * ViscosityCode: New session centre content. When set, the composer is not
+   * anchored mid-pane; this slot fills the space above it (newSession.css).
+   */
+  sessionCenter?: ReactNode;
   restoreWorktreeSelectionToken?: number;
   /**
    * Override whether unmodified Enter submits instead of inserting a newline.
@@ -467,6 +478,11 @@ export function ThreadDraftView(props: {
   const [draftCrewExplicitlyCleared, setDraftCrewExplicitlyCleared] = useState(
     () => lastDraftConfig?.crew === null,
   );
+  // ViscosityCode: the draft's playbook; the ref lets persistence read it before the next render.
+  const [draftPlaybook, setDraftPlaybook] = useState<DraftPlaybookFields>(() =>
+    isIsolatedSelection ? {} : draftPlaybookFields(lastDraftConfig),
+  );
+  const draftPlaybookRef = useRef(draftPlaybook);
   const [crewOpenSignal, setCrewOpenSignal] = useState(0);
   const [crewOpenPending, setCrewOpenPending] = useState(false);
   useEffect(() => {
@@ -660,7 +676,10 @@ export function ThreadDraftView(props: {
     explicitlyCleared = draftCrewExplicitlyCleared,
     persistClientSelection = false,
   ) {
-    const selection = projectDraftWithCrew(nextDraftConfig, crew, explicitlyCleared);
+    const selection = {
+      ...projectDraftWithCrew(nextDraftConfig, crew, explicitlyCleared),
+      ...draftPlaybookRef.current, // ViscosityCode:
+    };
     if (props.draftSelection) {
       const current = props.draftSelection;
       const { agentKind: selectedKind, worktreeMode: _worktreeMode, ...configFields } = selection;
@@ -1796,7 +1815,11 @@ export function ThreadDraftView(props: {
     blockRef: anchorBlockRef,
     spacerRef: anchorSpacerRef,
   } = useStableComposerAnchor(
-    !props.compact && !props.quickComposer && !props.chatOnly && !!selectedAgent,
+    !props.compact &&
+      !props.quickComposer &&
+      !props.chatOnly &&
+      !!selectedAgent &&
+      !props.sessionCenter, // ViscosityCode: the New session layout pins the composer by CSS
   );
 
   if (!props.submissionPending && remoteConnection === "connecting" && !hostUpdateRestarting) {
@@ -1817,7 +1840,8 @@ export function ThreadDraftView(props: {
   ) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        {/* ViscosityCode: shell styling hook (layout/content.css). */}
+        <h1 className="poracode-draft-headline text-2xl font-semibold tracking-tight">
           <Trans>Connection error</Trans>
         </h1>
         <p className="text-muted">
@@ -1830,28 +1854,11 @@ export function ThreadDraftView(props: {
   }
 
   if (!selectedAgent) {
-    if (props.isDetectingAgents) {
-      // The app-level discovery overlay owns the animated scan. A hidden scan
-      // leaves this lightweight loading state usable below its progress pill.
-      return (
-        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-          <PixelLoader size="md" />
-          <p className="text-sm text-muted">
-            <Trans>Detecting agents…</Trans>
-          </p>
-        </div>
-      );
-    }
+    // ViscosityCode: a small row in the composer slot replaces upstream's
+    // full-pane detecting spinner and "No supported agents" headline.
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          <Trans>No supported agents detected</Trans>
-        </h1>
-        <p className="text-muted">
-          <Trans>
-            Install {formatAgentList(props.agentStatuses.map((s) => s.label))} to create a thread.
-          </Trans>
-        </p>
+      <div className="flex h-full flex-col px-3 pb-2">
+        <NoAgentsComposerHint detecting={!!props.isDetectingAgents} />
       </div>
     );
   }
@@ -1958,6 +1965,7 @@ export function ThreadDraftView(props: {
       ref={props.droppableRef}
       data-draft-composer=""
       data-poracode-attachment-drop-target=""
+      data-vc-session={props.sessionCenter ? "" : undefined} // ViscosityCode: New session layout hook
       className={`relative flex ${rootSizeClass} flex-col ${props.isDragging ? "opacity-50" : ""}`}
     >
       <ThreadDraftDropIndicators dropIndicator={props.dropIndicator} />
@@ -1988,6 +1996,14 @@ export function ThreadDraftView(props: {
           )
         ) : props.quickComposer ? null : props.compact ? (
           <ThreadDraftHero compact={props.compact} />
+        ) : props.sessionCenter ? (
+          // ViscosityCode: New session centre (project picker) in place of the anchor spacer.
+          <div
+            data-vc-session-center=""
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2"
+          >
+            {props.sessionCenter}
+          </div>
         ) : (
           // Spacer whose height is driven by useStableComposerAnchor to keep the
           // composer centered initially, then anchored as it grows.
@@ -2007,12 +2023,15 @@ export function ThreadDraftView(props: {
         >
           {props.chatOnly ? null : (
             <div data-draft-controls="" className="mb-1 flex items-center justify-between gap-2">
-              <ProjectSwitchMenu
-                currentProjectId={project.id}
-                variant="compact"
-                {...(props.paneId ? { paneId: props.paneId } : {})}
-                {...(props.onProjectChange ? { onSelectProject: props.onProjectChange } : {})}
-              />
+              {/* ViscosityCode: the New session centre already holds the project picker. */}
+              {props.sessionCenter ? null : (
+                <ProjectSwitchMenu
+                  currentProjectId={project.id}
+                  variant="compact"
+                  {...(props.paneId ? { paneId: props.paneId } : {})}
+                  {...(props.onProjectChange ? { onSelectProject: props.onProjectChange } : {})}
+                />
+              )}
               <PresentationModeTabs
                 presentationMode={presentationMode}
                 supportsTerminal={supportsTerminalMode}
@@ -2049,6 +2068,7 @@ export function ThreadDraftView(props: {
                 : draftCrewExplicitlyCleared
                   ? { crew: null }
                   : {}),
+              ...draftPlaybook, // ViscosityCode:
             }}
             compact={compactComposer}
             {...(props.chatOnly ? { hideWorkspaceControls: true } : {})}
@@ -2065,7 +2085,27 @@ export function ThreadDraftView(props: {
             {...(props.pickFiles ? { pickFiles: props.pickFiles } : {})}
             {...(props.importFiles ? { importFiles: props.importFiles } : {})}
 
-            onConfigChange={onConfigPatch}
+            onConfigChange={(patch) => {
+              // ViscosityCode: playbook fields stay beside the provider draft config.
+              const { fields, rest } = splitDraftPlaybookPatch(draftPlaybook, patch);
+              if (fields) {
+                draftPlaybookRef.current = fields;
+                setDraftPlaybook(fields);
+                if (effectiveAgentKind) {
+                  persistProjectDraftConfig(
+                    {
+                      ...withoutDraftCrew(draftConfig),
+                      agentKind: effectiveAgentKind,
+                      worktreeMode: effectiveWorktreeMode,
+                    },
+                    draftCrew,
+                    draftCrewExplicitlyCleared,
+                    true,
+                  );
+                }
+              }
+              if (!fields || Object.keys(rest).length > 0) onConfigPatch(rest);
+            }}
             onWorktreeModeChange={setWorktreeMode}
             onSwitchBranch={handleSwitchBranch}
             onRememberPresentationMode={() => {

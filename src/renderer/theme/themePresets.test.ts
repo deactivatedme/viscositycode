@@ -1,7 +1,22 @@
-import { describe, expect, it } from "vitest";
-import { applyAppTheme } from "./applyAppTheme";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  applyAppTheme,
+  getAppThemeOverride,
+  setAppThemeOverride,
+  useShownAppearance,
+  useShownThemeOverride,
+} from "./applyAppTheme";
 import { contrastRatio, mixHex, toHex } from "./colorMath";
-import { APP_THEME_PRESETS, DEFAULT_THEME_ID, getThemePreset } from "./themePresets";
+import {
+  APP_THEME_PRESETS,
+  DEFAULT_THEME_ID,
+  getThemePreset,
+  hasThemePreset,
+  HOSTILE_BINARY_THEME_ID,
+  isDarkOnlyTheme,
+} from "./themePresets";
 import { MANAGED_THEME_VARS } from "./themeTokens";
 
 // Floors mirror themeTokens: text stays readable on the content background
@@ -158,7 +173,9 @@ describe("theme presets", () => {
 
     const failures: string[] = [];
     for (const preset of APP_THEME_PRESETS) {
-      for (const mode of ["light", "dark"] as const) {
+      // A dark-only preset's light slot equals its dark one and shows under .dark.
+      const modes = isDarkOnlyTheme(preset.id) ? (["dark"] as const) : (["light", "dark"] as const);
+      for (const mode of modes) {
         const v = preset[mode];
         const surface = v["--surface"]!;
         const content = v["--content-background"]!;
@@ -239,5 +256,92 @@ describe("applyAppTheme", () => {
     for (const key of MANAGED_THEME_VARS) {
       expect(el.style.getPropertyValue(key)).toBe("");
     }
+  });
+});
+
+describe("theme override (ViscosityCode playbooks)", () => {
+  const root = document.documentElement;
+  afterEach(() => {
+    setAppThemeOverride(null);
+    applyAppTheme(root, "dark", DEFAULT_THEME_ID);
+  });
+
+  it("knows built-in and custom ids without falling back", () => {
+    expect(hasThemePreset(HOSTILE_BINARY_THEME_ID)).toBe(true);
+    expect(hasThemePreset("custom:night")).toBe(false);
+    expect(
+      hasThemePreset("custom:night", [
+        { id: "custom:night", label: "Night", light: {}, dark: {} } as never,
+      ]),
+    ).toBe(true);
+  });
+
+  it("shows the override on the document root and restores the saved theme", () => {
+    applyAppTheme(root, "dark", "github");
+    setAppThemeOverride(HOSTILE_BINARY_THEME_ID);
+    expect(getAppThemeOverride()).toBe(HOSTILE_BINARY_THEME_ID);
+    expect(root.dataset.themePreset).toBe(HOSTILE_BINARY_THEME_ID);
+    expect(root.style.getPropertyValue("--background")).toBe("#000000");
+
+    // The provider re-applying the saved theme keeps the override on top, and
+    // the dark-only preset stays pitch black in light appearance.
+    applyAppTheme(root, "light", "github");
+    expect(root.style.getPropertyValue("--accent")).toBe("#ff3344");
+    expect(root.style.getPropertyValue("--background")).toBe("#000000");
+    expect(root.classList.contains("dark")).toBe(true);
+    expect(root.classList.contains("light")).toBe(false);
+    expect(root.dataset.theme).toBe("dark");
+
+    setAppThemeOverride(null);
+    expect(root.dataset.themePreset).toBe("github");
+    expect(root.style.getPropertyValue("--accent")).toBe("#0969da");
+    expect(root.classList.contains("light")).toBe(true);
+    expect(root.classList.contains("dark")).toBe(false);
+    expect(root.dataset.theme).toBe("light");
+  });
+
+  it("shows a saved Hostile Binary dark in light appearance, with a black light slot", () => {
+    expect(isDarkOnlyTheme(HOSTILE_BINARY_THEME_ID)).toBe(true);
+    expect(isDarkOnlyTheme("github")).toBe(false);
+    expect(getThemePreset(HOSTILE_BINARY_THEME_ID).light).toEqual(
+      getThemePreset(HOSTILE_BINARY_THEME_ID).dark,
+    );
+    applyAppTheme(root, "light", HOSTILE_BINARY_THEME_ID);
+    expect(root.dataset.theme).toBe("dark");
+    expect(root.style.getPropertyValue("--background")).toBe("#000000");
+  });
+
+  it("reports the shown appearance for Monaco and xterm", () => {
+    const { result } = renderHook(() => useShownAppearance("light", "github", []));
+    expect(result.current).toBe("light");
+    act(() => setAppThemeOverride(HOSTILE_BINARY_THEME_ID));
+    expect(result.current).toBe("dark");
+    act(() => setAppThemeOverride("custom:gone"));
+    expect(result.current).toBe("light");
+    act(() => setAppThemeOverride(null));
+    expect(result.current).toBe("light");
+  });
+
+  it("reports the override shown in place of the saved theme, for Settings", () => {
+    const { result } = renderHook(() => useShownThemeOverride([]));
+    expect(result.current).toBeNull();
+    act(() => setAppThemeOverride(HOSTILE_BINARY_THEME_ID));
+    expect(result.current).toBe(HOSTILE_BINARY_THEME_ID);
+    act(() => setAppThemeOverride("custom:gone"));
+    expect(result.current).toBeNull();
+  });
+
+  it("ignores an override whose preset does not exist", () => {
+    applyAppTheme(root, "dark", "github");
+    setAppThemeOverride("custom:gone");
+    expect(root.dataset.themePreset).toBe("github");
+    expect(root.style.getPropertyValue("--accent")).toBe("#2f81f7");
+  });
+
+  it("never applies the override to other elements", () => {
+    setAppThemeOverride(HOSTILE_BINARY_THEME_ID);
+    const el = document.createElement("div");
+    applyAppTheme(el, "dark", "github");
+    expect(el.style.getPropertyValue("--accent")).toBe("#2f81f7");
   });
 });

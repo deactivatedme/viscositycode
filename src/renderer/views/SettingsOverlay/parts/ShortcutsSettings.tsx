@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { toast } from "@heroui/react";
@@ -22,6 +23,7 @@ import {
   buildShortcutRows,
   groupRowsBySection,
   isProjectScriptCommandId,
+  removeKeybinding, // ViscosityCode: keeps a removal of a backfilled default
   type ResolveLabel,
   type ShortcutRow,
   type ShortcutSection,
@@ -132,7 +134,7 @@ export function ShortcutsSettings() {
         replace: entry,
       });
     },
-    remove: (entry) => persist(current().filter((binding) => binding !== entry)),
+    remove: (entry) => persist(removeKeybinding(current(), entry)), // ViscosityCode:
     reset: (row) =>
       persist([
         ...current().filter((binding) => binding.command !== row.commandId),

@@ -6,7 +6,9 @@
  * contrast separately on light and dark surfaces), the four in-between hues
  * mix two neighbouring tokens, and "accent" is the active theme's accent. So
  * every preset, light or dark, built-in or custom, recolours the agents and
- * keeps them readable.
+ * keeps them readable. A theme may set `--vc-agent-hue-<name>` to tint agents
+ * without touching project icons: the monochrome Viscosity base theme uses it
+ * for muted tints (theme/viscosity/tokens.css); other themes leave it unset.
  */
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -35,7 +37,7 @@ export interface AgentColor {
   readonly css: string;
 }
 
-const token = (name: string) => `var(--project-icon-${name})`;
+const token = (name: string) => `var(--vc-agent-hue-${name}, var(--project-icon-${name}))`;
 /** Halfway between two token hues, interpolated in OKLCH (shorter hue arc). */
 const between = (a: string, b: string) => `color-mix(in oklch, ${token(a)}, ${token(b)})`;
 

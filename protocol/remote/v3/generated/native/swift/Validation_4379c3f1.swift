@@ -13,10 +13,6 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
-  static let schema_f6f6c60cfab9884a = RemoteSchema(type: "object", required: Set(["branchRenamed", "kind", "replayed", "thread"]), properties: ["branch": RemoteSchemas.schema_36fea325bf1aca70, "branchRenamed": RemoteSchemas.schema_feeb8bb50144d96d, "kind": RemoteSchemas.schema_1fcbd5bc41d865ae, "replayed": RemoteSchemas.schema_feeb8bb50144d96d, "thread": RemoteSchemas.schema_b37f60804aab420f, "worktreePath": RemoteSchemas.schema_36fea325bf1aca70], additionalAllowed: true, unknownPolicy: .strip)
-}
-
-public extension RemoteSchemas {
   static let schema_f7164d030c9bbeaf = RemoteSchema(type: "integer", minimum: 2.0, maximum: 6.0, unknownPolicy: .strip)
 }
 
@@ -45,11 +41,11 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
-  static let schema_f86171557f2ff456 = RemoteSchema(type: "array", items: RemoteSchemas.schema_11f20430355ec49c, unknownPolicy: .strip)
+  static let schema_f82c06f1740e4a30 = RemoteSchema(unionKind: "oneOf", options: [RemoteSchemas.schema_832bb77191de36f4, RemoteSchemas.schema_aafcd63530265fa8, RemoteSchemas.schema_c133c6f7b7129d49], unknownPolicy: .strip)
 }
 
 public extension RemoteSchemas {
-  static let schema_f87159e7882b195f = RemoteSchema(type: "object", required: Set(["settings"]), properties: ["settings": RemoteSchemas.schema_5a8607ab9974cf4e], additionalAllowed: true, unknownPolicy: .strip)
+  static let schema_f86171557f2ff456 = RemoteSchema(type: "array", items: RemoteSchemas.schema_11f20430355ec49c, unknownPolicy: .strip)
 }
 
 public extension RemoteSchemas {

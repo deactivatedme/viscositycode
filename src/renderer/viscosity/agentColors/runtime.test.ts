@@ -54,7 +54,7 @@ describe("installAgentColors", () => {
 
     useAgentColors.getState().setColor("agent-a", "fuchsia");
     expect(styleText()).toMatch(
-      /\[data-vc-agent-kind="agent-a"\] \{ --vc-agent-accent: color-mix\(in oklch, var\(--project-icon-violet\), var\(--project-icon-pink\)\); \}/,
+      /\[data-vc-agent-kind="agent-a"\] \{ --vc-agent-accent: color-mix\(in oklch, var\(--vc-agent-hue-violet, var\(--project-icon-violet\)\), var\(--vc-agent-hue-pink, var\(--project-icon-pink\)\)\); \}/,
     );
   });
 
@@ -73,7 +73,7 @@ describe("installAgentColors", () => {
       mutations += records.length;
     });
     observer.observe(style, { childList: true, characterData: true, subtree: true });
-    useAgentStatusesStore.setState({ discoveryHidden: true });
+    useAgentStatusesStore.setState({ hasCompletedDiscovery: true });
     // Same agents in a new array: the generated text is identical.
     useAgentStatusesStore.setState({ agentStatuses: [status("agent-a")] });
     useAgentColors.getState().setEnabled(true);

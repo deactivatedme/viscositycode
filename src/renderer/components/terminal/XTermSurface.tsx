@@ -44,6 +44,7 @@ import { readClientRuntime } from "@/renderer/clientRuntime";
 import { isMac, readBridge } from "@/renderer/bridge";
 import { ContextMenu, type ContextMenuItem } from "@/renderer/components/common/ContextMenu";
 import { useResolvedAppearance } from "@/renderer/components/ui/provider";
+import { useAppThemeOverride } from "@/renderer/theme/applyAppTheme"; // ViscosityCode:
 import { FindBar } from "@/renderer/components/find/FindBar";
 import {
   clearActiveTerminalFind,
@@ -213,6 +214,7 @@ export const XTermSurface = forwardRef<
   const activeCustomTheme = useSharedSettings((state) =>
     state.customThemes.find((theme) => theme.id === state.themePreset),
   );
+  const themeOverride = useAppThemeOverride(); // ViscosityCode: playbook theme override
   const mountRef = useRef<HTMLDivElement | null>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
@@ -1321,7 +1323,8 @@ export const XTermSurface = forwardRef<
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [appearance, themePreset, activeCustomTheme, themeBackgroundVar]);
+    // ViscosityCode: a playbook theme override also recolours the terminal.
+  }, [appearance, themePreset, activeCustomTheme, themeBackgroundVar, themeOverride]);
 
   const contextMenuItems: ContextMenuItem[] = [
     { id: "copy", label: t`Copy`, isDisabled: !hasSelection },

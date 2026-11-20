@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { agentVisionStreamFrameSchema, AGENT_VISION_STREAM_VERSION } from "../../agentVision";
 import { sensitiveAgentSettingKeys } from "../../agentSecrets";
@@ -5,6 +6,7 @@ import { CATALOG_READS_CAPABILITY } from "../catalogReadContract";
 import { HISTORY_DETAILS_PROJECTION, historyRuntimeItemSchema } from "../historyPresentation";
 import { gitStateInterestSchema } from "../../gitState";
 import { sharedSettingsSchema } from "../../settings";
+import { savedPlaybooksSchema } from "../../viscosity/playbook"; // ViscosityCode
 import { EVENT_SEQUENCE_SPACES } from "../../eventSequenceSpace";
 import {
   TERMINAL_CURSOR_SYNC_VERSION,
@@ -131,6 +133,7 @@ export const remoteSettingsSchema = sharedSettingsSchema
     agentSettings: remoteAgentSettingsSchema,
     // Optional for older hosts; remote edits must keep the field sparse.
     crews: sharedSettingsSchema.shape.crews.removeDefault().optional(),
+    playbooks: savedPlaybooksSchema.optional(), // ViscosityCode: optional for hosts without playbooks.
     // Optional for backward-compatible reads from remote-v3 hosts released
     // before native clients could edit usage card ordering and collapse state.
     usage: sharedSettingsSchema.shape.usage.optional(),

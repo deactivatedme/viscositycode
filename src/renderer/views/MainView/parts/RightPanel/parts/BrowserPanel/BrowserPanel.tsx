@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner, Tooltip } from "@heroui/react";
 import { useRendererActionStore } from "@/renderer/state/rendererActionStore";
@@ -53,6 +54,7 @@ export function BrowserPanel(props: { visible: boolean; surface?: "main" | "wind
   const residentTabs = useBrowserPanelStore((s) => s.residentTabs);
   const activeTabId = useBrowserPanelStore((s) => s.activeTabId);
   const activeTab = tabs.find((tab) => tab.tabId === activeTabId);
+  const automationActive = useBrowserPanelStore((s) => s.automationActive);
   const initialized = useBrowserPanelStore((s) => s.initialized);
   const browserPanelOpen = usePanelStore((s) => s.browserPanelOpen);
   const browserOverlayOpen = usePanelStore((s) => s.browserOverlayOpen);
@@ -76,6 +78,15 @@ export function BrowserPanel(props: { visible: boolean; surface?: "main" | "wind
   const everHadTabsRef = useRef(false);
   const hasActiveTab = tabs.length > 0 && activeTabId !== null;
   const rootRef = useRef<HTMLDivElement>(null);
+  // ViscosityCode: each <webview> is a guest renderer, so keep a tab mounted only once the user
+  // has activated it. Automation mounts every resident tab just while it lasts (the agent can
+  // drive tabs without activating them); a tab it drove but the user never opened unmounts
+  // after the grace period and reloads on next use, as background mode already does.
+  const [activatedTabIds, setActivatedTabIds] = useState<ReadonlySet<string>>(() => new Set());
+  if (activeTabId && !activatedTabIds.has(activeTabId)) {
+    setActivatedTabIds(new Set([...activatedTabIds, activeTabId]));
+  }
+  const isTabMounted = (tabId: string) => automationActive || activatedTabIds.has(tabId);
 
   useEffect(() => {
     if (browserOverlayOpen || isWindowSurface) rootRef.current?.focus({ preventScroll: true });
@@ -289,7 +300,7 @@ export function BrowserPanel(props: { visible: boolean; surface?: "main" | "wind
       <div className="relative flex-1 overflow-hidden bg-[var(--content-background)]">
         {nativeBrowserWebContents ? (
           residentTabs
-            .filter((tab) => !tab.internalPage)
+            .filter((tab) => !tab.internalPage && isTabMounted(tab.tabId))
             .map((tab) => (
               <BrowserTabWebview
                 key={tab.tabId}

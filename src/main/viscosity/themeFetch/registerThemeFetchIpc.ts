@@ -7,6 +7,7 @@
  * (see `themeFetchSession.ts`). The session is created on first use, after
  * the app is ready.
  */
+import { lookup } from "node:dns/promises";
 import { ipcMain, session } from "electron";
 import { THEME_FETCH_IPC, themeFetchFail } from "./themeFetchContract";
 import { createThemeHopGuard } from "./themeFetch";
@@ -24,7 +25,9 @@ let themeSession: ThemeFetchSession | undefined;
 function themeFetchSession(): ThemeFetchSession {
   if (!themeSession) {
     const created = session.fromPartition(THEME_FETCH_PARTITION, { cache: false });
-    installThemeHopGuard(created, createThemeHopGuard());
+    installThemeHopGuard(created, createThemeHopGuard(), async (hostname) =>
+      (await lookup(hostname, { all: true })).map((entry) => entry.address),
+    );
     themeSession = created;
   }
   return themeSession;

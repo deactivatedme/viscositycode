@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Preload-boundary regression for the hop-17 invocation envelope.
 //
 // Exercises the ACTUAL method exposed by src/main/preload.ts through a
@@ -46,6 +47,7 @@ vi.mock("./testing/smokeNativeControls", () => ({
 
 import { IPC_WINDOW_CHANNELS } from "@/shared/ipc/channels";
 import { createClientProcedureInvocation } from "@/shared/ipc/invocation";
+import { IPC_PROCEDURE_MAP_VERSION } from "@/shared/ipc/procedureMap";
 
 type ExposedInvoke = (invocation: unknown, ...rest: unknown[]) => Promise<unknown>;
 
@@ -78,6 +80,12 @@ describe("preload invokeProcedure envelope passthrough", () => {
     };
     expect(forwarded.payload).toBe(invocation);
     expect(forwarded.payload.ipcProcedureMapVersion).toBe(19);
+  });
+
+  it("exposes the procedure-map version from the leaf hop constant unchanged", async () => {
+    await exposedInvokeProcedure();
+    const exposed = electron.exposed() as { ipcProcedureMapVersion?: unknown };
+    expect(exposed.ipcProcedureMapVersion).toBe(IPC_PROCEDURE_MAP_VERSION);
   });
 
   it("never manufactures a version for a legacy positional call", async () => {

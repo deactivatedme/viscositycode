@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Standalone attach info: process-lifetime bootstrap shape for Electron as a
 // client of an already-running compatible headless owner at the same profile
 // namespace.
@@ -25,7 +26,7 @@
 
 import { z } from "zod";
 import { hostServiceCapabilitiesSchema } from "./hostControlProtocol";
-import { PORACODE_REMOTE_PROTOCOL_VERSION } from "./remote/protocol";
+import { PORACODE_REMOTE_PROTOCOL_VERSION } from "./remote/protocol/core"; // ViscosityCode: skip the barrel
 
 const rootSchema = z.string().min(1).max(4_096);
 

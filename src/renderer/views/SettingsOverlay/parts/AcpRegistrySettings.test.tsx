@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -68,7 +69,6 @@ const bridge = {
 
 const runAgentInstallCommandMock = vi.hoisted(() => vi.fn<(input: unknown) => boolean>());
 const runAgentLoginCommandMock = vi.hoisted(() => vi.fn<(input: unknown) => boolean>());
-const resetDiscoveredAgentsMock = vi.hoisted(() => vi.fn<() => void>());
 const remoteClientMock = vi.hoisted(() => ({
   endpoint: "https://conn-1.test",
   callRemoteProcedure: vi.fn<(procedure: string, payload: unknown) => Promise<unknown>>(),
@@ -78,20 +78,9 @@ const remoteClientMock = vi.hoisted(() => ({
 
 vi.mock("@/renderer/state/agentStatusesStore", () => {
   const useAgentStatusesStore = (
-    selector: (state: {
-      agentStatuses: AgentStatus[];
-      wslAgentStatuses: AgentStatus[];
-      resetDiscoveredAgents: () => void;
-    }) => unknown,
-  ) =>
-    selector({
-      ...statusesState,
-      resetDiscoveredAgents: resetDiscoveredAgentsMock,
-    });
-  useAgentStatusesStore.getState = () => ({
-    ...statusesState,
-    resetDiscoveredAgents: resetDiscoveredAgentsMock,
-  });
+    selector: (state: { agentStatuses: AgentStatus[]; wslAgentStatuses: AgentStatus[] }) => unknown,
+  ) => selector(statusesState);
+  useAgentStatusesStore.getState = () => statusesState;
   return {
     useAgentStatusesStore,
     isDetectingAgentsForLocation: () => false,
@@ -445,7 +434,6 @@ describe("AcpRegistrySettings", () => {
     bridge.getLatestAgentVersion.mockReset().mockResolvedValue({ source: "unknown" });
     runAgentLoginCommandMock.mockReset().mockReturnValue(true);
     runAgentInstallCommandMock.mockReset().mockReturnValue(true);
-    resetDiscoveredAgentsMock.mockReset();
     settingsState.syncAcpRegistryInstalledAgents.mockReset().mockImplementation((installed) => {
       settingsState.acpRegistryInstalledAgents = Object.fromEntries(
         installed.map((record) => [record.id, record]),

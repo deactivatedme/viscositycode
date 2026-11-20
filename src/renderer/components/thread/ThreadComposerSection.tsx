@@ -45,6 +45,7 @@ import { ComposerVoiceInput } from "../composer/ComposerVoiceInput";
 import { LiveVoiceButton, LiveVoiceSessionControls } from "../composer/LiveVoiceControls";
 import { liveVoice, useLiveVoice } from "@/renderer/speech/liveVoice";
 import {
+  browserMcpServer, // ViscosityCode: playbook picker
   composerMcpServers,
   COMPUTER_USE_MCP_ID,
   providerOwnsMcpConfig,
@@ -63,7 +64,7 @@ import {
 } from "../composer/MentionInput";
 import { useThreadMentionItems } from "../composer/useThreadMentionItems";
 import { useCrewMentionItems } from "../crew/useCrewMentionItems";
-// ViscosityCode: bots and ready models as `@` mentions (Roundtable from inside a chat).
+// ViscosityCode: ready models as `@` mentions (Roundtable from inside a chat).
 import { useRoundtableMentionItems } from "@/renderer/viscosity/roundtable/chat";
 import { attachmentsFromPaths, useAttachments } from "../composer/useAttachments";
 import type { VoiceInputHandle } from "../composer/VoiceInputButton";
@@ -108,6 +109,8 @@ import {
 } from "@/renderer/components/crew/crewComposerModel";
 import { useCrewHelperOptions } from "@/renderer/components/crew/crewHelperOptions";
 import { useCrewSessionRelaunch } from "@/renderer/components/crew/useCrewSessionRelaunch";
+// ViscosityCode: playbook picker and its relaunch for launch-bound MCP.
+import { PlaybookChip, usePlaybookSessionRelaunch } from "@/renderer/viscosity/playbooks";
 import {
   canLeadCrew,
   crewBindingFromSavedCrew,
@@ -629,6 +632,16 @@ function ThreadComposerSectionInner(props: ThreadComposerSectionProps & { thread
   const runtimeRequests = useAppStore((s) => s.runtimeRequestsByThread[thread.id]);
   const followUpQueue = useThreadFollowUpQueue(thread.id, !usesTerminalPresentation);
   const crewHelperNote = useCrewSessionRelaunch({
+    thread,
+    capabilities: effectiveAgentStatus?.capabilities,
+    runtimeLaunchConfig,
+    pendingSteer,
+    queuedFollowUp: followUpQueue,
+    openRuntimeRequest: (runtimeRequests?.length ?? 0) > 0,
+    activeSubAgent: docksSummary.agentCount > 0,
+  });
+  // ViscosityCode: same safety gates as the crew relaunch.
+  const playbookRestartNote = usePlaybookSessionRelaunch({
     thread,
     capabilities: effectiveAgentStatus?.capabilities,
     runtimeLaunchConfig,
@@ -1699,6 +1712,27 @@ function ThreadComposerSectionInner(props: ThreadComposerSectionProps & { thread
                         <>
                           {compactLayout ? addMenu : contextIndicator}
                           {compactLayout ? contextIndicator : addMenu}
+                          {/* ViscosityCode: playbook picker (desktop shell only). */}
+                          <PlaybookChip
+                            targetKey={thread.id}
+                            config={thread.config}
+                            onConfigChange={(patch) =>
+                              changeThreadConfig(thread.id, { ...thread.config, ...patch })
+                            }
+                            projectMcpServers={project?.mcpServers}
+                            projectLocation={projectLocation}
+                            browserAvailable={
+                              effectiveAgentStatus !== undefined &&
+                              browserMcpServer.getScope(
+                                effectiveAgentStatus.capabilities,
+                                presentationMode,
+                                projectLocation,
+                              ) !== "none"
+                            }
+                            terminal={usesTerminalPresentation}
+                            restartNote={playbookRestartNote}
+                            isDisabled={authRequired}
+                          />
                         </>
                       );
                       const renderVoiceInput = () =>

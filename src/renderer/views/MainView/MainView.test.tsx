@@ -1,10 +1,12 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import "fake-indexeddb/auto";
 import type { ReactNode } from "react";
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PoracodeBridge } from "@/shared/ipc";
 import { installBrowserClientRuntime, resetClientRuntimeForTest } from "@/renderer/clientRuntime";
 import { useCommandPaletteStore } from "@/renderer/commands/commandPaletteStore";
+import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { usePanelStore } from "@/renderer/state/panelStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -23,10 +25,6 @@ vi.mock("@/renderer/state/experimentStore", () => ({
 vi.mock("@/renderer/state/sharedSettingsStore", () => ({
   useSharedSettings: (selector: (state: object) => unknown) =>
     selector({ homeScopeEnabled: false, sharedSettingsHydrated: false }),
-}));
-vi.mock("@/renderer/state/welcomeGateStore", () => ({
-  useWelcomeGateStore: (selector: (state: { backgroundWorkReleased: boolean }) => unknown) =>
-    selector({ backgroundWorkReleased: false }),
 }));
 vi.mock("@/renderer/actions/projectActions", () => ({
   ensureHomeScopeProject: vi.fn<() => void>(),
@@ -124,5 +122,30 @@ describe("Search hosting", () => {
     expect(screen.getByTestId("compact-dnd")).toContainElement(
       screen.getByRole("dialog", { name: "Search" }),
     );
+  });
+});
+
+// ViscosityCode: detection no longer waits for the removed welcome screen.
+describe("agent detection", () => {
+  it("asks for agent statuses as soon as the store is hydrated, with no welcome gate", async () => {
+    layout.compact = false;
+    const getAgentStatuses = vi.fn<
+      (distros: string[]) => Promise<{ fromCache: boolean; windows: []; wsl: [] }>
+    >(async () => ({ fromCache: false, windows: [], wsl: [] }));
+    resetClientRuntimeForTest();
+    window.poracode = { getAgentStatuses } as unknown as PoracodeBridge;
+    installBrowserClientRuntime(window.poracode);
+    const beginStartupDiscovery = vi.fn<() => void>();
+    const original = useAgentStatusesStore.getState().beginStartupDiscovery;
+    useAgentStatusesStore.setState({ beginStartupDiscovery });
+    try {
+      render(<MainView storeHydrated runtimeSnapshotsReady />);
+      await waitFor(() => expect(getAgentStatuses).toHaveBeenCalledWith([]));
+      // Detection is silent: no loading state unless a WSL distro is missing.
+      await act(async () => {});
+      expect(beginStartupDiscovery).not.toHaveBeenCalled();
+    } finally {
+      useAgentStatusesStore.setState({ beginStartupDiscovery: original });
+    }
   });
 });

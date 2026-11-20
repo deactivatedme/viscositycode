@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { ProjectLocation } from "@/shared/contracts";
 import { useSmoothStreamedText } from "@/renderer/hooks/useSmoothStreamedText";
@@ -9,8 +10,15 @@ import { InlineFolderPathChip } from "./InlineFolderPathChip";
 import { tokenizePlainText } from "./plainTextTokens";
 import { DeferredItemMarkdownInner } from "@/renderer/deferredFeatures";
 import { shouldUseChunkedPlainText } from "./longPlainText";
+import { useLightweightActive } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 
 export { shouldUseChunkedPlainText } from "./longPlainText";
+
+/** ViscosityCode: Lightweight reveals at 20 updates per second instead of every frame. */
+export function streamRevealIntervalMs(chunkedPlainText: boolean, lightweight: boolean): number {
+  if (chunkedPlainText) return 1_000;
+  return lightweight ? 50 : 1_000 / 60;
+}
 
 interface ItemMarkdownProps {
   text: string;
@@ -34,13 +42,14 @@ export function SmoothItemMarkdown({
     initialRevealKey && !revealedStreamKeys.has(initialRevealKey) ? "" : text,
   );
   const chunkedPlainText = shouldUseChunkedPlainText(text);
+  const lightweight = useLightweightActive(); // ViscosityCode:
   // Long plain output is still readable as it arrives; limiting DOM updates
   // avoids repeatedly re-laying out an ever-growing paragraph every frame.
   // Normal reveal follows display frames at up to 60 updates per second.
   const smoothedText = useSmoothStreamedText(
     text,
     isStreaming,
-    chunkedPlainText ? 1_000 : 1_000 / 60,
+    streamRevealIntervalMs(chunkedPlainText, lightweight), // ViscosityCode:
     initialText,
   );
   const hasRevealedText = smoothedText.length > 0;

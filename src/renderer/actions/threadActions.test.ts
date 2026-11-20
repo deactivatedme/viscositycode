@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
@@ -31,6 +32,7 @@ import {
   requestDeleteThread,
   openNewThread,
   openThread,
+  resolveNewThreadProjectId,
   claimThreadNavigation,
   reopenPaneThreadsIfInactive,
   reopenStoredThread,
@@ -252,6 +254,54 @@ describe("threadActions", () => {
 
     await waitFor(() => {
       expect(useAppStore.getState().view).toEqual({ kind: "draft", projectId: beta.id });
+    });
+  });
+
+  // ViscosityCode: the New session landing passes its most recently used project.
+  describe("resolveNewThreadProjectId with a preferred project", () => {
+    it("prefers a visible preferred project over the on-screen one", () => {
+      const a = useAppStore.getState().addProject({ kind: "posix", path: "/repo-a" });
+      const b = useAppStore.getState().addProject({ kind: "posix", path: "/repo-b" });
+      useAppStore.setState((state) => ({ ...state, view: { kind: "draft", projectId: a.id } }));
+
+      expect(resolveNewThreadProjectId(b.id)).toBe(b.id);
+    });
+
+    it("skips a disabled preferred project", () => {
+      const a = useAppStore.getState().addProject({ kind: "posix", path: "/repo-a" });
+      const b = useAppStore.getState().addProject({ kind: "posix", path: "/repo-b" });
+      useAppStore.setState((state) => ({
+        ...state,
+        view: { kind: "draft", projectId: a.id },
+        projects: state.projects.map((p) => (p.id === b.id ? { ...p, disabled: true } : p)),
+      }));
+
+      expect(resolveNewThreadProjectId(b.id)).toBe(a.id);
+    });
+
+    it("skips a preferred project in another workspace", () => {
+      const { alpha, beta } = configureTwoWorkspaceProjects();
+      useWorkspaceStore.setState({ activeWorkspaceId: "workspace-beta" });
+
+      expect(resolveNewThreadProjectId(alpha.id)).toBe(beta.id);
+    });
+
+    it("falls back when the preferred project is missing", () => {
+      const a = useAppStore.getState().addProject({ kind: "posix", path: "/repo-a" });
+
+      expect(resolveNewThreadProjectId("missing")).toBe(a.id);
+    });
+
+    it("keeps the upstream order without an argument", () => {
+      const a = useAppStore.getState().addProject({ kind: "posix", path: "/repo-a" });
+      const b = useAppStore.getState().addProject({ kind: "posix", path: "/repo-b" });
+      useAppStore.setState((state) => ({ ...state, view: { kind: "draft", projectId: b.id } }));
+
+      expect(resolveNewThreadProjectId()).toBe(b.id);
+      useAppStore.setState((state) => ({ ...state, view: { kind: "home" } }));
+      // No current project: the first visible project in store order.
+      expect(resolveNewThreadProjectId()).toBe(useAppStore.getState().projects[0]?.id);
+      expect([a.id, b.id]).toContain(resolveNewThreadProjectId());
     });
   });
 

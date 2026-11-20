@@ -95,26 +95,28 @@ describe("Zen mode stylesheet", () => {
     }
   });
 
-  it("hides the activity bar and sidebar without collapsing the widths AppShell measures", () => {
-    // AppShell measures both (useActivityBarWidth, the sidebar's ResizeObserver)
-    // to decide when the sidebar and right/git panels float; display: none
-    // would read 0 px and leaving zen would re-dock or dismiss them.
+  it("hides the sidebar without collapsing the width AppShell measures", () => {
+    // AppShell measures it (the sidebar's ResizeObserver) to decide when the
+    // sidebar and right/git panels float; display: none would read 0 px and
+    // leaving zen would re-dock or dismiss them.
     for (const selector of selectorsSetting("display", "none")) {
-      expect(selector).not.toMatch(/\.vc-activitybar\b|\.poracode-sidebar-aside\b/);
+      expect(selector).not.toMatch(/\.poracode-sidebar-aside\b/);
     }
-    for (const selector of [`${SHELL} .vc-activitybar`, `${SHELL} .poracode-sidebar-aside`]) {
-      const hidden = declarationsFor(selector);
-      expect(hidden.get("position")).toBe("fixed");
-      expect(hidden.get("visibility")).toBe("hidden");
-      expect(hidden.get("pointer-events")).toBe("none");
-      for (const sizing of ["display", "width", "min-width", "max-width", "flex", "flex-basis"]) {
-        expect(hidden.has(sizing)).toBe(false);
-      }
+    // The vertical rail is gone; nothing targets it any more.
+    for (const rule of rules()) {
+      for (const selector of selectorsOf(rule)) expect(selector).not.toMatch(/\.vc-activitybar\b/);
     }
-    // Nothing else in zen mode resizes them either.
+    const hidden = declarationsFor(`${SHELL} .poracode-sidebar-aside`);
+    expect(hidden.get("position")).toBe("fixed");
+    expect(hidden.get("visibility")).toBe("hidden");
+    expect(hidden.get("pointer-events")).toBe("none");
+    for (const sizing of ["display", "width", "min-width", "max-width", "flex", "flex-basis"]) {
+      expect(hidden.has(sizing)).toBe(false);
+    }
+    // Nothing else in zen mode resizes it either.
     for (const rule of rules()) {
       const targetsChrome = selectorsOf(rule).some((selector) =>
-        /\.vc-activitybar$|\.poracode-sidebar-aside$/.test(selector),
+        /\.poracode-sidebar-aside$/.test(selector),
       );
       if (!targetsChrome) continue;
       rule.walkDecls((decl) => {
@@ -161,13 +163,6 @@ describe("Zen mode stylesheet", () => {
     );
     expect(others.get("visibility")).toBe("hidden");
     expect(others.get("pointer-events")).toBe("none");
-  });
-
-  it("dims the animated background and makes panels more opaque", () => {
-    const canvas = declarationsFor("html[data-vc-shell][data-vc-zen] .vc-bg-layer > .vc-bg-canvas");
-    expect(canvas.get("opacity")).toBe("var(--vc-zen-background-opacity)");
-    const panels = declarationsFor('html[data-vc-shell][data-vc-zen][data-vc-bg="on"]');
-    expect(panels.get("--vc-panel-fill-alpha")).toMatch(/var\(--vc-zen-panel-fill-floor\)/);
   });
 
   it("removes the reveal band while the strip shows, so the strip keeps its window-drag region", () => {

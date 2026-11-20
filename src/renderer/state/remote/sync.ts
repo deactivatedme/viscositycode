@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { historyContentOmissions } from "../historyDelivery";
 import { noteHistoryDeliveryGap } from "../historyResumeRegistry";
 import { isThreadTurnActive, type Thread } from "@/shared/contracts";
@@ -702,9 +703,8 @@ function liveReducer(): SupervisorEventReducer {
     get wrapApply() {
       return intakeHooks.wrapApply;
     },
-    // A first-launch bulk discovery result is deferred so the UI paints first.
-    onAgentStatusEvent: (event) =>
-      applyAgentStatusSupervisorEvent(event, { deferFirstLaunchBulk: true }),
+    // ViscosityCode: bulk results apply at once; no discovery screen to pace.
+    onAgentStatusEvent: (event) => applyAgentStatusSupervisorEvent(event),
     isHistoryIncorporated,
     afterApply: (batches, { threadMetadata }) => {
       for (const { threadId, events } of batches) {

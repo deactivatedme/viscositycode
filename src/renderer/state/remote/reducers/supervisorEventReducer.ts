@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useAppStore } from "@/renderer/state/appStore";
 import {
   confirmPendingThreadInput,
@@ -28,6 +29,7 @@ import { invalidateRuntimeHistoryRead } from "@/renderer/state/runtimeHistoryBou
 import { forgetBoundedHistoryThreadByViewId } from "@/renderer/state/remoteServers/catalog/boundedHistoryRegistry";
 import { drainRuntimeEventQueue } from "@/renderer/state/runtimeEventDrain";
 import { createRecoveryRetries } from "./recoveryRetries";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 import {
   isAgentStatusSupervisorEvent,
   type AgentStatusSupervisorEvent,
@@ -278,7 +280,8 @@ export function createSupervisorEventReducer(
   /** Bumped by clear(): recoveries started before it settle without effect. */
   let recoveryGeneration = 0;
   const pendingContentOmissions = new Map<string, number>();
-  let runtimeFlushHandle: number | null = null;
+  // ViscosityCode: the foreground flush is a frame or, in Lightweight, a 50 ms timer.
+  let cancelRuntimeFlush: (() => void) | null = null;
   let backgroundRuntimeFlushHandle: ReturnType<typeof setTimeout> | null = null;
   let runtimeDrainContinuationHandle: ReturnType<typeof setTimeout> | null = null;
   let runtimeDrainContinuationFlush: (() => void) | null = null;
@@ -286,11 +289,16 @@ export function createSupervisorEventReducer(
   let removeReadBarrierListener: (() => void) | null = null;
 
   const BACKGROUND_RUNTIME_EVENT_BATCH_MS = 250;
+  /** ViscosityCode: Lightweight flushes foreground events at 20 Hz instead of every frame. */
+  const LIGHTWEIGHT_RUNTIME_EVENT_FLUSH_MS = 50;
   /** Cooperative budget for extraction, reduction, subscribers and retention. */
   const RUNTIME_FLUSH_BUDGET_MS = 4;
 
   const isForegroundRuntimeThread = (threadId: string): boolean => {
     if (document.visibilityState === "hidden") return false;
+    // ViscosityCode: in Lightweight an unfocused window takes the 250 ms background batch.
+    if (document.documentElement.hasAttribute("data-app-unfocused") && isLightweightActive())
+      return false;
     const view = useAppStore.getState().view;
     return view.kind === "thread" && view.panes.includes(threadId);
   };
@@ -364,15 +372,23 @@ export function createSupervisorEventReducer(
       if (hasForeground && hasBackground) break;
     }
 
-    if (hasForeground && runtimeFlushHandle === null) {
-      runtimeFlushHandle = requestAnimationFrame(() => {
-        runtimeFlushHandle = null;
+    if (hasForeground && cancelRuntimeFlush === null) {
+      const flush = (): void => {
+        cancelRuntimeFlush = null;
         flushPendingRuntimeEvents(isForegroundRuntimeThread, true);
         schedulePendingRuntimeEvents();
-      });
-    } else if (!hasForeground && runtimeFlushHandle !== null) {
-      cancelAnimationFrame(runtimeFlushHandle);
-      runtimeFlushHandle = null;
+      };
+      // ViscosityCode: Lightweight uses a 50 ms timer instead of the next frame.
+      if (isLightweightActive()) {
+        const timer = setTimeout(flush, LIGHTWEIGHT_RUNTIME_EVENT_FLUSH_MS);
+        cancelRuntimeFlush = () => clearTimeout(timer);
+      } else {
+        const frame = requestAnimationFrame(flush);
+        cancelRuntimeFlush = () => cancelAnimationFrame(frame);
+      }
+    } else if (!hasForeground && cancelRuntimeFlush !== null) {
+      cancelRuntimeFlush();
+      cancelRuntimeFlush = null;
     }
 
     if (hasBackground && backgroundRuntimeFlushHandle === null) {
@@ -772,10 +788,8 @@ export function createSupervisorEventReducer(
   const clear = (): void => {
     removeReadBarrierListener?.();
     removeReadBarrierListener = null;
-    if (runtimeFlushHandle !== null) {
-      cancelAnimationFrame(runtimeFlushHandle);
-      runtimeFlushHandle = null;
-    }
+    cancelRuntimeFlush?.();
+    cancelRuntimeFlush = null;
     if (backgroundRuntimeFlushHandle !== null) {
       clearTimeout(backgroundRuntimeFlushHandle);
       backgroundRuntimeFlushHandle = null;

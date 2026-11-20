@@ -6,12 +6,25 @@
 import { startTransition } from "react";
 import { resolveActivePaneId } from "@/renderer/actions/currentProject";
 import { openNewThread, openThread } from "@/renderer/actions/threadActions";
+import { isSplitViewCovered } from "@/renderer/viscosity/threadOnScreen";
 import { useAppStore } from "@/renderer/state/appStore";
 import { findExperimentByThreadId } from "@/renderer/state/experimentStore";
 import { useFileEditorStore } from "@/renderer/state/fileEditorStore";
 import { getThreadMap } from "@/renderer/state/useThread";
-import { hideRoundtablePanel } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
-import { closeOpenTab, getRenderableTabIds } from "./openTabsStore";
+import {
+  closeMissionControl,
+  useMissionControlViewStore,
+} from "@/renderer/viscosity/missionControl/missionControlViewStore";
+import {
+  hideRoundtablePanel,
+  useRoundtableViewStore,
+} from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
+import {
+  closeOpenTab,
+  getRenderableTabIds,
+  isOpenableThread,
+  useOpenTabsStore,
+} from "./openTabsStore";
 import { resolveNextTabAfterClose } from "./openTabsModel";
 
 /**
@@ -49,8 +62,12 @@ export function hideEditorPanel(): void {
   if (editor.overlayMode === "modal") editor.setOverlayMode(null);
 }
 
-/** Tab (or status bar) press: bring the thread forward over the editor and Roundtable panels. */
+/**
+ * Tab (or status bar) press: bring the thread forward over the editor and Roundtable panels.
+ * A deleted or archived thread is ignored, so no fork link can reopen it.
+ */
 export function activateThreadTab(threadId: string): void {
+  if (!isOpenableThread(threadId)) return;
   hideEditorPanel();
   // ViscosityCode: also step the Roundtable panel aside (its tab stays).
   hideRoundtablePanel();
@@ -71,6 +88,14 @@ export function closeThreadTab(threadId: string): void {
   const view = state.view;
   if (view.kind !== "thread" || !view.panes.includes(threadId)) return;
 
+  // ViscosityCode: under a cover panel (Roundtable, Mission Control) only close the
+  // hidden pane: openThread or a view change would dismiss the panel, and filling the pane
+  // would mount (and mark seen) a thread the user cannot see.
+  if (isSplitViewCovered()) {
+    if (view.panes.length > 1) state.closePane(threadId);
+    else closePaneWhenUncovered(threadId);
+    return;
+  }
   const focusedPaneId = resolveActivePaneId(view.panes, state.focusedPaneId);
   if (focusedPaneId === threadId && !view.activeGroupId) {
     const nextThreadId = resolveNextTabAfterClose(tabsBeforeClose, threadId, view.panes);
@@ -82,11 +107,43 @@ export function closeThreadTab(threadId: string): void {
   state.closePane(threadId);
 }
 
+/**
+ * ViscosityCode: closing the last pane goes home, which would dismiss the cover panel, so it
+ * closes once the panel is gone, unless the user navigated meanwhile (that navigation owns
+ * the pane) or reopened the tab.
+ */
+function closePaneWhenUncovered(threadId: string): void {
+  const unsubscribes: Array<() => void> = [];
+  const onPanelChange = () => {
+    if (isSplitViewCovered()) return;
+    for (const unsubscribe of unsubscribes) unsubscribe();
+    // After the action that uncovered the split, so an openThread it starts is already pending.
+    queueMicrotask(() => {
+      // One panel replaced by another (each hides the others before it shows): keep waiting.
+      if (isSplitViewCovered()) {
+        closePaneWhenUncovered(threadId);
+        return;
+      }
+      const state = useAppStore.getState();
+      if (state.view.kind !== "thread" || !state.view.panes.includes(threadId)) return;
+      if (state.pendingActiveThreadId !== null) return;
+      if (useOpenTabsStore.getState().ids.includes(threadId)) return;
+      state.closePane(threadId);
+    });
+  };
+  unsubscribes.push(
+    useRoundtableViewStore.subscribe(onPanelChange),
+    useMissionControlViewStore.subscribe(onPanelChange),
+  );
+}
+
 /** "+" in the tab strip: the same new-thread draft as the sidebar's button. */
 export function openNewThreadTab(): void {
   hideEditorPanel();
-  // ViscosityCode: the new draft shows in front of the Roundtable panel.
+  // ViscosityCode: the new draft shows in front of the Roundtable and Mission Control
+  // panels (a draft-to-draft or side-by-side open changes nothing their syncs watch).
   hideRoundtablePanel();
+  closeMissionControl();
   openNewThread();
 }
 

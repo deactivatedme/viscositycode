@@ -2,7 +2,7 @@ import { Button } from "@heroui/react";
 import { useLingui } from "@lingui/react/macro";
 import { UsersRound, X } from "lucide-react";
 import { useRoundtableSession } from "@/renderer/viscosity/roundtable/api";
-import { sessionTone } from "@/renderer/viscosity/roundtable/ui/patterns";
+import { isChatIdle, sessionTone } from "@/renderer/viscosity/roundtable/ui/patterns";
 import {
   closeRoundtableView,
   isRoundtablePanelShown,
@@ -23,7 +23,8 @@ export function RoundtableTab() {
   if (!sessionId) return null;
 
   const title = session?.title ?? t`Roundtable`;
-  const tone = session ? sessionTone(session.status) : "inactive";
+  // A team chat that only waits for a message is not working.
+  const tone = session && !isChatIdle(session) ? sessionTone(session.status) : "inactive";
   return (
     <div
       data-vc-tab=""

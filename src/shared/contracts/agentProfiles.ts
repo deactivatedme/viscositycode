@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import {
   devinProfileDependencies,
@@ -13,6 +14,7 @@ import {
   type AgentInstanceConfig,
 } from "./agentInstance";
 import { validateDevinProfileConfig } from "../agents/devin/profileConfig";
+import { validateCursorProfileConfig } from "../agents/cursor/profileConfig"; // ViscosityCode:
 import { geminiProfileDriver } from "../agents/gemini/profileConfig";
 
 /**
@@ -53,7 +55,12 @@ export interface AgentProfileDriver {
 export const AGENT_PROFILE_DRIVERS: readonly AgentProfileDriver[] = [
   { driver: "claude", validateConfig: parseClaudeProfileInstanceConfig },
   { driver: "codex", validateConfig: parseCodexProfileInstanceConfig },
-  { driver: "cursor", credentialEnvVar: "CURSOR_API_KEY" },
+  // ViscosityCode: Cursor profile config (local or cloud runtime target).
+  {
+    driver: "cursor",
+    credentialEnvVar: "CURSOR_API_KEY",
+    validateConfig: validateCursorProfileConfig,
+  },
   geminiProfileDriver,
   {
     driver: "devin",

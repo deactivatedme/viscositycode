@@ -27,33 +27,58 @@ function fakeSession(fetch: ThemeFetchSession["fetch"]) {
     },
   };
   /** Runs one request hop through the guard; true when it was cancelled. */
-  function hop(id: number, url: string): boolean {
-    let cancelled: boolean | undefined;
-    listeners.before?.({ id, url }, (response) => {
-      cancelled = response.cancel === true;
+  function hop(id: number, url: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      listeners.before?.({ id, url }, (response) => resolve(response.cancel === true));
     });
-    if (cancelled === undefined) throw new Error("the guard never answered");
-    return cancelled;
   }
   return { session, listeners, hop };
 }
 
 describe("installThemeHopGuard", () => {
-  it("cancels hops the guard refuses on the dedicated session, and forgets finished requests", () => {
+  it("cancels hops the guard refuses on the dedicated session, and forgets finished requests", async () => {
     const { session, listeners, hop } = fakeSession(vi.fn<ThemeFetchSession["fetch"]>());
-    installThemeHopGuard(session, createThemeHopGuard(1));
-    expect(hop(1, "https://themes.example.com/a.json")).toBe(false);
-    expect(hop(1, "http://themes.example.com/a.json")).toBe(true);
-    expect(hop(2, "https://themes.example.com/a.json")).toBe(false);
-    expect(hop(2, "https://192.168.1.1/a.json")).toBe(true);
-    expect(hop(3, "https://themes.example.com/a.json")).toBe(false);
-    expect(hop(3, "https://cdn.example.com/a.json")).toBe(false);
+    installThemeHopGuard(session, createThemeHopGuard(1), async () => ["93.184.216.34"]);
+    expect(await hop(1, "https://themes.example.com/a.json")).toBe(false);
+    expect(await hop(1, "http://themes.example.com/a.json")).toBe(true);
+    expect(await hop(2, "https://themes.example.com/a.json")).toBe(false);
+    expect(await hop(2, "https://192.168.1.1/a.json")).toBe(true);
+    expect(await hop(3, "https://themes.example.com/a.json")).toBe(false);
+    expect(await hop(3, "https://cdn.example.com/a.json")).toBe(false);
     // One redirect allowed: the second is refused.
-    expect(hop(3, "https://cdn2.example.com/a.json")).toBe(true);
+    expect(await hop(3, "https://cdn2.example.com/a.json")).toBe(true);
     listeners.completed?.({ id: 3, url: "" });
-    expect(hop(3, "https://themes.example.com/a.json")).toBe(false);
+    expect(await hop(3, "https://themes.example.com/a.json")).toBe(false);
     listeners.failed?.({ id: 3, url: "" });
-    expect(hop(3, "https://themes.example.com/a.json")).toBe(false);
+    expect(await hop(3, "https://themes.example.com/a.json")).toBe(false);
+  });
+
+  it("refuses a hop whose name resolves to a local or private address, or does not resolve", async () => {
+    const addresses: Record<string, string[]> = {
+      "themes.example.com": ["93.184.216.34", "2606:2800:220:1::1"],
+      "127.0.0.1.nip.io": ["127.0.0.1"],
+      "mixed.example.com": ["93.184.216.34", "10.0.0.5"],
+      "mapped.example.com": ["::ffff:192.168.1.1"],
+      "nat64.example.com": ["64:ff9b::a9fe:a9fe"],
+      "empty.example.com": [],
+    };
+    const lookup = vi.fn<(hostname: string) => Promise<string[]>>(async (hostname) => {
+      const found = addresses[hostname];
+      if (!found) throw new Error("ENOTFOUND");
+      return found;
+    });
+    const { session, hop } = fakeSession(vi.fn<ThemeFetchSession["fetch"]>());
+    installThemeHopGuard(session, createThemeHopGuard(), lookup);
+    expect(await hop(1, "https://themes.example.com/a.json")).toBe(false);
+    // One request per host, so every refusal comes from the lookup, not the redirect cap.
+    for (const [index, host] of Object.keys(addresses).slice(1).entries()) {
+      expect(await hop(10 + index, `https://${host}/a.json`)).toBe(true);
+    }
+    expect(await hop(3, "https://missing.example.com/a.json")).toBe(true);
+    // A literal public address needs no lookup.
+    lookup.mockClear();
+    expect(await hop(4, "https://8.8.8.8/a.json")).toBe(false);
+    expect(lookup).not.toHaveBeenCalled();
   });
 });
 

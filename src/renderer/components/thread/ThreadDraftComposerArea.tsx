@@ -154,12 +154,16 @@ import {
 } from "@/renderer/components/common/BranchSelector/parts/worktreeBaseRef";
 // ViscosityCode: Roundtable from the new-thread composer (toggle, `/roundtable`).
 import {
+  primarySeatId, // ViscosityCode:
   RoundtableDraftPanel,
   startDraftRoundtable,
   useRoundtableDraft,
   type RoundtableDraftPrimary,
 } from "@/renderer/viscosity/roundtable/chat";
 import { parseRoundtableCommand } from "@/renderer/viscosity/roundtable/chat/slashCommand";
+import { toastRoundtableStarted } from "@/renderer/viscosity/roundtable/chat/startedToast"; // ViscosityCode:
+import { PlaybookChip } from "@/renderer/viscosity/playbooks"; // ViscosityCode:
+import { threadPlaybookBinding } from "@/shared/viscosity/playbook"; // ViscosityCode:
 
 const EMPTY_BRANCHES: GitBranchInfo[] = [];
 
@@ -318,6 +322,7 @@ function DraftComposerAfterControls(props: {
     visible: boolean;
     onToggle: (next: boolean) => void;
   };
+  playbook?: ReactNode; // ViscosityCode: the playbook picker beside "+".
 }) {
   return (
     <>
@@ -339,6 +344,7 @@ function DraftComposerAfterControls(props: {
         {...(props.experiment ? { experiment: props.experiment } : {})}
         {...(props.roundtable ? { roundtable: props.roundtable } : {})} // ViscosityCode:
       />
+      {props.playbook /* ViscosityCode: */}
       <ComposerVoiceInput
         show={props.showVoiceInputButton}
         isDisabled={props.isDisabled}
@@ -423,13 +429,6 @@ export function ThreadDraftComposerArea(props: {
   const autoFocus = props.autoFocus ?? ((props.paneCount ?? 1) === 1 && !isBrowserClient);
   const isQuickComposer = hasAnyClientBridge() ? isQuickComposerWindow() : false;
   // ViscosityCode: Roundtable mode (desktop shell; not side-chat drafts, home scope, quick composer).
-  const roundtable = useRoundtableDraft({
-    canHost:
-      !props.isolatedDraft &&
-      !props.hideWorkspaceControls &&
-      !isHomeProject(props.project) &&
-      !isQuickComposer,
-  });
   const roundtablePrimary: RoundtableDraftPrimary = {
     agentKind: props.selectedAgent.kind,
     agentLabel: props.selectedAgent.label,
@@ -437,6 +436,14 @@ export function ThreadDraftComposerArea(props: {
     modelLabel: resolveModelLabel(props.selectedAgent, props.config.model) ?? "",
     presentationMode: props.presentationMode,
   };
+  const roundtable = useRoundtableDraft({
+    canHost:
+      !props.isolatedDraft &&
+      !props.hideWorkspaceControls &&
+      !isHomeProject(props.project) &&
+      !isQuickComposer,
+    primaryId: primarySeatId(roundtablePrimary), // ViscosityCode: the composer's model is not a second seat.
+  });
   const voiceInputEnabled = useSharedSettings((s) => s.audio.showVoiceInputButton);
   const showVoiceInputButton = voiceInputEnabled;
   // Persistent (standing-default) composer MCP enablement, keyed by MCP id.
@@ -1272,6 +1279,9 @@ export function ThreadDraftComposerArea(props: {
     mentionRef.current?.placeCaret("end");
   }
 
+  // ViscosityCode: a Roundtable started with an existing worktree picked works in that worktree.
+  const roundtableExistingWorktree =
+    (branchSelection?.isWorktree ?? props.worktreeMode) ? branchSelection?.worktreePath : undefined;
   // ViscosityCode: the composer's model takes seat 0; the dock lists the others.
   async function runRoundtable(allSegments: PromptSegment[], fallbackPrompt = "") {
     const input = resolveExperimentInput(allSegments, fallbackPrompt);
@@ -1286,7 +1296,8 @@ export function ThreadDraftComposerArea(props: {
     submissionInFlightRef.current = true;
     setIsSubmitting(true);
     try {
-      await startDraftRoundtable({
+      const sessionId = await startDraftRoundtable({
+        // ViscosityCode:
         projectId: props.project.id,
         task,
         pattern: roundtable.pattern,
@@ -1294,6 +1305,10 @@ export function ThreadDraftComposerArea(props: {
         seats: roundtable.seats,
         newWorktree:
           (branchSelection?.isWorktree ?? props.worktreeMode) && !branchSelection?.worktreePath,
+        // ViscosityCode: an existing worktree is used as is, never swapped for the main checkout.
+        existingWorktreePath: roundtableExistingWorktree, // ViscosityCode:
+        existingWorktreeBranch: roundtableExistingWorktree ? branchSelection?.branch : undefined, // ViscosityCode:
+        playbookId: threadPlaybookBinding(props.config)?.id, // ViscosityCode: seats inherit the composer's playbook
       });
       roundtable.reset();
       mentionRef.current?.clear();
@@ -1302,7 +1317,7 @@ export function ThreadDraftComposerArea(props: {
       setHasContent(false);
       resetDraftRefs();
       clearDraftContent(props.project.id);
-      toast.success(t`Roundtable started`);
+      toastRoundtableStarted(sessionId); // ViscosityCode: with an Open action
     } catch (error) {
       toast.danger(friendlyError(error));
     } finally {
@@ -1907,6 +1922,25 @@ export function ThreadDraftComposerArea(props: {
                   },
                 }
               : {})}
+            // ViscosityCode: playbook picker (desktop shell; not side-chat drafts).
+            {...(props.isolatedDraft
+              ? {}
+              : {
+                  playbook: (
+                    <PlaybookChip
+                      targetKey={props.paneId ?? `draft:${props.project.id}`}
+                      config={props.config}
+                      onConfigChange={props.onConfigChange}
+                      projectMcpServers={props.project.mcpServers}
+                      projectLocation={props.project.location}
+                      browserAvailable={mcpServers.some(
+                        (server) => server.descriptor.id === "browser" && server.visible,
+                      )}
+                      terminal={props.presentationMode === "terminal"}
+                      isDisabled={authRequired || agentUpdating || isSubmitting}
+                    />
+                  ),
+                })}
             mentionRef={mentionRef}
             voiceInputRef={voiceInputRef}
             computerUse={{

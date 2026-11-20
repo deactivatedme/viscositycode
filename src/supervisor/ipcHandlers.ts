@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ListPluginsPayload } from "@/shared/contracts";
 import {
   invokeThreadSessionActionPayloadSchema,
@@ -95,6 +96,10 @@ export function createSupervisorIpcHandlers(runtime: SupervisorRuntime): Supervi
     logoutAcpAgent: (payload) => withUsageReconciliation(registry.logoutAcpAgent(payload)),
     listImportableSessions: (payload) => runtime.sessionImportService.list(payload),
     importSessionTranscript: (payload) => runtime.sessionImportService.importTranscript(payload),
+    // ViscosityCode: cloud agents
+    listCloudAgents: (payload) => runtime.cloudAgentsService.list(payload),
+    getCloudAgent: (payload) => runtime.cloudAgentsService.get(payload),
+    followCloudAgent: (payload) => runtime.cloudAgentsService.follow(payload),
     getThreadSnapshots: () => threads.getThreadSnapshots(),
     getResourceAdmissionStatus: () => runtime.getResourceAdmissionStatus(),
     getTerminalShellSnapshots: () => threads.getTerminalShellSnapshots(),

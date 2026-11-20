@@ -1,0 +1,118 @@
+/*
+ * ViscosityCode: monochrome code surfaces for the Viscosity base theme
+ * (preset id "default"; fork of Poracode).
+ *
+ * Unlayered on purpose: @git-diff-view's stylesheet is unlayered, so a layered
+ * rule would lose to it regardless of specificity. Other presets keep the
+ * library's GitHub colours and Shiki's GitHub themes.
+ */
+
+/* Neutral diff chrome from theme variables; +/- lines keep a faint status tint.
+   0,3,1 outranks the library's `.diff-tailwindcss-wrapper[data-theme] .diff-style-root`.
+   The *-lineNumber-- cells are sticky over horizontally scrolled code, so they
+   stay opaque. */
+html[data-theme-preset="default"] .diff-tailwindcss-wrapper .diff-style-root {
+  --diff-border--: var(--border);
+  --diff-plain-content--: transparent;
+  --diff-plain-lineNumber--: var(--content-background);
+  --diff-expand-content--: var(--hairline-soft);
+  --diff-expand-lineNumber--: color-mix(in oklab, var(--foreground) 3%, var(--content-background));
+  --diff-empty-content--: var(--hairline-soft);
+  --diff-plain-lineNumber-color--: var(--muted);
+  --diff-expand-lineNumber-color--: var(--muted);
+  --diff-hunk-content--: var(--hairline);
+  --diff-hunk-lineNumber--: color-mix(in oklab, var(--foreground) 15%, var(--content-background));
+  --diff-hunk-lineNumber-hover--: var(--foreground);
+  --diff-hunk-content-color--: var(--muted);
+  --diff-add-content--: color-mix(in oklab, var(--success) 12%, transparent);
+  --diff-add-lineNumber--: color-mix(in oklab, var(--success) 22%, var(--content-background));
+  --diff-add-content-highlight--: color-mix(in oklab, var(--success) 30%, transparent);
+  --diff-del-content--: color-mix(in oklab, var(--danger) 12%, transparent);
+  --diff-del-lineNumber--: color-mix(in oklab, var(--danger) 22%, var(--content-background));
+  --diff-del-content-highlight--: color-mix(in oklab, var(--danger) 30%, transparent);
+  --diff-add-widget--: var(--accent);
+  --diff-add-widget-color--: var(--accent-foreground);
+}
+
+/* The +/- tint carries the meaning, so diff text drops syntax colour.
+   !important: the library's hljs token rules reach 0,5,0 specificity. */
+html[data-theme-preset="default"] .diff-tailwindcss-wrapper .diff-line-syntax-raw * {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* Chat code blocks: each Shiki GitHub token colour becomes the grey of matching
+   lightness (Rec. 709 luma). Colour overrides rather than filter: grayscale(),
+   which drops text to greyscale antialiasing (no ClearType on Windows).
+   !important beats Shiki's inline style; the hex match is case-insensitive. */
+/* github-dark-default */
+html[data-theme-preset="default"] .lc-shiki [style*="color:#e6edf3" i] {
+  color: #ececec !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#8b949e" i] {
+  color: #939393 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#ff7b72" i] {
+  color: #969696 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#79c0ff" i] {
+  color: #b5b5b5 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#ffa657" i] {
+  color: #b3b3b3 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#d2a8ff" i] {
+  color: #b7b7b7 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#7ee787" i] {
+  color: #cacaca !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#a5d6ff" i] {
+  color: #cfcfcf !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#ffa198" i] {
+  color: #b4b4b4 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#f0f6fc" i] {
+  color: #f5f5f5 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#161b22" i] {
+  color: #1a1a1a !important;
+}
+/* github-light-default */
+html[data-theme-preset="default"] .lc-shiki [style*="color:#1f2328" i] {
+  color: #232323 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#6e7781" i] {
+  color: #767676 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#cf222e" i] {
+  color: #484848 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#0550ae" i] {
+  color: #474747 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#953800" i] {
+  color: #484848 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#8250df" i] {
+  color: #656565 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#116329" i] {
+  color: #4d4d4d !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#0a3069" i] {
+  color: #2c2c2c !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#82071e" i] {
+  color: #232323 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#57606a" i] {
+  color: #5f5f5f !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#f6f8fa" i] {
+  color: #f8f8f8 !important;
+}
+html[data-theme-preset="default"] .lc-shiki [style*="color:#eaeef2" i] {
+  color: #ededed !important;
+}

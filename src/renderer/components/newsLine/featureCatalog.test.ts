@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { BUILT_IN_MCP_SERVER_IDS } from "@/shared/contracts/mcpServer";
 import { DISCOVERABLE_FEATURE_IDS } from "@/shared/featureDiscovery";

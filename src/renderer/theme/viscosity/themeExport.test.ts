@@ -39,6 +39,6 @@ describe("built-in theme export", () => {
   it("copies palettes so edits to an export never touch the catalog", () => {
     const doc = builtInThemeDocument("default")!;
     doc.dark.bg = "#123456";
-    expect(THEME_SPECS[0]!.dark.bg).toBe("#0a0a0b");
+    expect(THEME_SPECS[0]!.dark.bg).toBe("#000000");
   });
 });

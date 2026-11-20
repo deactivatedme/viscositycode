@@ -11,18 +11,20 @@
  */
 import {
   DEFAULT_SWITCH_AT_PERCENT,
+  isPoolMemberExcluded,
   memberAvailability,
   poolForAgentKind,
   type AccountPools,
 } from "@/shared/accountPools";
 import { authStateForPresentation } from "@/shared/agentSelection";
-import type {
-  AgentInstanceConfigMap,
-  AgentStatus,
-  ProjectDraftConfig,
-  ProviderDraftConfig,
-  ThreadPresentationMode,
-  UsageSnapshot,
+import {
+  baseAgentKind,
+  type AgentInstanceConfigMap,
+  type AgentStatus,
+  type ProjectDraftConfig,
+  type ProviderDraftConfig,
+  type ThreadPresentationMode,
+  type UsageSnapshot,
 } from "@/shared/contracts";
 import type { ProviderModelPreference } from "@/shared/settings";
 import {
@@ -149,6 +151,10 @@ export function buildSmartStartCandidates(input: SmartStartCandidateInput): Smar
     if (seen.has(agent.kind)) continue;
     seen.add(agent.kind);
     if (!isReadyForPresentation(agent, input.presentationMode, input.disabledAgents)) continue;
+    // An account the owner left out of an enabled pool never takes new threads.
+    const driver = baseAgentKind(agent.kind);
+    const pool = Object.hasOwn(input.pools, driver) ? input.pools[driver] : undefined;
+    if (pool?.enabled && isPoolMemberExcluded(pool, agent.kind)) continue;
     const { candidate, poolIndex } = describeAccount(agent, input);
     if (!candidate.model) continue;
     entries.push({ candidate, rank: input.rankOf?.(agent.kind) ?? 0, poolIndex });

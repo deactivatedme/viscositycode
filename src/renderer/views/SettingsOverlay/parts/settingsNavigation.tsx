@@ -3,7 +3,7 @@ import {
   Archive,
   Bell,
   Bot,
-  BotMessageSquare,
+  BookMarked, // ViscosityCode: Settings → Playbooks
   Boxes,
   Box,
   Cable,
@@ -14,6 +14,7 @@ import {
   GitFork,
   Globe,
   Info,
+  KeyRound, // ViscosityCode: Settings → xAI API
   Keyboard,
   Layers,
   Megaphone,
@@ -29,7 +30,6 @@ import {
   TerminalSquare,
   UserRound,
   UsersRound,
-  WandSparkles,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useLingui } from "@lingui/react/macro";
@@ -63,7 +63,7 @@ const DESKTOP_ONLY_SECTIONS = new Set<SettingsSection>([
   "browser",
   "archived",
   "about",
-  "bots", // ViscosityCode: the xAI key lives in the desktop main process
+  "xai", // ViscosityCode: the xAI key lives in the desktop main process
 ]);
 
 /** Whether this client shows `id`; the sidebar and every settings search share it. */
@@ -96,15 +96,6 @@ export function useSettingsNavigation() {
         { id: "workspaces", icon: <Layers className="size-4" />, label: t`Workspaces` },
         { id: "general", icon: <Settings2 className="size-4" />, label: t`General` },
         { id: "appearance", icon: <Palette className="size-4" />, label: t`Appearance` },
-        // ViscosityCode: animated background and agent effects (client preference).
-        {
-          id: "effects",
-          icon: <WandSparkles className="size-4" />,
-          label: t({
-            message: "Effects",
-            comment: "Settings section: animated background and live agent effects",
-          }),
-        },
         { id: "audio", icon: <Mic className="size-4" />, label: t`Audio` },
         { id: "notifications", icon: <Bell className="size-4" />, label: t`Notifications` },
         { id: "shortcuts", icon: <Keyboard className="size-4" />, label: t`Shortcuts` },
@@ -140,12 +131,17 @@ export function useSettingsNavigation() {
         { id: "mcpServers", icon: <Cable className="size-4" />, label: t`MCP Servers` },
         { id: "plugins", icon: <Puzzle className="size-4" />, label: t`Plugins` },
         { id: "crews", icon: <UsersRound className="size-4" />, label: t`Crews` },
-        // ViscosityCode: Codync-style bots (xAI key, Grok defaults).
+        // ViscosityCode: the xAI API key for Grok Roundtable seats.
         {
-          id: "bots",
-          icon: <BotMessageSquare className="size-4" />,
-          label: t({ message: "Bots", comment: "Settings section: named AI teammates (bots)" }),
+          id: "xai",
+          icon: <KeyRound className="size-4" />,
+          label: t({
+            message: "xAI API",
+            comment: "Settings section: the xAI API key that Grok in a Roundtable uses",
+          }),
         },
+        // ViscosityCode: playbooks (work modes for a chat).
+        { id: "playbooks", icon: <BookMarked className="size-4" />, label: t`Playbooks` },
         {
           id: "usage",
           icon: <Gauge className="size-4" />,

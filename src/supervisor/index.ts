@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   isSupervisorFlowControl,
   SUPERVISOR_EVENT_BACKPRESSURE_VERSION,
@@ -30,6 +31,8 @@ import {
 } from "@/shared/threadWorkspaceRuntimeProtocol";
 import { createWorkspaceRuntimeRequestHandler } from "./workspaceRuntimeRequest";
 
+// ViscosityCode: this process already loaded with the compile cache; agent CLIs and workers must not inherit it.
+delete process.env.NODE_COMPILE_CACHE;
 const performanceDiagnostics = startNodePerformanceDiagnostics("supervisor");
 const isDev = process.env.PORACODE_IS_DEV === "1" || Boolean(process.env.VITE_DEV_SERVER_URL);
 

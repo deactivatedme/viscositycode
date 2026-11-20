@@ -1,3 +1,4 @@
+/* Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md. */
 /* Poracode brand type — Geist (Vercel, SIL OFL), bundled for offline use. */
 @font-face {
   font-family: "Geist";
@@ -7988,4 +7989,18 @@ html[data-compact-layout] .poracode-thread-composer-section > .m-thread-compose-
   .poracode-prompt-rail-card {
     animation: none;
   }
+}
+
+/* ViscosityCode: Lightweight mode (html[data-vc-lightweight], set by
+   fx/FxRoot.tsx) drops these endless status animations. Each one keeps
+   Chromium producing compositor frames for as long as it is on screen; the
+   icons keep their colour and glow, just without the motion. !important
+   because the base rules use state selectors of varying specificity. */
+html[data-vc-lightweight] .poracode-goal-active-icon__ring::before,
+html[data-vc-lightweight] .poracode-goal-active-icon::after,
+html[data-vc-lightweight] .poracode-provider-icon--attention,
+html[data-vc-lightweight] .poracode-provider-icon--finished,
+html[data-vc-lightweight] .poracode-compacting-icon {
+  animation: none !important;
+  will-change: auto;
 }

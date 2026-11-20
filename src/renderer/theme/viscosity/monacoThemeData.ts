@@ -97,6 +97,15 @@ const FALLBACK_COLORS: Record<TerminalAppearance, Resolved> = {
 
 const TRANSPARENT = "#00000000";
 
+/** Max RGB channel spread (0–255) for an accent to count as grey. */
+const GREY_ACCENT_SPREAD = 12;
+
+/** True for an achromatic accent (e.g. the monochrome Viscosity base theme). */
+function isGreyAccent(hex: string): boolean {
+  const rgb = parseCssRgb(hex);
+  return rgb !== null && Math.max(...rgb) - Math.min(...rgb) <= GREY_ACCENT_SPREAD;
+}
+
 /** `#rrggbb` + two-digit alpha (0–1). */
 function alpha(hex: string, value: number): string {
   const byte = Math.round(Math.min(1, Math.max(0, value)) * 255);
@@ -216,7 +225,29 @@ export function buildMonacoThemeData(
     "minimap.background": TRANSPARENT,
   };
 
-  const rules: MonacoTokenRule[] = [
+  // A grey accent means a monochrome theme: syntax reads through weight and
+  // grey steps instead of hues.
+  const ink = (share: number) => token(mixHex(c.foreground, editorBg, share));
+  const fg = token(c.foreground);
+  const greyscaleRules = (): MonacoTokenRule[] => [
+    { token: "comment", foreground: token(c.muted), fontStyle: "italic" },
+    { token: "keyword", foreground: fg, fontStyle: "bold" },
+    { token: "storage", foreground: fg, fontStyle: "bold" },
+    { token: "string", foreground: ink(0.72) },
+    { token: "string.escape", foreground: fg },
+    { token: "regexp", foreground: ink(0.72) },
+    { token: "number", foreground: fg },
+    { token: "constant", foreground: fg },
+    { token: "type", foreground: fg },
+    { token: "type.identifier", foreground: fg },
+    { token: "tag", foreground: fg, fontStyle: "bold" },
+    { token: "attribute.name", foreground: ink(0.85) },
+    { token: "attribute.value", foreground: ink(0.72) },
+    { token: "annotation", foreground: token(c.muted) },
+    { token: "delimiter", foreground: ink(0.7) },
+    { token: "operator", foreground: ink(0.8) },
+  ];
+  const colouredRules = (): MonacoTokenRule[] => [
     { token: "comment", foreground: token(c.muted), fontStyle: "italic" },
     { token: "keyword", foreground: token(c.accent) },
     { token: "storage", foreground: token(c.accent) },
@@ -235,5 +266,22 @@ export function buildMonacoThemeData(
     { token: "operator", foreground: token(mixHex(c.foreground, editorBg, 0.8)) },
   ];
 
-  return { base: dark ? "vs-dark" : "vs", inherit: true, rules, colors };
+  const grey = isGreyAccent(c.accent);
+  if (grey) {
+    // Monaco colourises bracket pairs by default; keep them in grey steps.
+    const brackets = [c.foreground, mixHex(c.foreground, editorBg, 0.7)];
+    for (let level = 1; level <= 6; level++) {
+      colors[`editorBracketHighlight.foreground${level}`] = brackets[(level - 1) % 2]!;
+    }
+    colors["editorBracketHighlight.unexpectedBracket.foreground"] = c.danger;
+  }
+
+  // Greyscale drops the base theme's rules (coloured JSON keys, variables,
+  // YAML keys, SQL, ...) so unlisted tokens fall back to editor.foreground.
+  return {
+    base: dark ? "vs-dark" : "vs",
+    inherit: !grey,
+    rules: grey ? greyscaleRules() : colouredRules(),
+    colors,
+  };
 }

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Desktop backend-host composition: the out-of-process backend host client,
 // its renderer event dispatch/delivery wiring, the native request/event
 // handlers, and the shell state preload. Split out of `desktopAppReady` along
@@ -266,6 +267,7 @@ export function createDesktopBackendHost(deps: DesktopBackendHostDeps): DesktopB
     preloadShellState: async () => {
       await shellState.preload([
         "window-bounds",
+        "viscosity-window-material-v1", // ViscosityCode: persisted Windows backdrop preference (windowChromeAppearance.ts)
         "browser-extract-window-bounds",
         "browser-panel-tabs-v1",
         "browser-history-v1",

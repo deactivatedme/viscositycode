@@ -3,7 +3,12 @@ import { msg } from "@lingui/core/macro";
 import { allUsageProviderDescriptors } from "@poracode/agents-usage/providers";
 import type { UsageSnapshot, UsageWindow, UsageRingGroup } from "@poracode/agents-usage/types";
 export type { UsageRingGroup } from "@poracode/agents-usage/types";
-import { baseAgentKind, agentProfileKind, type AgentInstanceConfigMap } from "@/shared/contracts";
+import {
+  baseAgentKind,
+  agentProfileKind,
+  type AgentInstanceConfigMap,
+  type AgentStatus, // ViscosityCode: detectedUsageIds
+} from "@/shared/contracts";
 import type { RemoteAgentStatuses } from "@/shared/remote";
 import { USAGE_PROFILE_SUPPORT } from "./usageProfileRegistry";
 import { i18n } from "@/renderer/i18n/i18n";
@@ -221,12 +226,7 @@ export function hasRailUsage(snapshot: UsageSnapshot | undefined): boolean {
   // here rather than silently defaulting into (or out of) the rail.
   switch (snapshot.status) {
     case "auth-missing":
-      return (
-        snapshot.windows.length > 0 ||
-        snapshot.cost !== undefined ||
-        snapshot.tokens !== undefined ||
-        snapshot.credits !== undefined
-      );
+      return hasUsageReading(snapshot); // ViscosityCode: shared with isUsageProviderShown
     case "unsupported":
       return false;
     case "ok":
@@ -236,6 +236,54 @@ export function hasRailUsage(snapshot: UsageSnapshot | undefined): boolean {
     case "error":
       return true;
   }
+}
+
+/** The snapshot carries a reading a ring or card can show: windows, cost, tokens or credits. */
+export function hasUsageReading(snapshot: UsageSnapshot): boolean {
+  return (
+    snapshot.windows.length > 0 ||
+    snapshot.cost !== undefined ||
+    snapshot.tokens !== undefined ||
+    snapshot.credits !== undefined
+  );
+}
+
+/**
+ * ViscosityCode: the one rule every usage surface (Usage tab, sidebar rail,
+ * Subscriptions) lists a tracked provider by. Its usage must be able to show
+ * something (`hasRailUsage`), and it must be detected here (installed, enabled,
+ * not signed out) or already hold a reading. A missing snapshot counts only for
+ * a detected provider, so a never-installed agent or a signed-in account whose
+ * usage source returns nothing gets no empty row.
+ */
+export function isUsageProviderShown(
+  snapshot: UsageSnapshot | undefined,
+  detected: boolean,
+): boolean {
+  if (!hasRailUsage(snapshot)) return false;
+  return detected || (snapshot !== undefined && hasUsageReading(snapshot));
+}
+
+/**
+ * ViscosityCode: usage ids of the agents detected on a host: installed (native
+ * or WSL), not in `disabledAgents` and not signed out. Each kind maps through
+ * `usageProviderIdForAgent`, so profiles and manifest aliases resolve to the
+ * snapshot that meters them.
+ */
+export function detectedUsageIds(
+  statuses:
+    | { readonly windows: readonly AgentStatus[]; readonly wsl: readonly AgentStatus[] }
+    | undefined,
+  disabledAgents: readonly string[],
+  instances: AgentInstanceConfigMap | undefined,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const status of [...(statuses?.windows ?? []), ...(statuses?.wsl ?? [])]) {
+    if (!status.installed || status.authState === "missing") continue;
+    if (disabledAgents.includes(status.kind)) continue;
+    ids.add(usageProviderIdForAgent(status.kind, undefined, instances));
+  }
+  return ids;
 }
 
 /** Remote profile IDs and labels belong to that host, never the client's configured profiles. */

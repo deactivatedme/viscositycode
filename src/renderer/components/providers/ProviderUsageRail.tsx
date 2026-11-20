@@ -18,6 +18,8 @@ import { ContextMenu, type ContextMenuEntry } from "@/renderer/components/common
 import { RemoteServerPicker } from "@/renderer/components/common/RemoteServerPicker";
 import { useProviderUsage, useProviderUsageStore } from "@/renderer/state/providerUsageStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+// ViscosityCode: usage surfaces list only detected agents (isUsageProviderShown).
+import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useUsageScopeStore } from "@/renderer/state/usageScopeStore";
 import { ProviderUsageCircle } from "./ProviderUsageCircle";
@@ -35,8 +37,9 @@ import {
   sharedWindowResetLabel,
 } from "./usageFormat";
 import {
-  hasRailUsage,
+  detectedUsageIds,
   isClaudeUsageProvider,
+  isUsageProviderShown,
   resolveDisplayedProviders,
   resolveHostUsageProviders,
   usageRingGroups,
@@ -370,18 +373,24 @@ export function ProviderUsageRail(props: { orientation?: "row" | "column" }) {
   const sidebarHiddenProviders = useSharedSettings((s) => s.usage.sidebarHiddenProviders);
   const providerOrder = useSharedSettings((s) => s.usage.providerOrder);
   const agentInstances = useSharedSettings((s) => s.agentInstances);
+  const disabledAgents = useSharedSettings((s) => s.disabledAgents);
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);
   const scope = useUsagePanelScope();
   const connectionId = scope.remote ? (scope.effectiveId ?? "") : null;
   const view = useHostUsageView(connectionId ?? "", 0, false, showInSidebar);
+  const localStatuses = useHostAgentStatusPools(undefined);
+  // ViscosityCode: a paired host's agents are judged by that host's statuses.
+  const detected = scope.remote
+    ? detectedUsageIds(view.agents, [], undefined)
+    : detectedUsageIds(localStatuses, disabledAgents, agentInstances);
   const servers = useRemoteServersStore((s) => s.servers);
   const setDesktopId = useUsageScopeStore((s) => s.setDesktopId);
 
   useProviderUsageHydration(showInSidebar && !scope.remote);
 
   // Full set drives the persisted order; the rail only offers the providers the
-  // user hasn't individually hidden and that have usage worth a ring — a
-  // signed-out provider belongs in Settings, not in the rail. Skipped providers
+  // user hasn't individually hidden and that pass the shared usage-visibility
+  // rule (detected here or holding a reading) — the rest belong in Settings. Skipped providers
   // still hold their slot in `providerOrder` (the docked panel can reorder them).
   const allProviders = scope.remote
     ? resolveHostUsageProviders(
@@ -395,13 +404,18 @@ export function ProviderUsageRail(props: { orientation?: "row" | "column" }) {
   // circle) whenever any provider's percentages moved; each circle already reads
   // its own snapshot through a narrow selector.
   const eligible = useProviderUsageStore(
-    useShallow((s) => allProviders.map((p) => hasRailUsage(s.snapshots[p.id]))),
+    useShallow((s) =>
+      allProviders.map((p) => isUsageProviderShown(s.snapshots[p.id], detected.has(p.id))),
+    ),
   );
   const providers = allProviders.filter(
     (p, i) =>
       !sidebarHiddenProviders.includes(p.id) &&
       (scope.remote
-        ? hasRailUsage(view.usage.snapshots.find((snapshot) => snapshot.providerId === p.id))
+        ? isUsageProviderShown(
+            view.usage.snapshots.find((snapshot) => snapshot.providerId === p.id),
+            detected.has(p.id),
+          )
         : eligible[i]),
   );
 

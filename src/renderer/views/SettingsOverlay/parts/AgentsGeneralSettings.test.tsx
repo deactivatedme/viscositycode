@@ -1,19 +1,12 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
-import { agentStatusSchema, type AgentStatusesResponse } from "@/shared/contracts";
 import type { MachineDescriptor } from "@/renderer/state/machines";
-import {
-  applyAgentStatusSupervisorEvent,
-  useAgentStatusesStore,
-} from "@/renderer/state/agentStatusesStore";
-import { AgentDiscoveryOverlay } from "@/renderer/components/thread/AgentDiscoveryOverlay";
 import { AgentsGeneralSettings } from "./AgentsGeneralSettings";
 
 const mocks = vi.hoisted(() => ({
   rediscover: vi.fn<(distros: string[]) => Promise<unknown>>(),
-  refreshAgentStatuses: vi.fn<(distros: string[]) => Promise<AgentStatusesResponse>>(),
-  cancelAgentDiscovery: vi.fn<() => Promise<AgentStatusesResponse>>(),
   host: vi.fn<(machine: MachineDescriptor) => void>(),
   danger: vi.fn<(message: string) => void>(),
 }));
@@ -28,7 +21,6 @@ vi.mock("@/renderer/components/providers/settings/agentManagementHost", () => ({
     };
   },
 }));
-vi.mock("@/renderer/bridge", () => ({ readBridge: () => mocks }));
 vi.mock("@heroui/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@heroui/react")>()),
   toast: { danger: mocks.danger },
@@ -36,164 +28,93 @@ vi.mock("@heroui/react", async (importOriginal) => ({
 vi.mock("./ModelVisibilitySection", () => ({ ModelVisibilitySection: () => null }));
 vi.mock("./ModelOrderSection", () => ({ ModelOrderSection: () => null }));
 
-describe("Agents General discovery", () => {
+const LOCAL: MachineDescriptor = {
+  id: "local",
+  kind: "local",
+  label: "Local",
+  status: "online",
+  ref: { host: "local", env: { kind: "native" } },
+};
+
+const refreshButton = () => screen.getByRole("button", { name: "Refresh detected agents" });
+
+describe("Agents General refresh", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.rediscover.mockReset().mockResolvedValue({ windows: [], wsl: [] });
-    mocks.refreshAgentStatuses
-      .mockReset()
-      .mockResolvedValue({ windows: [], wsl: [], fromCache: false });
-    mocks.cancelAgentDiscovery
-      .mockReset()
-      .mockResolvedValue({ windows: [], wsl: [], fromCache: false });
-    useAgentStatusesStore.getState().resetDiscoveredAgents();
-    // A returning user's loaded inventory must still allow manual discovery.
-    useAgentStatusesStore.getState().hydrateFromCache({ windows: [], wsl: [] });
-    machine = {
-      id: "local",
-      kind: "local",
-      label: "Local",
-      status: "online",
-      ref: { host: "local", env: { kind: "native" } },
-    };
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-    useAgentStatusesStore.getState().resetDiscoveredAgents();
+    machine = LOCAL;
   });
 
   it("keeps Refresh available when no agents are installed", async () => {
     render(<AgentsGeneralSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    await waitFor(() => expect(mocks.refreshAgentStatuses).toHaveBeenCalledExactlyOnceWith([]));
+    fireEvent.click(refreshButton());
+    await waitFor(() => expect(mocks.rediscover).toHaveBeenCalledExactlyOnceWith([]));
     expect(mocks.host).toHaveBeenCalledWith(machine);
     expect(screen.getByRole("heading", { name: "Agents · General" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Refresh detected agents" }).textContent).toBe("");
+    await waitFor(() => expect(refreshButton()).toBeEnabled());
   });
 
-  it("shows background progress, opens results, and keeps discovery alive after leaving Settings", async () => {
-    vi.useFakeTimers();
-    let finish!: (response: AgentStatusesResponse) => void;
-    mocks.refreshAgentStatuses.mockReturnValueOnce(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const view = render(
-      <>
-        <AgentsGeneralSettings />
-        <AgentDiscoveryOverlay />
-      </>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    expect(screen.getByRole("button", { name: "Show agent discovery" })).toBeVisible();
-    expect(screen.getByText("Discovering agents…")).toBeInTheDocument();
-    expect(useAgentStatusesStore.getState()).toMatchObject({
-      inFirstLaunchDiscovery: true,
-      discoveryScanning: true,
-      discoveryHidden: true,
-    });
-    const found = agentStatusSchema.parse({
-      kind: "discovery-test",
-      label: "Discovery test",
-      installed: true,
-      authState: "authenticated",
-      capabilities: {},
-    });
-    act(() => applyAgentStatusSupervisorEvent({ type: "agent-detected", status: found }));
-    expect(screen.getByText("1 agent found")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Show agent discovery" }));
-    expect(screen.getByRole("button", { name: "Hide" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
-    view.rerender(<AgentDiscoveryOverlay />);
-    expect(screen.getByRole("button", { name: "Show agent discovery" })).toBeVisible();
-    await act(async () => {
-      finish({ windows: [found], wsl: [], fromCache: false });
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(useAgentStatusesStore.getState().discoveryScanning).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Show agent discovery" }));
-    expect(screen.getByRole("button", { name: "Done (10s)" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Done (10s)" }));
-    expect(screen.queryByRole("button", { name: "Show agent discovery" })).toBeNull();
-  });
-
-  it("disables Refresh during app-owned discovery without starting another scan", () => {
-    useAgentStatusesStore.setState({ inFirstLaunchDiscovery: true, discoveryScanning: true });
-    render(<AgentsGeneralSettings />);
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).toBeDisabled();
-    expect(mocks.refreshAgentStatuses).not.toHaveBeenCalled();
-  });
-
-  it("cancels discovery without reporting an error or accepting late results", async () => {
-    vi.useFakeTimers();
-    let reject!: (error: Error) => void;
-    mocks.refreshAgentStatuses.mockReturnValueOnce(
-      new Promise((_resolve, fail) => {
-        reject = fail;
-      }),
-    );
-    render(
-      <>
-        <AgentsGeneralSettings />
-        <AgentDiscoveryOverlay />
-      </>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel agent discovery" }));
-    expect(mocks.cancelAgentDiscovery).toHaveBeenCalledOnce();
-    await act(async () => {
-      reject(new Error("Agent discovery cancelled"));
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(mocks.danger).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Show agent discovery" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).toBeEnabled();
-    expect(useAgentStatusesStore.getState().inFirstLaunchDiscovery).toBe(false);
-  });
-
-  it("refreshes the selected local WSL distro in the background", async () => {
-    machine = {
-      ...machine,
-      id: "wsl:Ubuntu",
-      kind: "local-wsl",
-      ref: { host: "local", env: { kind: "wsl", distro: "Ubuntu" } },
-    };
-    render(<AgentsGeneralSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    await waitFor(() =>
-      expect(mocks.refreshAgentStatuses).toHaveBeenCalledExactlyOnceWith(["Ubuntu"]),
-    );
-    expect(useAgentStatusesStore.getState().discoveryHidden).toBe(true);
-  });
-
-  it.each(["native", "wsl"] as const)("refreshes the selected remote %s machine", async (kind) => {
-    machine = {
-      id: "remote:studio",
-      kind: kind === "wsl" ? "remote-wsl" : "remote",
-      label: "Studio",
-      status: "online",
-      ref: {
-        host: "remote",
-        desktopId: "studio",
-        env: kind === "wsl" ? { kind, distro: "Ubuntu" } : { kind },
+  it.each([
+    ["local native", LOCAL, []],
+    [
+      "local WSL",
+      {
+        ...LOCAL,
+        id: "wsl:Ubuntu",
+        kind: "local-wsl",
+        ref: { host: "local", env: { kind: "wsl", distro: "Ubuntu" } },
       },
-    };
-    render(<AgentsGeneralSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    await waitFor(() =>
-      expect(mocks.rediscover).toHaveBeenCalledExactlyOnceWith(kind === "wsl" ? ["Ubuntu"] : []),
-    );
-    expect(mocks.host).toHaveBeenCalledWith(machine);
-    expect(useAgentStatusesStore.getState().inFirstLaunchDiscovery).toBe(false);
-    expect(mocks.refreshAgentStatuses).not.toHaveBeenCalled();
-  });
+      ["Ubuntu"],
+    ],
+    [
+      "remote native",
+      {
+        id: "remote:studio",
+        kind: "remote",
+        label: "Studio",
+        status: "online",
+        ref: { host: "remote", desktopId: "studio", env: { kind: "native" } },
+      },
+      [],
+    ],
+    [
+      "remote WSL",
+      {
+        id: "remote:studio:wsl",
+        kind: "remote-wsl",
+        label: "Studio",
+        status: "online",
+        ref: { host: "remote", desktopId: "studio", env: { kind: "wsl", distro: "Ubuntu" } },
+      },
+      ["Ubuntu"],
+    ],
+  ] as [string, MachineDescriptor, string[]][])(
+    "rediscovers the %s machine and shows its spinner until the call settles",
+    async (_name, selected, distros) => {
+      machine = selected;
+      let finish!: () => void;
+      mocks.rediscover.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = () => resolve({ windows: [], wsl: [] });
+          }),
+      );
+      render(<AgentsGeneralSettings />);
+      fireEvent.click(refreshButton());
+      expect(mocks.rediscover).toHaveBeenCalledExactlyOnceWith(distros);
+      expect(mocks.host).toHaveBeenCalledWith(selected);
+      expect(refreshButton()).toBeDisabled();
+      fireEvent.click(refreshButton());
+      expect(mocks.rediscover).toHaveBeenCalledOnce();
+      await act(async () => finish());
+      expect(refreshButton()).toBeEnabled();
+    },
+  );
 
   it("disables Refresh while the selected machine is offline", () => {
     machine = { ...machine, status: "offline" };
     render(<AgentsGeneralSettings />);
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).toBeDisabled();
+    expect(refreshButton()).toBeDisabled();
     expect(mocks.rediscover).not.toHaveBeenCalled();
   });
 
@@ -207,30 +128,22 @@ describe("Agents General discovery", () => {
         }),
     );
     const { rerender } = render(<AgentsGeneralSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).toBeDisabled();
+    fireEvent.click(refreshButton());
+    expect(refreshButton()).toBeDisabled();
     machine = { ...machine, id: "other", label: "Other" };
     rerender(<AgentsGeneralSettings />);
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).not.toBeDisabled();
+    expect(refreshButton()).not.toBeDisabled();
     await act(async () => finish());
     expect(mocks.rediscover).toHaveBeenCalledTimes(1);
   });
 
   it("reports failures and allows another refresh", async () => {
-    vi.useFakeTimers();
-    mocks.refreshAgentStatuses.mockRejectedValueOnce(new Error("Host unavailable"));
+    mocks.rediscover.mockRejectedValueOnce(new Error("Host unavailable"));
     render(<AgentsGeneralSettings />);
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(mocks.danger).toHaveBeenCalledWith("Host unavailable");
-    expect(screen.getByRole("button", { name: "Refresh detected agents" })).not.toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Refresh detected agents" }));
-    expect(mocks.refreshAgentStatuses).toHaveBeenCalledTimes(2);
-    expect(useAgentStatusesStore.getState().discoveryScanning).toBe(true);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
+    fireEvent.click(refreshButton());
+    await waitFor(() => expect(mocks.danger).toHaveBeenCalledWith("Host unavailable"));
+    await waitFor(() => expect(refreshButton()).not.toBeDisabled());
+    fireEvent.click(refreshButton());
+    expect(mocks.rediscover).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
@@ -82,6 +83,7 @@ try {
   await run("scripts/prepare-computer-use-helper.mjs", ["--host-only", "--dev"]);
   await run("scripts/prepare-mcp-relay.mjs", ["--host-only"]);
   await run("scripts/prepare-git-helper.mjs", ["--host-only"]);
+  await run("scripts/prepare-live-re.mjs", ["--host-only"]); // ViscosityCode: warns and skips without Rust or on Linux.
   if (!closed) {
     runtime = await watchRuntime({
       root,

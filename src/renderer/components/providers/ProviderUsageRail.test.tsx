@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,8 @@ import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useUsageScopeStore } from "@/renderer/state/usageScopeStore";
+import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
+import type { AgentStatus } from "@/shared/contracts";
 import { openUsagePanelAtProvider } from "@/renderer/actions/panelActions";
 import { useProviderUsageHydration } from "./useProviderUsageHydration";
 import { ProviderUsageRail } from "./ProviderUsageRail";
@@ -203,5 +206,35 @@ describe("sidebar host usage", () => {
     act(() => useUsageScopeStore.getState().setDesktopId(null));
     expect(screen.getByRole("button", { name: "Connections" })).toHaveAttribute("title", "Local");
     expect(useProviderUsageHydration).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe("sidebar usage visibility", () => {
+  afterEach(() => useAgentStatusesStore.setState({ agentStatuses: [], wslAgentStatuses: [] }));
+
+  it("rings detected agents before their first snapshot but never undetected, unreadable ones", () => {
+    session.remote = false;
+    useRemoteServersStore.setState({ servers: [], runtime: {} });
+    // First in the saved order, so the rail cap cannot be what hides them.
+    useSharedSettings.setState((state) => ({
+      usage: { ...state.usage, providerOrder: ["cursor", "codex", "claude"] },
+    }));
+    useAgentStatusesStore.setState({
+      agentStatuses: [
+        { kind: "claude", label: "Claude Code", installed: true, authState: "authenticated" },
+      ] as AgentStatus[],
+      wslAgentStatuses: [],
+    });
+    useProviderUsageStore.setState({
+      snapshots: {
+        // Tracked but not installed here: the collector reports it can't run.
+        cursor: { providerId: "cursor", status: "app-not-running", windows: [], fetchedAt: 1 },
+      },
+    });
+    render(<ProviderUsageRail orientation="column" />);
+    expect(screen.getByRole("button", { name: "Claude usage — open usage panel" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Cursor usage — open usage panel" })).toBeNull();
+    // Codex is tracked but neither detected nor reporting.
+    expect(screen.queryByRole("button", { name: "Codex usage — open usage panel" })).toBeNull();
   });
 });

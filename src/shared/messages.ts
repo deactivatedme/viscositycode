@@ -284,6 +284,13 @@ const messages = {
   "sessionImport.inProgress": "This session is already being imported.",
   "sessionImport.changedOnDisk": "This session changed on disk. Refresh the list and try again.",
 
+  // ── Cloud agents ──────────────────────────────────────────
+  // ViscosityCode: provider-neutral cloud agents service (src/supervisor/cloudAgents)
+  "cloudAgents.unsupported": "This agent does not offer cloud agents.",
+  "cloudAgents.unavailable": "Cloud agents are unavailable right now. Try again later.",
+  "cloudAgents.backingOff": "Cloud agents are paused after a provider error. Try again shortly.",
+  "cloudAgents.followInProgress": "This cloud agent is already being opened.",
+
   // ── Gemini ────────────────────────────────────────────────
   "gemini.emptyResponse":
     "Gemini ended the turn without returning a response. Check authentication or quota and try again.",
@@ -315,6 +322,28 @@ const messages = {
   "cursor.compactFailed": "Cursor couldn't summarize the conversation, so it was left unchanged.",
   "cursor.compactFallback":
     "Cursor couldn't write a summary, so it saved a trimmed copy of the conversation instead.",
+  // ViscosityCode: Cursor cloud agents (src/supervisor/agents/cursor/cloud*.ts)
+  "cursor.cloud.pushBranch":
+    "Push {branch} to origin first. A Cursor cloud agent starts from the pushed branch and cannot see local commits.",
+  "cursor.cloud.unpushedCommits":
+    "Push {branch} first. It has local commits that are not on origin, and a Cursor cloud agent starts from the pushed branch.",
+  "cursor.cloud.checkoutBranch":
+    "Check out a branch that is pushed to origin first. A Cursor cloud agent starts from the pushed branch.",
+  "cursor.cloud.noOrigin":
+    "This project has no git origin, so a cloud agent couldn't see it. Add an origin remote, or start the agent from Home for a repo-less agent.",
+  "cursor.cloud.unsupportedOrigin":
+    "Cursor cloud agents need an origin remote on a git host Cursor can clone, such as GitHub or GitLab.",
+  "cursor.cloud.gitUnavailable":
+    "Could not read this project's git origin and branch for the Cursor cloud agent.",
+  "cursor.cloud.authFailed":
+    "Cursor rejected this profile's API key. Use a User API key from cursor.com/dashboard/api.",
+  "cursor.cloud.planRequired":
+    "This Cursor key or plan cannot use cloud agents. Use a User API key on a plan that includes Cloud Agents.",
+  "cursor.cloud.rateLimited": "Cursor is rate limiting cloud agent requests. Try again shortly.",
+  "cursor.cloud.unavailable": "Cursor cloud agents are unavailable right now. Try again shortly.",
+  "cursor.cloud.branchPushed": "Pushed {branch} to {repo}.",
+  "cursor.cloud.pullRequest": "Pull request: {url}",
+  "cursor.cloud.openInCursor": "Open in Cursor: {url}",
 
   // ── App update ────────────────────────────────────────────
   "update.error": "Update error: {detail}",
@@ -523,6 +552,18 @@ const errorPatterns: Array<{
       const match = raw.match(/^Profile "([\s\S]*)" needs account owner "([\s\S]*)"\. Reassign/);
       return { profile: match?.[1] ?? "", dependency: match?.[2] ?? "" };
     },
+  },
+
+  // ViscosityCode: the Cursor cloud launch refusals carry a branch, so exact matching can't localize them
+  {
+    test: /^Push ([\s\S]+) to origin first\. A Cursor cloud agent starts from the pushed branch and cannot see local commits\.$/,
+    key: "cursor.cloud.pushBranch",
+    params: (raw) => ({ branch: raw.match(/^Push ([\s\S]+) to origin first\./)?.[1] ?? "" }),
+  },
+  {
+    test: /^Push ([\s\S]+) first\. It has local commits that are not on origin, and a Cursor cloud agent starts from the pushed branch\.$/,
+    key: "cursor.cloud.unpushedCommits",
+    params: (raw) => ({ branch: raw.match(/^Push ([\s\S]+) first\. It has local/)?.[1] ?? "" }),
   },
 
   { test: /^Steer was cancelled before the message was sent\.$/, key: "supervisor.steer.cleared" },

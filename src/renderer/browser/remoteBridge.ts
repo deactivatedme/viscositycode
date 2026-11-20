@@ -33,6 +33,7 @@ import { RemoteEnvironmentClient } from "@/shared/remote/clientEnvironments";
 import type { RemoteImageReadiness } from "@/renderer/state/remoteServers/environmentSessions";
 import { createCacheImageReadiness } from "@/renderer/state/cacheImageReadiness";
 import {
+  BACKFILL_COMMAND_IDS, // ViscosityCode: backfill new defaults into stored files
   DEFAULT_KEYBINDINGS,
   keybindingsFileSchema,
   migrateThreadSearchCommand,
@@ -77,13 +78,27 @@ const remoteTerminals = new RemoteTerminalOwnership<true>();
 let hostPlatform: NodeJS.Platform | null = null;
 const BROWSER_KEYBINDINGS_STORAGE_KEY = "poracode.browser.keybindings.v1";
 
+// ViscosityCode: same additive backfill as `src/main/keybindingsFile.ts`, so a
+// stored browser file that predates a command still gets its default chord.
+// A removed shortcut stays removed only through a keyless `{ command }` stub.
+function backfillNewDefaults(file: KeybindingsFile): KeybindingsFile {
+  const present = new Set(file.keybindings.map((binding) => binding.command));
+  const missing = new Set<string>(BACKFILL_COMMAND_IDS.filter((id) => !present.has(id)));
+  const additions = DEFAULT_KEYBINDINGS.keybindings.filter((binding) =>
+    missing.has(binding.command),
+  );
+  return additions.length === 0
+    ? file
+    : { ...file, keybindings: [...file.keybindings, ...additions] };
+}
+
 function getBrowserKeybindings(): KeybindingsConfig {
   let file = DEFAULT_KEYBINDINGS;
   try {
     const stored = window.localStorage.getItem(BROWSER_KEYBINDINGS_STORAGE_KEY);
     if (stored) {
       const parsed = keybindingsFileSchema.parse(JSON.parse(stored));
-      file = migrateThreadSearchCommand(parsed);
+      file = migrateThreadSearchCommand(backfillNewDefaults(parsed)); // ViscosityCode: backfill
       if (file !== parsed) {
         window.localStorage.setItem(BROWSER_KEYBINDINGS_STORAGE_KEY, JSON.stringify(file));
       }

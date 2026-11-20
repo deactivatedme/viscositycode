@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { parseGeminiProfileInstanceConfig } from "@/shared/contracts";
 import { i18n } from "@/renderer/i18n/i18n";
 import { msg } from "@lingui/core/macro";
@@ -12,4 +13,6 @@ export default {
     const profile = instance.displayName ?? instance.id;
     return i18n._(msg`Gemini ${profile}`);
   },
+  // ViscosityCode: plan suggestions for the Subscriptions editor (display only).
+  subscriptionPlanNames: ["Free", "Google AI Pro", "Google AI Ultra"],
 } satisfies RendererProviderManifest;

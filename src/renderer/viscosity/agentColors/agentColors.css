@@ -1,17 +1,12 @@
-/* ViscosityCode: per-agent colour markers on panes, tabs and sidebar threads.
+/* ViscosityCode: per-agent colour markers on panes and sidebar threads.
  *
  * The colour itself is `--vc-agent-accent`, defined per `data-vc-agent-kind`
  * by the generated stylesheet (stylesheet.ts). These rules only place it, and
  * only in the desktop shell while the owner has "Colour panes and tabs by
  * agent" on (html[data-vc-agent-colors], runtime.ts).
  *
- * Layering with the agent-state effects (fx/agentState/agentState.css): the
- * pane line is a background on the pane header, so the state ring (pane
- * ::after), glow and top bar (pane ::before) and the attention wash (a header
- * box-shadow) all paint over it. The tab marker sits on the tab wrapper's
- * ::before at its left edge; the state underline stays on the tab button's
- * ::after along the bottom. State colours win on the ring; the agent colour
- * stays on the header line and the tab marker.
+ * The pane line is a background on the pane header, so it never takes the
+ * pane's ::before / ::after; anything painted there sits over it.
  */
 
 /* Pane header: a 2px line along the top edge. */
@@ -25,34 +20,6 @@ html[data-vc-shell][data-vc-agent-colors]
   background-position: top left;
   background-repeat: no-repeat;
   background-size: 100% 2px;
-}
-
-/* Tab: a 2px marker on the left edge, full strength once the tab is shown. */
-html[data-vc-shell][data-vc-agent-colors] .vc-tab[data-vc-agent-kind]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: var(--vc-agent-accent, var(--vc-accent));
-  opacity: 0.45;
-  pointer-events: none;
-  transition: opacity var(--vc-motion-fast) var(--vc-ease-standard);
-}
-
-html[data-vc-shell][data-vc-agent-colors] .vc-tab[data-vc-agent-kind]:hover::before,
-html[data-vc-shell][data-vc-agent-colors] .vc-tab[data-vc-agent-kind][data-on-screen]::before {
-  opacity: 0.8;
-}
-
-html[data-vc-shell][data-vc-agent-colors] .vc-tab[data-vc-agent-kind][data-selected]::before {
-  opacity: 1;
-}
-
-/* The selected tab's top edge follows its agent too, joining the pane line. */
-html[data-vc-shell][data-vc-agent-colors] .vc-tab[data-vc-agent-kind][data-selected] {
-  box-shadow: inset 0 1px 0 var(--vc-agent-accent, var(--vc-accent));
 }
 
 /* Sidebar thread: a short bar in the row's left padding, above the row's

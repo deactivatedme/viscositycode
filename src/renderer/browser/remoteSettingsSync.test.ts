@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteSettings, RemoteSettingsPatch } from "@/shared/remote";
 import { defaultSharedSettings } from "@/shared/settings";
@@ -193,6 +194,41 @@ describe("pushDesktopSettingsDiff push ordering", () => {
     await flush();
 
     expect(updateSettings).toHaveBeenCalledWith({ crews: [crew] });
+  });
+
+  // ViscosityCode: playbooks follow the crews rules.
+  it("syncs playbooks only with hosts that advertise them", async () => {
+    const playbook = { id: "c-0a1b2c3d", label: "Firmware", instructions: "Dump the flash." };
+    const legacyClient = {
+      updateSettings: vi.fn<RemoteDesktopClient["updateSettings"]>(),
+    } as unknown as RemoteDesktopClient;
+    applyDesktopSettings(settings("v0"));
+    expect(h.applyExternalSharedSettings).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ playbooks: expect.anything() }),
+    );
+    pushDesktopSettingsDiff(legacyClient, {
+      ...input("v0"),
+      playbooks: [playbook],
+    } as SharedSettingsInput);
+    expect(legacyClient.updateSettings).not.toHaveBeenCalled();
+
+    resetDesktopSettings();
+    applyDesktopSettings({ ...settings("v0"), playbooks: [] } as RemoteSettings);
+    expect(h.applyExternalSharedSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playbooks: [] }),
+    );
+    const updateSettings = vi.fn<(patch: RemoteSettingsPatch) => Promise<RemoteSettings>>(
+      async () => ({ ...settings("v0"), playbooks: [playbook] }) as RemoteSettings,
+    );
+    pushDesktopSettingsDiff(
+      { updateSettings } as unknown as RemoteDesktopClient,
+      {
+        ...input("v0"),
+        playbooks: [playbook],
+      } as SharedSettingsInput,
+    );
+    await flush();
+    expect(updateSettings).toHaveBeenCalledWith({ playbooks: [playbook] });
   });
 
   it("forwards follow-up behavior changes to the desktop", async () => {

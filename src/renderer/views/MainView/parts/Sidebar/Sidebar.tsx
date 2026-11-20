@@ -68,6 +68,10 @@ import {
   ActivitySidebarViews,
   useActivityHostViewHidden,
 } from "@/renderer/viscosity/layout/activityBar/ActivitySidebarViews";
+// ViscosityCode: nav list, Pinned section and profile row of the desktop shell sidebar.
+import { SidebarNavList } from "@/renderer/viscosity/layout/sidebar/SidebarNavList";
+import { SidebarPinnedSection } from "@/renderer/viscosity/layout/sidebar/SidebarPinnedSection";
+import { SidebarProfileRow } from "@/renderer/viscosity/layout/sidebar/SidebarProfileRow";
 
 function prewarmSettings(): void {
   void DeferredSettingsOverlay.preload();
@@ -290,8 +294,10 @@ export function Sidebar() {
       <PaneVisibility value={visible && !isCollapsed && !vcHostViewHidden}>
         <div
           className={`${sidebarColumnLayoutClass} ${isCollapsed || vcHostViewHidden ? "invisible" : ""} ${activityBarActive ? "vc-sidebar-host-column" : ""}`}
+          data-vc-sidebar-shown={isCollapsed || vcHostViewHidden ? undefined : ""} // ViscosityCode: entrance hook (fx/motion).
           style={{ minWidth: SIDEBAR_MIN_WIDTH }}
         >
+          {activityBarActive ? <SidebarNavList /> : null /* ViscosityCode: nav list */}
           {projectIds.length === 0 && !(homeScopeEnabled && homeProjects.length > 0) ? (
             <div
               ref={setScrollContainer}
@@ -327,6 +333,7 @@ export function Sidebar() {
               style={scrollFadeStyle}
             >
               <div className="space-y-4">
+                {activityBarActive ? <SidebarPinnedSection /> : null /* ViscosityCode: Pinned */}
                 {homeScopeEnabled
                   ? homeProjects.map((project) => (
                       <SidebarHomeSection key={project.id} project={project} sortMode={sortMode} />
@@ -347,6 +354,12 @@ export function Sidebar() {
           {compactLayout ? null : <ProviderUsageRail orientation="row" />}
           {compactLayout ? (
             <MobileHomeActions />
+          ) : activityBarActive ? (
+            // ViscosityCode: the shell's profile row replaces the footer nav.
+            <SidebarProfileRow
+              remoteAccessStatus={remoteAccessStatus}
+              showRemoteAccess={showRemoteAccess}
+            />
           ) : (
             <SidebarFooterNav
               remoteAccessStatus={remoteAccessStatus}

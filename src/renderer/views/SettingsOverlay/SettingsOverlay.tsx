@@ -17,10 +17,10 @@ import { getSettingsInstalledAgents } from "@/shared/agentStatus";
 import { normalizeAnalyticsProvider } from "@/shared/analytics/posthogPrivacy";
 import { ProfileSettings } from "./parts/ProfileSettings";
 import { AppearanceSettings } from "./parts/AppearanceSettings";
-// ViscosityCode: Settings → Effects lives with the fork effects it configures.
-import { EffectsSettings } from "@/renderer/fx/settings/EffectsSettings";
-// ViscosityCode: Settings → Bots lives with the Bots feature.
-import { BotsSettings } from "@/renderer/viscosity/bots/settings/BotsSettings";
+// ViscosityCode: Settings → Playbooks lives with the playbooks it edits.
+import { PlaybooksSettings } from "@/renderer/viscosity/playbooks/settings/PlaybooksSettings";
+// ViscosityCode: Settings → xAI API lives with the xAI client.
+import { XaiSettings } from "@/renderer/viscosity/xai/settings/XaiSettings";
 import { BrowserSettings } from "./parts/BrowserSettings";
 import { ImportSettings } from "./parts/ImportSettings";
 import { UsageSettings } from "./parts/UsageSettings";
@@ -80,7 +80,6 @@ const SECTION_VIEWS: Partial<Record<SettingsSection, () => ReactNode>> = {
   general: () => <GeneralSettings />,
   audio: () => <AudioSettings />,
   appearance: () => <AppearanceSettings />,
-  effects: () => <EffectsSettings />, // ViscosityCode
   terminal: () => <TerminalSettings />,
   threads: () => <ThreadSettings />,
   git: () => <GitSettings />,
@@ -97,7 +96,8 @@ const SECTION_VIEWS: Partial<Record<SettingsSection, () => ReactNode>> = {
   mcpServers: () => <McpServersSettings />,
   plugins: () => <PluginsSettings />,
   crews: () => <CrewsSettings />,
-  bots: () => <BotsSettings />, // ViscosityCode
+  playbooks: () => <PlaybooksSettings />, // ViscosityCode
+  xai: () => <XaiSettings />, // ViscosityCode
   browser: () => <BrowserSettings />,
   usage: () => <UsageSettings />,
   import: () => <ImportSettings />,
@@ -130,6 +130,7 @@ const HOST_SCOPED_SECTIONS = new Set<SettingsSection>([
   "mcpServers",
   "usage",
   "crews",
+  "playbooks", // ViscosityCode: a remote client edits the selected host's list, like crews
   "import",
 ]);
 

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -105,7 +106,9 @@ describe("remote v3 native binding generator", () => {
         // Remote agent management exposes ACP install/remove/auth/logout/account resolution.
         // Optional period activity snapshots (`recent`) on ProfileCoreStats and ProfileTokenStats
         // add five structural types and move only the source hash while keeping older hosts valid.
-        sourceHash: "sha256:95c61030df1c62beff0f434e61059ec710d6533b4e1b688499e0c2164a0921a4",
+        // ViscosityCode: optional playbooks (thread config + settings, phrase cap 10) add four
+        // structural types and move only the source hash.
+        sourceHash: "sha256:f9be5ac20286ca22fa2b79d2e001c23e699b66835513e450aac32c2e9c9a37a9",
         manifestHash: "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3",
         counts: {
           routes: 121,
@@ -116,12 +119,12 @@ describe("remote v3 native binding generator", () => {
           // 11 shared + the desktop-internal `desktop-event` frame (V5 plan 2.5).
           webSocketServerVariants: 12,
           schemaRoots: 579,
-          structuralTypes: 1365,
+          structuralTypes: 1369,
           semanticValidators: 25,
           // Content-defined shards (emitterCommon.shardDeclarations) average
           // ~200 lines, so a contract change rewrites only nearby files.
-          swiftFiles: 149,
-          kotlinFiles: 127,
+          swiftFiles: 146,
+          kotlinFiles: 129,
           stateMachines: 5,
         },
       });

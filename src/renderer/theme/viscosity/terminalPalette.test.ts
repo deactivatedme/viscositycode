@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "@/renderer/theme/colorMath";
 import {
+  HOSTILE_BINARY_ANSI,
   VISCOSITY_ANSI,
+  VISCOSITY_MONO_ANSI,
   buildTerminalPalette,
   deriveAnsiColors,
   parseCssRgb,
@@ -31,16 +33,58 @@ const HEX = /^#[0-9a-f]{6}$/;
 const RGBA = /^rgba\(\d{1,3}, \d{1,3}, \d{1,3}, [\d.]+\)$/;
 
 describe("terminal palette", () => {
-  it("uses the curated Viscosity ANSI sets for the base theme", () => {
+  it("uses the curated monochrome ANSI sets for the base theme", () => {
     for (const appearance of ["dark", "light"] as const) {
+      const content = appearance === "dark" ? "#0a0a0a" : "#ffffff";
       const palette = buildTerminalPalette({
         appearance,
         presetId: "default",
+        background: content,
+        foreground: appearance === "dark" ? "#ededed" : "#0a0a0a",
+        accent: appearance === "dark" ? "#ffffff" : "#0a0a0a",
+      });
+      expect(palette).toMatchObject(VISCOSITY_MONO_ANSI[appearance]);
+      // CLI agents colour errors/diffs with these hues; keep them readable.
+      const hues = ANSI_KEYS.filter((key) => !/black|white/i.test(key));
+      expect(hues.filter((key) => contrastRatio(palette[key], content) < 4.5)).toEqual([]);
+    }
+  });
+
+  it("keeps the original curated ANSI sets for Viscosity Blue", () => {
+    for (const appearance of ["dark", "light"] as const) {
+      const palette = buildTerminalPalette({
+        appearance,
+        presetId: "viscosity-blue",
         background: appearance === "dark" ? "#0e0e10" : "#fafafa",
         foreground: appearance === "dark" ? "#e6e6e8" : "#18181b",
         accent: appearance === "dark" ? "#38bdf8" : "#0279bb",
       });
       expect(palette).toMatchObject(VISCOSITY_ANSI[appearance]);
+    }
+  });
+
+  it("uses one readable dark ANSI set for Hostile Binary, even in light appearance", () => {
+    for (const appearance of ["dark", "light"] as const) {
+      const content = "#050303";
+      const palette = buildTerminalPalette({
+        appearance,
+        presetId: "hostile-binary",
+        background: content,
+        foreground: "#f3ebe6",
+        accent: "#ff3344",
+      });
+      expect(palette).toMatchObject(HOSTILE_BINARY_ANSI);
+      expect(palette.selectionBackground).toBe(
+        buildTerminalPalette({
+          appearance: "dark",
+          presetId: "hostile-binary",
+          background: content,
+          foreground: "#f3ebe6",
+          accent: "#ff3344",
+        }).selectionBackground,
+      );
+      const hues = ANSI_KEYS.filter((key) => !/black|white/i.test(key));
+      expect(hues.filter((key) => contrastRatio(palette[key], content) < 4.5)).toEqual([]);
     }
   });
 
@@ -54,6 +98,7 @@ describe("terminal palette", () => {
     });
     expect(ANSI_KEYS.filter((key) => !HEX.test(palette[key]))).toEqual([]);
     expect(palette).not.toMatchObject(VISCOSITY_ANSI.dark);
+    expect(palette).not.toMatchObject(VISCOSITY_MONO_ANSI.dark);
     expect(palette.cursorAccent).toBe("#282828");
     expect(palette.selectionBackground).toBe("rgba(254, 128, 25, 0.3)");
     expect(palette.selectionInactiveBackground).toMatch(RGBA);

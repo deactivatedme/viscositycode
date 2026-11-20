@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { Button, Popover, toast } from "@heroui/react";
 import { Check, ChevronDown, Lock, LockOpen, Plus, Wand2, X } from "lucide-react";
@@ -10,6 +11,19 @@ import {
   type ClaudeProfileInstanceConfig,
 } from "@/shared/contracts";
 import { CLAUDE_PROFILE_EFFORT_CHOICES } from "@/shared/agents/claudeEfforts";
+import {
+  CLAUDE_FABLE_51_MODEL_ID,
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_FABLE_5_MODEL_ID,
+  CLAUDE_HAIKU_MODEL_ID,
+  CLAUDE_OPUS_46_MODEL_ID,
+  CLAUDE_OPUS_47_MODEL_ID,
+  CLAUDE_OPUS_48_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_OPUS_5_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
+  CLAUDE_SONNET_5_MODEL_ID,
+} from "@/shared/agents/claudeModels"; // ViscosityCode
 import { readBridge } from "@/renderer/bridge";
 import { i18n } from "@/renderer/i18n/i18n";
 import { Input } from "@/renderer/components/common";
@@ -39,12 +53,20 @@ import {
   type ProfilePreset,
 } from "./ClaudeProfileSettingsModel";
 
+// ViscosityCode: fallback (no profile status yet) follows the shared Claude ids.
 const CLAUDE_PROFILE_BASE_MODEL_IDS = [
-  "claude-opus-4-8",
-  "claude-opus-4-7",
-  "claude-opus-4-6",
+  CLAUDE_FABLE_52_MODEL_ID,
+  CLAUDE_FABLE_51_MODEL_ID,
+  CLAUDE_FABLE_5_MODEL_ID,
+  CLAUDE_OPUS_55_MODEL_ID,
+  CLAUDE_OPUS_5_MODEL_ID,
+  CLAUDE_OPUS_48_MODEL_ID,
+  CLAUDE_OPUS_47_MODEL_ID,
+  CLAUDE_OPUS_46_MODEL_ID,
+  CLAUDE_SONNET_55_MODEL_ID,
+  CLAUDE_SONNET_5_MODEL_ID,
   "sonnet",
-  "haiku",
+  CLAUDE_HAIKU_MODEL_ID,
 ];
 const EMPTY_EFFORT_SELECTION = new Set<string>();
 

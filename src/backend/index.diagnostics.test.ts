@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   BACKEND_HOST_PROTOCOL_VERSION,
@@ -205,4 +206,16 @@ it("exposes the read-only describe handle when PORACODE_BACKEND_DIAGNOSTICS=1", 
   expect(described.role).toBe("backend");
   expect(described).not.toHaveProperty("rendererStream");
   expect(JSON.stringify(described)).not.toContain("ws://");
+});
+
+// ViscosityCode: the backend loads with the compile cache but its children (git, SSH, readers)
+// must not inherit it implicitly; the supervisor and reader forks opt in explicitly.
+it("drops NODE_COMPILE_CACHE from its environment on load", async () => {
+  process.env.NODE_COMPILE_CACHE = "/data/cache/node-compile-cache";
+  try {
+    await importBackend();
+    expect(process.env.NODE_COMPILE_CACHE).toBeUndefined();
+  } finally {
+    delete process.env.NODE_COMPILE_CACHE;
+  }
 });

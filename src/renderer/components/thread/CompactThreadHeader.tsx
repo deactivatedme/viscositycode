@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -33,6 +34,7 @@ import { SidebarButton } from "@/renderer/components/common/SidebarButton";
 import { MobileCircleButton } from "@/renderer/components/mobileComposer/MobileCircleButton";
 import { InlineRenameInput } from "@/renderer/views/MainView/parts/Sidebar/parts/InlineRenameInput";
 import { resolveWorktreeBranch } from "@/renderer/utils/gitHelpers";
+import { PlaybookCompactLabel } from "@/renderer/viscosity/playbooks/PlaybookTabBadge"; // ViscosityCode:
 
 function CompactThreadActions(props: { thread: Thread; onRename: () => void }) {
   const { t } = useLingui();
@@ -170,6 +172,7 @@ export function CompactThreadHeader(props: {
               <span className="flex min-w-0 items-center gap-1 text-[10px] leading-4 text-muted/70">
                 <span className="truncate">{props.project.name}</span>
                 <ProjectRemoteServerChip info={remote} size="xs" />
+                <PlaybookCompactLabel playbook={thread.config.playbook} /* ViscosityCode: */ />
               </span>
             </span>
           </>

@@ -52,6 +52,13 @@ describe("headroomPoints", () => {
     expect(headroomPoints({ kind: "unknown" })).toBe(UNKNOWN_HEADROOM);
     expect(headroomPoints({ kind: "exhausted" })).toBeUndefined();
   });
+
+  it("ranks a failed poll by its last good reading, like the pool pick", () => {
+    const nearlyOut = headroomPoints({ kind: "unknown", transient: true, headroomPercent: 2 });
+    expect(nearlyOut).toBe(2);
+    expect(nearlyOut!).toBeLessThan(headroomPoints(available(40))!);
+    expect(headroomPoints({ kind: "unknown", transient: true })).toBe(UNKNOWN_HEADROOM);
+  });
 });
 
 describe("preferenceBonus", () => {

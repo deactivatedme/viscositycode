@@ -22,7 +22,7 @@ import {
 } from "../attachments/localFiles";
 import { createProjectDirectory } from "../projectDirectory";
 import { detectProjectIconFile, listProjectIconFiles } from "../projectIconDetect";
-import { showOsNotification } from "../osNotifications";
+import { isUserViewingThread, showOsNotification } from "../osNotifications"; // ViscosityCode: isUserViewingThread
 import { showAndFocusWindow } from "../window/showAndFocusWindow";
 import { readKeybindingsFile } from "../keybindingsFile";
 import { applyKeybindingsWrite } from "../keybindingsApply";
@@ -235,6 +235,7 @@ export function createLocalIpcHandlers(
       if (options.hostOffersOsNotifications?.() === false) return false;
       return showOsNotification(payload, options.getMainWindow);
     },
+    isUserViewingThread: (payload) => isUserViewingThread(payload, options.getMainWindow), // ViscosityCode
     relaunchApp: () => {
       options.requestRelaunch();
     },
@@ -338,12 +339,22 @@ export function createLocalIpcHandlers(
           height: 32,
         });
       }
-      // Toggle the native translucency material live. macOS vibrancy is created
-      // with the window and revealed/hidden purely via CSS, so there is nothing
-      // to switch here. The Windows backdrop is toggled at runtime (no relaunch);
+      // Toggle the native translucency material live. ViscosityCode: macOS
+      // vibrancy is created with the (transparent) window; detaching it while
+      // glass is off stops the live behind-window blur the opaque CSS hides.
+      // The Windows backdrop is toggled at runtime (no relaunch);
       // the resolver only yields Mica/acrylic where the OS capability check passes.
       const wantsMaterial = payload.materialEnabled === true && nativeCapable;
-      if (process.platform === "win32") {
+      if (process.platform === "darwin") {
+        mainWindow.setVibrancy(wantsMaterial ? "sidebar" : null); // ViscosityCode:
+        // ViscosityCode: the renderer clears its transparent CSS only after this
+        // reply, so an opaque base keeps the window from going see-through meanwhile.
+        mainWindow.setBackgroundColor(
+          wantsMaterial
+            ? TRANSPARENT_WINDOW_BACKGROUND
+            : windowBaseBackgroundColor(payload.shownAppearance ?? payload.appearance),
+        );
+      } else if (process.platform === "win32") {
         const material = resolveWindowsBackgroundMaterial({
           preference: payload.windowMaterial,
           translucent: wantsMaterial,
@@ -352,7 +363,7 @@ export function createLocalIpcHandlers(
         mainWindow.setBackgroundMaterial(material);
         mainWindow.setBackgroundColor(
           material === "none"
-            ? windowBaseBackgroundColor(payload.appearance)
+            ? windowBaseBackgroundColor(payload.shownAppearance ?? payload.appearance) // ViscosityCode:
             : TRANSPARENT_WINDOW_BACKGROUND,
         );
       }

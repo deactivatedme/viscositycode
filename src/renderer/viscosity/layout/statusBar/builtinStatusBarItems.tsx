@@ -2,22 +2,18 @@
  * ViscosityCode built-in status bar items. Each reads existing store state
  * through primitive selectors and reuses existing actions; none is specific to
  * one provider. Orders leave gaps so later fork steps can slot items between.
+ * Theme and version live in the palette and Settings, keeping the bar minimal.
  */
 import type { ReactNode } from "react";
-import { useSyncExternalStore } from "react";
 import { Button, Tooltip } from "@heroui/react";
 import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { Activity, CircleAlert, CircleX, FolderGit2, GitBranch, Moon, Sun } from "lucide-react";
-import { resolveThemeMode } from "@/shared/themeMode";
+import { Activity, CircleAlert, CircleX, FolderGit2, GitBranch } from "lucide-react";
 import { openGitReview } from "@/renderer/actions/panelActions";
-import { readBridge } from "@/renderer/bridge";
 import { resolveModelLabel } from "@/renderer/components/providers/modelDisplay";
 import { selectFocusedThreadId, useProjectAgentStatuses } from "@/renderer/hooks/uiSelectors";
 import { useAppStore } from "@/renderer/state/appStore";
 import { useGitStore } from "@/renderer/state/gitStore";
-import { usePanelStore } from "@/renderer/state/panelStore";
-import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { getProjectMap } from "@/renderer/state/useThread";
 import { activateThreadTab } from "../tabs/tabActions";
 import {
@@ -43,8 +39,6 @@ export const BUILTIN_STATUS_BAR_ITEM_IDS = {
   waiting: "agents.waiting",
   errors: "agents.errors",
   agentModel: "agent-model",
-  theme: "theme",
-  version: "version",
 } as const;
 
 const ITEM_CLASS = "vc-statusbar__item h-full min-w-0 shrink-0 gap-1 rounded-none px-2 font-normal";
@@ -198,72 +192,6 @@ function AgentModelStatusItem() {
   );
 }
 
-function subscribeColorScheme(onChange: () => void): () => void {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-
-function systemPrefersDark(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
-}
-
-function ThemeToggleStatusItem() {
-  const { t } = useLingui();
-  const themeMode = useSharedSettings((state) => state.themeMode);
-  const prefersDark = useSyncExternalStore(subscribeColorScheme, systemPrefersDark, () => true);
-  const appearance = resolveThemeMode(themeMode, prefersDark);
-  const label = appearance === "dark" ? t`Switch to light theme` : t`Switch to dark theme`;
-  return (
-    <StatusBarTooltip label={label}>
-      <Button
-        isIconOnly
-        size="sm"
-        variant="ghost"
-        aria-label={label}
-        data-vc-status-item={BUILTIN_STATUS_BAR_ITEM_IDS.theme}
-        className={ITEM_CLASS}
-        onPress={() =>
-          useSharedSettings.getState().setThemeMode(appearance === "dark" ? "light" : "dark")
-        }
-      >
-        {appearance === "dark" ? (
-          <Sun aria-hidden="true" className="size-3" />
-        ) : (
-          <Moon aria-hidden="true" className="size-3" />
-        )}
-      </Button>
-    </StatusBarTooltip>
-  );
-}
-
-function VersionStatusItem() {
-  const { t } = useLingui();
-  const version = readBridge().appVersion;
-  // Browser clients report "remote" instead of a release version.
-  if (!version || version === "remote") return null;
-  const label = t`About this version`;
-  return (
-    <StatusBarTooltip label={label}>
-      <Button
-        size="sm"
-        variant="ghost"
-        aria-label={t`Version ${version}`}
-        data-vc-status-item={BUILTIN_STATUS_BAR_ITEM_IDS.version}
-        className={ITEM_CLASS}
-        onPress={() => usePanelStore.getState().openSettingsSection("about")}
-      >
-        <span className="tabular-nums">{t`v${version}`}</span>
-      </Button>
-    </StatusBarTooltip>
-  );
-}
-
 let registered = false;
 
 /** Idempotent: registers the built-in items once per renderer. */
@@ -299,17 +227,5 @@ export function registerBuiltinStatusBarItems(): void {
     align: "right",
     order: 100,
     component: AgentModelStatusItem,
-  });
-  registerStatusBarItem({
-    id: BUILTIN_STATUS_BAR_ITEM_IDS.theme,
-    align: "right",
-    order: 800,
-    component: ThemeToggleStatusItem,
-  });
-  registerStatusBarItem({
-    id: BUILTIN_STATUS_BAR_ITEM_IDS.version,
-    align: "right",
-    order: 900,
-    component: VersionStatusItem,
   });
 }

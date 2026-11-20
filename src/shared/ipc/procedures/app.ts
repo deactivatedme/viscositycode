@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { projectLocationSchema, type ProjectLocation } from "../../contracts";
 import {
@@ -206,6 +207,16 @@ export const appProcedures = {
     boolean,
     "main-local"
   >("showNotification", "main-local", showNotificationPayloadSchema),
+  // ViscosityCode: asks main whether the user is looking at the thread (no renderer caller since the sound pack was removed).
+  isUserViewingThread: definePayloadProcedure<
+    Pick<z.infer<typeof showNotificationPayloadSchema>, "threadId" | "shownInMainWindow">,
+    boolean,
+    "main-local"
+  >(
+    "isUserViewingThread",
+    "main-local",
+    showNotificationPayloadSchema.pick({ threadId: true, shownInMainWindow: true }),
+  ), // ViscosityCode
   relaunchApp: defineNoArgProcedure<void, "main-local">("relaunchApp", "main-local"),
   getHomeScopeLocation: defineNoArgProcedure<ProjectLocation, "main-local">(
     "getHomeScopeLocation",

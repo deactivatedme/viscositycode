@@ -272,6 +272,8 @@ describe("sharedSettingsFile", () => {
     expect(readSharedSettingsFile(settingsPath)).toEqual({
       // ViscosityCode: account pools are an additive setting that loads as {} when absent.
       accountPools: {},
+      // ViscosityCode: saved playbooks load as [] when absent.
+      playbooks: [],
       followUpBehavior: "steer",
       themeMode: "dark",
       themePreset: "default",

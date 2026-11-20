@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
@@ -137,13 +138,29 @@ import { isRemoteProcedure } from "../remote/procedures";
 // are unchanged, so hop 19 stays compatible.
 // Local port management adds two same-bundle main-local names. Older peers
 // reject unknown names; no existing payload or remote allowlist changes.
-const HOP_PIN = `${IPC_PROCEDURE_MAP_VERSION}:faa92559ca82d8af9dd1a5c87e7832d9000b326519f2ee986ec4b05727bf47c1`;
+// ViscosityCode: `isUserViewingThread` adds one same-bundle main-local read
+// (main's window-focus check; its renderer caller, the sound pack, was removed
+// before release). Older peers reject the unknown name, and it stays out of the
+// remote allowlist, so hop 19 stays.
+// ViscosityCode: the Grok Bots names (`listGrokBots`, `refreshGrokBots`,
+// `openGrokBot`) were removed before release; they never shipped, so hop 19 stays.
+// ViscosityCode: cloud agents add three supervisor procedures
+// (`listCloudAgents`, `getCloudAgent`, `followCloudAgent`). New names only: an
+// older supervisor rejects them before any effect and the renderer hides the
+// inbox; existing names and payloads are unchanged, the list cache is
+// in-memory, and none enters the remote allowlist, so hop 19 stays.
+const HOP_PIN = `${IPC_PROCEDURE_MAP_VERSION}:12dba45c0a965e364c76ac346564933aeab4eedda392833e08ec29f76afe72fd`;
 
 describe("IPC procedure map versioning", () => {
   it("preserves the previous map while keeping port termination off remote transports", () => {
     const previous = ipcProcedureMapFingerprint()
       .split("\n")
-      .filter((line) => !/^(listLocalPorts|closeLocalPort):/.test(line))
+      .filter(
+        (line) =>
+          !/^(listLocalPorts|closeLocalPort|isUserViewingThread|listCloudAgents|getCloudAgent|followCloudAgent):/.test(
+            line,
+          ),
+      ) // ViscosityCode: isUserViewingThread, cloud agents
       .join("\n");
     expect(createHash("sha256").update(previous).digest("hex")).toBe(
       "e7d56779b0a1910e7bf1b1e1a877255af172c66dec31b92512f223dc7250f2c9",
@@ -353,6 +370,38 @@ describe("IPC procedure map versioning", () => {
       expect(isRemoteProcedure(name)).toBe(false);
       expect(ipcProcedureMap[name].transport).toBe("main-local");
     }
+  });
+
+  // ViscosityCode: the sound pack's focus query.
+  it("keeps the thread viewing query main-local with a closed thread payload", () => {
+    const procedure = ipcProcedureMap.isUserViewingThread;
+    expect(procedure.transport).toBe("main-local");
+    expect(isRemoteProcedure("isUserViewingThread")).toBe(false);
+    expect(procedure.payloadSchema.safeParse({ threadId: "t" }).success).toBe(true);
+    expect(
+      procedure.payloadSchema.safeParse({ threadId: "t", shownInMainWindow: true }).success,
+    ).toBe(true);
+    expect(procedure.payloadSchema.safeParse({ threadId: "" }).success).toBe(false);
+  });
+
+  // ViscosityCode: the cloud agents inbox stays off remote transports with bounded payloads.
+  it("keeps the cloud agents procedures supervisor-local with closed payloads", () => {
+    for (const name of ["listCloudAgents", "getCloudAgent", "followCloudAgent"] as const) {
+      expect(ipcProcedureMap[name].transport).toBe("supervisor");
+      expect(isRemoteProcedure(name)).toBe(false);
+    }
+    expect(ipcProcedureMap.listCloudAgents.payloadSchema.safeParse({}).success).toBe(true);
+    expect(
+      ipcProcedureMap.getCloudAgent.payloadSchema.safeParse({ agentKind: "a", agentId: "" })
+        .success,
+    ).toBe(false);
+    expect(
+      ipcProcedureMap.followCloudAgent.payloadSchema.safeParse({
+        threadId: "t",
+        agentKind: "a",
+        agentId: "x".repeat(257),
+      }).success,
+    ).toBe(false);
   });
 
   it("keeps the procedure-map fingerprint pinned so any map change forces a compat review", () => {

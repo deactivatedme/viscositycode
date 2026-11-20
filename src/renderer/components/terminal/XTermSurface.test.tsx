@@ -12,6 +12,7 @@ import { resizeTerminalPayloadSchema } from "@/shared/contracts";
 import type { SupervisorEvent } from "@/shared/ipc";
 import type { TerminalFeedListener } from "@/shared/remote/terminalFeed";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { setAppThemeOverride } from "@/renderer/theme/applyAppTheme";
 import { resolveTerminalFontFamily } from "./terminalFonts";
 import type { RemoteTerminalWatchResultReady } from "@/shared/remote/protocol";
 import { sendTerminalInput } from "./terminalInputQueue";
@@ -442,6 +443,36 @@ describe("XTermSurface", () => {
           customThemes: previous.customThemes,
         }),
       );
+      root.style.setProperty("--content-background", originalBg);
+    }
+  });
+
+  // ViscosityCode: a playbook theme switching in or out repaints the terminal.
+  it("refreshes terminal colors when a playbook theme override changes", async () => {
+    const root = document.documentElement;
+    const originalBg = root.style.getPropertyValue("--content-background");
+    vi.spyOn(terminalColors, "resolveTerminalColor").mockImplementation((color) => color || null);
+    try {
+      root.style.setProperty("--content-background", "#101010");
+      render(<XTermSurface terminalId="override-theme-terminal" />);
+      await flushFrame();
+      expect(state.terminalOptions?.theme).toMatchObject({ background: "#101010" });
+      const existingTerminal = state.terminal;
+      act(() => {
+        root.style.setProperty("--content-background", "#050505");
+        setAppThemeOverride("hostile-binary");
+      });
+      await flushFrame();
+      expect(state.terminalOptions?.theme).toMatchObject({ background: "#050505" });
+      act(() => {
+        root.style.setProperty("--content-background", "#101010");
+        setAppThemeOverride(null);
+      });
+      await flushFrame();
+      expect(state.terminalOptions?.theme).toMatchObject({ background: "#101010" });
+      expect(state.terminal).toBe(existingTerminal);
+    } finally {
+      act(() => setAppThemeOverride(null));
       root.style.setProperty("--content-background", originalBg);
     }
   });

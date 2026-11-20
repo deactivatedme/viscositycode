@@ -9,7 +9,7 @@ import {
   type CustomTheme,
 } from "@/shared/customThemes";
 import { downloadTextFile } from "@/renderer/utils/downloadTextFile";
-import { useResolvedAppearance } from "@/renderer/components/ui/provider";
+import { useThemeModeAppearance } from "@/renderer/components/ui/provider"; // ViscosityCode: was useResolvedAppearance
 import { buildThemePreset } from "@/renderer/theme/themePresets";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { Button, Input, Select } from "@/renderer/components/common";
@@ -20,7 +20,7 @@ import { CustomThemePalette } from "./CustomThemePalette";
 export function CustomThemeEditor(props: { initial: CustomTheme; onClose: () => void }) {
   const { t } = useLingui();
   const [draft, setDraft] = useState(props.initial);
-  const appearance = useResolvedAppearance();
+  const appearance = useThemeModeAppearance(); // ViscosityCode: edit the Mode palette, not a playbook override
   const [mode, setMode] = useState<"light" | "dark">(appearance);
   const [saveError, setSaveError] = useState(false);
   const saveCustomTheme = useSharedSettings((state) => state.saveCustomTheme);

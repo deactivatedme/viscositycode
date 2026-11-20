@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 export * from "./CursorIcon";
 
 import { msg } from "@lingui/core/macro";
@@ -26,10 +27,13 @@ import {
 import { registerCommitGenDefaults } from "../commitGen";
 import { registerConflictResolverDefaults } from "../conflictResolver";
 import { registerTitleGenDefaults } from "../titleGen";
+// ViscosityCode: Cursor's setup line in Mission Control's Cloud tab.
+import { registerCursorCloudSetupHint } from "./cloudAgentsSetupHint";
 
 const PROVIDER_KIND = providerManifest.kind;
 
 registerProviderIcon(PROVIDER_KIND, CursorIcon);
+registerCursorCloudSetupHint(); // ViscosityCode:
 // The SDK runtime reports only feature-detected session commands (`/summarize`
 // on @cursor/sdk >= 1.2.0), appended to Poracode's composer-local set (mode,
 // model, fast). ACP sessions keep the commands cursor-agent reports via

@@ -22,10 +22,6 @@ vi.mock("@/renderer/state/sharedSettingsStore", () => ({
   useSharedSettings: (selector: (state: object) => unknown) =>
     selector({ homeScopeEnabled: false, sharedSettingsHydrated: false }),
 }));
-vi.mock("@/renderer/state/welcomeGateStore", () => ({
-  useWelcomeGateStore: (selector: (state: { backgroundWorkReleased: boolean }) => unknown) =>
-    selector({ backgroundWorkReleased: false }),
-}));
 vi.mock("@/renderer/actions/projectActions", () => ({
   ensureHomeScopeProject: vi.fn<() => void>(),
 }));
@@ -78,8 +74,10 @@ vi.mock("@/renderer/diagnostics/runtimeContext", () => ({
 }));
 // The built-in items read app state this test does not set up.
 vi.mock("./builtinStatusBarItems", () => ({ registerBuiltinStatusBarItems: () => {} }));
-// The fx layer subscribes to the real app store, which this test replaces.
-vi.mock("@/renderer/fx/FxRoot", () => ({ FxRoot: () => null }));
+// The shell runtime subscribes to the real app store, which this test replaces.
+vi.mock("@/renderer/viscosity/ViscosityShellRuntime", () => ({
+  ViscosityShellRuntime: () => null,
+}));
 
 beforeEach(() => {
   document.documentElement.dataset.windowKind = "main";

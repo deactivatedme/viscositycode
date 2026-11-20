@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import {
   agentKindSchema,
@@ -333,6 +334,8 @@ export const showNotificationPayloadSchema = z.object({
   body: z.string(),
   /** Thread to open when the notification is clicked. */
   threadId: z.string().min(1),
+  /** ViscosityCode: the thread is on screen in the main window; skip while any app window has focus. */
+  shownInMainWindow: z.boolean().optional(), // ViscosityCode
 });
 export type ShowNotificationPayload = z.infer<typeof showNotificationPayloadSchema>;
 
@@ -352,6 +355,12 @@ export const windowChromePayloadSchema = z.object({
    * OS default. Optional for callers that predate the toggle.
    */
   appearance: z.enum(["light", "dark"]).optional(),
+  /**
+   * ViscosityCode: the appearance the document actually shows, which differs
+   * from `appearance` in system mode under a dark-only theme. Paints the opaque
+   * window base. Optional; absent means `appearance`.
+   */
+  shownAppearance: z.enum(["light", "dark"]).optional(), // ViscosityCode
 });
 export type WindowChromePayload = z.infer<typeof windowChromePayloadSchema>;
 

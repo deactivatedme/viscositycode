@@ -37,6 +37,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_9aae8a80ce4e7cb3 = RemoteSchema(unionKind: "anyOf", options: [RemoteSchemas.schema_d76087116976279b, RemoteSchemas.schema_a7a81bdaababd798], unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_9ab386636c31e53c = RemoteSchema(type: "string", literals: [.string("ready"), .string("unsupported_host"), .string("missing_sdk"), .string("missing_xcode"), .string("missing_idb"), .string("unavailable")], unknownPolicy: .strip)
 }
 

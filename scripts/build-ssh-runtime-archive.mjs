@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Build the immutable preassembled SSH runtime archive the desktop ships
  * (`resources/ssh-runtime-archive/{manifest.json,<archive>}`), consumed by
@@ -161,8 +162,11 @@ export function buildSshRuntimeArchive(options = {}) {
     // in the app bundle, and electron-builder cannot sign a binary inside this
     // tarball, so macOS helper builds stay out; a remote macOS SSH host then
     // falls back to the JS/TS implementations (as for WSL and linux-arm64).
+    // ViscosityCode: live_re is host-local (macOS/Windows desktop only), so
+    // it never ships to SSH hosts.
     const wslHelpersFilter = (source) => {
       const segments = relative(wslHelpersDir, source).split(sep).join("/").split("/");
+      if (segments[0] === "live-re") return false;
       return !(
         (segments[0] === "mcp-relay" || segments[0] === "git-helper") &&
         segments[1]?.startsWith("darwin-")

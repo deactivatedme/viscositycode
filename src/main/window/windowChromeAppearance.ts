@@ -1,7 +1,10 @@
 // ViscosityCode: pure window-chrome decisions (startup colours and the Windows
 // backdrop material), kept free of Electron imports so they are unit-testable
 // and shared by the window factory and the `setWindowChrome` handler.
-import type { WindowMaterialPreference } from "@/shared/ipc/procedures/settings";
+import {
+  windowMaterialPreferenceSchema,
+  type WindowMaterialPreference,
+} from "@/shared/ipc/procedures/settings";
 
 export type WindowAppearance = "light" | "dark";
 
@@ -9,12 +12,13 @@ export type WindowAppearance = "light" | "dark";
 export const TRANSPARENT_WINDOW_BACKGROUND = "#00000000";
 
 /**
- * Opaque window background per appearance: the ViscosityCode base colours, so
- * the first frame (before the renderer paints) and the opaque fallback after a
- * backdrop is switched off match the default theme instead of flashing.
+ * Opaque window background per appearance: the default theme's monochrome
+ * `--background` (tokens.css), so the first frame (before the renderer paints),
+ * the opaque fallback after a backdrop is switched off and the edge Windows
+ * exposes during a fast resize match the default theme instead of flashing.
  */
 export function windowBaseBackgroundColor(appearance: WindowAppearance | undefined): string {
-  return appearance === "dark" ? "#0a0a0b" : "#f4f4f5";
+  return appearance === "dark" ? "#000000" : "#fafafa";
 }
 
 /**
@@ -77,22 +81,47 @@ export function windowReportsNativeMaterial(input: {
 /**
  * Last preference a renderer sent through `setWindowChrome`, held in memory so
  * windows created later in this process (a re-created main window, the browser
- * window) open with the user's backdrop. Not persisted: before the renderer's
- * first call a fresh process starts from the default (`auto`), and the renderer
- * corrects the material live once it loads.
+ * window) open with the user's backdrop, and mirrored to the shell state store
+ * so the next cold launch opens with it too instead of flashing `auto` (Mica).
  */
 let rememberedPreference: WindowMaterialPreference | undefined;
 
+/** Minimal slice of the main process `ShellStateStore`. */
+interface PreferenceStore {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+}
+
+/**
+ * Shell-state key for the persisted preference. Must be in the backend host's
+ * `preloadShellState` list. An unknown value (newer build) reads as absent.
+ */
+export const WINDOW_MATERIAL_STATE_KEY = "viscosity-window-material-v1";
+
+let preferenceStore: PreferenceStore | undefined;
+
+/** Called by the window factory with the shell state store it was given. */
+export function bindWindowMaterialPreferenceStore(store: PreferenceStore): void {
+  preferenceStore = store;
+}
+
 export function rememberWindowMaterialPreference(preference: WindowMaterialPreference): void {
+  if (preference === rememberedPreference) return;
   rememberedPreference = preference;
+  preferenceStore?.set(WINDOW_MATERIAL_STATE_KEY, preference);
 }
 
-/** The preference new windows start with: the last one sent, else `auto`. */
+/** The preference new windows start with: the last one sent, else the stored one, else `auto`. */
 export function startupWindowMaterialPreference(): WindowMaterialPreference {
-  return rememberedPreference ?? "auto";
+  if (rememberedPreference) return rememberedPreference;
+  const stored = windowMaterialPreferenceSchema.safeParse(
+    preferenceStore?.get(WINDOW_MATERIAL_STATE_KEY),
+  );
+  return stored.success ? stored.data : "auto";
 }
 
-/** Test-only reset of the in-memory preference. */
+/** Test-only reset of the in-memory preference and store binding. */
 export function resetRememberedWindowMaterialPreferenceForTests(): void {
   rememberedPreference = undefined;
+  preferenceStore = undefined;
 }

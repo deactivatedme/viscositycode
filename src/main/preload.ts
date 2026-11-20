@@ -4,6 +4,8 @@ import { installSmokeNativePreload } from "./testing/smokeNativeControls";
 // ViscosityCode: fork-owned `window.viscosityHost` namespace (xAI client bridge).
 import { createViscosityXaiPreloadBridge } from "./viscosity/xai/xaiPreloadBridge";
 import { createViscosityThemePreloadBridge } from "./viscosity/themeFetch/themePreloadBridge"; // ViscosityCode:
+import { createViscositySystemPreloadBridge } from "./viscosity/system/systemInfoPreloadBridge"; // ViscosityCode:
+import { createViscosityLiveRePreloadBridge } from "./viscosity/liveRe/liveRePreloadBridge"; // ViscosityCode:
 import { type PoracodeChannel, normalizeChannel } from "@/shared/channel";
 import type { RemoteThreadCommand } from "@/shared/contracts";
 import type { RemoteAccessPairingInfo } from "@/shared/remote";
@@ -27,7 +29,8 @@ import {
   PORACODE_WINDOW_KINDS,
   type PoracodeWindowKind,
 } from "@/shared/ipc/channels";
-import { IPC_PROCEDURE_MAP_VERSION } from "@/shared/ipc/procedureMap";
+// ViscosityCode: leaf import; IPC_PROCEDURE_MAP_VERSION aliases this, procedureMap drags in contracts.
+import { CLIENT_HOST_HOP_VERSION } from "@/shared/clientHostHop";
 import {
   type BrowserEvent,
   type PrWatchMergedEvent,
@@ -221,7 +224,7 @@ const bridge: ElectronHostBridge = {
   // Procedure-map version handshake (V5 plan 2.6): the renderer asserts this
   // against its own map before installing the runtime, so a mixed bundle or
   // foreign preload pair rejects typed instead of guessing semantics.
-  ipcProcedureMapVersion: IPC_PROCEDURE_MAP_VERSION,
+  ipcProcedureMapVersion: CLIENT_HOST_HOP_VERSION, // ViscosityCode: same value as IPC_PROCEDURE_MAP_VERSION
   onBackendSupervisorReset(listener) {
     const handler = () => listener();
     ipcRenderer.on(IPC_EVENT_CHANNELS.backendSupervisorReset, handler);
@@ -364,6 +367,8 @@ contextBridge.exposeInMainWorld("poracodeHost", bridge);
 contextBridge.exposeInMainWorld("viscosityHost", {
   xai: createViscosityXaiPreloadBridge(ipcRenderer),
   themes: createViscosityThemePreloadBridge(ipcRenderer), // ViscosityCode: theme import from a link.
+  system: createViscositySystemPreloadBridge(process), // ViscosityCode: memory and GPU hints for Lightweight mode.
+  liveRe: createViscosityLiveRePreloadBridge(ipcRenderer), // ViscosityCode: live_re setup check (desktop only).
 });
 // Facade 11: forward each per-request bridge port into the main world via the
 // documented preload -> main-world port pattern. The isolated world never sees

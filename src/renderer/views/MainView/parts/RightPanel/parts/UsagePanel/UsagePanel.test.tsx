@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +8,10 @@ import { useProviderUsage, useProviderUsageStore } from "@/renderer/state/provid
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useHostUsageStore } from "@/renderer/state/hostUsageStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
+import type { AgentStatus } from "@/shared/contracts";
 import { fetchHostUsage } from "@/renderer/components/providers/hostUsage";
+import { resolveDisplayedProviders } from "@/renderer/components/providers/usageProviders";
 import { UsagePanelHeaderActions } from "./parts/UsagePanelHeaderActions";
 import { floatingBubblePillClass } from "@/renderer/components/layout/floatingGlass";
 import { UsagePanel } from "./UsagePanel";
@@ -82,6 +86,26 @@ vi.mock("@dnd-kit/react", () => ({
   KeyboardSensor: {},
   PointerSensor: { configure: () => ({}) },
 }));
+
+// The fixtures' providers count as detected (installed and signed in) on each host,
+// so the shared usage-visibility rule lists them even before they report windows.
+const DETECTED = ["first", "second", "provider", "other", "third", "claude", "codex"];
+function detectedStatuses() {
+  return {
+    windows: DETECTED.map(
+      (kind) =>
+        ({
+          kind,
+          label: kind,
+          installed: true,
+          authState: "authenticated",
+          capabilities: {},
+        }) as AgentStatus,
+    ),
+    wsl: [],
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
+}
 
 describe("usage panel host ownership", () => {
   it("scrolls to sidebar selections after data arrives and handles repeated clicks without reordering", async () => {
@@ -202,9 +226,13 @@ describe("usage panel host ownership", () => {
     }));
     useRemoteServersStore.setState({
       runtime: {
-        a: { status: "online", projects: [], threads: [] },
-        b: { status: "online", projects: [], threads: [] },
+        a: { status: "online", projects: [], threads: [], agentStatuses: detectedStatuses() },
+        b: { status: "online", projects: [], threads: [], agentStatuses: detectedStatuses() },
       },
+    });
+    useAgentStatusesStore.setState({
+      agentStatuses: detectedStatuses().windows,
+      wslAgentStatuses: [],
     });
     session.compact = false;
     useUsageScopeStore.setState({
@@ -315,6 +343,90 @@ describe("usage panel host ownership", () => {
     render(<UsagePanel />);
     expect(screen.queryByRole("button", { name: "Current host" })).toBeNull();
     expect(screen.getByText("Updated just now")).toBeTruthy();
+  });
+
+  it("lists only detected or reporting providers and keeps hidden ones' order slots on drag", () => {
+    useRemoteServersStore.setState({ servers: [], runtime: {} });
+    useSharedSettings.setState((state) => ({
+      usage: { ...state.usage, providerOrder: ["claude", "cursor", "codex"] },
+    }));
+    const reading = (providerId: string) => ({
+      providerId,
+      status: "ok" as const,
+      windows: [{ id: "weekly", label: "Weekly", usedPercent: 10 }],
+      fetchedAt: Date.now(),
+    });
+    useProviderUsageStore.setState({
+      snapshots: {
+        claude: reading("claude"),
+        codex: reading("codex"),
+        // Tracked but not installed here: its collector can't run, so no card.
+        cursor: { providerId: "cursor", status: "app-not-running", windows: [], fetchedAt: 1 },
+      },
+    });
+    render(<UsagePanel />);
+    expect(screen.getByTestId("usage-card-claude")).toBeTruthy();
+    expect(screen.getByTestId("usage-card-codex")).toBeTruthy();
+    expect(screen.queryByTestId("usage-card-cursor")).toBeNull();
+    expect(screen.queryAllByTestId(/^usage-card-/)).toHaveLength(2);
+
+    act(() =>
+      drag.end?.({ canceled: false, operation: { source: { initialIndex: 1, index: 0 } } }),
+    );
+    expect(useSharedSettings.getState().usage.providerOrder.slice(0, 3)).toEqual([
+      "codex",
+      "cursor",
+      "claude",
+    ]);
+  });
+
+  it("says nothing is tracked only when no provider is tracked, not while none is detected yet", () => {
+    useRemoteServersStore.setState({ servers: [], runtime: {} });
+    // Cold start: providers are tracked but agent detection has not arrived.
+    useAgentStatusesStore.setState({ agentStatuses: [], wslAgentStatuses: [] });
+    useProviderUsageStore.setState({ snapshots: {} });
+    const view = render(<UsagePanel />);
+    expect(screen.queryAllByTestId(/^usage-card-/)).toHaveLength(0);
+    expect(screen.queryByText("No providers are being tracked.")).toBeNull();
+    view.unmount();
+
+    useSharedSettings.setState((state) => ({
+      usage: {
+        ...state.usage,
+        disabledProviders: resolveDisplayedProviders([], []).map((provider) => provider.id),
+      },
+    }));
+    render(<UsagePanel />);
+    expect(screen.getByText("No providers are being tracked.")).toBeTruthy();
+  });
+
+  it("filters a paired host's cards by that host's detected agents", () => {
+    const statuses = detectedStatuses();
+    useRemoteServersStore.setState((state) => ({
+      runtime: {
+        ...state.runtime,
+        a: {
+          ...state.runtime.a!,
+          agentStatuses: {
+            ...statuses,
+            windows: statuses.windows.filter((s) => s.kind !== "other"),
+          },
+        },
+      },
+    }));
+    useUsageScopeStore.setState({ desktopId: "a" });
+    const store = useHostUsageStore.getState();
+    store.complete("a", store.begin("a"), [
+      { providerId: "provider", status: "ok", windows: [], fetchedAt: Date.now() },
+      // Not detected on host a and no reading: hidden.
+      { providerId: "other", status: "ok", windows: [], fetchedAt: Date.now() },
+    ]);
+    const view = render(<UsagePanel />);
+    expect(
+      [...view.container.querySelectorAll<HTMLElement>("[data-usage-provider-id]")].map(
+        (element) => element.dataset.usageProviderId,
+      ),
+    ).toEqual(["provider"]);
   });
 
   it.each([false, true])(

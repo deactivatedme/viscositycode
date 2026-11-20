@@ -3,7 +3,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { Toast, toast as heroToast } from "@heroui/react";
 import { Copy } from "lucide-react";
 import { resolveThemeMode } from "@/shared/themeMode";
-import { applyAppTheme, persistThemeBoot, systemPrefersDark } from "@/renderer/theme/applyAppTheme";
+import {
+  applyAppTheme,
+  persistThemeBoot,
+  systemPrefersDark,
+  useShownAppearance, // ViscosityCode:
+} from "@/renderer/theme/applyAppTheme";
 import { applySidebarGlassTint } from "@/renderer/theme/sidebarGlass";
 import { isRemoteSession, readBridge } from "@/renderer/bridge";
 import { isBrowserClientRuntime } from "@/renderer/clientRuntime";
@@ -17,6 +22,8 @@ import { getToastActionLabel, normalizeToastContent } from "./toastContent";
 import { SwipeDismissToast } from "./SwipeDismissToast";
 // ViscosityCode: Windows backdrop preference (Auto/Mica/Acrylic/None).
 import { useWindowMaterialPreference } from "@/renderer/viscosity/windowMaterial/windowMaterialStore";
+import { usePerformanceSettings } from "@/renderer/viscosity/performance/performanceSettingsStore"; // ViscosityCode:
+import { isLowPowerDevice } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 
 function systemPrefersReducedTransparency(): boolean {
   return (
@@ -34,6 +41,15 @@ const toastTitleClassName = "lc-toast__title";
 
 export function useResolvedAppearance(): "light" | "dark" {
   return useContext(AppearanceContext);
+}
+
+// ViscosityCode: the appearance the Mode setting resolves to, ignoring dark-only
+// presets and playbook overrides. Settings theme previews read it, so each
+// swatch shows the variant that preset gets once chosen and on screen.
+const ThemeModeAppearanceContext = createContext<"light" | "dark">("dark");
+
+export function useThemeModeAppearance(): "light" | "dark" {
+  return useContext(ThemeModeAppearanceContext);
 }
 
 interface ToastActionProps {
@@ -132,13 +148,27 @@ export function AppProvider(props: {
   }, []);
 
   const appearance = resolveThemeMode(themeMode, prefersDark);
+  // ViscosityCode: dark-only presets (Hostile Binary) show dark, also as a
+  // playbook override; the theme effect below keeps the user's appearance.
+  const shownAppearance = useShownAppearance(appearance, themePreset, customThemes);
   // Browser/PWA always uses the inexpensive in-app faux-glass sidebar so the
   // chrome remains visually distinct from the content pane. Native apps keep
   // the opt-in setting; every host respects reduced-transparency.
   const remoteSession = isRemoteSession();
   const browserSession = isBrowserClientRuntime();
+  // ViscosityCode: Lightweight mode drops the glass, which also detaches the
+  // native window material (a live behind-window blur) through setWindowChrome.
+  // Checked last and only in a ready chrome-syncing window: Auto may run a
+  // blocking WebGL probe, which secondary windows and the boot render skip.
+  const lightweightMode = usePerformanceSettings((state) => state.lightweight);
   const effectiveGlassEnabled =
-    !reducedTransparency && (browserSession || (!remoteSession && sidebarTranslucency));
+    !reducedTransparency &&
+    (browserSession || (!remoteSession && sidebarTranslucency)) &&
+    !(
+      syncWindowChrome &&
+      contentReady &&
+      (lightweightMode === "on" || (lightweightMode === "auto" && isLowPowerDevice()))
+    ); // ViscosityCode:
 
   useEffect(() => {
     const root = document.documentElement;
@@ -168,15 +198,23 @@ export function AppProvider(props: {
 
     const root = document.documentElement;
     const styles = window.getComputedStyle(root);
-    const wantMaterial = effectiveGlassEnabled && contentReady;
+    // ViscosityCode: main mirrors this into nativeTheme.themeSource, which drives
+    // prefers-color-scheme; in system mode an override must not feed back into it.
+    const nativeAppearance = themeMode === "system" ? appearance : shownAppearance;
+    // ViscosityCode: a native material that cannot follow the shown appearance
+    // (a dark-only theme over a light OS in system mode) would paint its light
+    // variant behind a dark UI, so the window goes opaque until they match again.
+    const wantMaterial =
+      effectiveGlassEnabled && contentReady && nativeAppearance === shownAppearance;
 
     void readBridge()
       .setWindowChrome({
         backgroundColor:
           styles.getPropertyValue("--window-overlay-background").trim() || "rgba(0, 0, 0, 0)",
-        symbolColor: appearance === "dark" ? "#fafafa" : "#1f2937",
+        symbolColor: shownAppearance === "dark" ? "#fafafa" : "#1f2937", // ViscosityCode:
         materialEnabled: wantMaterial,
-        appearance,
+        appearance: nativeAppearance, // ViscosityCode:
+        shownAppearance, // ViscosityCode: the opaque window base follows what is shown.
         windowMaterial, // ViscosityCode:
       })
       .then((result) => {
@@ -190,7 +228,9 @@ export function AppProvider(props: {
         // Keep renderer boot resilient if Electron rejects a color value.
       });
   }, [
-    appearance,
+    appearance, // ViscosityCode:
+    shownAppearance, // ViscosityCode:
+    themeMode, // ViscosityCode:
     effectiveGlassEnabled,
     contentReady,
     syncWindowChrome,
@@ -205,14 +245,15 @@ export function AppProvider(props: {
   useEffect(() => {
     applySidebarGlassTint(
       document.documentElement,
-      sidebarGlassTint[appearance],
+      sidebarGlassTint[shownAppearance], // ViscosityCode: same key as the Frosting slider.
       effectiveGlassEnabled && contentReady,
     );
-  }, [appearance, effectiveGlassEnabled, contentReady, sidebarGlassTint]);
+  }, [shownAppearance, effectiveGlassEnabled, contentReady, sidebarGlassTint]); // ViscosityCode:
 
   return (
     <AppLocaleProvider>
-      <AppearanceContext.Provider value={appearance}>
+      {/* ViscosityCode: the appearance actually shown, for Monaco and xterm. */}
+      <AppearanceContext.Provider value={shownAppearance}>
         <Toast.Provider
           className="lc-toast-region"
           placement="bottom end"
@@ -307,7 +348,10 @@ export function AppProvider(props: {
             );
           }}
         </Toast.Provider>
-        {children}
+        {/* ViscosityCode: the Mode setting's appearance, for Settings theme previews. */}
+        <ThemeModeAppearanceContext.Provider value={appearance}>
+          {children}
+        </ThemeModeAppearanceContext.Provider>
         <EditContextMenuHost />
       </AppearanceContext.Provider>
     </AppLocaleProvider>

@@ -1,0 +1,89 @@
+/* ViscosityCode: content surfaces (chat transcript, draft states, Settings nav)
+   in the desktop shell. Scoped to html[data-vc-shell]; upstream markup only
+   carries unstyled class hooks, so compact/PWA and the extension are unchanged.
+   Static rules only: no transitions, shadows or effects (Lightweight-safe). */
+
+/* === Chat column ========================================================= */
+html[data-vc-shell] {
+  --poracode-chat-column-max: var(--vc-chat-column-max);
+}
+
+/* The GUI pane's content body holds the transcript, docks and composer, so
+   capping it keeps them on one column. Terminal panes keep upstream's width. */
+html[data-vc-shell] .m-thread:not(.m-thread--terminal) > .m-thread-content > div {
+  max-width: var(--poracode-chat-column-max);
+}
+
+/* Upstream gives the header row and the body the same centred width; keep the
+   title and actions lined up with the capped transcript. */
+html[data-vc-shell]
+  .m-thread:not(.m-thread--terminal)
+  > [data-poracode-thread-header]
+  > :is(.poracode-content-over-drag-region, .poracode-content-over-drag-region--drag) {
+  max-width: var(--poracode-chat-column-max);
+}
+
+/* === User prompts ======================================================== */
+html[data-vc-shell] .poracode-chat-prompt-surface {
+  border-radius: var(--vc-prompt-radius);
+  background: var(--vc-surface-raised);
+}
+
+html[data-vc-shell] .poracode-chat-prompt-surface .poracode-message-action-strip {
+  border-radius: var(--vc-radius-md);
+  /* Match the raised prompt fill so the strip doesn't read as a second chip. */
+  background: var(--vc-surface-raised);
+}
+
+/* === Tool call sections ================================================== */
+html[data-vc-shell] .poracode-tool-section-label {
+  font-family: var(--vc-font-ui);
+  font-size: var(--vc-font-size-xs);
+  font-weight: var(--vc-font-weight-medium);
+  line-height: var(--vc-line-height-meta);
+  letter-spacing: normal;
+  text-transform: none;
+  /* Full muted colour (upstream fades it to 80%) keeps 11px text readable. */
+  color: var(--vc-text-muted);
+}
+
+/* Sentence case without touching the label strings. */
+html[data-vc-shell] .poracode-tool-section-label::first-letter {
+  text-transform: uppercase;
+}
+
+/* === Draft states ======================================================== */
+/* Demoted, not removed: each stays the page heading for screen readers. */
+html[data-vc-shell] .poracode-draft-headline {
+  font-size: var(--vc-font-size-lg);
+  font-weight: var(--vc-font-weight-medium);
+  line-height: var(--vc-line-height-ui);
+  letter-spacing: normal;
+  color: var(--vc-text-muted);
+}
+
+/* The split-draft wordmark hero (upstream's data-draft-hero hook) is visually
+   hidden; it stays the pane heading for screen readers. */
+html[data-vc-shell] [data-draft-hero] h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === Settings nav ======================================================== */
+html[data-vc-shell] .poracode-settings-nav-row {
+  min-height: var(--vc-control-height);
+  border-radius: var(--vc-radius-md);
+}
+
+/* Nested profile rows keep their smaller upstream size. */
+html[data-vc-shell] .poracode-settings-nav-row:not(.text-xs) {
+  font-size: var(--vc-font-size-md);
+  line-height: var(--vc-line-height-ui);
+}

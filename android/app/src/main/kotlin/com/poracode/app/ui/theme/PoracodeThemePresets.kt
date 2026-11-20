@@ -21,33 +21,111 @@ internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(
     preset("default", "Viscosity",
         light = PoracodeColors(
             isDark = false, // color scheme
-            background = Color(0xFFF1F1F4), // --background
-            foreground = Color(0xFF18181B), // --foreground
-            muted = Color(0xFF68686F), // --muted
-            surface = Color(0xFFFAFAFB), // --surface
-            surfaceSecondary = Color(0xFFF0F0F2), // --surface-secondary
-            surfaceTertiary = Color(0xFFEBEBED), // --surface-tertiary
-            overlay = Color(0xFFFBFCFD), // --overlay
+            background = Color(0xFFFAFAFA), // --background
+            foreground = Color(0xFF0A0A0A), // --foreground
+            muted = Color(0xFF666666), // --muted
+            surface = Color(0xFFFFFFFF), // --surface
+            surfaceSecondary = Color(0xFFE8E8E8), // --surface-secondary
+            surfaceTertiary = Color(0xFFD5D5D5), // --surface-tertiary
+            overlay = Color(0xFFEBEBEB), // --overlay
             listRow = Color(0xFFFFFFFF), // --m-list-row-surface (compact)
-            glass = Color(0xCCF9F9FA), // --m-glass-surface (compact, non-iOS alpha 80%)
-            composerSurface = Color(0xFFF9F9FA), // --composer-surface
-            default = Color(0xFFD0D1D3), // --default
-            accent = Color(0xFF5F6CD9), // --accent
-            accentForeground = Color(0xFFFCFCFC), // --accent-foreground
-            accentSoft = Color(0x265F6CD9), // fade(--accent) soft wash (mode-tuned alpha)
-            accentSoftForeground = Color(0xFF4A54A6), // --color-accent-soft-foreground
+            glass = Color(0xCCFFFFFF), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFFFFFFFF), // --composer-surface
+            default = Color(0xFFCCCCCC), // --default
+            accent = Color(0xFF0A0A0A), // --accent
+            accentForeground = Color(0xFFFFFFFF), // --accent-foreground
+            accentSoft = Color(0x260A0A0A), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFF0A0A0A), // --color-accent-soft-foreground
+            success = Color(0xFF236E44), // --success (fixed per mode)
+            successForeground = Color(0xFFFCFCFC), // --success-foreground (fixed)
+            warning = Color(0xFF875814), // --warning (fixed per mode)
+            warningForeground = Color(0xFFFCFCFC), // --warning-foreground (fixed)
+            danger = Color(0xFFA83634), // --danger (fixed per mode)
+            dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFFF1F1F1), // --field-background
+            fieldPlaceholder = Color(0xFF6E6E6E), // --field-placeholder
+            fieldBorder = Color(0xB3E5E5E5), // --field-border
+            segment = Color(0xFFFFFFFF), // --segment
+            border = Color(0xFFE5E5E5), // --border
+            separator = Color(0xBFE5E5E5), // --separator
+            hairline = Color(0x170A0A0A), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x260A0A0A), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x1C0A0A0A), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFF3A3A3A), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFF645992), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFF666666), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x140F172A), // fixed shadow tint (not themed)
+            scrim = Color(0x52000000), // fixed scrim (not themed)
+        ),
+        dark = PoracodeColors(
+            isDark = true, // color scheme
+            background = Color(0xFF000000), // --background
+            foreground = Color(0xFFEDEDED), // --foreground
+            muted = Color(0xFFA1A1A1), // --muted
+            surface = Color(0xFF111111), // --surface
+            surfaceSecondary = Color(0xFF1F1F1F), // --surface-secondary
+            surfaceTertiary = Color(0xFF2C2C2C), // --surface-tertiary
+            overlay = Color(0xFF141414), // --overlay
+            listRow = Color(0xFF1C1C1E), // --m-list-row-surface (compact)
+            glass = Color(0xFF1C1C1E), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFF141414), // --composer-surface
+            default = Color(0xFF2A2A2A), // --default
+            accent = Color(0xFFFFFFFF), // --accent
+            accentForeground = Color(0xFF000000), // --accent-foreground
+            accentSoft = Color(0x1FFFFFFF), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFFFAFAFA), // --color-accent-soft-foreground
+            success = Color(0xFF74C692), // --success (fixed per mode)
+            successForeground = Color(0xFF000000), // --success-foreground (fixed)
+            warning = Color(0xFFE6BD77), // --warning (fixed per mode)
+            warningForeground = Color(0xFF000000), // --warning-foreground (fixed)
+            danger = Color(0xFFE47C75), // --danger (fixed per mode)
+            dangerForeground = Color(0xFF000000), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFF1A1A1A), // --field-background
+            fieldPlaceholder = Color(0xFF8A8A8A), // --field-placeholder
+            fieldBorder = Color(0xB3262626), // --field-border
+            segment = Color(0xFF3A3A3A), // --segment
+            border = Color(0xFF262626), // --border
+            separator = Color(0xBF262626), // --separator
+            hairline = Color(0x17EDEDED), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x26EDEDED), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x33EDEDED), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFFD1D1D1), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFFABA3D4), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFFA1A1A1), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
+            scrim = Color(0x99000000), // fixed scrim (not themed)
+        ),
+    ),
+    preset("viscosity-blue", "Viscosity Blue",
+        light = PoracodeColors(
+            isDark = false, // color scheme
+            background = Color(0xFFF4F4F5), // --background
+            foreground = Color(0xFF18181B), // --foreground
+            muted = Color(0xFF6B6B73), // --muted
+            surface = Color(0xFFFFFFFF), // --surface
+            surfaceSecondary = Color(0xFFEAEAEA), // --surface-secondary
+            surfaceTertiary = Color(0xFFD8D8D8), // --surface-tertiary
+            overlay = Color(0xFFEDEDED), // --overlay
+            listRow = Color(0xFFFFFFFF), // --m-list-row-surface (compact)
+            glass = Color(0xCCFFFFFF), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFFFFFFFF), // --composer-surface
+            default = Color(0xFFD0D0D1), // --default
+            accent = Color(0xFF0279BB), // --accent
+            accentForeground = Color(0xFFFFFFFF), // --accent-foreground
+            accentSoft = Color(0x260279BB), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFF1A5E8D), // --color-accent-soft-foreground
             success = Color(0xFF006C1A), // --success (fixed per mode)
             successForeground = Color(0xFFFCFCFC), // --success-foreground (fixed)
             warning = Color(0xFF8E5500), // --warning (fixed per mode)
             warningForeground = Color(0xFFFCFCFC), // --warning-foreground (fixed)
             danger = Color(0xFFB30018), // --danger (fixed per mode)
             dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
-            fieldBackground = Color(0xFFF6F6F8), // --field-background
-            fieldPlaceholder = Color(0xFF717177), // --field-placeholder
-            fieldBorder = Color(0xB3CACACE), // --field-border
-            segment = Color(0xFFF6F6F8), // --segment
-            border = Color(0xB3CACACE), // --border
-            separator = Color(0xE6D7D7DA), // --separator
+            fieldBackground = Color(0xFFF2F2F2), // --field-background
+            fieldPlaceholder = Color(0xFF84848B), // --field-placeholder
+            fieldBorder = Color(0xB3E3E3E8), // --field-border
+            segment = Color(0xFFFFFFFF), // --segment
+            border = Color(0xFFE3E3E8), // --border
+            separator = Color(0xBFE3E3E8), // --separator
             hairline = Color(0x1718181B), // --hairline = color-mix(--foreground 9%, transparent)
             hairlineStrong = Color(0x2618181B), // --hairline-strong = color-mix(--foreground 15%, transparent)
             rowActive = Color(0x1C18181B), // --row-active = color-mix(--foreground 11%/20%, transparent)
@@ -59,39 +137,39 @@ internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(
         ),
         dark = PoracodeColors(
             isDark = true, // color scheme
-            background = Color(0xFF000000), // --background
-            foreground = Color(0xFFFAFAFA), // --foreground
-            muted = Color(0xFF9A9FA5), // --muted
-            surface = Color(0xFF0E0E14), // --surface
-            surfaceSecondary = Color(0xFF1A1A1E), // --surface-secondary
-            surfaceTertiary = Color(0xFF17171D), // --surface-tertiary
-            overlay = Color(0xFF121216), // --overlay
-            listRow = Color(0xFF1C1C1E), // --m-list-row-surface (compact)
-            glass = Color(0xFF1C1C1E), // --m-glass-surface (compact, non-iOS alpha 80%)
-            composerSurface = Color(0xFF17171D), // --composer-surface
-            default = Color(0xFF242429), // --default
-            accent = Color(0xFF8892EF), // --accent
-            accentForeground = Color(0xFF0A0A12), // --accent-foreground
-            accentSoft = Color(0x1F8892EF), // fade(--accent) soft wash (mode-tuned alpha)
-            accentSoftForeground = Color(0xFFA5AEF4), // --color-accent-soft-foreground
+            background = Color(0xFF0A0A0B), // --background
+            foreground = Color(0xFFE6E6E8), // --foreground
+            muted = Color(0xFF8A8A93), // --muted
+            surface = Color(0xFF111113), // --surface
+            surfaceSecondary = Color(0xFF1F1F21), // --surface-secondary
+            surfaceTertiary = Color(0xFF2B2B2D), // --surface-tertiary
+            overlay = Color(0xFF141416), // --overlay
+            listRow = Color(0x24E6E6E8), // --m-list-row-surface (compact)
+            glass = Color(0xCC141417), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFF141417), // --composer-surface
+            default = Color(0xFF29292B), // --default
+            accent = Color(0xFF38BDF8), // --accent
+            accentForeground = Color(0xFF04121C), // --accent-foreground
+            accentSoft = Color(0x1F38BDF8), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFF74C9F5), // --color-accent-soft-foreground
             success = Color(0xFF17C964), // --success (fixed per mode)
             successForeground = Color(0xFF18181B), // --success-foreground (fixed)
             warning = Color(0xFFF7B750), // --warning (fixed per mode)
             warningForeground = Color(0xFF18181B), // --warning-foreground (fixed)
             danger = Color(0xFFED4A4A), // --danger (fixed per mode)
             dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
-            fieldBackground = Color(0xFF18181B), // --field-background
-            fieldPlaceholder = Color(0xFF6B6B7B), // --field-placeholder
-            fieldBorder = Color(0xD937373B), // --field-border
-            segment = Color(0xFF2E2F33), // --segment
-            border = Color(0xE6303033), // --border
-            separator = Color(0xD92D2D31), // --separator
-            hairline = Color(0x17FAFAFA), // --hairline = color-mix(--foreground 9%, transparent)
-            hairlineStrong = Color(0x26FAFAFA), // --hairline-strong = color-mix(--foreground 15%, transparent)
-            rowActive = Color(0x33FAFAFA), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            fieldBackground = Color(0xFF19191B), // --field-background
+            fieldPlaceholder = Color(0xFF6E6E76), // --field-placeholder
+            fieldBorder = Color(0xB31F1F23), // --field-border
+            segment = Color(0xFF38383B), // --segment
+            border = Color(0xFF1F1F23), // --border
+            separator = Color(0xBF1F1F23), // --separator
+            hairline = Color(0x17E6E6E8), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x26E6E6E8), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x33E6E6E8), // --row-active = color-mix(--foreground 11%/20%, transparent)
             finishedTone = Color(0xFF96C5FF), // --finished-tone (fixed per mode)
             prMerged = Color(0xFFA287FE), // --pr-merged (fixed per mode)
-            gitBranchTone = Color(0xFF9A9FA5), // --git-branch-tone (light fixed / dark = --muted)
+            gitBranchTone = Color(0xFF8A8A93), // --git-branch-tone (light fixed / dark = --muted)
             floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
             scrim = Color(0x99000000), // fixed scrim (not themed)
         ),
@@ -1106,6 +1184,84 @@ internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(
             finishedTone = Color(0xFF96C5FF), // --finished-tone (fixed per mode)
             prMerged = Color(0xFFA287FE), // --pr-merged (fixed per mode)
             gitBranchTone = Color(0xFF90908A), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
+            scrim = Color(0x99000000), // fixed scrim (not themed)
+        ),
+    ),
+    preset("hostile-binary", "Hostile Binary",
+        light = PoracodeColors(
+            isDark = true, // color scheme
+            background = Color(0xFF000000), // --background
+            foreground = Color(0xFFF3EBE6), // --foreground
+            muted = Color(0xFF7A7673), // --muted
+            surface = Color(0xFF0C0808), // --surface
+            surfaceSecondary = Color(0xFF1A1615), // --surface-secondary
+            surfaceTertiary = Color(0xFF282322), // --surface-tertiary
+            overlay = Color(0xFF0F0B0B), // --overlay
+            listRow = Color(0x24F3EBE6), // --m-list-row-surface (compact)
+            glass = Color(0xCC140B0B), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFF140B0B), // --composer-surface
+            default = Color(0xFF262120), // --default
+            accent = Color(0xFFFF3344), // --accent
+            accentForeground = Color(0xFF000000), // --accent-foreground
+            accentSoft = Color(0x1FFF3344), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFFFF726F), // --color-accent-soft-foreground
+            success = Color(0xFF17C964), // --success (fixed per mode)
+            successForeground = Color(0xFF18181B), // --success-foreground (fixed)
+            warning = Color(0xFFF7B750), // --warning (fixed per mode)
+            warningForeground = Color(0xFF18181B), // --warning-foreground (fixed)
+            danger = Color(0xFFED4A4A), // --danger (fixed per mode)
+            dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFF151010), // --field-background
+            fieldPlaceholder = Color(0xFF575553), // --field-placeholder
+            fieldBorder = Color(0xB33A1418), // --field-border
+            segment = Color(0xFF0C0808), // --segment
+            border = Color(0xFF3A1418), // --border
+            separator = Color(0xBF3A1418), // --separator
+            hairline = Color(0x17F3EBE6), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x26F3EBE6), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x33F3EBE6), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFF96C5FF), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFFA287FE), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFF7A7673), // --git-branch-tone (light fixed / dark = --muted)
+            floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
+            scrim = Color(0x99000000), // fixed scrim (not themed)
+        ),
+        dark = PoracodeColors(
+            isDark = true, // color scheme
+            background = Color(0xFF000000), // --background
+            foreground = Color(0xFFF3EBE6), // --foreground
+            muted = Color(0xFF7A7673), // --muted
+            surface = Color(0xFF0C0808), // --surface
+            surfaceSecondary = Color(0xFF1A1615), // --surface-secondary
+            surfaceTertiary = Color(0xFF282322), // --surface-tertiary
+            overlay = Color(0xFF0F0B0B), // --overlay
+            listRow = Color(0x24F3EBE6), // --m-list-row-surface (compact)
+            glass = Color(0xCC140B0B), // --m-glass-surface (compact, non-iOS alpha 80%)
+            composerSurface = Color(0xFF140B0B), // --composer-surface
+            default = Color(0xFF262120), // --default
+            accent = Color(0xFFFF3344), // --accent
+            accentForeground = Color(0xFF000000), // --accent-foreground
+            accentSoft = Color(0x1FFF3344), // fade(--accent) soft wash (mode-tuned alpha)
+            accentSoftForeground = Color(0xFFFF726F), // --color-accent-soft-foreground
+            success = Color(0xFF17C964), // --success (fixed per mode)
+            successForeground = Color(0xFF18181B), // --success-foreground (fixed)
+            warning = Color(0xFFF7B750), // --warning (fixed per mode)
+            warningForeground = Color(0xFF18181B), // --warning-foreground (fixed)
+            danger = Color(0xFFED4A4A), // --danger (fixed per mode)
+            dangerForeground = Color(0xFFFCFCFC), // --danger-foreground (fixed)
+            fieldBackground = Color(0xFF151010), // --field-background
+            fieldPlaceholder = Color(0xFF575553), // --field-placeholder
+            fieldBorder = Color(0xB33A1418), // --field-border
+            segment = Color(0xFF0C0808), // --segment
+            border = Color(0xFF3A1418), // --border
+            separator = Color(0xBF3A1418), // --separator
+            hairline = Color(0x17F3EBE6), // --hairline = color-mix(--foreground 9%, transparent)
+            hairlineStrong = Color(0x26F3EBE6), // --hairline-strong = color-mix(--foreground 15%, transparent)
+            rowActive = Color(0x33F3EBE6), // --row-active = color-mix(--foreground 11%/20%, transparent)
+            finishedTone = Color(0xFF96C5FF), // --finished-tone (fixed per mode)
+            prMerged = Color(0xFFA287FE), // --pr-merged (fixed per mode)
+            gitBranchTone = Color(0xFF7A7673), // --git-branch-tone (light fixed / dark = --muted)
             floatingShadow = Color(0x59000000), // fixed shadow tint (not themed)
             scrim = Color(0x99000000), // fixed scrim (not themed)
         ),

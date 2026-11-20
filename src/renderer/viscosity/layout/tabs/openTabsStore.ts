@@ -137,3 +137,30 @@ export function useRenderableTabIds(): readonly string[] {
   const ids = useOpenTabsStore((state) => state.ids);
   return useAppStore(useShallow((state) => selectRenderableTabs(ids, getThreadMap(state.threads))));
 }
+
+/**
+ * A thread can be opened only while it is loaded and not archived, so no fork
+ * link (Mission Control, status bar, Roundtable) brings a deleted chat back.
+ */
+function isOpenable(threads: AppState["threads"], threadId: string | undefined): boolean {
+  if (!threadId) return false;
+  const thread = getThreadMap(threads).get(threadId);
+  return thread !== undefined && !thread.archived;
+}
+
+/** Non-subscribing: whether `threadId` is a live (loaded, not archived) thread. */
+export function isOpenableThread(threadId: string): boolean {
+  return isOpenable(useAppStore.getState().threads, threadId);
+}
+
+/** Whether `threadId` is a live thread; re-renders only when that answer changes. */
+export function useIsOpenableThread(threadId: string | undefined): boolean {
+  return useAppStore((state) => isOpenable(state.threads, threadId));
+}
+
+/** The ids in `threadIds` that are live threads (a stable list while that set holds). */
+export function useOpenableThreadIds(threadIds: readonly string[]): readonly string[] {
+  return useAppStore(
+    useShallow((state) => threadIds.filter((threadId) => isOpenable(state.threads, threadId))),
+  );
+}

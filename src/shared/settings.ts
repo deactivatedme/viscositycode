@@ -58,6 +58,8 @@ import {
 } from "./crew";
 // ViscosityCode: account pools (src/shared/accountPools.ts).
 import { accountPoolsSchema, parseStoredAccountPools } from "./accountPools";
+// ViscosityCode: saved playbooks (src/shared/viscosity/playbook.ts).
+import { normalizeSavedPlaybooks, savedPlaybooksSchema } from "./viscosity/playbook";
 
 export const WINDOWS_SHELL_AUTO = "auto";
 export const WINDOWS_SHELL_ARGUMENTS_MAX = 8_192;
@@ -779,6 +781,15 @@ export const sharedSettingsSchema = z.object({
   workspaces: workspaceListSchema,
   /** Additive field: older settings files omit it and normalize to an empty list. */
   crews: z.array(savedCrewSchema).max(MAX_SAVED_CREWS).default([]),
+  // ViscosityCode: saved playbooks.
+  /**
+   * Custom playbooks and edited built-ins (an entry whose id is a built-in id).
+   * Additive, like `accountPools`: optional in the TypeScript shape and filled
+   * with `[]` on load, so whole-snapshot writers that predate it never clear
+   * it. No SETTINGS_DOCUMENT_VERSION bump: older readers keep it as an unknown
+   * field. Malformed entries drop one by one (`normalizeSavedPlaybooks`).
+   */
+  playbooks: savedPlaybooksSchema.default([]).optional(),
   /** User-starred (provider, presentation, model) entries surfaced at the top of the model picker. */
   favoriteModels: z.array(modelPickerEntrySchema),
   /**
@@ -1006,6 +1017,7 @@ export const defaultSharedSettings: SharedSettings = {
   remotePushRedactContent: false,
   workspaces: [],
   crews: [],
+  playbooks: [], // ViscosityCode
   favoriteModels: [],
   recentModels: [],
   agentSelectionUsage: [],
@@ -1878,6 +1890,8 @@ function normalizeSharedSettingsStateImpl(value: unknown): {
       crews: normalizeSavedCrews(parsed.data.crews),
       // ViscosityCode: one malformed pool drops alone instead of every pool.
       accountPools: parseStoredAccountPools(parsed.data.accountPools),
+      // ViscosityCode: one malformed playbook drops alone.
+      playbooks: normalizeSavedPlaybooks(parsed.data.playbooks),
     },
     parsed.data,
   );

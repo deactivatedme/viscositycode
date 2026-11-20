@@ -6,8 +6,6 @@ import { useLingui } from "@lingui/react/macro";
 import { PixelLoader } from "@/renderer/components/common";
 import { agentManagementHostForMachine } from "@/renderer/components/providers/settings/agentManagementHost";
 import { useSelectedMachine } from "@/renderer/state/machines";
-import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
-import { refreshAgentDiscovery } from "@/renderer/actions/agentDiscoveryActions";
 import { ModelOrderSection } from "./ModelOrderSection";
 import { ModelVisibilitySection } from "./ModelVisibilitySection";
 import { SettingsPage } from "./SettingsForm";
@@ -18,17 +16,15 @@ export function AgentsGeneralSettings() {
   const { t } = useLingui();
   const machine = useSelectedMachine();
   const host = agentManagementHostForMachine(machine);
-  const discoveryScanning = useAgentStatusesStore((s) => s.discoveryScanning);
   const [refreshingMachines, setRefreshingMachines] = useState<string[]>([]);
-  const isRefreshing =
-    refreshingMachines.includes(machine.id) || (!host.isRemote && discoveryScanning);
+  const isRefreshing = refreshingMachines.includes(machine.id);
   const refreshAgents = async () => {
     if (isRefreshing || machine.status !== "online") return;
     setRefreshingMachines((current) => [...current, machine.id]);
     try {
       const wslDistros = machine.ref.env.kind === "wsl" ? [machine.ref.env.distro] : [];
-      if (host.isRemote) await host.rediscoverAgents(wslDistros);
-      else await refreshAgentDiscovery(wslDistros, { background: true });
+      // ViscosityCode: the supervisor's bulk events update the local store.
+      await host.rediscoverAgents(wslDistros);
     } catch (error) {
       toast.danger(error instanceof Error ? error.message : t`Unable to refresh ${machine.label}.`);
     } finally {

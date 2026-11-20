@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
@@ -208,7 +209,7 @@ describe("BrowserPanel", () => {
     expect(container.querySelector("webview")).toBeNull();
   });
 
-  it("renders a <webview> per tab and hides inactive ones", () => {
+  it("renders a <webview> per mounted tab and hides inactive ones", () => {
     useBrowserPanelStore.getState().setState({
       tabs: [
         {
@@ -230,6 +231,7 @@ describe("BrowserPanel", () => {
       ],
       activeTabId: "tab-1",
     });
+    useBrowserPanelStore.setState({ automationActive: true });
     const { container } = render(<BrowserPanel visible />);
     const webviews = container.querySelectorAll("webview");
     expect(webviews).toHaveLength(2);
@@ -262,11 +264,75 @@ describe("BrowserPanel", () => {
       ],
       activeTabId: "downloads",
     });
+    useBrowserPanelStore.setState({ automationActive: true });
 
     const { container } = render(<BrowserPanel visible />);
     const webviews = container.querySelectorAll("webview");
     expect(webviews).toHaveLength(1);
     expect(webviews[0]?.getAttribute("data-tab-id")).toBe("tab-1");
+  });
+
+  it("mounts restored tabs only once activated and keeps them mounted", () => {
+    const tab = (id: string) => ({
+      tabId: id,
+      url: `https://${id}.example/`,
+      title: id,
+      loading: false,
+      canGoBack: false,
+      canGoForward: false,
+    });
+    useBrowserPanelStore.getState().setState({
+      tabs: [tab("a"), tab("b"), tab("c"), tab("d")],
+      activeTabId: "a",
+    });
+    const { container } = render(<BrowserPanel visible />);
+    const mountedIds = () =>
+      [...container.querySelectorAll("webview")].map((el) => el.getAttribute("data-tab-id"));
+    expect(mountedIds()).toEqual(["a"]);
+    const first = container.querySelector("webview");
+
+    act(() => useBrowserPanelStore.setState({ activeTabId: "b" }));
+    expect(mountedIds()).toEqual(["a", "b"]);
+    act(() => useBrowserPanelStore.setState({ activeTabId: "a" }));
+    expect(mountedIds()).toEqual(["a", "b"]);
+    expect(container.querySelector("webview")).toBe(first);
+
+    // The agent can drive any tab without activating it, so automation mounts them all,
+    // but only while it lasts.
+    act(() => useBrowserPanelStore.setState({ automationActive: true }));
+    expect(mountedIds()).toEqual(["a", "b", "c", "d"]);
+    act(() => useBrowserPanelStore.setState({ automationActive: false }));
+    expect(mountedIds()).toEqual(["a", "b"]);
+    expect(container.querySelector("webview")).toBe(first);
+  });
+
+  it("does not keep restored tabs mounted after a user opens a new tab", () => {
+    const tab = (id: string) => ({
+      tabId: id,
+      url: `https://${id}.example/`,
+      title: id,
+      loading: false,
+      canGoBack: false,
+      canGoForward: false,
+    });
+    useBrowserPanelStore.getState().setState({
+      tabs: [tab("a"), tab("b"), tab("c")],
+      activeTabId: "a",
+    });
+    const { container } = render(<BrowserPanel visible />);
+    const mountedIds = () =>
+      [...container.querySelectorAll("webview")].map((el) => el.getAttribute("data-tab-id"));
+
+    // The host marks automation activity for user-created tabs ('+', link opens) too.
+    act(() => {
+      useBrowserPanelStore.getState().setState({
+        tabs: [tab("a"), tab("b"), tab("c"), tab("new")],
+        activeTabId: "new",
+      });
+      useBrowserPanelStore.setState({ automationActive: true });
+    });
+    act(() => useBrowserPanelStore.setState({ automationActive: false }));
+    expect(mountedIds()).toEqual(["a", "new"]);
   });
 
   it("renders the remote mirror instead of Electron webviews in a browser client", () => {

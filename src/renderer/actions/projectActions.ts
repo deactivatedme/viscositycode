@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { toast } from "@heroui/react";
 import { msg } from "@lingui/core/macro";
 import type {
@@ -32,8 +33,8 @@ import {
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 
 // The home dir doesn't change at runtime, so cache the single IPC roundtrip
-// and reuse it across callers (MainView mount effect + WelcomeOverlay
-// "Ask Question" path).
+// and reuse it across callers (MainView mount effect and later lookups).
+// ViscosityCode: the WelcomeOverlay "Ask Question" caller was removed.
 let homeScopeLocationPromise: Promise<ProjectLocation> | null = null;
 
 type RemoteProjectPatch = Extract<RemoteProjectCommand, { kind: "update" }>["patch"];

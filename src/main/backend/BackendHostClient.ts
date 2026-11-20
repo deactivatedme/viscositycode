@@ -1,8 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import { desktopHostControlAckSchema } from "@/shared/desktopHostControl";
 import { AGENT_UPDATE_REQUEST_TIMEOUT_MS } from "@/shared/agents/updatePolicy";
 import { fork, type ChildProcess } from "node:child_process";
 import { constants as osConstants, setPriority } from "node:os";
+import { join } from "node:path"; // ViscosityCode
 import type { Readable } from "node:stream";
 import {
   BACKEND_HOST_FORCE_KILL_GRACE_MS as DISPOSE_FORCE_KILL_GRACE_MS,
@@ -172,7 +174,11 @@ export class BackendHostClient {
     try {
       child = fork(this.options.backendHostPath, [], {
         stdio: ["ignore", "pipe", "pipe", "ipc"],
-        env: process.env,
+        // ViscosityCode: reuse V8 bytecode across launches; Node keys entries by its version and file content.
+        env: {
+          ...process.env,
+          NODE_COMPILE_CACHE: join(this.options.initialize.baseDir, "cache", "node-compile-cache"),
+        },
       });
     } catch (error) {
       this.handleSpawnFailure(

@@ -1,12 +1,12 @@
 /**
  * ViscosityCode: the main Sidebar's switchable views.
  *
- * Renders, over the top of upstream's sidebar column, ONE header row (Cursor
- * style: the active view's small-caps title on the left, the sidebar actions on
- * the right; AppShell drops upstream's separate titlebar header row while the
- * activity bar shows) and, for registry views, the view body. The row sits at
- * the window's top edge, so it is the window drag region there and clears the
- * macOS traffic lights. The Agents view is upstream's own column (the "host"
+ * Renders, over the top of upstream's sidebar column, ONE header row (the
+ * sidebar toggle and back/forward on the left, the view switch on the right;
+ * the active view's title stays for screen readers; AppShell drops upstream's
+ * separate titlebar header row in the shell) and, for registry views, the view
+ * body. The row sits at the window's top edge, so it is the window drag region
+ * there and clears the macOS traffic lights. The Agents view is upstream's own column (the "host"
  * view): it stays mounted underneath and is only made invisible while another
  * view is shown, so its scroll and collapse state survive view switches. The
  * column reserves the header row through `.vc-sidebar-host-column`
@@ -25,7 +25,8 @@ import {
 } from "./activityBarRegistry";
 import { useActiveActivityViewId } from "./activityViewPreference";
 import { registerBuiltinActivityItems } from "./builtinActivityItems";
-import { SidebarHeaderActions } from "./SidebarHeaderActions";
+import { ActivityViewSwitch } from "../sidebar/ActivityViewSwitch";
+import { NavControls } from "../topBar/NavControls";
 
 registerBuiltinActivityItems();
 
@@ -56,25 +57,29 @@ export function ActivitySidebarViews(props: {
   const { item, view } = activeViewOf(items, activeViewId);
   const RegistryView = view === ACTIVITY_HOST_VIEW ? null : view;
   const HeaderAccessory = item?.viewHeaderAccessory ?? null;
-  const title = item ? i18n._(item.label) : t`Agents`;
+  const title = item ? i18n._(item.label) : t`Chats`;
 
   return (
     <div
       className={`vc-sidebar-views ${props.collapsed ? "invisible" : ""}`}
       data-vc-sidebar-view={activeViewId}
       data-vc-registry-view={RegistryView ? "" : undefined}
+      data-vc-sidebar-shown={props.collapsed ? undefined : ""}
       style={{ minWidth: SIDEBAR_MIN_WIDTH }}
     >
       <div className="vc-sidebar-view-header">
         {hasMacWindowChrome() ? (
           <div aria-hidden="true" className={macosTrafficLightGutterClass} />
         ) : null}
-        <h2 className="vc-sidebar-view-title">{title}</h2>
+        <h2 className="sr-only">{title}</h2>
+        <NavControls />
         {HeaderAccessory ? <HeaderAccessory /> : null}
-        <SidebarHeaderActions />
+        <div aria-hidden="true" className="min-w-0 flex-1" />
+        <ActivityViewSwitch />
       </div>
       {RegistryView ? (
-        <div className="vc-sidebar-view-body">
+        // Keyed so a view switch remounts the body (fresh scroll and state).
+        <div key={activeViewId} className="vc-sidebar-view-body">
           <Suspense fallback={null}>
             <RegistryView visible={props.visible} />
           </Suspense>

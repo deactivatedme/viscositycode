@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { existsSync, readFileSync } from "node:fs";
 import { writeFileAtomic } from "@/shared/atomicFile";
 import {
@@ -33,9 +34,9 @@ export function readKeybindingsFile(keybindingsPath: string): KeybindingsConfig 
 /**
  * Additive migration: backfill default bindings for newly-introduced commands
  * into keybinding files that predate them. Only commands with zero existing
- * entries are added, so user customizations are never touched — and because
- * these ids never shipped a default before, no file could have deliberately
- * cleared them, so nothing is resurrected.
+ * entries are added, so user customizations are never touched. A removal is
+ * kept as a keyless `{ command }` stub (ViscosityCode: the Shortcuts editor
+ * writes it), so it is not resurrected.
  */
 function backfillNewDefaults(file: KeybindingsFile): KeybindingsFile {
   const present = new Set(file.keybindings.map((binding) => binding.command));

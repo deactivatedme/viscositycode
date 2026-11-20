@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { MessageDescriptor } from "@lingui/core";
 import {
   baseAgentKind,
@@ -52,6 +53,13 @@ export interface RendererProviderManifest {
    * it. Shared chat code applies this blindly; the provider owns the format.
    */
   formatTranscriptMarkdown?: (text: string) => string;
+  /**
+   * ViscosityCode: the provider's subscription plan names as its billing pages
+   * show them (product names, not translated), lowest tier first. Display-only
+   * suggestions for the Subscriptions dashboard's editor; nothing decides
+   * behavior from them. Omit when the provider has no known plans.
+   */
+  subscriptionPlanNames?: readonly string[];
 }
 
 const manifestModules = import.meta.glob<RendererProviderManifest>("./*/manifest.ts", {

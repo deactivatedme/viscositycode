@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * VS Code icon theme resolver.
  *
@@ -11,7 +12,16 @@
  */
 
 // ── Load the manifest ───────────────────────────────────────
-import manifest from "material-icon-theme/dist/material-icons.json";
+// ViscosityCode: named imports let the bundler drop unused manifest keys (folderNamesExpanded, light).
+import {
+  iconDefinitions as manifestIconDefinitions,
+  fileExtensions as manifestFileExtensions,
+  fileNames as manifestFileNames,
+  folderNames as manifestFolderNames,
+  languageIds as manifestLanguageIds,
+  file as manifestFile,
+  folder as manifestFolder,
+} from "material-icon-theme/dist/material-icons.json";
 import { getBuildAssetBase } from "../../buildAssetBase";
 
 const MATERIAL_ICON_ASSET_PATH = "assets/material-icons/";
@@ -21,13 +31,13 @@ const BUILD_ASSET_BASE = getBuildAssetBase();
 
 // ── Manifest tables ─────────────────────────────────────────
 
-const iconDefinitions = manifest.iconDefinitions as Record<string, { iconPath: string }>;
-const fileExtensions = manifest.fileExtensions as Record<string, string>;
-const fileNames = manifest.fileNames as Record<string, string>;
-const folderNames = manifest.folderNames as Record<string, string>;
-const languageIds = manifest.languageIds as Record<string, string>;
-const defaultFileIcon = manifest.file as string;
-const defaultFolderIcon = manifest.folder as string;
+const iconDefinitions = manifestIconDefinitions as Record<string, { iconPath: string }>;
+const fileExtensions = manifestFileExtensions as Record<string, string>;
+const fileNames = manifestFileNames as Record<string, string>;
+const folderNames = manifestFolderNames as Record<string, string>;
+const languageIds = manifestLanguageIds as Record<string, string>;
+const defaultFileIcon = manifestFile as string;
+const defaultFolderIcon = manifestFolder as string;
 
 // ── Extension → VS Code languageId ──────────────────────────
 // VS Code icon themes use `languageIds` for common languages (ts, js, py, etc.)

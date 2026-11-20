@@ -80,6 +80,23 @@ describe("friendlyErrorWithDetail", () => {
       setMessageResolver(undefined);
     }
   });
+  // ViscosityCode: the Cursor cloud launch refusals carry a branch name.
+  it.each(["cursor.cloud.pushBranch", "cursor.cloud.unpushedCommits"] as const)(
+    "re-localizes %s with its branch after string IPC",
+    (key) => {
+      const sent = msg(key, { branch: "feature/a.b" });
+      setMessageResolver((resolved, values) =>
+        resolved === key ? `localized ${values?.branch}` : undefined,
+      );
+      try {
+        expect(friendlyError(new Error(`Error invoking remote method 'x': Error: ${sent}`))).toBe(
+          "localized feature/a.b",
+        );
+      } finally {
+        setMessageResolver(undefined);
+      }
+    },
+  );
 
   it("returns the raw message and no details for plain errors", () => {
     const result = friendlyErrorWithDetail(new Error("something broke"));

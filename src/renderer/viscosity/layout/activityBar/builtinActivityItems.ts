@@ -1,44 +1,39 @@
 /**
- * ViscosityCode built-in activity bar items. Each one reuses an existing
- * upstream surface (sidebar, file tree, command palette, git panel, browser
- * panel, Settings); nothing here owns new behaviour.
+ * ViscosityCode built-in activity items. Each one reuses an existing surface
+ * (sidebar, command palette, Settings, Mission Control tabs); nothing here
+ * owns new behaviour. The sidebar nav list draws top actions as rows, bottom
+ * actions under "More", and views in the header switch. Settings lives in the
+ * sidebar profile row. Files, changes and the browser live in the right
+ * sidebar (`../rightSidebar`).
  *
- * Order leaves gaps so later fork steps can slot items between them (for
- * example Bots after Agents, Mission control after Explorer).
+ * Order leaves gaps so features can slot items between them (Mission Control
+ * at 110, Roundtable at 160).
  */
 import { msg } from "@lingui/core/macro";
-import { lazy } from "react";
-import { Files, GitBranch, Globe, MessagesSquare, Search, Settings2 } from "lucide-react";
+import { BookOpenText, Cloud, Gauge, MessagesSquare, Search } from "lucide-react";
 import { isHomeProject } from "@/shared/homeScope";
-import { openGitReview, openSettings, toggleBrowserPanel } from "@/renderer/actions/panelActions";
 import { getCurrentProjectId } from "@/renderer/actions/currentProject";
 import { useCommandPaletteStore } from "@/renderer/commands/commandPaletteStore";
-import { DeferredSettingsOverlay } from "@/renderer/deferredFeatures";
 import { selectFocusedThreadId } from "@/renderer/hooks/uiSelectors";
 import { useAppStore } from "@/renderer/state/appStore";
-import { useIsPanelTabVisible } from "@/renderer/state/panelDockSelectors";
 import { usePanelStore } from "@/renderer/state/panelStore";
+import { openCloudAgents } from "@/renderer/viscosity/cloudAgents/openCloudAgents";
 import {
-  selectBrowserPanelAvailable,
-  useRemoteServersStore,
-} from "@/renderer/state/remoteServersStore";
+  isSettingsSectionOffered,
+  openSettingsSectionIfOffered,
+} from "@/renderer/viscosity/commands/commandSupport";
+import { openSubscriptions } from "@/renderer/viscosity/subscriptions/openSubscriptions";
 import { getThreadMap } from "@/renderer/state/useThread";
 import { ACTIVITY_HOST_VIEW, registerActivityBarItem } from "./activityBarRegistry";
 import { DEFAULT_ACTIVITY_VIEW_ID } from "./activityViewPreference";
-import { ExplorerHeaderAccessory } from "./ExplorerHeaderAccessory";
 
 export const BUILTIN_ACTIVITY_ITEM_IDS = {
   agents: DEFAULT_ACTIVITY_VIEW_ID,
-  explorer: "explorer",
   search: "search",
-  sourceControl: "source-control",
-  browser: "browser",
-  settings: "settings",
+  playbooks: "playbooks",
+  subscriptions: "subscriptions",
+  cloudAgents: "cloud-agents",
 } as const;
-
-const ExplorerSidebarView = lazy(() =>
-  import("./ExplorerSidebarView").then((module) => ({ default: module.ExplorerSidebarView })),
-);
 
 /** Project/worktree/thread the activity bar commands act on (focused thread first). */
 export function resolveActivityCommandScope(): {
@@ -69,42 +64,19 @@ function useSearchOpen(): boolean {
   return useCommandPaletteStore((state) => state.isOpen);
 }
 
-/** Same toggle as the "Open Git Review" command: panel or page per the user's git setting. */
-function toggleSourceControl(): void {
-  const scope = resolveActivityCommandScope();
-  if (!scope) return;
-  openGitReview(scope.projectId, scope.worktreePath, scope.threadId);
+function openPlaybooks(): void {
+  openSettingsSectionIfOffered("playbooks");
 }
 
-function useSourceControlOpen(): boolean {
-  const panelOpen = usePanelStore(
-    (state) => state.gitReviewContext !== null && state.gitReviewAsPanel,
+function usePlaybooksOpen(): boolean {
+  return usePanelStore(
+    (state) =>
+      state.settingsOpen && (state.settingsSection ?? state.activeSettingsSection) === "playbooks",
   );
-  const pageOpen = usePanelStore((state) => state.gitOverlayOpen);
-  const onScreen = useIsPanelTabVisible("git");
-  return pageOpen || (panelOpen && onScreen);
 }
 
-function useHasProjects(): boolean {
-  return useAppStore((state) => state.projects.some((project) => !isHomeProject(project)));
-}
-
-function useBrowserVisible(): boolean {
-  const open = usePanelStore((state) => state.browserPanelOpen);
-  const onScreen = useIsPanelTabVisible("browser");
-  return open && onScreen;
-}
-
-function useBrowserAvailable(): boolean {
-  return useRemoteServersStore(selectBrowserPanelAvailable);
-}
-
-function useSettingsOpen(): boolean {
-  return usePanelStore((state) => state.settingsOpen);
-}
-
-function prewarmSettings(): void {
-  void DeferredSettingsOverlay.preload();
+function usePlaybooksOffered(): boolean {
+  return isSettingsSectionOffered("playbooks");
 }
 
 let registered = false;
@@ -115,55 +87,43 @@ export function registerBuiltinActivityItems(): void {
   registered = true;
   registerActivityBarItem({
     id: BUILTIN_ACTIVITY_ITEM_IDS.agents,
-    label: msg`Agents`,
+    label: msg`Chats`,
     icon: MessagesSquare,
     order: 100,
     view: ACTIVITY_HOST_VIEW,
   });
   registerActivityBarItem({
-    id: BUILTIN_ACTIVITY_ITEM_IDS.explorer,
-    label: msg`Explorer`,
-    icon: Files,
-    order: 200,
-    view: ExplorerSidebarView,
-    viewHeaderAccessory: ExplorerHeaderAccessory,
-  });
-  registerActivityBarItem({
     id: BUILTIN_ACTIVITY_ITEM_IDS.search,
     label: msg`Search`,
     icon: Search,
-    order: 300,
+    // Before Mission Control (110), so Search is the first nav row after New.
+    order: 90,
     action: openSearch,
     useIsActive: useSearchOpen,
   });
   registerActivityBarItem({
-    id: BUILTIN_ACTIVITY_ITEM_IDS.sourceControl,
-    label: msg`Source Control`,
-    icon: GitBranch,
-    order: 400,
-    action: toggleSourceControl,
-    toggle: true,
-    useIsActive: useSourceControlOpen,
-    useIsAvailable: useHasProjects,
+    id: BUILTIN_ACTIVITY_ITEM_IDS.playbooks,
+    label: msg`Playbooks`,
+    icon: BookOpenText,
+    order: 120,
+    action: openPlaybooks,
+    useIsActive: usePlaybooksOpen,
+    useIsAvailable: usePlaybooksOffered,
   });
   registerActivityBarItem({
-    id: BUILTIN_ACTIVITY_ITEM_IDS.browser,
-    label: msg`Browser`,
-    icon: Globe,
-    order: 500,
-    action: toggleBrowserPanel,
-    toggle: true,
-    useIsActive: useBrowserVisible,
-    useIsAvailable: useBrowserAvailable,
-  });
-  registerActivityBarItem({
-    id: BUILTIN_ACTIVITY_ITEM_IDS.settings,
-    label: msg`Settings`,
-    icon: Settings2,
-    order: 1000,
+    id: BUILTIN_ACTIVITY_ITEM_IDS.subscriptions,
+    label: msg`Subscriptions`,
+    icon: Gauge,
+    order: 100,
     position: "bottom",
-    action: openSettings,
-    onPreload: prewarmSettings,
-    useIsActive: useSettingsOpen,
+    action: openSubscriptions,
+  });
+  registerActivityBarItem({
+    id: BUILTIN_ACTIVITY_ITEM_IDS.cloudAgents,
+    label: msg`Cloud agents`,
+    icon: Cloud,
+    order: 110,
+    position: "bottom",
+    action: openCloudAgents,
   });
 }

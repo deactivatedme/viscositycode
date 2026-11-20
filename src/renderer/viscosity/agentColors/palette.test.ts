@@ -18,8 +18,10 @@ describe("agent colour palette", () => {
 
   it("builds every colour from theme tokens, never a literal", () => {
     for (const color of AGENT_COLOR_PALETTE) {
+      // A token is `var(--x)` or a theme tint over the project-icon hue.
+      const tokenRe = String.raw`var\(--[a-z-]+(, var\(--[a-z-]+\))?\)`;
       expect(color.css).toMatch(
-        /^(var\(--[a-z-]+\)|color-mix\(in oklch, var\(--[a-z-]+\), var\(--[a-z-]+\)\))$/,
+        new RegExp(`^(${tokenRe}|color-mix\\(in oklch, ${tokenRe}, ${tokenRe}\\))$`),
       );
       expect(color.css).not.toMatch(/#|rgb\(|oklch\(\d/);
     }
@@ -38,7 +40,7 @@ describe("agent colour palette", () => {
 
   it("puts only plain token hues in the first tier, never the close in-between mixes", () => {
     for (const id of DEFAULT_AGENT_COLOR_TIERS[0]!) {
-      expect(agentColorCss(id)).toBe(`var(--project-icon-${id})`);
+      expect(agentColorCss(id)).toBe(`var(--vc-agent-hue-${id}, var(--project-icon-${id}))`);
     }
   });
 

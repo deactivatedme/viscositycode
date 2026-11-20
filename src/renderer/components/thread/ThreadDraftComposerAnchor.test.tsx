@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import "@/renderer/testUtils/clientDraftDatabase";
 import { act } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -251,9 +252,6 @@ function resetStores() {
     wslAgentStatuses: [],
     windowsLoaded: false,
     wslLoaded: false,
-    inFirstLaunchDiscovery: false,
-    discoveryScope: undefined,
-    discoveredAgents: [],
   });
   useSharedSettings.setState({
     providerConfigs: {},

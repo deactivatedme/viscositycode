@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen } from "@testing-library/react";
 import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -112,6 +113,9 @@ vi.mock("@/renderer/components/common", async () => {
       />
     )),
     PixelLoader: () => <span data-testid="pixel-loader" />,
+    // The Run in control on a profile page (cloudProfileSettings).
+    Select: (props: { "aria-label"?: string }) => <select aria-label={props["aria-label"]} />,
+    ToggleSwitch: (props: { children?: ReactNode }) => <label>{props.children}</label>,
     // Destructive profile removal routes through the shared confirm dialog, so
     // the stub renders its real actions instead of swallowing them.
     ConfirmDialog: (props: {
@@ -285,6 +289,14 @@ beforeEach(() => {
 });
 
 describe("CursorProviderSettings", () => {
+  it("offers the Run in choice on a Cursor profile page", () => {
+    useSharedSettings.setState({
+      agentInstances: { work: { id: "work", driver: "cursor", displayName: "Work" } },
+    });
+    render(<CursorProviderSettings agentKind="cursor:work" wslDistros={[]} />);
+    expect(screen.getByLabelText("Run in")).toBeTruthy();
+  });
+
   it("registers the provider-local panel for Cursor", () => {
     expect(
       NATIVE_AGENT_REGISTRY_ENTRIES.find((entry) => entry.id === "cursor")?.settingsPanel,

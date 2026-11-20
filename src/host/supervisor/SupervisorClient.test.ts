@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { EventEmitter } from "node:events";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupervisorEvent } from "@/shared/ipc";
 import { isHostResourceBusyError } from "@/shared/hostResourceAdmission";
@@ -423,7 +425,11 @@ describe("SupervisorClient.call", () => {
       "/fake/supervisor.cjs",
       [],
       expect.objectContaining({
-        env: expect.objectContaining({ PORACODE_DATA_DIR: "/lazy-base" }),
+        env: expect.objectContaining({
+          PORACODE_DATA_DIR: "/lazy-base",
+          // ViscosityCode: the compile cache lives under the data root's cache dir.
+          NODE_COMPILE_CACHE: join("/lazy-base", "cache", "node-compile-cache"),
+        }),
       }),
     );
     child.emit("message", { replyTo: getId(), ok: true, data: "started-lazily" });

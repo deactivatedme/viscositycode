@@ -74,14 +74,14 @@ public struct RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7: Codable,
   }
 }
 
-public enum RouteexperimentU2DCommandRequest_45f37b4e85: Codable, Sendable {
-  case option1(RouteexperimentU2DCommandRequestU2DOptionU2D1_045e333a69)
+public enum RouteexperimentU2DCommandRequest_f82c06f174: Codable, Sendable {
+  case option1(RouteexperimentU2DCommandRequestU2DOptionU2D1_832bb77191)
   case option2(RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530)
   case option3(RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7)
   public init(from decoder: Decoder) throws {
     let container = try decoder.singleValueContainer()
-    var matches: [(Int, RouteexperimentU2DCommandRequest_45f37b4e85)] = []
-    if RemoteUnionProbe.matchesProperty(decoder, property: "kind", literals: [.string("create")]), let value = try? container.decode(RouteexperimentU2DCommandRequestU2DOptionU2D1_045e333a69.self) {
+    var matches: [(Int, RouteexperimentU2DCommandRequest_f82c06f174)] = []
+    if RemoteUnionProbe.matchesProperty(decoder, property: "kind", literals: [.string("create")]), let value = try? container.decode(RouteexperimentU2DCommandRequestU2DOptionU2D1_832bb77191.self) {
       matches.append((1, .option1(value)))
     }
     if RemoteUnionProbe.matchesProperty(decoder, property: "kind", literals: [.string("replace")]), let value = try? container.decode(RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530.self) {
@@ -91,8 +91,8 @@ public enum RouteexperimentU2DCommandRequest_45f37b4e85: Codable, Sendable {
       matches.append((3, .option3(value)))
     }
     guard matches.count == 1 else {
-      let detail = matches.isEmpty ? "No union option matched RouteexperimentU2DCommandRequest_45f37b4e85" : "Ambiguous union RouteexperimentU2DCommandRequest_45f37b4e85 matched options " + matches.map { String($0.0) }.joined(separator: ", ")
-      throw DecodingError.typeMismatch(RouteexperimentU2DCommandRequest_45f37b4e85.self, .init(codingPath: decoder.codingPath, debugDescription: detail))
+      let detail = matches.isEmpty ? "No union option matched RouteexperimentU2DCommandRequest_f82c06f174" : "Ambiguous union RouteexperimentU2DCommandRequest_f82c06f174 matched options " + matches.map { String($0.0) }.joined(separator: ", ")
+      throw DecodingError.typeMismatch(RouteexperimentU2DCommandRequest_f82c06f174.self, .init(codingPath: decoder.codingPath, debugDescription: detail))
     }
     self = matches[0].1
   }

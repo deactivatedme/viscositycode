@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { ArrowLeft, ArrowRight, Box, Download, Plug, Sparkles, TriangleAlert } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -234,7 +235,8 @@ export function PluginDetail(props: {
                 <Button
                   size="sm"
                   variant="tertiary"
-                  className="text-danger transition-colors hover:bg-danger hover:text-white"
+                  // ViscosityCode: white on the low-chroma dark danger fails AA.
+                  className="text-danger transition-colors hover:bg-danger hover:text-danger-foreground"
                   onPress={() => uninstallPlugin(plugin)}
                 >
                   <Trans>Uninstall</Trans>

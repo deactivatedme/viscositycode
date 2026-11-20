@@ -1,7 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppView, Project, Thread } from "@/shared/contracts";
 import { useAppStore } from "@/renderer/state/appStore";
 import { type FileEditorRootContext, useFileEditorStore } from "@/renderer/state/fileEditorStore";
+import { isSplitViewCovered } from "@/renderer/viscosity/threadOnScreen";
+import {
+  closeMissionControl,
+  startMissionControlViewSync,
+  useMissionControlViewStore,
+} from "@/renderer/viscosity/missionControl/missionControlViewStore";
+import {
+  hideRoundtablePanel,
+  startRoundtableViewSync,
+  useRoundtableViewStore,
+} from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { useOpenTabsStore } from "./openTabsStore";
 import {
   activateThreadTab,
@@ -38,6 +49,7 @@ function setView(view: AppView, focusedPaneId: string | null = null, threads = T
     projects: [{ id: "p1", name: "Project" } as Project],
     view,
     focusedPaneId,
+    pendingActiveThreadId: null,
   });
 }
 
@@ -57,6 +69,8 @@ beforeEach(() => {
   threadActions.openNewThread.mockReset();
   useOpenTabsStore.setState({ ids: ["a", "b", "c", "d"] });
   useFileEditorStore.setState({ rootContext: null, overlayMode: null });
+  useRoundtableViewStore.setState({ openSessionId: null, shown: false });
+  useMissionControlViewStore.setState({ shown: false });
 });
 
 describe("showThreadInFocusedPane", () => {
@@ -122,6 +136,102 @@ describe("closeThreadTab", () => {
     expect(useOpenTabsStore.getState().ids).toEqual(["a", "c", "d"]);
     expect(panes()).toEqual(["a"]);
     expect(threadActions.openThread).not.toHaveBeenCalled();
+  });
+});
+
+describe("tab strip actions under a cover panel", () => {
+  // The real panel syncs, as the center host installs them: any navigation they see hides the panel.
+  let stopSyncs: Array<() => void> = [];
+  beforeEach(() => {
+    stopSyncs = [startRoundtableViewSync(), startMissionControlViewSync()];
+  });
+  afterEach(() => {
+    for (const stop of stopSyncs) stop();
+  });
+
+  const PANELS = [
+    {
+      name: "Roundtable",
+      show: () => useRoundtableViewStore.setState({ openSessionId: "s1", shown: true }),
+      hide: hideRoundtablePanel,
+    },
+    {
+      name: "Mission Control",
+      show: () => useMissionControlViewStore.setState({ shown: true }),
+      hide: closeMissionControl,
+    },
+  ];
+
+  it("control: the installed syncs hide the panel when the last pane closes", () => {
+    setView({ kind: "thread", panes: ["a"] }, "a");
+    useRoundtableViewStore.setState({ openSessionId: "s1", shown: true });
+    useAppStore.getState().closePane("a");
+    expect(useRoundtableViewStore.getState().shown).toBe(false);
+  });
+
+  it.each(PANELS)("closing the focused tab under $name closes only its hidden pane", ({ show }) => {
+    setView({ kind: "thread", panes: ["a", "b"] }, "b", [
+      ...THREADS.filter((item) => item.id !== "c"),
+      thread("c", { status: "finished" }),
+    ]);
+    show();
+    closeThreadTab("b");
+    expect(panes()).toEqual(["a"]);
+    expect(isSplitViewCovered()).toBe(true);
+    expect(threadActions.openThread).not.toHaveBeenCalled();
+    // The next tab's thread was never shown, so its unread "finished" state stays.
+    expect(useAppStore.getState().threads.find((item) => item.id === "c")?.status).toBe("finished");
+  });
+
+  it.each(PANELS)(
+    "closing the last pane under $name waits until the panel is dismissed",
+    async ({ show, hide }) => {
+      useOpenTabsStore.setState({ ids: ["a"] });
+      setView({ kind: "thread", panes: ["a"] }, "a");
+      show();
+      closeThreadTab("a");
+      expect(useOpenTabsStore.getState().ids).toEqual([]);
+      expect(useAppStore.getState().view).toMatchObject({ kind: "thread", panes: ["a"] });
+      expect(isSplitViewCovered()).toBe(true);
+
+      hide();
+      await Promise.resolve();
+      expect(useAppStore.getState().view.kind).toBe("home");
+    },
+  );
+
+  it("leaves the last pane to a navigation that dismisses the panel", async () => {
+    useOpenTabsStore.setState({ ids: ["a"] });
+    setView({ kind: "thread", panes: ["a"] }, "a");
+    useMissionControlViewStore.setState({ shown: true });
+    closeThreadTab("a");
+    // What openThread does first; its deferred swap then fills the pane.
+    useAppStore.getState().setPendingActiveThread("b");
+    expect(isSplitViewCovered()).toBe(false);
+    await Promise.resolve();
+    expect(useAppStore.getState().view).toMatchObject({ kind: "thread", panes: ["a"] });
+  });
+
+  it('"+" closes Mission Control so the new draft is visible', () => {
+    useMissionControlViewStore.setState({ shown: true });
+    openNewThreadTab();
+    expect(useMissionControlViewStore.getState().shown).toBe(false);
+    expect(threadActions.openNewThread).toHaveBeenCalledWith();
+  });
+});
+
+describe("activateThreadTab", () => {
+  it("ignores a deleted or archived thread and still opens a live one", () => {
+    useFileEditorStore.setState({ rootContext: EDITOR_ROOT, overlayMode: "modal" });
+    setView({ kind: "thread", panes: ["a"] }, "a", [thread("a"), thread("b", { archived: true })]);
+    activateThreadTab("gone");
+    activateThreadTab("b");
+    expect(threadActions.openThread).not.toHaveBeenCalled();
+    expect(useAppStore.getState().pendingActiveThreadId).toBeNull();
+    // Nothing else moved either: the editor panel stays in front.
+    expect(useFileEditorStore.getState().overlayMode).toBe("modal");
+    activateThreadTab("a");
+    expect(threadActions.openThread).toHaveBeenCalledExactlyOnceWith("a");
   });
 });
 

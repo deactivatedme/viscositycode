@@ -36,16 +36,73 @@ export interface AppThemePreset {
 export const DEFAULT_THEME_ID = "default";
 /** ViscosityCode: bold showcase preset id (persisted in settings; keep stable). */
 export const VISCOSITY_SHOWCASE_THEME_ID = "viscosity-showcase";
+/** ViscosityCode: the original sky-accent Viscosity palette (persisted in settings; keep stable). */
+export const VISCOSITY_BLUE_THEME_ID = "viscosity-blue";
+/** ViscosityCode: the Reversing playbook's theme (persisted in settings and playbooks; keep stable). */
+export const HOSTILE_BINARY_THEME_ID = "hostile-binary";
+
+const HOSTILE_BINARY_SPEC: ThemeSpec = {
+  bg: "#000000",
+  surface: "#0c0808",
+  fg: "#f3ebe6",
+  accent: "#ff3344",
+  accentFg: "#000000",
+  border: "#3a1418",
+  sidebar: "#000000",
+  content: "#050303",
+  composer: "#140b0b",
+};
+
+/** ViscosityCode: built-in presets shown dark whatever the appearance setting. */
+const DARK_ONLY_THEME_IDS: ReadonlySet<string> = new Set([HOSTILE_BINARY_THEME_ID]);
+
+/** ViscosityCode: whether `id` is a dark-only preset (custom themes never are). */
+export function isDarkOnlyTheme(id: string): boolean {
+  return DARK_ONLY_THEME_IDS.has(id);
+}
 
 export const THEME_SPECS: AppThemeSpec[] = [
-  // ViscosityCode: Viscosity base. Mirrors the `.light` / `.dark` base palette
-  // in theme/viscosity/tokens.css and is used only for the gallery preview and
-  // as the starting point for custom themes / JSON export — at runtime the base
-  // theme clears all overrides so the CSS base cascade stays the source of
-  // truth (see applyAppTheme). viscosityPalette.test.ts keeps the two in sync.
+  // ViscosityCode: Viscosity base, monochrome: black/white chrome, grey
+  // hierarchy and a white (dark) / black (light) accent. Mirrors the `.light` /
+  // `.dark` base palette in theme/viscosity/tokens.css and is used only for the
+  // gallery preview and as the starting point for custom themes / JSON export —
+  // at runtime the base theme clears all overrides so the CSS base cascade stays
+  // the source of truth (see applyAppTheme). viscosityPalette.test.ts keeps the
+  // two in sync.
   {
     id: DEFAULT_THEME_ID,
     label: "Viscosity",
+    light: {
+      bg: "#fafafa",
+      surface: "#ffffff",
+      fg: "#0a0a0a",
+      accent: "#0a0a0a",
+      accentFg: "#ffffff",
+      border: "#e5e5e5",
+      sidebar: "#f5f5f5",
+      content: "#ffffff",
+      composer: "#ffffff",
+    },
+    dark: {
+      bg: "#000000",
+      surface: "#111111",
+      fg: "#ededed",
+      accent: "#ffffff",
+      accentFg: "#000000",
+      border: "#262626",
+      sidebar: "#000000",
+      content: "#0a0a0a",
+      composer: "#141414",
+    },
+  },
+
+  // ViscosityCode: Viscosity Blue — the original Viscosity palette (near-black
+  // panels, single sky accent), kept selectable after the base theme went
+  // monochrome. Anchors and BLUE_OVERRIDES are the released tokens.css values
+  // (including its hand-tuned secondary text); do not retune.
+  {
+    id: VISCOSITY_BLUE_THEME_ID,
+    label: "Viscosity Blue",
     light: {
       bg: "#f4f4f5",
       surface: "#ffffff",
@@ -406,9 +463,55 @@ export const THEME_SPECS: AppThemeSpec[] = [
       sidebar: "#1d1e19",
     },
   },
+
+  // ViscosityCode: Hostile Binary — the Reversing playbook's theme. Pitch-black
+  // panels with a blood-red accent (amber hazard stripes, red focus rings and
+  // monospace headings come from playbooks/theme/hostileBinary.css). Dark-only:
+  // applyAppTheme shows it dark whatever the appearance setting, so both
+  // variants carry the same anchors.
+  {
+    id: HOSTILE_BINARY_THEME_ID,
+    label: "Hostile Binary",
+    light: HOSTILE_BINARY_SPEC,
+    dark: HOSTILE_BINARY_SPEC,
+  },
 ];
 
-export const APP_THEME_PRESETS: AppThemePreset[] = THEME_SPECS.map(buildThemePreset);
+/**
+ * ViscosityCode: Viscosity Blue's hand-tuned released values, applied over the
+ * derived variables. Kept off the spec so custom themes copied from it stay
+ * plain anchor documents.
+ */
+const BLUE_OVERRIDES: Record<"light" | "dark", ThemeVariantVars> = {
+  light: {
+    "--muted": "#6b6b73",
+    "--scrollbar": "color-mix(in oklab, #6b6b73 45%, transparent)",
+    "--field-placeholder": "#84848b",
+    "--segment": "#ffffff",
+    "--sidebar-row-active": "color-mix(in oklab, var(--foreground) 9%, transparent)",
+  },
+  dark: {
+    "--muted": "#8a8a93",
+    "--scrollbar": "color-mix(in oklab, #8a8a93 45%, transparent)",
+    "--field-placeholder": "#6e6e76",
+    "--segment": "color-mix(in oklab, #111113 78%, #e6e6e8 22%)",
+    "--sidebar-row-active": "color-mix(in oklab, var(--foreground) 10%, transparent)",
+  },
+};
+
+export const APP_THEME_PRESETS: AppThemePreset[] = THEME_SPECS.map((spec) => {
+  const preset = buildThemePreset(spec);
+  // ViscosityCode: a dark-only preset's light slot is its dark variant (boot
+  // background, previews), never a light derivation of dark anchors.
+  if (isDarkOnlyTheme(spec.id)) return { ...preset, light: preset.dark };
+  // ViscosityCode: Blue keeps the released hand-tuned secondary text and fills.
+  if (spec.id !== VISCOSITY_BLUE_THEME_ID) return preset;
+  return {
+    ...preset,
+    light: { ...preset.light, ...BLUE_OVERRIDES.light },
+    dark: { ...preset.dark, ...BLUE_OVERRIDES.dark },
+  };
+});
 
 const PRESETS_BY_ID = new Map(APP_THEME_PRESETS.map((entry) => [entry.id, entry]));
 
@@ -420,6 +523,11 @@ export function getThemePreset(
   if (custom) return buildThemePreset(custom);
   const currentId = id === "lightcode-legacy" ? "poracode-legacy" : id;
   return PRESETS_BY_ID.get(currentId) ?? PRESETS_BY_ID.get(DEFAULT_THEME_ID)!;
+}
+
+/** ViscosityCode: whether `id` names a built-in or one of `customThemes` (no fallback). */
+export function hasThemePreset(id: string, customThemes: readonly CustomTheme[] = []): boolean {
+  return PRESETS_BY_ID.has(id) || customThemes.some((theme) => theme.id === id);
 }
 
 /** `{ id, label }` options for a Select, in catalog order. */

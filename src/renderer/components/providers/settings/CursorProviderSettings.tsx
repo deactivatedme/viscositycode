@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { RadioGroup, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -15,6 +16,7 @@ import { friendlyError } from "@/shared/messages";
 import { CursorRuntimeCard } from "../../../views/SettingsOverlay/parts/CursorRuntimeCard";
 import { AgentProfileList } from "../../../views/SettingsOverlay/parts/AgentProfileList";
 import { CursorProfileIdentity } from "./CursorProfileIdentity";
+import { CursorCloudProfileSettings } from "../cursor/cloudProfileSettings"; // ViscosityCode: where a Cursor profile runs
 import { cursorProfileSupport } from "../../../views/SettingsOverlay/parts/CursorProfileSettings";
 import { CursorSdkRuntimeSetup } from "../../../views/SettingsOverlay/parts/CursorSdkRuntimeSetup";
 import { cursorRuntimeInstallState } from "../../../views/SettingsOverlay/parts/cursorRuntimeInstall";
@@ -183,6 +185,10 @@ export function CursorProviderSettings(props: {
             ) : null}
           </div>
           <div className="space-y-1.5 border-t border-border/10 px-3 py-2">{sdkSetup}</div>
+        </div>
+        {/* ViscosityCode: Run in (this computer or Cursor Cloud). */}
+        <div className="mt-3">
+          <CursorCloudProfileSettings profileInstanceId={profileInstanceId} />
         </div>
       </div>
     );

@@ -6,7 +6,8 @@ import { Slider, SliderFill, SliderOutput, SliderThumb, SliderTrack } from "@her
 import type { ThemeMode } from "@/shared/contracts";
 import { isMac, isRemoteSession } from "@/renderer/bridge";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
-import { useResolvedAppearance } from "@/renderer/components/ui/provider";
+import { useResolvedAppearance, useThemeModeAppearance } from "@/renderer/components/ui/provider"; // ViscosityCode: useThemeModeAppearance
+import { PlaybookThemeNote } from "@/renderer/viscosity/playbooks/theme/PlaybookThemeNote"; // ViscosityCode:
 import { getThemePreset } from "@/renderer/theme/themePresets";
 import { applySidebarGlassTint, sidebarGlassTintDefault } from "@/renderer/theme/sidebarGlass";
 // ViscosityCode: client-side UI font preference + fork appearance rows.
@@ -26,10 +27,11 @@ export function AppearanceSettings() {
   const themePreset = useSharedSettings((state) => state.themePreset);
   const customThemes = useSharedSettings((state) => state.customThemes);
   const appearance = useResolvedAppearance();
+  const previewAppearance = useThemeModeAppearance(); // ViscosityCode: theme previews ignore a playbook override
   const [themeOpen, setThemeOpen] = useState(false);
   const activePreset = getThemePreset(themePreset, customThemes);
   const activeVars = (
-    appearance === "dark" ? activePreset.dark : activePreset.light
+    previewAppearance === "dark" ? activePreset.dark : activePreset.light
   ) as CSSProperties;
   const guiChatFontSize = useSharedSettings((state) => state.guiChatFontSize);
   const setGuiChatFontSize = useSharedSettings((state) => state.setGuiChatFontSize);
@@ -142,6 +144,8 @@ export function AppearanceSettings() {
             />
           </div>
         </button>
+        {/* ViscosityCode: say why a picked theme is not on screen while a playbook shows its own. */}
+        <PlaybookThemeNote />
         {themeOpen ? <ThemeGallery /> : null}
       </div>
 

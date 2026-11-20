@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   isClientDraftAsset,
   listClientSubmissions,
@@ -15,7 +16,7 @@ import {
 } from "react";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { toast } from "@heroui/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import type { AgentStatus, Project, ThreadConfig } from "@/shared/contracts";
 import type { RemoteDesktopClient } from "@/shared/remote/client";
@@ -24,6 +25,7 @@ import { HOME_PROJECT_ID, HOME_PROJECT_NAME } from "@/shared/homeScope";
 import { selectionBindingMatches } from "@/shared/selectionBinding";
 import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { useAppStore } from "@/renderer/state/appStore";
+import { usePanelStore } from "@/renderer/state/panelStore";
 import { useGitStore } from "@/renderer/state/gitStore";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
@@ -543,9 +545,6 @@ describe("ThreadDraftView", () => {
       wslAgentStatuses: [],
       windowsLoaded: false,
       wslLoaded: false,
-      inFirstLaunchDiscovery: false,
-      discoveryScope: undefined,
-      discoveredAgents: [],
     });
     useSharedSettings.setState({
       providerConfigs: {},
@@ -2140,7 +2139,7 @@ describe("ThreadDraftView", () => {
       <ThreadDraftView project={project} agentStatuses={[]} onStart={onStart} />,
     );
 
-    expect(screen.getByText("No supported agents detected")).toBeInTheDocument();
+    expect(screen.getByText("No agents found yet.")).toBeInTheDocument();
     expect(container.querySelector("[data-draft-composer]")).toBeNull();
 
     rerender(
@@ -2197,8 +2196,8 @@ describe("ThreadDraftView", () => {
     // While detection is in flight we suppress the "no agents installed"
     // message so the renderer doesn't flash it before the cache or detection
     // events hydrate the store.
-    expect(screen.getByText(/detecting agents/i)).toBeInTheDocument();
-    expect(screen.queryByText("No supported agents detected")).not.toBeInTheDocument();
+    expect(screen.getByText("Looking for installed agents…")).toBeInTheDocument();
+    expect(screen.queryByText("No agents found yet.")).not.toBeInTheDocument();
   });
 
   it.each(["terminal", "gui"] as const)(
@@ -2355,7 +2354,7 @@ describe("ThreadDraftView", () => {
 
     expect(screen.getByText("Connection error")).toBeInTheDocument();
     expect(screen.getByText(/remote server is offline/i)).toBeInTheDocument();
-    expect(screen.queryByText("No supported agents detected")).not.toBeInTheDocument();
+    expect(screen.queryByText("No agents found yet.")).not.toBeInTheDocument();
   });
 
   it("shows the remote connection's specific error message", () => {
@@ -2448,7 +2447,7 @@ describe("ThreadDraftView", () => {
 
     expect(screen.getByText("Connecting to host…")).toBeInTheDocument();
     expect(screen.queryByText("Connection error")).not.toBeInTheDocument();
-    expect(screen.queryByText("No supported agents detected")).not.toBeInTheDocument();
+    expect(screen.queryByText("No agents found yet.")).not.toBeInTheDocument();
     expect(composerSpy).not.toHaveBeenCalled();
   });
 
@@ -2591,9 +2590,8 @@ describe("ThreadDraftView", () => {
     expect(menuProps.readOnlyMcp).not.toBe(true);
   });
 
-  it("keeps the draft loading while app-level WSL discovery is running", () => {
+  it("keeps the draft loading while WSL agent detection is running", () => {
     const onStart = vi.fn<(input: unknown) => void>();
-    useAgentStatusesStore.getState().beginFirstLaunchDiscovery({ kind: "wsl", distro: "Ubuntu" });
 
     render(
       <ThreadDraftView
@@ -2604,8 +2602,61 @@ describe("ThreadDraftView", () => {
       />,
     );
 
-    expect(screen.getByText("Detecting agents…")).toBeInTheDocument();
-    expect(screen.queryByText("No supported agents detected")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Looking for installed agents…");
+    expect(screen.queryByText("No agents found yet.")).not.toBeInTheDocument();
+  });
+
+  // ViscosityCode: zero-agent hint replaces the full-pane headline.
+  it("shows the no-agents hint that opens Settings → Agents, with no composer", () => {
+    const original = usePanelStore.getState().openSettingsSection;
+    const openSettingsSection = vi.fn<typeof original>();
+    usePanelStore.setState({ openSettingsSection });
+    onTestFinished(() => usePanelStore.setState({ openSettingsSection: original }));
+    const { container } = render(
+      <ThreadDraftView project={project} agentStatuses={[]} onStart={() => {}} />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("No agents found yet.");
+    expect(container.querySelector("[data-draft-composer]")).toBeNull();
+    expect(container.querySelector("h1")).toBeNull();
+    expect(composerSpy).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /Set up in Settings → Agents/ }));
+    expect(openSettingsSection).toHaveBeenCalledWith("agentsGeneral");
+  });
+
+  // ViscosityCode: New session layout slot.
+  it("renders the session centre in place of the anchor spacer", () => {
+    const { container } = render(
+      <ThreadDraftView
+        project={project}
+        agentStatuses={[codexStatus]}
+        composerPlaceholder="Describe a task or ask a question"
+        sessionCenter={<div data-testid="session-centre">centre</div>}
+        onStart={() => {}}
+      />,
+    );
+
+    const root = container.querySelector("[data-draft-composer]");
+    expect(root).toHaveAttribute("data-vc-session", "");
+    expect(screen.getByTestId("session-centre").closest("[data-vc-session-center]")).not.toBeNull();
+    expect(container.querySelector("[data-draft-composer-anchor-spacer]")).toBeNull();
+    const props = composerSpy.mock.lastCall?.[0] as { placeholder?: string };
+    expect(props.placeholder).toBe("Describe a task or ask a question");
+    // The centre owns the project picker; the controls row must not repeat it.
+    expect(screen.queryAllByRole("button", { name: "Switch project" })).toHaveLength(0);
+  });
+
+  it("keeps the anchor spacer and no session hook without a session centre", () => {
+    const { container } = render(
+      <ThreadDraftView project={project} agentStatuses={[codexStatus]} onStart={() => {}} />,
+    );
+
+    expect(screen.getAllByRole("button", { name: "Switch project" })).toHaveLength(1);
+
+    expect(container.querySelector("[data-draft-composer]")).not.toHaveAttribute("data-vc-session");
+    expect(container.querySelector("[data-draft-composer-anchor-spacer]")).not.toBeNull();
+    expect(container.querySelector("[data-vc-session-center]")).toBeNull();
   });
 
   it("keeps auth-missing agents selectable but blocks launching from the draft composer", () => {
@@ -3147,6 +3198,48 @@ describe("ThreadDraftView", () => {
     expect((onStart.mock.lastCall![0] as { config: object }).config).not.toHaveProperty(
       "browserMcp",
     );
+  });
+
+  it("lets the browser chip turn off the browser a draft playbook switched on", async () => {
+    const onStart = vi.fn<(input: unknown) => void>();
+    render(
+      <ThreadDraftView project={project} agentStatuses={[dualModeCodexStatus]} onStart={onStart} />,
+    );
+    await waitFor(() => expect(composerSpy).toHaveBeenCalled());
+    type ChipProps = { onConfigChange: (patch: Partial<ThreadConfig>) => void };
+    const composer = () =>
+      composerSpy.mock.lastCall?.[0] as {
+        afterControls: ReactElement<{ playbook?: ReactElement<ChipProps> }>;
+        attachmentBar: ReactElement<{ leading?: ReactNode }>;
+      };
+    const chip = composer().afterControls.props.playbook;
+    if (!chip) throw new Error("Missing playbook picker");
+    // What applyPlaybook emits for Web QA when the browser is available.
+    act(() =>
+      chip.props.onConfigChange({
+        playbook: { version: 1, id: "web-qa", label: "Web QA", instructions: "Test it." },
+        browserMcp: true,
+      }),
+    );
+    const browserChip = Children.toArray(
+      (composer().attachmentBar.props.leading as ReactElement<{ children: ReactNode }>).props
+        .children,
+    )
+      .flat()
+      .find(
+        (child): child is ReactElement<{ descriptor: { id: string }; onRemove: () => void }> =>
+          isValidElement<{ descriptor?: { id: string } }>(child) &&
+          child.props.descriptor?.id === "browser",
+      );
+    if (!browserChip) throw new Error("Missing browser chip");
+    act(() => browserChip.props.onRemove());
+
+    fireEvent.click(screen.getByText("set-prompt"));
+    fireEvent.click(screen.getByText("submit"));
+    await waitFor(() => expect(onStart).toHaveBeenCalledOnce());
+    const launched = (onStart.mock.lastCall![0] as { config: ThreadConfig }).config;
+    expect(launched.browserMcp).not.toBe(true);
+    expect(launched.playbook).toMatchObject({ id: "web-qa" });
   });
 
   it("submits the Codex Ask for approval reviewer override", async () => {

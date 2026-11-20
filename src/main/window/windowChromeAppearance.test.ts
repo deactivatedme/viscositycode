@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  WINDOW_MATERIAL_STATE_KEY,
+  bindWindowMaterialPreferenceStore,
   rememberWindowMaterialPreference,
   resetRememberedWindowMaterialPreferenceForTests,
   resolveWindowsBackgroundMaterial,
@@ -80,10 +82,10 @@ describe("windowReportsNativeMaterial", () => {
 
 describe("window base colours", () => {
   it("uses the ViscosityCode base colours with contrasting caption glyphs", () => {
-    expect(windowBaseBackgroundColor("dark")).toBe("#0a0a0b");
-    expect(windowBaseBackgroundColor("light")).toBe("#f4f4f5");
+    expect(windowBaseBackgroundColor("dark")).toBe("#000000");
+    expect(windowBaseBackgroundColor("light")).toBe("#fafafa");
     // Upstream's fallback for a payload without an appearance was the light base.
-    expect(windowBaseBackgroundColor(undefined)).toBe("#f4f4f5");
+    expect(windowBaseBackgroundColor(undefined)).toBe("#fafafa");
     expect(windowCaptionSymbolColor("dark")).toBe("#fafafa");
     expect(windowCaptionSymbolColor("light")).toBe("#1f2937");
   });
@@ -94,5 +96,25 @@ describe("startupWindowMaterialPreference", () => {
     expect(startupWindowMaterialPreference()).toBe("auto");
     rememberWindowMaterialPreference("acrylic");
     expect(startupWindowMaterialPreference()).toBe("acrylic");
+  });
+
+  it("persists the preference so a cold launch opens with it", () => {
+    const saved = new Map<string, string>();
+    const store = { get: (key: string) => saved.get(key) ?? null, set: saved.set.bind(saved) };
+    bindWindowMaterialPreferenceStore(store);
+    rememberWindowMaterialPreference("none");
+    expect(saved.get(WINDOW_MATERIAL_STATE_KEY)).toBe("none");
+
+    // Fresh process: nothing remembered in memory, the store still has it.
+    resetRememberedWindowMaterialPreferenceForTests();
+    bindWindowMaterialPreferenceStore(store);
+    expect(startupWindowMaterialPreference()).toBe("none");
+  });
+
+  it("reads a missing or unknown stored value (older or newer build) as Auto", () => {
+    for (const value of [null, "frosted", ""]) {
+      bindWindowMaterialPreferenceStore({ get: () => value, set: () => {} });
+      expect(startupWindowMaterialPreference()).toBe("auto");
+    }
   });
 });

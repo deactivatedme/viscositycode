@@ -26,12 +26,16 @@ import { floatingBubblePillClass } from "@/renderer/components/layout/floatingGl
 import { MobilePageHeaderActions } from "@/renderer/components/layout/MobilePageHeaderActions";
 import { MobileCircleButton } from "@/renderer/components/mobileComposer/MobileCircleButton";
 import {
+  detectedUsageIds,
+  isUsageProviderShown,
   resolveDisplayedProviders,
   resolveHostUsageProviders,
   separateCurrentUsageProvider,
   usageProviderIdForAgent,
 } from "@/renderer/components/providers/usageProviders";
 import { useScrollFade } from "@/renderer/hooks/useScrollFade";
+// ViscosityCode: usage surfaces list only detected agents (isUsageProviderShown).
+import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
 import { useProviderUsageStore } from "@/renderer/state/providerUsageStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useUsageLoginStateStore } from "@/renderer/state/usageLoginStateStore";
@@ -143,6 +147,8 @@ function UsagePanelContent(props: {
   const disabledProviders = useSharedSettings(selectCollectedUsageDisabledProviders);
   const collapsedProviders = useSharedSettings((s) => s.usage.collapsedProviders);
   const agentInstances = useSharedSettings((s) => s.agentInstances);
+  const disabledAgents = useSharedSettings((s) => s.disabledAgents);
+  const localStatuses = useHostAgentStatusPools(undefined);
   const setUsageSetting = useSharedSettings((s) => s.setUsageSetting);
   const snapshots = useProviderUsageStore((s) => s.snapshots);
   const requestedDesktopId = useUsageScopeStore((s) => s.desktopId);
@@ -170,7 +176,20 @@ function UsagePanelContent(props: {
         hostView.agents,
       )
     : localProviders;
-  const revealAvailable = orderedProviders.some(
+  const displayedSnapshots = remoteView
+    ? Object.fromEntries(
+        hostView.usage.snapshots.map((snapshot) => [snapshot.providerId, snapshot]),
+      )
+    : snapshots;
+  // ViscosityCode: cards only for providers the shared usage-visibility rule
+  // lists; `orderedProviders` keeps the full order for drag persistence.
+  const detected = remoteView
+    ? detectedUsageIds(hostView.agents, [], undefined)
+    : detectedUsageIds(localStatuses, disabledAgents, agentInstances);
+  const visibleProviders = orderedProviders.filter((provider) =>
+    isUsageProviderShown(displayedSnapshots[provider.id], detected.has(provider.id)),
+  );
+  const revealAvailable = visibleProviders.some(
     (provider) => provider.id === revealRequest?.providerId,
   );
   useEffect(() => {
@@ -184,16 +203,11 @@ function UsagePanelContent(props: {
     return () => cancelAnimationFrame(frame);
   }, [revealRequest, revealAvailable]);
   const { current: currentProvider, rest: sortableProviders } = separateCurrentUsageProvider(
-    orderedProviders,
+    visibleProviders,
     preferredProviderId
       ? usageProviderIdForAgent(preferredProviderId, undefined, agentInstances)
       : null,
   );
-  const displayedSnapshots = remoteView
-    ? Object.fromEntries(
-        hostView.usage.snapshots.map((snapshot) => [snapshot.providerId, snapshot]),
-      )
-    : snapshots;
 
   function renderCard(provider: { id: string; label: string }, index: number, draggable = true) {
     const common = {
@@ -227,7 +241,7 @@ function UsagePanelContent(props: {
 
   const lastUpdated = (() => {
     let max = 0;
-    for (const provider of orderedProviders) {
+    for (const provider of visibleProviders) {
       const fetchedAt = displayedSnapshots[provider.id]?.fetchedAt;
       if (fetchedAt && fetchedAt > max) max = fetchedAt;
     }
@@ -264,9 +278,12 @@ function UsagePanelContent(props: {
     const [moved] = reorderedIds.splice(fromIndex, 1);
     if (!moved) return;
     reorderedIds.splice(toIndex, 0, moved);
+    // ViscosityCode: splice back into the full order so the pinned current card
+    // and hidden providers keep their `providerOrder` slots.
+    const sortableIds = new Set(reorderedIds);
     let reorderedIndex = 0;
     const next = orderedProviders.map((provider) =>
-      provider.id === currentProvider?.id ? provider.id : reorderedIds[reorderedIndex++]!,
+      sortableIds.has(provider.id) ? reorderedIds[reorderedIndex++]! : provider.id,
     );
     startTransition(() => setUsageSetting("providerOrder", next));
   }
@@ -297,8 +314,9 @@ function UsagePanelContent(props: {
       >
         <div ref={contentRef} className="min-h-full">
           {remoteView ? <HostUsageStatus view={hostView} className="mb-2" /> : null}
-          {orderedProviders.length === 0 ? (
-            remoteView ? null : (
+          {visibleProviders.length === 0 ? (
+            // ViscosityCode: "nothing tracked" only when nothing is; tracked but undetected yet shows nothing.
+            remoteView || orderedProviders.length > 0 ? null : (
               <div className="flex min-h-full flex-col items-center justify-center gap-2 px-6 text-center">
                 <p className="text-sm text-muted">
                   <Trans>No providers are being tracked.</Trans>

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import { setMessageResolver, type MessageKey } from "@/shared/messages";
@@ -532,6 +533,47 @@ export const SHARED_MESSAGE_DESCRIPTORS: Record<MessageKey, MessageDescriptor> =
     message:
       "Cursor couldn't write a summary, so it saved a trimmed copy of the conversation instead.",
   }),
+  // ViscosityCode: Cursor cloud agents
+  "cursor.cloud.pushBranch": msg({
+    message:
+      "Push {branch} to origin first. A Cursor cloud agent starts from the pushed branch and cannot see local commits.",
+  }),
+  "cursor.cloud.unpushedCommits": msg({
+    message:
+      "Push {branch} first. It has local commits that are not on origin, and a Cursor cloud agent starts from the pushed branch.",
+  }),
+  "cursor.cloud.checkoutBranch": msg({
+    message:
+      "Check out a branch that is pushed to origin first. A Cursor cloud agent starts from the pushed branch.",
+  }),
+  "cursor.cloud.noOrigin": msg({
+    message:
+      "This project has no git origin, so a cloud agent couldn't see it. Add an origin remote, or start the agent from Home for a repo-less agent.",
+  }),
+  "cursor.cloud.unsupportedOrigin": msg({
+    message:
+      "Cursor cloud agents need an origin remote on a git host Cursor can clone, such as GitHub or GitLab.",
+  }),
+  "cursor.cloud.gitUnavailable": msg({
+    message: "Could not read this project's git origin and branch for the Cursor cloud agent.",
+  }),
+  "cursor.cloud.authFailed": msg({
+    message:
+      "Cursor rejected this profile's API key. Use a User API key from cursor.com/dashboard/api.",
+  }),
+  "cursor.cloud.planRequired": msg({
+    message:
+      "This Cursor key or plan cannot use cloud agents. Use a User API key on a plan that includes Cloud Agents.",
+  }),
+  "cursor.cloud.rateLimited": msg({
+    message: "Cursor is rate limiting cloud agent requests. Try again shortly.",
+  }),
+  "cursor.cloud.unavailable": msg({
+    message: "Cursor cloud agents are unavailable right now. Try again shortly.",
+  }),
+  "cursor.cloud.branchPushed": msg({ message: "Pushed {branch} to {repo}." }),
+  "cursor.cloud.pullRequest": msg({ message: "Pull request: {url}" }),
+  "cursor.cloud.openInCursor": msg({ message: "Open in Cursor: {url}" }),
   "acp.authenticationUnverified": msg({
     message:
       "{agent} reported authentication success, but Poracode could not verify it. Configure {agent} directly, then try again.",
@@ -553,6 +595,15 @@ export const SHARED_MESSAGE_DESCRIPTORS: Record<MessageKey, MessageDescriptor> =
   "sessionImport.changedOnDisk": msg({
     message: "This session changed on disk. Refresh the list and try again.",
   }),
+  // ViscosityCode: cloud agents service
+  "cloudAgents.unsupported": msg({ message: "This agent does not offer cloud agents." }),
+  "cloudAgents.unavailable": msg({
+    message: "Cloud agents are unavailable right now. Try again later.",
+  }),
+  "cloudAgents.backingOff": msg({
+    message: "Cloud agents are paused after a provider error. Try again shortly.",
+  }),
+  "cloudAgents.followInProgress": msg({ message: "This cloud agent is already being opened." }),
   "gemini.emptyResponse": msg({
     message:
       "Gemini ended the turn without returning a response. Check authentication or quota and try again.",

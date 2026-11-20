@@ -9,6 +9,7 @@ import { session } from "@/renderer/viscosity/roundtable/ui/roundtable.testFixtu
 import { useRoundtableViewStore } from "@/renderer/viscosity/roundtable/ui/roundtableViewStore";
 import { acquireViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
 import { useOpenTabsStore } from "./openTabsStore";
+import { activateThreadTab } from "./tabActions";
 import { ViscosityCenterFrame } from "./ViscosityCenterFrame";
 
 const threadActions = vi.hoisted(() => ({
@@ -81,9 +82,6 @@ describe("Roundtable tab", () => {
     const tab = screen.getByRole("tab", { name: "Roundtable: Fix the login bug" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
     expect(tab.parentElement?.querySelector('.vc-tab__dot[data-tone="working"]')).not.toBeNull();
-    expect(screen.getByRole("tab", { name: /Thread a/ }).getAttribute("aria-selected")).toBe(
-      "false",
-    );
     expect(document.querySelector("[data-vc-roundtable-panel]")).not.toBeNull();
     // The panel's view loads lazily on first use.
     expect(
@@ -91,10 +89,18 @@ describe("Roundtable tab", () => {
     ).toBeTruthy();
   });
 
-  it("steps aside for a thread tab and comes back from its own tab", () => {
+  it("shows an idle team chat's dot as inactive, not working", () => {
+    api.sessions.set("rt1", session({ status: "running", pattern: "open", maxRounds: 0 }));
+    useRoundtableViewStore.setState({ openSessionId: "rt1", shown: false });
+    renderCenter();
+    const tab = screen.getByRole("tab", { name: "Roundtable: Fix the login bug" });
+    expect(tab.parentElement?.querySelector('.vc-tab__dot[data-tone="inactive"]')).not.toBeNull();
+  });
+
+  it("steps aside for a thread opened from the sidebar and comes back from its own tab", async () => {
     useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true });
     renderCenter();
-    fireEvent.click(screen.getByRole("tab", { name: /Thread a/ }));
+    await act(async () => activateThreadTab("a"));
     expect(threadActions.openThread).toHaveBeenCalledWith("a");
     expect(useRoundtableViewStore.getState()).toMatchObject({ openSessionId: "rt1", shown: false });
     expect(document.querySelector("[data-vc-roundtable-panel]")).toBeNull();
@@ -108,15 +114,14 @@ describe("Roundtable tab", () => {
     renderCenter();
     fireEvent.click(screen.getByRole("button", { name: "Close Roundtable Fix the login bug" }));
     expect(screen.queryByRole("tab", { name: /Roundtable/ })).toBeNull();
-    expect(screen.getByRole("tab", { name: /Thread a/ }).getAttribute("aria-selected")).toBe(
-      "true",
-    );
+    expect(document.querySelector("[data-vc-roundtable-panel]")).toBeNull();
+    expect(useAppStore.getState().view).toMatchObject({ kind: "thread", panes: ["a"] });
   });
 
-  it("hides the panel when the user opens a thread elsewhere", () => {
+  it("hides the panel when the user opens a thread elsewhere", async () => {
     useRoundtableViewStore.setState({ openSessionId: "rt1", shown: true });
     renderCenter();
-    act(() => {
+    await act(async () => {
       useAppStore.setState({ pendingActiveThreadId: "a" });
     });
     expect(document.querySelector("[data-vc-roundtable-panel]")).toBeNull();

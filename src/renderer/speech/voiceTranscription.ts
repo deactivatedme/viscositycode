@@ -1,9 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type {
   VoiceTranscriptionProgress,
   VoiceTranscriptionRequest,
   VoiceTranscriptionResponse,
 } from "./voiceTranscriptionWorker";
 import type { AudioTranscriptionModel } from "@/shared/settings";
+import { isLightweightActive } from "@/renderer/viscosity/performance/lightweight"; // ViscosityCode:
 
 const TARGET_SAMPLE_RATE = 16_000;
 const MIN_AUDIO_SECONDS = 0.25;
@@ -23,6 +25,31 @@ const pending = new Map<
 >();
 const progressListeners = new Set<(progress: VoiceTranscriptionProgress) => void>();
 
+// ViscosityCode: the loaded Whisper model holds 150-600 MB in the worker, so drop
+// it once idle; the next recording's warmup re-creates it from the model cache.
+export const VOICE_WORKER_IDLE_MS = 60_000;
+export const VOICE_WORKER_LIGHTWEIGHT_IDLE_MS = 15_000;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearIdleTimer(): void {
+  if (idleTimer !== null) clearTimeout(idleTimer);
+  idleTimer = null;
+}
+
+function armIdleTermination(): void {
+  clearIdleTimer();
+  if (pending.size > 0) return;
+  idleTimer = setTimeout(
+    () => {
+      idleTimer = null;
+      if (pending.size > 0) return;
+      worker?.terminate();
+      worker = null;
+    },
+    isLightweightActive() ? VOICE_WORKER_LIGHTWEIGHT_IDLE_MS : VOICE_WORKER_IDLE_MS,
+  );
+}
+
 export interface VoiceTranscriptionOptions {
   language: string;
   model: AudioTranscriptionModel;
@@ -33,6 +60,7 @@ function getWorker(): Worker {
   if (typeof Worker === "undefined") {
     throw new Error("Voice input requires worker support.");
   }
+  clearIdleTimer(); // ViscosityCode: any new use keeps the worker alive.
   if (!worker) {
     worker = new Worker(new URL("./voiceTranscriptionWorker.ts", import.meta.url), {
       type: "module",
@@ -56,6 +84,7 @@ function getWorker(): Worker {
       } else {
         entry.reject(new Error(event.data.error));
       }
+      armIdleTermination(); // ViscosityCode:
     };
     worker.onerror = (event) => {
       const error = new Error(event.message || "Voice transcription worker failed.");

@@ -2,7 +2,7 @@
 import { pathToFileURL } from "node:url";
 import { registerLocalFontRenderer } from "../browser/localFontPermissions";
 import type { ShellStateStore } from "../backend/BackendStateStore";
-import { BrowserWindow, screen, type RenderProcessGoneDetails } from "electron";
+import { app, BrowserWindow, screen, type RenderProcessGoneDetails } from "electron";
 import type { PoracodeChannel } from "@/shared/channel";
 import type { PoracodeWindowKind } from "@/shared/ipc";
 import type { RendererProcessGoneIntent } from "@/main/diagnostics/processGone";
@@ -11,6 +11,7 @@ import { supportsNativeWindowMaterial, syncNativeThemeForMaterial } from "./wind
 import type { WindowMaterialPreference } from "@/shared/ipc/procedures/settings";
 import {
   TRANSPARENT_WINDOW_BACKGROUND,
+  bindWindowMaterialPreferenceStore,
   resolveWindowsBackgroundMaterial,
   startupWindowMaterialPreference,
   windowBaseBackgroundColor,
@@ -23,6 +24,7 @@ import {
   noteRendererWindowClose,
 } from "./windowHardening";
 import { openDevToolsAfterStartup } from "./deferredDevTools";
+import { lowPowerGraphicsArguments } from "../viscosity/system/systemInfoPreloadBridge"; // ViscosityCode:
 import { rectOverlapsWorkArea } from "./windowGeometry";
 
 interface WindowBounds {
@@ -136,6 +138,7 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
   // from creation. Windows acrylic is applied here for a flash-free first paint
   // when glass is already on, and toggled live via setBackgroundMaterial.
   const isMacOS = process.platform === "darwin";
+  bindWindowMaterialPreferenceStore(options.state); // ViscosityCode: persisted backdrop preference.
   // ViscosityCode: the Windows backdrop follows the material preference
   // (Auto = Mica) instead of always acrylic; `none` keeps the window opaque.
   const winMaterialAtStart =
@@ -162,8 +165,14 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
     minHeight: options.minHeight ?? 720,
     backgroundColor: isMacOS || winGlassAtStart ? TRANSPARENT_WINDOW_BACKGROUND : backgroundColor,
     autoHideMenuBar: true,
+    // ViscosityCode: the blur follows window focus (flat when inactive, like
+    // other macOS apps); setWindowChrome detaches it while glass is off.
     ...(isMacOS
-      ? { vibrancy: "sidebar" as const, visualEffectState: "active" as const, transparent: true }
+      ? {
+          vibrancy: "sidebar" as const,
+          visualEffectState: "followWindow" as const,
+          transparent: true,
+        }
       : {}),
     ...(winGlassAtStart ? { backgroundMaterial: winMaterialAtStart } : {}),
     ...(supportsTitleBarOverlay
@@ -184,18 +193,26 @@ export function createMainWindow(options: CreateMainWindowOptions): BrowserWindo
       nodeIntegration: false,
       sandbox: true,
       webviewTag: true,
-      additionalArguments: buildRendererAdditionalArguments({
-        appVersion: options.appVersion,
-        isDev: options.isDev,
-        windowKind: options.windowKind ?? "main",
-        channel: options.channel,
-        posthogEnableDev: options.posthogEnableDev,
-        posthogEnabled: options.posthogEnabled,
-        posthogHost: options.posthogHost,
-        posthogKey: options.posthogKey,
-        sentryEnabled: options.sentryEnabled,
-        ...(options.hostCapabilities ? { hostCapabilities: options.hostCapabilities } : {}),
-      }),
+      additionalArguments: [
+        ...buildRendererAdditionalArguments({
+          appVersion: options.appVersion,
+          isDev: options.isDev,
+          windowKind: options.windowKind ?? "main",
+          channel: options.channel,
+          posthogEnableDev: options.posthogEnableDev,
+          posthogEnabled: options.posthogEnabled,
+          posthogHost: options.posthogHost,
+          posthogKey: options.posthogKey,
+          sentryEnabled: options.sentryEnabled,
+          ...(options.hostCapabilities ? { hostCapabilities: options.hostCapabilities } : {}),
+        }),
+        // ViscosityCode: software GPU / Remote Desktop hint for Lightweight Auto.
+        ...lowPowerGraphicsArguments({
+          readGpuFeatureStatus: () => app.getGPUFeatureStatus(),
+          platform: process.platform,
+          env: process.env,
+        }),
+      ],
     },
   });
   if ((options.windowKind ?? "main") === "main") {

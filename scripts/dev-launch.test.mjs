@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
 import { fork } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -54,6 +55,7 @@ async function fixture(t, holdAcquisition = false) {
     "prepare-computer-use-helper.mjs",
     "prepare-mcp-relay.mjs",
     "prepare-git-helper.mjs",
+    "prepare-live-re.mjs",
     "prepare-wsl-helpers.mjs",
     "prepare-agent-plugins.mjs",
     "wait-dev-server.mjs",

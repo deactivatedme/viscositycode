@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { EffectsSettingsGroup } from "@/renderer/fx/settings/EffectsSettingsControls";
+import { SettingsGroup } from "@/renderer/viscosity/settings/SettingsGroup";
 import { useViscosityShellEnabled } from "@/renderer/viscosity/layout/tabs/shellGate";
 import { SmartStartPreferencesEditor } from "@/renderer/viscosity/smartStart";
 
@@ -15,11 +15,11 @@ export function SmartStartSettings() {
   const shell = useViscosityShellEnabled();
   if (!shell) return null;
   return (
-    <EffectsSettingsGroup
+    <SettingsGroup
       title={t`Smart start`}
       description={t`Auto starts new threads on the ready account with the most usage left. These lists break close calls by what the prompt looks like.`}
     >
       <SmartStartPreferencesEditor />
-    </EffectsSettingsGroup>
+    </SettingsGroup>
   );
 }

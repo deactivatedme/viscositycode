@@ -128,4 +128,18 @@ describe("startOpenTabsSync", () => {
     setApp({ threads: [thread("a"), thread("b", { archived: true })] });
     expect(getRenderableTabIds()).toEqual(["a"]);
   });
+
+  it("closes the tab and the pane of an open, on-screen chat that is deleted or archived", () => {
+    setApp({ threads: [thread("a"), thread("b"), thread("c")], panes: ["a", "b", "c"] });
+    stopSync = startOpenTabsSync();
+    expect(useOpenTabsStore.getState().ids).toEqual(["a", "b", "c"]);
+
+    // The real store actions the delete and archive flows end in.
+    useAppStore.getState().deleteThread("a");
+    useAppStore.getState().archiveThread("b");
+    expect(useOpenTabsStore.getState().ids).toEqual(["c"]);
+    expect(getRenderableTabIds()).toEqual(["c"]);
+    const view = useAppStore.getState().view;
+    expect(view.kind === "thread" ? view.panes : []).toEqual(["c"]);
+  });
 });

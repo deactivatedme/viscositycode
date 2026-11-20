@@ -1,7 +1,9 @@
 /**
  * ViscosityCode: full 16-colour ANSI palette + selection colours for xterm.
  *
- * The Viscosity base theme ships curated light/dark ANSI sets. Every other
+ * The monochrome Viscosity base theme, Viscosity Blue and Hostile Binary ship curated light/dark
+ * ANSI sets (CLI agents rely on red/green/yellow, so the mono set keeps hues at
+ * low chroma rather than going grey). Every other
  * preset (built-in or custom) derives its palette from the resolved theme
  * colours: neutrals (black/white and their bright variants) are blended from
  * the terminal background and foreground, hues are canonical terminal colours
@@ -14,7 +16,12 @@
  */
 
 import { mixHex, toHex, type Rgb } from "@/renderer/theme/colorMath";
-import { DEFAULT_THEME_ID } from "@/renderer/theme/themePresets";
+import {
+  DEFAULT_THEME_ID,
+  HOSTILE_BINARY_THEME_ID,
+  isDarkOnlyTheme,
+  VISCOSITY_BLUE_THEME_ID,
+} from "@/renderer/theme/themePresets";
 
 export type TerminalAppearance = "light" | "dark";
 
@@ -52,7 +59,47 @@ export interface TerminalPaletteInput {
   accent: string;
 }
 
-/** Curated Viscosity sets: neutral greys plus Tailwind-family hues. */
+/** Curated monochrome Viscosity sets: neutral greys plus low-chroma hues. */
+export const VISCOSITY_MONO_ANSI: Record<TerminalAppearance, TerminalAnsiColors> = {
+  dark: {
+    black: "#262626",
+    red: "#e18881",
+    green: "#88ca95",
+    yellow: "#e1c885",
+    blue: "#8dadd7",
+    magenta: "#bf9dc7",
+    cyan: "#90cacd",
+    white: "#d4d4d4",
+    brightBlack: "#737373",
+    brightRed: "#fda19a",
+    brightGreen: "#a1e4ae",
+    brightYellow: "#fce39f",
+    brightBlue: "#a6c7f1",
+    brightMagenta: "#d9b6e1",
+    brightCyan: "#a9e4e7",
+    brightWhite: "#fafafa",
+  },
+  light: {
+    black: "#262626",
+    red: "#a43b38",
+    green: "#2c6d3e",
+    yellow: "#7e5d1d",
+    blue: "#3f5d90",
+    magenta: "#744c7d",
+    cyan: "#296e79",
+    white: "#737373",
+    brightBlack: "#525252",
+    brightRed: "#902828",
+    brightGreen: "#195c2e",
+    brightYellow: "#6c4c02",
+    brightBlue: "#2f4c7e",
+    brightMagenta: "#623b6b",
+    brightCyan: "#135d68",
+    brightWhite: "#a3a3a3",
+  },
+};
+
+/** Curated Viscosity Blue sets: neutral greys plus Tailwind-family hues. */
 export const VISCOSITY_ANSI: Record<TerminalAppearance, TerminalAnsiColors> = {
   dark: {
     black: "#27272a",
@@ -90,6 +137,30 @@ export const VISCOSITY_ANSI: Record<TerminalAppearance, TerminalAnsiColors> = {
     brightCyan: "#0891b2",
     brightWhite: "#a1a1aa",
   },
+};
+
+/**
+ * Curated Hostile Binary set: hot red and amber lead, the other hues stay
+ * recognisable (agents still mean "ok" with green) but run warm and dim.
+ * Dark-only, like the preset.
+ */
+export const HOSTILE_BINARY_ANSI: TerminalAnsiColors = {
+  black: "#2a1416",
+  red: "#ff3344",
+  green: "#8fd694",
+  yellow: "#ffb020",
+  blue: "#8aa4d6",
+  magenta: "#e27aa8",
+  cyan: "#7fc8c2",
+  white: "#d9cfca",
+  brightBlack: "#7a6a66",
+  brightRed: "#ff6b77",
+  brightGreen: "#b2e8b5",
+  brightYellow: "#ffcc66",
+  brightBlue: "#b0c4ea",
+  brightMagenta: "#f2a6c8",
+  brightCyan: "#a6e0db",
+  brightWhite: "#f3ebe6",
 };
 
 type Hue = "red" | "green" | "yellow" | "blue" | "magenta" | "cyan";
@@ -210,15 +281,18 @@ export function deriveAnsiColors(
   };
 }
 
-/** The ANSI set for a preset: curated for Viscosity, derived for the rest. */
+/** The ANSI set for a preset: curated for the Viscosity presets, derived for the rest. */
 export function resolveAnsiColors(input: TerminalPaletteInput): TerminalAnsiColors {
-  if (input.presetId === DEFAULT_THEME_ID) return VISCOSITY_ANSI[input.appearance];
+  if (input.presetId === DEFAULT_THEME_ID) return VISCOSITY_MONO_ANSI[input.appearance];
+  if (input.presetId === VISCOSITY_BLUE_THEME_ID) return VISCOSITY_ANSI[input.appearance];
+  if (input.presetId === HOSTILE_BINARY_THEME_ID) return HOSTILE_BINARY_ANSI;
   return deriveAnsiColors(input.appearance, input.background, input.foreground);
 }
 
 /** Full xterm palette: ANSI colours, cursor accent and theme-derived selection. */
 export function buildTerminalPalette(input: TerminalPaletteInput): TerminalPalette {
-  const { appearance } = input;
+  // A dark-only preset is shown dark even when the caller's appearance is light.
+  const appearance = isDarkOnlyTheme(input.presetId) ? "dark" : input.appearance;
   const background = toOpaqueHex(input.background) ?? FALLBACK[appearance].background;
   const foreground = toOpaqueHex(input.foreground) ?? FALLBACK[appearance].foreground;
   const selectionAlpha = appearance === "dark" ? 0.3 : 0.22;

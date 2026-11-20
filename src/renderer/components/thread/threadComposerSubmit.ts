@@ -56,7 +56,7 @@ import {
   resolveLocalSlashCommandAction,
   SIDE_CHAT_COMMAND_PREFIX,
 } from "./threadSlashCommands";
-// ViscosityCode: Roundtable from inside a chat (`/roundtable`, `@model` / `@bot` mentions).
+// ViscosityCode: Roundtable from inside a chat (`/roundtable`, `@model` mentions).
 import {
   openRoundtableFromComposer,
   routeComposerRoundtableMentions,
@@ -105,7 +105,7 @@ export interface ComposerSubmitContext {
   onSubmitSuccess?: (() => void) | undefined;
   /** Surface-provided per-turn context, captured when the user submits. */
   captureClientContext?: TurnClientContextCapture | undefined;
-  // ViscosityCode: bots / ready models offered as `@` mentions; a mention routes to a Roundtable.
+  // ViscosityCode: ready models offered as `@` mentions; a mention routes to a Roundtable.
   roundtableMentionTargets?: readonly RoundtableMentionTarget[] | undefined;
 }
 
@@ -337,7 +337,7 @@ export function submitComposerPrompt(
     clearComposerText();
     return;
   }
-  // ViscosityCode: a message that @mentions bots or models goes to this chat's open Roundtable.
+  // ViscosityCode: a message that @mentions models goes to this chat's open Roundtable.
   const roundtableSend = routeComposerRoundtableMentions(flat, ctx);
   if (roundtableSend) return roundtableSend;
   if (attachments.hasPendingUploads()) return;

@@ -117,6 +117,7 @@ import { prepareMcpToolFilters } from "./mcp/McpToolFilterService";
 import { ExternalMcpDiscoveryService } from "./mcp/ExternalMcpDiscoveryService";
 import { SkillsService } from "./skills/SkillsService";
 import { SessionImportService } from "./sessionImport/service";
+import { CloudAgentsService } from "./cloudAgents/service"; // ViscosityCode: cloud agents
 import { dropSkillSegmentsOnPolicyFailure } from "./skills/pluginSkillPolicy";
 import { PluginRegistry, resolvePluginMcpServers } from "./plugins";
 import { PluginCatalogService } from "./plugins/PluginCatalogService";
@@ -215,6 +216,7 @@ export class SupervisorRuntime {
   readonly mcpProbeService: McpProbeService;
   readonly skillsService: SkillsService;
   readonly sessionImportService: SessionImportService;
+  readonly cloudAgentsService: CloudAgentsService; // ViscosityCode: cloud agents
   readonly pluginRegistry: PluginRegistry;
   readonly pluginCatalogService: PluginCatalogService;
   readonly pluginAccountService: PluginAccountService;
@@ -364,6 +366,7 @@ export class SupervisorRuntime {
     });
     this.pluginDataDir = paths.pluginDataDir;
     this.sessionImportService = new SessionImportService(this.adapters, emit);
+    this.cloudAgentsService = new CloudAgentsService(this.adapters, emit); // ViscosityCode: cloud agents
     this.skillsService = new SkillsService({
       adapters: this.adapters,
       resolveAgentVersion: (kind, wslDistro) =>

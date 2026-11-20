@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   ArrowLeft,
   AlertTriangle,
@@ -71,7 +72,14 @@ type SectionMeta = { id: SettingsSection; icon: ReactNode; label: string };
  * whole list reachable without scrolling.
  */
 function SettingsNavButton(props: React.ComponentProps<typeof SidebarButton>) {
-  return <SidebarButton density="compact" {...props} />;
+  // ViscosityCode: poracode-settings-nav-row is a shell styling hook (layout/content.css).
+  return (
+    <SidebarButton
+      density="compact"
+      {...props}
+      className={`poracode-settings-nav-row ${props.className ?? ""}`}
+    />
+  );
 }
 
 /**

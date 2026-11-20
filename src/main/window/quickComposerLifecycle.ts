@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Shared quick-composer device lifecycle for managed and standalone attach.
 //
 // Both modes run the same overlay state machine: submissions queue while the
@@ -11,6 +12,10 @@
 // imports Electron types only and stays unit-testable without mocks.
 import type { BrowserWindow } from "electron";
 import type { QuickComposerSubmission } from "@/shared/ipc";
+import {
+  THREAD_START_REMOTE_REQUEST_TIMEOUT_MS,
+  WORKTREE_ADD_REMOTE_REQUEST_TIMEOUT_MS,
+} from "@/shared/remote/clientTypes"; // ViscosityCode:
 
 export interface QuickComposerLifecycleHost {
   getMainWindow(): BrowserWindow | null;
@@ -32,12 +37,20 @@ export interface QuickComposerLifecycleHost {
 export const QUICK_COMPOSER_SUBMIT_DISMISS_DELAY_MS = 800;
 /** Grace period for the overlay's animated dismiss round-trip. */
 export const QUICK_COMPOSER_REQUEST_DISMISS_DELAY_MS = 240;
+/** ViscosityCode: a hidden overlay is closed after this long, freeing its renderer. */
+export const QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS = 2 * 60_000;
+/** ViscosityCode: longest the overlay renderer may await a submit's launch receipt
+ * (mirrors the renderer's WORKTREE_LAUNCH_RECEIPT_TIMEOUT_MS, the larger of its waits). */
+export const QUICK_COMPOSER_SUBMIT_RECEIPT_WINDOW_MS =
+  WORKTREE_ADD_REMOTE_REQUEST_TIMEOUT_MS + THREAD_START_REMOTE_REQUEST_TIMEOUT_MS + 60_000;
 
 export class QuickComposerLifecycle {
   private mainReady = false;
   private dismissTimer: ReturnType<typeof setTimeout> | null = null;
+  private idleCloseTimer: ReturnType<typeof setTimeout> | null = null; // ViscosityCode:
   private revealMainAfterDismiss = false;
   private dialogOpen = false;
+  private receiptWaitUntil = 0; // ViscosityCode:
   private readonly pending: QuickComposerSubmission[] = [];
 
   constructor(private readonly host: QuickComposerLifecycleHost) {}
@@ -74,6 +87,7 @@ export class QuickComposerLifecycle {
 
   handleSubmit(overlay: BrowserWindow, submission: QuickComposerSubmission): void {
     this.pending.push(submission);
+    this.receiptWaitUntil = Date.now() + QUICK_COMPOSER_SUBMIT_RECEIPT_WINDOW_MS; // ViscosityCode:
     this.revealMainAfterDismiss = true;
     this.host.ensureMainWindow(false);
     this.flushSubmissions();
@@ -88,13 +102,17 @@ export class QuickComposerLifecycle {
 
   finishDismiss(overlay: BrowserWindow): void {
     this.clearDismissTimer();
-    if (!overlay.isDestroyed()) this.host.hideOverlay(overlay);
+    if (!overlay.isDestroyed()) {
+      this.host.hideOverlay(overlay);
+      this.armIdleClose(overlay); // ViscosityCode:
+    }
     if (!this.revealMainAfterDismiss) return;
     this.revealMainAfterDismiss = false;
     this.host.revealMainWindow(this.host.ensureMainWindow(true));
   }
 
   toggle(): void {
+    this.clearIdleCloseTimer(); // ViscosityCode:
     const overlay = this.host.getOverlay();
     if (overlay && !overlay.isDestroyed()) {
       if (overlay.isVisible()) {
@@ -121,15 +139,43 @@ export class QuickComposerLifecycle {
 
   dispose(): void {
     this.clearDismissTimer();
+    this.clearIdleCloseTimer(); // ViscosityCode:
     this.pending.length = 0;
     this.revealMainAfterDismiss = false;
     this.dialogOpen = false;
     this.mainReady = false;
+    this.receiptWaitUntil = 0; // ViscosityCode:
   }
 
   private restartDismissTimer(overlay: BrowserWindow, delayMs: number): void {
     this.clearDismissTimer();
     this.dismissTimer = setTimeout(() => this.finishDismiss(overlay), delayMs);
+  }
+
+  // ViscosityCode: the next toggle recreates a closed overlay (cold start).
+  // An open file picker (owned by the overlay), queued work, or a submit whose
+  // launch receipt the overlay renderer may still be awaiting re-arms instead.
+  // shortcut: a receipt that lands early still keeps the overlay until the
+  // window ends; add a renderer "receipt settled" ping if that memory matters.
+  private armIdleClose(overlay: BrowserWindow): void {
+    this.clearIdleCloseTimer();
+    this.idleCloseTimer = setTimeout(() => {
+      this.idleCloseTimer = null;
+      if (overlay.isDestroyed() || overlay.isVisible()) return;
+      if (this.dialogOpen || this.pending.length > 0 || Date.now() < this.receiptWaitUntil) {
+        this.armIdleClose(overlay);
+        return;
+      }
+      // Graceful close runs pagehide, so drafts flush; onClosed clears the ref.
+      overlay.close();
+    }, QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+  }
+
+  private clearIdleCloseTimer(): void {
+    if (this.idleCloseTimer) {
+      clearTimeout(this.idleCloseTimer);
+      this.idleCloseTimer = null;
+    }
   }
 
   private clearDismissTimer(): void {

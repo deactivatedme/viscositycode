@@ -1,4 +1,9 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
+import {
+  VISCOSITY_BACKFILL_COMMAND_IDS,
+  VISCOSITY_DEFAULT_KEYBINDINGS,
+} from "./viscosity/keybindings"; // ViscosityCode: fork default shortcuts
 
 export const keybindingEntrySchema = z.object({
   command: z.string().min(1),
@@ -135,6 +140,7 @@ export const BACKFILL_COMMAND_IDS = [
   "thread.recent.next",
   "thread.recent.previous",
   EDITOR_TOGGLE_MARKDOWN_PREVIEW_COMMAND_ID,
+  ...VISCOSITY_BACKFILL_COMMAND_IDS, // ViscosityCode: fork shortcuts (right sidebar)
 ] as const;
 
 /**
@@ -400,6 +406,7 @@ export const DEFAULT_KEYBINDINGS: KeybindingsFile = {
       mac: "Meta+Shift+D",
       when: "composerFocus",
     },
+    ...VISCOSITY_DEFAULT_KEYBINDINGS, // ViscosityCode: fork shortcuts (right sidebar)
   ],
 };
 

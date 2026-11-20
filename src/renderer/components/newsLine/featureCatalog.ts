@@ -3,6 +3,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import {
   AppWindow,
+  BookMarked, // ViscosityCode: Playbooks
   CalendarClock,
   GitBranch,
   GitCommitHorizontal,
@@ -81,6 +82,16 @@ export interface DiscoverableFeature {
 }
 
 export const FEATURE_CATALOG: readonly DiscoverableFeature[] = [
+  // ViscosityCode: Playbooks (src/renderer/viscosity/playbooks).
+  {
+    id: "playbooks",
+    covers: ["settings:playbooks"],
+    icon: BookMarked,
+    pitch: msg`Switch an agent into Reversing, Review or Debug in one click`,
+    action: msg`See playbooks`,
+    open: () => openSettingsSection("playbooks"),
+    isUsed: (c) => c.seen("settings:playbooks"),
+  },
   {
     id: "crews",
     covers: ["settings:crews"],
@@ -254,10 +265,9 @@ export const NOT_PROMOTED: Readonly<Partial<Record<CoverageKey, string>>> = {
   "settings:terminal": "Preferences, not a feature",
   "settings:threads": "Preferences, not a feature",
   "settings:notifications": "Preferences, not a feature",
-  // ViscosityCode: effects are on by default in the desktop layout, so people already see them.
-  "settings:effects": "Visual preferences that are on by default, not a feature to discover",
-  // ViscosityCode: Bots are discovered from their activity bar item; Settings only holds the xAI key.
-  "settings:bots": "Reached from the Bots activity bar view; the section only holds the xAI key",
+  // ViscosityCode: the key setting for Grok Roundtable seats; listed under Settings → Agents.
+  "settings:xai":
+    "Only holds the xAI API key for Grok seats in a Roundtable; reached from Settings → Agents",
   "settings:ai": "AI helper preferences, not a feature",
   "settings:acpRegistry": "Reached while adding agents",
   // ViscosityCode: Smart start's lists sit here too; Auto shows in the new-thread composer.

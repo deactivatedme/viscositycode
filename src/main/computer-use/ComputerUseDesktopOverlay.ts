@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { BrowserWindow, globalShortcut, screen, type Display } from "electron";
 import {
   ComputerUseActivityTracker,
@@ -223,9 +224,13 @@ export class ComputerUseDesktopOverlay {
 
   private hide(): void {
     this.unregisterEscape();
+    // ViscosityCode: destroy rather than hide so an idle session keeps no
+    // renderer per display; show() recreates the chip on the next activity.
     for (const overlay of this.windows.values()) {
-      if (!overlay.window.isDestroyed()) overlay.window.hide();
+      overlay.contentKey = ""; // ViscosityCode: makes in-flight loads stale.
+      if (!overlay.window.isDestroyed()) overlay.window.destroy(); // ViscosityCode:
     }
+    this.windows.clear(); // ViscosityCode:
   }
 
   private syncEscapeShortcut(): void {

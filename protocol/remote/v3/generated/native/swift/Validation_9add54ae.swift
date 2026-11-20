@@ -97,10 +97,6 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
-  static let schema_03762dd017f2a872 = RemoteSchema(unionKind: "oneOf", options: [RemoteSchemas.schema_cd9a361e554145c9, RemoteSchemas.schema_e30d1bfa71891ffd, RemoteSchemas.schema_0e5eb227708be551, RemoteSchemas.schema_73d7644dc835b94d, RemoteSchemas.schema_4734a988c0fc7988, RemoteSchemas.schema_404d099c5c6a9b12, RemoteSchemas.schema_cb09d6f7d6659d21], unknownPolicy: .strip)
-}
-
-public extension RemoteSchemas {
   static let schema_039b848cf1c1ad6c = RemoteSchema(type: "integer", defaultValue: .int(50), minimum: 1.0, maximum: 200.0, unknownPolicy: .strip)
 }
 
@@ -121,10 +117,6 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
-  static let schema_045e333a691dd990 = RemoteSchema(type: "object", required: Set(["kind", "record", "threads"]), properties: ["kind": RemoteSchemas.schema_1f4518886240126e, "record": RemoteSchemas.schema_1be5ac91cc4357cb, "threads": RemoteSchemas.schema_07e53f0185035761], additionalAllowed: true, unknownPolicy: .strip)
-}
-
-public extension RemoteSchemas {
   static let schema_0463d43632698ad7 = RemoteSchema(type: "string", literals: [.string("refresh_token")], unknownPolicy: .strip)
 }
 
@@ -134,10 +126,6 @@ public extension RemoteSchemas {
 
 public extension RemoteSchemas {
   static let schema_046f6b1ae10fa4ef = RemoteSchema(type: "string", literals: [.string("new-thread")], unknownPolicy: .strip)
-}
-
-public extension RemoteSchemas {
-  static let schema_04879beede8bfc96 = RemoteSchema(type: "object", required: Set(["config", "prompt"]), properties: ["clientContext": RemoteSchemas.schema_b23ca9582f16c4d7, "config": RemoteSchemas.schema_281d24bbbaa46745, "prompt": RemoteSchemas.schema_bf0b727f7b1c6d07, "segments": RemoteSchemas.schema_4392338ffc80bed7], additionalAllowed: true, unknownPolicy: .strip)
 }
 
 public extension RemoteSchemas {

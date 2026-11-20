@@ -2,7 +2,11 @@
 import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { KeybindingEntry } from "@/shared/keybindings";
-import { DEFAULT_KEYBINDINGS, QUICK_COMPOSER_COMMAND_ID } from "@/shared/keybindings";
+import {
+  BACKFILL_COMMAND_IDS, // ViscosityCode: removal stubs
+  DEFAULT_KEYBINDINGS,
+  QUICK_COMPOSER_COMMAND_ID,
+} from "@/shared/keybindings";
 import { BRAND_NAME, UPSTREAM_BRAND_NAME } from "@/shared/brand"; // ViscosityCode
 import { COMPOSER_CONTROL_COMMANDS } from "./composerCommands";
 import { bindingForPlatform, formatKeybinding, type PlatformName } from "./keybindingMatcher";
@@ -204,6 +208,29 @@ for (const binding of DEFAULT_KEYBINDINGS.keybindings) {
   else DEFAULT_BINDINGS_BY_COMMAND.set(binding.command, [binding]);
 }
 
+// ViscosityCode: a keyless `{ command }` entry records that the user removed every binding.
+function isRemovalStub(binding: KeybindingEntry): boolean {
+  return !binding.key && !binding.mac && !binding.windows && !binding.linux;
+}
+
+const BACKFILLED_COMMANDS = new Set<string>(BACKFILL_COMMAND_IDS);
+
+/**
+ * ViscosityCode: drop one binding. Removing the last binding of a backfilled
+ * command leaves a keyless stub, because the default backfill (main and
+ * browser) re-adds the defaults of any backfilled command with no entry.
+ */
+export function removeKeybinding(
+  keybindings: readonly KeybindingEntry[],
+  entry: KeybindingEntry,
+): KeybindingEntry[] {
+  const rest = keybindings.filter((binding) => binding !== entry);
+  const lastOne = !rest.some((binding) => binding.command === entry.command);
+  return lastOne && BACKFILLED_COMMANDS.has(entry.command)
+    ? [...rest, { command: entry.command }]
+    : rest;
+}
+
 export function buildShortcutRows(
   commands: AppCommand[],
   keybindings: readonly KeybindingEntry[],
@@ -212,6 +239,7 @@ export function buildShortcutRows(
 ): ShortcutRow[] {
   const bindingsByCommand = new Map<string, KeybindingEntry[]>();
   for (const binding of keybindings) {
+    if (isRemovalStub(binding)) continue; // ViscosityCode: not a shortcut, so no empty chip
     const existing = bindingsByCommand.get(binding.command);
     if (existing) existing.push(binding);
     else bindingsByCommand.set(binding.command, [binding]);
@@ -262,6 +290,7 @@ export function buildShortcutRows(
   const customRows = keybindings
     .filter((binding) => !knownCommandIds.has(binding.command))
     .filter((binding) => !isProjectScriptCommandId(binding.command))
+    .filter((binding) => !isRemovalStub(binding)) // ViscosityCode:
     .map((binding) =>
       rowWithSearchText(
         {

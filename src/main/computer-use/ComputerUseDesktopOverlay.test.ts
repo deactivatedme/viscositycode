@@ -525,6 +525,29 @@ describe("ComputerUseDesktopOverlay", () => {
     overlay.dispose();
   });
 
+  // ViscosityCode: hidden overlays are destroyed and recreated on the next activity.
+  it("destroys overlay windows when hidden and recreates them for the next session", async () => {
+    const overlay = new ComputerUseDesktopOverlay({
+      onExit: vi.fn<(threadIds: string[]) => void>(),
+    });
+    overlay.setActivity({ kind: "session", threadId: "thread-1", active: true });
+    await Promise.resolve();
+    const first = [...electronMock.BrowserWindow.instances];
+    expect(first.length).toBeGreaterThan(0);
+
+    overlay.setActivity({ kind: "session", threadId: "thread-1", active: false });
+    expect(first.every((window) => window.destroyed)).toBe(true);
+    expect(first.every((window) => window.hide.mock.calls.length === 0)).toBe(true);
+
+    overlay.setActivity({ kind: "session", threadId: "thread-1", active: true });
+    await Promise.resolve();
+    const second = electronMock.BrowserWindow.instances.slice(first.length);
+    expect(second).toHaveLength(first.length);
+    expect(second.every((window) => !window.destroyed && window.visible)).toBe(true);
+
+    overlay.dispose();
+  });
+
   it("keeps the overlay visible for an enabled session until it is disabled", async () => {
     const overlay = new ComputerUseDesktopOverlay({
       onExit: vi.fn<(threadIds: string[]) => void>(),

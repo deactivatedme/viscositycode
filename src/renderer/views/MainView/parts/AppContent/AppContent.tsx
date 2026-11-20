@@ -52,6 +52,9 @@ import type {
 } from "@/renderer/components/thread/ThreadDraftComposerArea";
 import { useDraftEnvironment } from "@/renderer/hooks/uiSelectors";
 import { HomeView } from "@/renderer/views/HomeView";
+// ViscosityCode: the desktop shell shows a New session instead of HomeView.
+import { useViscosityShellEnabled } from "@/renderer/viscosity/layout/tabs/shellGate";
+import { NewSessionCenter, NewSessionLanding } from "@/renderer/viscosity/newSession";
 import { ExperimentView } from "@/renderer/views/ExperimentView/ExperimentView";
 import { BrowserRemoteConnectionGate } from "@/renderer/views/MainView/parts/BrowserRemoteConnectionGate";
 import { PixelLoader } from "@/renderer/components/common/PixelLoader";
@@ -92,6 +95,7 @@ const getAppState = useAppStore.getState;
 
 export function AppContent() {
   const { t } = useLingui();
+  const shell = useViscosityShellEnabled(); // ViscosityCode: New session landing
   const view = useAppStore((state) => state.view);
   const projectIds = useProjectIds();
   const draftProjectId = view.kind === "draft" ? view.projectId : undefined;
@@ -308,7 +312,8 @@ export function AppContent() {
 
   if (view.kind === "draft") {
     if (!draftProject) {
-      return <HomeView />;
+      // ViscosityCode: may be transient while rows merge, so no redirect.
+      return shell ? <NewSessionLanding redirect={false} /> : <HomeView />;
     }
     return (
       <div className="h-full">
@@ -345,7 +350,8 @@ export function AppContent() {
     if (!hasValidPanes) {
       return (
         <div className="h-full">
-          <HomeView />
+          {/* ViscosityCode: may be transient while rows merge, so no redirect. */}
+          {shell ? <NewSessionLanding redirect={false} /> : <HomeView />}
         </div>
       );
     }
@@ -443,7 +449,8 @@ export function AppContent() {
 
   return (
     <div className="relative h-full">
-      <HomeView />
+      {/* ViscosityCode: in the shell, home becomes a New session draft. */}
+      {shell ? <NewSessionLanding redirect /> : <HomeView />}
     </div>
   );
 }
@@ -461,9 +468,17 @@ function DraftViewContent(props: {
 }) {
   const { project, lastDraftConfig, onStart } = props;
   const draftEnvironment = useDraftEnvironment(project);
+  const { t } = useLingui();
+  const shell = useViscosityShellEnabled(); // ViscosityCode: New session layout
   return (
     <ThreadDraftView
       project={project}
+      {...(shell
+        ? {
+            composerPlaceholder: t`Describe a task or ask a question`,
+            sessionCenter: <NewSessionCenter project={project} />,
+          }
+        : {})} // ViscosityCode: New session layout
       agentStatuses={draftEnvironment.agentStatuses}
       isDetectingAgents={draftEnvironment.isDetectingAgents}
       {...(draftEnvironment.pickFiles ? { pickFiles: draftEnvironment.pickFiles } : {})}

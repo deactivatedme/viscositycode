@@ -1,4 +1,4 @@
-// ViscosityCode: AppShell wiring of the fork activity bar.
+// ViscosityCode: AppShell wiring of the fork sidebar chrome (the vertical rail is gone).
 import { I18nProvider } from "@lingui/react";
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -15,9 +15,10 @@ vi.mock("@/renderer/bridge", () => ({ isMac: () => false, isWindows: () => false
 vi.mock("./parts/usePanelVisibility", () => ({
   usePanelVisibility: () => ({ rightPanelOpen: false, gitPanelOpen: false, sidePanelOpen: false }),
 }));
+const overlayEffects = vi.hoisted(() => vi.fn<(options: { reservedWidth?: number }) => void>());
 vi.mock("./parts/useSidebarOverlay", () => ({
   SIDEBAR_COLLAPSED_WIDTH: 48,
-  useSidebarOverlayEffects: () => {},
+  useSidebarOverlayEffects: overlayEffects,
 }));
 vi.mock("@/renderer/hooks/useTwoRafReady", () => ({ useTwoRafReady: (active: boolean) => active }));
 vi.mock("@/renderer/hooks/useGlassState", () => ({ useSidebarGlassActive: () => false }));
@@ -72,14 +73,17 @@ afterEach(() => {
   delete document.documentElement.dataset.windowKind;
 });
 
-it("renders the activity bar beside the main sidebar and sets the shell flag", () => {
+it("renders no rail beside the main sidebar but keeps the shell hooks", () => {
   const { container, unmount } = render(shell(<MainSidebar />));
-  expect(screen.getByRole("navigation", { name: "Activity bar" })).toBeInTheDocument();
+  expect(screen.queryByRole("navigation", { name: "Activity bar" })).toBeNull();
+  expect(container.querySelector(".vc-activitybar")).toBeNull();
+  // No width is reserved beside the sidebar any more.
+  for (const [options] of overlayEffects.mock.calls) expect(options.reservedWidth ?? 0).toBe(0);
   expect(container.querySelector(".poracode-shell")).toHaveAttribute("data-vc-activitybar");
   expect(container.querySelector(".poracode-shell")).toHaveAttribute("data-vc-sidebar-collapsed");
   expect(document.documentElement).toHaveAttribute(VISCOSITY_SHELL_ATTRIBUTE);
   expect(screen.getByText("bar active")).toBeInTheDocument();
-  // The activity bar replaces the 48px rail, so a collapsed sidebar is 0 wide.
+  // The shell has no 48px rail, so a collapsed sidebar is 0 wide.
   expect(container.querySelector<HTMLElement>(".poracode-sidebar-aside")?.style.width).toBe("0px");
 
   unmount();
@@ -94,14 +98,14 @@ it("keeps overlay shells (Settings, Git review, …) on upstream's layout", () =
   expect(container.querySelector<HTMLElement>(".poracode-sidebar-aside")?.style.width).toBe("48px");
 });
 
-it("skips the activity bar outside the main window", () => {
+it("skips the fork chrome outside the main window", () => {
   document.documentElement.dataset.windowKind = "thread";
   render(shell(<MainSidebar />));
   expect(screen.queryByRole("navigation", { name: "Activity bar" })).toBeNull();
   expect(document.documentElement).not.toHaveAttribute(VISCOSITY_SHELL_ATTRIBUTE);
 });
 
-it("skips the activity bar when the sidebar is forced expanded", () => {
+it("skips the fork chrome when the sidebar is forced expanded", () => {
   render(shell(<MainSidebar />, true));
   expect(screen.queryByRole("navigation", { name: "Activity bar" })).toBeNull();
   expect(screen.getByText("rail mode")).toBeInTheDocument();

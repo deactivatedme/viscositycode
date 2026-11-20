@@ -3,6 +3,7 @@ import type { Monaco } from "@monaco-editor/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as terminalColors from "@/renderer/components/terminal/terminalColors";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { setAppThemeOverride } from "@/renderer/theme/applyAppTheme";
 import { MONACO_THEME_NAMES, defineAppThemes, useResolvedTheme } from "./monacoThemes";
 
 type DefinedTheme = { colors: Record<string, string> };
@@ -76,6 +77,33 @@ describe("app Monaco themes", () => {
       );
     } finally {
       act(() => useSharedSettings.setState({ themePreset: previous }));
+    }
+  });
+
+  it("redefines the themes when a playbook theme override switches in and out", async () => {
+    const { monaco, defineTheme } = fakeMonaco();
+    defineAppThemes(monaco);
+    renderHook(() => useResolvedTheme());
+    const nextFrame = () =>
+      act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      });
+    await nextFrame();
+    try {
+      defineTheme.mockClear();
+      root.style.setProperty("--accent", "#00ff41");
+      act(() => setAppThemeOverride("hostile-binary"));
+      await nextFrame();
+      expect(lastDefinition(defineTheme, "poracode-dark")?.colors["editorCursor.foreground"]).toBe(
+        "#00ff41",
+      );
+
+      defineTheme.mockClear();
+      act(() => setAppThemeOverride(null));
+      await nextFrame();
+      expect(defineTheme).toHaveBeenCalled();
+    } finally {
+      act(() => setAppThemeOverride(null));
     }
   });
 });

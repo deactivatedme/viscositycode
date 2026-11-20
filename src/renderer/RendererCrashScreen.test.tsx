@@ -1,6 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentry = vi.hoisted(() => {
   const scope = {
@@ -18,6 +19,8 @@ const sentry = vi.hoisted(() => {
 });
 
 vi.mock("@sentry/electron/renderer", () => ({
+  init: vi.fn<() => void>(),
+  setContext: vi.fn<() => void>(),
   captureException: sentry.captureException,
   isEnabled: sentry.isEnabled,
   withScope: sentry.withScope,
@@ -29,8 +32,16 @@ import {
   RendererCrashScreen,
   RendererErrorBoundary,
 } from "./RendererCrashScreen";
-import { captureRendererException } from "./diagnostics/sentry";
+import { captureRendererException, initializeRendererSentry } from "./diagnostics/sentry";
 import { resetStaleBuildRecoveryForTest } from "./staleBuildRecovery";
+
+beforeAll(async () => {
+  // The renderer Sentry SDK loads lazily; initialize it once so capture reaches the mock.
+  Object.assign(window, { poracode: { sentryEnabled: true } });
+  initializeRendererSentry();
+  await vi.dynamicImportSettled();
+  Reflect.deleteProperty(window, "poracode");
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

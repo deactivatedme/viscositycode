@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import {
   profileIdentitySchema,
@@ -26,6 +27,7 @@ import {
   profileTokenStatsSchema,
 } from "../../contracts/profileResults";
 import { sharedSettingsSchema } from "../../settings";
+import { savedPlaybooksSchema } from "../../viscosity/playbook"; // ViscosityCode
 import { hostResourceAdmissionStatusSchema } from "../../hostResourceAdmission";
 import { gitStateSnapshotWireSchema } from "./gitStateWire";
 import {
@@ -347,6 +349,7 @@ const remoteSettingsWireBaseSchema = sharedSettingsSchema.pick(
 export const remoteSettingsWireSchema = remoteSettingsWireBaseSchema.extend({
   usage: sharedSettingsSchema.shape.usage.optional(),
   crews: sharedSettingsSchema.shape.crews.removeDefault().optional(),
+  playbooks: savedPlaybooksSchema.optional(), // ViscosityCode: optional for hosts without playbooks.
   followUpBehavior: sharedSettingsSchema.shape.followUpBehavior.optional().default("steer"),
   searchUseIgnoreFiles: sharedSettingsSchema.shape.searchUseIgnoreFiles.optional(),
   searchExclude: sharedSettingsSchema.shape.searchExclude.optional(),

@@ -1,8 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { z } from "zod";
 import { agentKindSchema, threadModeSchema } from "./common";
 import { selectionBindingSchema, type SelectionBinding } from "../selectionBinding.schemas.ts";
 import { threadImportedFromSchema } from "./sessionImport";
 import { isThreadConfigCrewEqual, threadConfigCrewSchema } from "../crew";
+// ViscosityCode: playbook binding (src/shared/viscosity/playbook.ts).
+import { isThreadConfigPlaybookEqual, threadConfigPlaybookSchema } from "../viscosity/playbook";
 
 const threadConfigShape = {
   model: z.string().min(1),
@@ -26,6 +29,7 @@ const threadConfigShape = {
    * writer and is retained when updating an existing thread.
    */
   crew: threadConfigCrewSchema.optional(),
+  playbook: threadConfigPlaybookSchema.optional(), // ViscosityCode: same absent/null/future rules as crew.
   mode: threadModeSchema.optional(),
   approvalPolicy: z.string().optional(),
   approvalsReviewer: z.string().optional(),
@@ -62,6 +66,10 @@ export function retainThreadToolOverrides(
       ? { pluginOverrides: previous.pluginOverrides }
       : {}),
     ...(config.crew === undefined && previous.crew !== undefined ? { crew: previous.crew } : {}),
+    // ViscosityCode: older writers omit the playbook; keep it like the crew.
+    ...(config.playbook === undefined && previous.playbook !== undefined
+      ? { playbook: previous.playbook }
+      : {}),
   };
 }
 
@@ -145,6 +153,7 @@ export function isThreadConfigEqual(
     left.workflows === right.workflows &&
     areSelectionBindingsEqual(left.selectionBinding, right.selectionBinding) &&
     isThreadConfigCrewEqual(left.crew, right.crew) &&
+    isThreadConfigPlaybookEqual(left.playbook, right.playbook) && // ViscosityCode
     left.mode === right.mode &&
     left.approvalPolicy === right.approvalPolicy &&
     left.approvalsReviewer === right.approvalsReviewer &&

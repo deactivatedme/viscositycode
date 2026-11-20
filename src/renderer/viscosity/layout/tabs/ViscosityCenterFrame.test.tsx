@@ -6,8 +6,11 @@ import { DEFAULT_KEYBINDINGS } from "@/shared/keybindings";
 import type { PlatformName } from "@/renderer/commands/keybindingMatcher";
 import { buildCommandRegistry } from "@/renderer/commands/registry";
 import { buildShortcutRows, SHORTCUT_CONTEXTS } from "@/renderer/commands/shortcutCatalog";
+import { i18n } from "@/renderer/i18n/i18n";
 import { useAppStore } from "@/renderer/state/appStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
+import { AGENT_COLORS_STYLE_ID } from "@/renderer/viscosity/agentColors/runtime";
+import { PLAYBOOK_COMMAND_IDS } from "@/renderer/viscosity/commands/commandIds";
 import { viscosityCommands } from "@/renderer/viscosity/commands/viscosityCommands";
 import { OPEN_MISSION_CONTROL_COMMAND_ID } from "@/renderer/viscosity/missionControl/paletteCommands";
 import { useMissionControlTabs } from "@/renderer/viscosity/missionControl/tabs";
@@ -46,8 +49,9 @@ const FEATURE_COMMAND_IDS = [
   ASK_ALL_MODELS_COMMAND_ID,
 ];
 
+// Like the app: descriptors with values (e.g. "Playbook: {0}") are interpolated.
 const resolveLabel = (value: string | MessageDescriptor): string =>
-  typeof value === "string" ? value : (value.message ?? String(value.id));
+  typeof value === "string" ? value : i18n._(value);
 
 let releaseShell: (() => void) | null = null;
 
@@ -80,19 +84,43 @@ describe("ViscosityCenterFrame startup wiring", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("installs the per-agent colour stylesheet and the Playbook commands with the main layout", () => {
+    expect(document.getElementById(AGENT_COLORS_STYLE_ID)).not.toBeNull();
+    const ids = buildCommandRegistry().map((command) => command.id);
+    expect(ids.some((id) => id.startsWith("viscosity.playbooks."))).toBe(true);
+  });
+
+  it("marks a single pane so the top bar owns its title", async () => {
+    releaseShell = acquireViscosityShellFlag(root);
+    const view = render(
+      <ViscosityCenterFrame>
+        <div data-testid="content" />
+      </ViscosityCenterFrame>,
+    );
+    const center = () => document.querySelector("[data-vc-center]")!;
+    expect(center()).toHaveAttribute("data-vc-single-pane");
+    await act(async () => useAppStore.setState({ view: { kind: "thread", panes: ["a", "b"] } }));
+    expect(center()).not.toHaveAttribute("data-vc-single-pane");
+    view.unmount();
+  });
+
   it("keeps new fork command ids in the viscosity namespace", () => {
     expect(TOGGLE_ZEN_MODE_COMMAND_ID).toBe("viscosity.zen.toggle");
     expect(OPEN_MISSION_CONTROL_COMMAND_ID).toBe("viscosity.missionControl.open");
     expect(OPEN_SUBSCRIPTIONS_COMMAND_ID).toBe("viscosity.subscriptions.open");
+    expect(PLAYBOOK_COMMAND_IDS.usePrefix).toBe("viscosity.playbooks.use.");
     for (const command of viscosityCommands()) {
-      expect(command.id).toMatch(/^(viscosity|roundtable)\.[a-zA-Z]+(\.[a-zA-Z]+)?$/);
+      // Per-playbook commands append the playbook's kebab-case id.
+      expect(command.id).toMatch(
+        /^(?:(viscosity|roundtable)\.[a-zA-Z]+(\.[a-zA-Z]+)?|viscosity\.playbooks\.use\.[a-z0-9][a-z0-9-]*)$/,
+      );
     }
   });
 
-  it("adds the Subscriptions tab to Mission Control after Agents", () => {
+  it("adds the Cloud and Subscriptions tabs to Mission Control after Agents", () => {
     const { result } = renderHook(() => useMissionControlTabs());
     const ids = result.current.map((tab) => tab.id);
-    expect(ids.slice(0, 2)).toEqual(["agents", "subscriptions"]);
+    expect(ids.slice(0, 3)).toEqual(["agents", "cloud", "subscriptions"]);
   });
 
   it("offers every feature command in the desktop shell with a title no other command uses", () => {

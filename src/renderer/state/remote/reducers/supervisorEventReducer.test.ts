@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RuntimeEvent, Thread } from "@/shared/contracts";
 import {
@@ -5,6 +6,11 @@ import {
   recordHistoryTail,
 } from "@/renderer/state/remoteServers/catalog/boundedHistoryRegistry";
 import { useAppStore } from "@/renderer/state/appStore";
+
+const { lightweightMock } = vi.hoisted(() => ({ lightweightMock: { active: false } }));
+vi.mock("@/renderer/viscosity/performance/lightweight", () => ({
+  isLightweightActive: () => lightweightMock.active,
+}));
 
 // Observe selector-cache invalidation while keeping every real export.
 vi.mock("@/renderer/components/thread/ChatPane/chatPaneSelectors", async (importOriginal) => {
@@ -1024,5 +1030,93 @@ describe("discardQueued", () => {
 
     expect(itemIds()).toBeUndefined();
     reducer.clear();
+  });
+});
+
+describe("supervisorEventReducer — Lightweight flush pacing", () => {
+  let reducer: SupervisorEventReducer;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    useAppStore.setState({ view: { kind: "thread", panes: ["thread-1"] } });
+    reducer = createSupervisorEventReducer({ recovery: inlineRecovery });
+  });
+
+  afterEach(() => {
+    reducer.clear();
+    resetStore();
+    useAppStore.setState({ view: { kind: "home" } });
+    document.documentElement.removeAttribute("data-app-unfocused");
+    lightweightMock.active = false;
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("flushes foreground events on the next frame when Lightweight is off", () => {
+    reducer.dispatch(runtimeEvent("thread-1", "item-1"));
+    vi.advanceTimersToNextFrame();
+    expect(itemIds()).toEqual(["item-1"]);
+  });
+
+  it("flushes foreground events after 50 ms, not per frame, in Lightweight", () => {
+    lightweightMock.active = true;
+    for (const id of ["item-1", "item-2", "item-3"]) {
+      reducer.dispatch(runtimeEvent("thread-1", id));
+    }
+    vi.advanceTimersToNextFrame();
+    vi.advanceTimersByTime(49 - 16);
+    expect(itemIds()).toBeUndefined();
+    vi.advanceTimersByTime(1);
+    expect(itemIds()).toEqual(["item-1", "item-2", "item-3"]);
+  });
+
+  it("keeps dispatch order across a budgeted multi-slice drain in Lightweight", () => {
+    lightweightMock.active = true;
+    let clock = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => clock);
+    const budgeted = createSupervisorEventReducer({
+      recovery: inlineRecovery,
+      // Every apply costs more than the 4 ms budget, forcing hasMore continuations.
+      afterApply: () => {
+        clock += 6;
+      },
+    });
+    const ids = Array.from({ length: 1_200 }, (_, i) => `item-${i}`);
+    try {
+      budgeted.enqueueRuntimeBatches([
+        { threadId: "thread-1", events: ids.map((id) => itemStarted(id)) },
+      ]);
+      vi.advanceTimersByTime(49);
+      expect(itemIds()).toBeUndefined();
+      vi.advanceTimersByTime(1);
+      const afterFirstSlice = itemIds()?.length ?? 0;
+      expect(afterFirstSlice).toBeGreaterThan(0);
+      expect(afterFirstSlice).toBeLessThan(ids.length);
+      // The 0 ms continuation runs well before the re-armed 50 ms flush.
+      vi.advanceTimersByTime(1);
+      expect(itemIds()?.length).toBeGreaterThan(afterFirstSlice);
+      vi.runAllTimers();
+      expect(itemIds()).toEqual(ids);
+    } finally {
+      budgeted.clear();
+    }
+  });
+
+  it("batches an unfocused window at 250 ms in Lightweight", () => {
+    lightweightMock.active = true;
+    document.documentElement.setAttribute("data-app-unfocused", "");
+    reducer.dispatch(runtimeEvent("thread-1", "item-1"));
+    vi.advanceTimersByTime(249);
+    expect(itemIds()).toBeUndefined();
+    vi.advanceTimersByTime(1);
+    expect(itemIds()).toEqual(["item-1"]);
+  });
+
+  it("keeps per-frame flushes for an unfocused window when Lightweight is off", () => {
+    document.documentElement.setAttribute("data-app-unfocused", "");
+    reducer.dispatch(runtimeEvent("thread-1", "item-1"));
+    vi.advanceTimersToNextFrame();
+    expect(itemIds()).toEqual(["item-1"]);
   });
 });

@@ -1,6 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { McpThreadIdentity } from "@/shared/browserMcpThread";
 import type { AgentVisionService } from "@/host/AgentVisionService";
-import { AsyncWorkTracker } from "@/shared/asyncWorkTracker";
 import { joinRuntimeShutdown } from "@/shared/joinRuntimeShutdown";
 import type { ComputerUseLockedUseStatus } from "@/shared/contracts/computerUse";
 import { createComputerUseDriver, type CreateComputerUseDriverOptions } from "./drivers";
@@ -79,7 +79,6 @@ export class ComputerUseMcpIngress {
   /** Locked-use notes keyed by the tool result they belong to. */
   private readonly resultNotes = new WeakMap<object, string>();
   private readonly ingress: StreamableHttpMcpIngress<ToolContext>;
-  private readonly prewarm = new AsyncWorkTracker();
   private starting: Promise<ComputerUseMcpIngressInfo> | undefined;
   private closing: Promise<void> | undefined;
   private stopping = false;
@@ -122,8 +121,7 @@ export class ComputerUseMcpIngress {
     void this.ingress
       .start()
       .then((info) => {
-        if (this.stopping) throw new Error("Computer-use ingress is stopping.");
-        void this.prewarm.run(() => this.driver.describeStatus()).catch(() => {});
+        // ViscosityCode: no helper prewarm; the native helper spawns on the first tool call (low-RAM hosts).
         if (this.stopping) throw new Error("Computer-use ingress is stopping.");
         return info;
       })
@@ -192,7 +190,6 @@ export class ComputerUseMcpIngress {
             () => undefined,
             () => undefined,
           ),
-        () => this.prewarm.drain(),
       ],
       "Computer-use shutdown is unconfirmed.",
     ).then(barrier.resolve, barrier.reject);

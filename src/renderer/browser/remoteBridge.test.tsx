@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { PrWatch, PrWatchInput, PrWatchKey, ProjectNotes } from "@/shared/contracts";
@@ -6,7 +7,7 @@ import { REMOTE_PROCEDURE_SPECS, pickRemoteSettings } from "@/shared/remote";
 import { defaultSharedSettings } from "@/shared/settings";
 import { applyDesktopSettings, resetDesktopSettings } from "./remoteSettingsSync";
 import type { RemoteDesktopClient } from "@/shared/remote/client";
-import { DEFAULT_KEYBINDINGS } from "@/shared/keybindings";
+import { BACKFILL_COMMAND_IDS, DEFAULT_KEYBINDINGS } from "@/shared/keybindings";
 import { resolveLocalImageDisplayUrl } from "@/shared/localImageDisplay";
 import { toLocalFileUrl } from "@/shared/promptContent";
 import {
@@ -26,6 +27,11 @@ import {
   beginBrowserPresentation,
   projectBrowserPresentation,
 } from "@/renderer/state/browserPresentationIntents";
+
+// Defaults a stored browser file gains on read when it predates their commands.
+const BACKFILLED = DEFAULT_KEYBINDINGS.keybindings.filter((binding) =>
+  (BACKFILL_COMMAND_IDS as readonly string[]).includes(binding.command),
+);
 
 describe("remote bridge", () => {
   it("notifies subscribers after the active client changes", () => {
@@ -300,8 +306,30 @@ describe("remote bridge", () => {
     });
     await expect(window.poracode.getKeybindings()).resolves.toEqual({
       path: "browser-storage://keybindings.json",
-      file,
+      file: { ...file, keybindings: [...file.keybindings, ...BACKFILLED] },
     });
+  });
+
+  it("backfills new default shortcuts into a stored browser file that predates them", async () => {
+    const storageKey = "poracode.browser.keybindings.v1";
+    const custom = { command: "settings.open", key: "Ctrl+Alt+," };
+    const cleared = { command: "viscosity.rightSidebar.toggle" };
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ version: 1, keybindings: [custom, cleared] }),
+    );
+    try {
+      installRemoteBridge();
+      const { file } = await window.poracode.getKeybindings();
+      const commands = file.keybindings.map((binding) => binding.command);
+      expect(file.keybindings.slice(0, 2)).toEqual([custom, cleared]);
+      // A deliberately cleared command stays cleared; missing fork ids gain their defaults.
+      expect(commands.filter((id) => id === "viscosity.rightSidebar.toggle")).toHaveLength(1);
+      expect(commands).toContain("viscosity.view.sourceControl");
+      expect(JSON.parse(window.localStorage.getItem(storageKey)!)).toEqual(file);
+    } finally {
+      window.localStorage.removeItem(storageKey);
+    }
   });
 
   it("migrates saved browser thread-search chords and removals into editable Search bindings", async () => {
@@ -331,13 +359,14 @@ describe("remote bridge", () => {
           { ...custom, command: "palette.open" },
           { command: "palette.open" },
           unrelated,
+          ...BACKFILLED,
         ],
       };
       await expect(window.poracode.getKeybindings()).resolves.toMatchObject({ file: migrated });
       expect(JSON.parse(window.localStorage.getItem(storageKey)!)).toEqual(migrated);
       await window.poracode.setKeybindings({ version: 1, keybindings: [unrelated] });
       await expect(window.poracode.getKeybindings()).resolves.toMatchObject({
-        file: { version: 1, keybindings: [unrelated] },
+        file: { version: 1, keybindings: [unrelated, ...BACKFILLED] },
       });
     } finally {
       window.localStorage.removeItem(storageKey);

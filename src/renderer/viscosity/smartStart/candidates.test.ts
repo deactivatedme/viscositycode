@@ -176,6 +176,19 @@ describe("buildSmartStartCandidates", () => {
     ]);
   });
 
+  it("skips accounts the owner left out of an enabled pool", () => {
+    const pool = { members: ["codex", "codex:personal"], excludedMembers: ["codex:personal"] };
+    const kinds = (enabled: boolean) =>
+      buildSmartStartCandidates(
+        input({
+          agents: [agent("codex"), agent("codex:personal")],
+          pools: { codex: { ...pool, enabled } },
+        }),
+      ).map((candidate) => candidate.agentKind);
+    expect(kinds(true)).toEqual(["codex"]);
+    expect(kinds(false)).toEqual(["codex", "codex:personal"]);
+  });
+
   it("returns nothing when no agent is ready", () => {
     expect(
       buildSmartStartCandidates(input({ agents: [agent("first", { installed: false })] })),

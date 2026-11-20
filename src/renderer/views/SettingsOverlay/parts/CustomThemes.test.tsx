@@ -257,7 +257,7 @@ describe("custom theme settings", () => {
     expect(JSON.parse(json)).toMatchObject({
       version: 1,
       label: "Viscosity",
-      dark: { bg: "#0a0a0b", accent: "#38bdf8" },
+      dark: { bg: "#000000", accent: "#ffffff" },
     });
     expect(JSON.parse(json)).not.toHaveProperty("id");
     expect(useSharedSettings.getState().customThemes).toEqual([]);

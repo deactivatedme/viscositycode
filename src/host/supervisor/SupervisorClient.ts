@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fork, type ChildProcess } from "node:child_process";
 import type { Readable } from "node:stream";
+import { join } from "node:path"; // ViscosityCode
 import { randomUUID } from "node:crypto";
 import { AGENT_UPDATE_REQUEST_TIMEOUT_MS } from "@/shared/agents/updatePolicy";
 import { constants as osConstants, setPriority } from "node:os";
@@ -434,6 +436,8 @@ export class SupervisorClient {
         ...(this.options.bundledPluginsDir
           ? { PORACODE_BUNDLED_PLUGINS_DIR: this.options.bundledPluginsDir }
           : {}),
+        // ViscosityCode: reuse V8 bytecode across launches; the supervisor drops it before spawning agents.
+        NODE_COMPILE_CACHE: join(this.options.baseDir, "cache", "node-compile-cache"),
         ...extraEnv,
       },
     });

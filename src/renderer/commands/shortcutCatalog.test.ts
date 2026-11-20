@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // @vitest-environment node
 
 import type { MessageDescriptor } from "@lingui/core";
@@ -8,7 +9,12 @@ import {
   QUICK_COMPOSER_COMMAND_ID,
 } from "@/shared/keybindings";
 import { buildCommandRegistry } from "./registry";
-import { buildShortcutRows, SHORTCUT_CONTEXTS, type ShortcutContext } from "./shortcutCatalog";
+import {
+  buildShortcutRows,
+  removeKeybinding,
+  SHORTCUT_CONTEXTS,
+  type ShortcutContext,
+} from "./shortcutCatalog";
 import { formatKeybinding, type PlatformName } from "./keybindingMatcher";
 
 const resolveLabel = (value: string | MessageDescriptor): string =>
@@ -395,5 +401,30 @@ describe("shortcut catalog", () => {
     }
 
     expect(conflicts).toEqual([]);
+  });
+
+  it("keeps a keyless stub when the last binding of a backfilled command is removed", () => {
+    const toggle = { command: "viscosity.rightSidebar.toggle", key: "Ctrl+Shift+Y" };
+    const other = { command: "settings.open", key: "Ctrl+," };
+    expect(removeKeybinding([toggle, other], toggle)).toEqual([
+      other,
+      { command: "viscosity.rightSidebar.toggle" },
+    ]);
+    // Not backfilled: nothing could re-add it, so no stub.
+    expect(removeKeybinding([toggle, other], other)).toEqual([toggle]);
+    // Another binding of the same command remains: no stub.
+    const second = { ...toggle, key: "Ctrl+Alt+Y" };
+    expect(removeKeybinding([toggle, second], toggle)).toEqual([second]);
+  });
+
+  it("shows a removal stub as a row with no bindings, never as a key or custom row", () => {
+    const rows = buildShortcutRows(
+      buildCommandRegistry(),
+      [{ command: "thread.new" }, { command: "custom.removed" }],
+      "win32",
+      resolveLabel,
+    );
+    expect(rows.find((row) => row.id === "thread.new")?.bindings).toEqual([]);
+    expect(rows.some((row) => row.commandId === "custom.removed")).toBe(false);
   });
 });

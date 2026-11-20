@@ -1,5 +1,5 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 
@@ -14,6 +14,9 @@ vi.mock("@/renderer/bridge", () => ({
 
 import { AppearanceSettings } from "./AppearanceSettings";
 import { useViscosityAppearance } from "@/renderer/theme/viscosity/viscosityAppearanceStore";
+import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { setAppThemeOverride } from "@/renderer/theme/applyAppTheme";
+import { setPlaybookViewPrefs } from "@/renderer/viscosity/playbooks/viewPrefs";
 
 describe("AppearanceSettings", () => {
   beforeEach(() => {
@@ -50,5 +53,16 @@ describe("AppearanceSettings", () => {
       uiFont: "system",
     });
     expect(document.documentElement.dataset.vcUiFont).toBe("system");
+  });
+
+  it("explains a playbook theme shown instead of the saved one", () => {
+    useSharedSettings.setState({ themePreset: "github", customThemes: [] });
+    setPlaybookViewPrefs({ themeOverride: true });
+    render(<AppearanceSettings />);
+    expect(screen.queryByRole("button", { name: "Turn off playbook themes" })).toBeNull();
+
+    act(() => setAppThemeOverride("hostile-binary"));
+    expect(screen.getByRole("button", { name: "Turn off playbook themes" })).toBeInTheDocument();
+    act(() => setAppThemeOverride(null));
   });
 });

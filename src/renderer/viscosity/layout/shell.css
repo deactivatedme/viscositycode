@@ -1,4 +1,4 @@
-/* ViscosityCode: tab strip, status bar and center/composer/palette restyle. Scoped to html[data-vc-shell].
+/* ViscosityCode: top bar, status bar and center/composer/palette restyle. Scoped to html[data-vc-shell].
  *
  * Only `--vc-*` tokens (and the upstream theme variables they derive from)
  * are used for colour, radius, spacing, type and motion. The few metrics this
@@ -13,16 +13,15 @@ html[data-vc-shell] {
   --vc-tab-dot-size: 6px;
   --vc-tab-close-size: 18px;
   --vc-sash-size: 2px;
-  --vc-pane-header-height: 28px;
+  --vc-pane-header-height: 26px;
   --vc-palette-width: 600px;
   --vc-palette-max-height: 520px;
   --vc-palette-input-height: 40px;
   /* One line box for every status bar item (text never clips its descenders). */
   --vc-statusbar-line-height: calc(var(--vc-font-size-xs) + var(--vc-space-1));
   /* Upstream's macOS traffic-light gutter (`macosTrafficLightGutterClass`).
-     Upstream adds its own inset in front of it: the sidebar header's 12px
-     padding (80px clearance) and, beside the 48px collapsed rail, 8px + 28px
-     (84px clearance). activityBar.css and the tab strip below reuse it. */
+     Upstream adds its own inset in front of it (the sidebar header's 12px
+     padding: 80px clearance). activityBar.css and the top bar below reuse it. */
   --vc-traffic-light-reach: 68px;
 }
 
@@ -110,12 +109,13 @@ html[data-vc-shell] .vc-statusbar .vc-statusbar__item[data-tone="error"] {
   color: var(--vc-state-error);
 }
 
-/* === Center column: tab strip over the split view ========================= */
+/* === Center column: top bar over the split view ========================== */
 html[data-vc-shell] .vc-tabstrip {
   box-sizing: border-box;
+  gap: var(--vc-space-1);
   min-width: 0;
-  /* Hairline drawn as an inset shadow so the selected tab's background can
-     cover it and read as joined to the content below. */
+  padding-left: var(--vc-space-4);
+  /* Bottom hairline as an inset shadow: it takes no layout space. */
   box-shadow: inset 0 -1px 0 var(--vc-border-subtle);
   background: color-mix(
     in oklab,
@@ -127,10 +127,10 @@ html[data-vc-shell] .vc-tabstrip {
   font-size: var(--vc-font-size-md);
 }
 
-/* macOS, sidebar collapsed: the traffic lights straddle the activity bar and
-   the strip (a window drag region there, like upstream's single-pane header).
-   Keep upstream's collapsed clearance (gutter + 16px from the window edge,
-   i.e. 84px beside a 48px bar) and subtract only the bar's own width. */
+/* macOS, sidebar collapsed: the traffic lights sit over the bar's start (a
+   window drag region there, like upstream's single-pane header). Keep
+   upstream's collapsed clearance (gutter + 16px from the window edge); the
+   rail width token is 0px now that the vertical rail is gone. */
 html[data-vc-shell]
   .poracode-shell[data-vc-activitybar][data-mac-collapsed]
   .vc-tabstrip.poracode-mac-traffic-light-pad {
@@ -140,21 +140,34 @@ html[data-vc-shell]
   );
 }
 
-html[data-vc-shell] .vc-tabstrip__scroller {
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
+/* Session title: the focused thread, or "New session" on a draft. It takes
+   the free space, so the chips and the right sidebar toggle sit at the end. */
+html[data-vc-shell] .vc-topbar__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--vc-text);
+  font-size: var(--vc-font-size-md);
+  font-weight: var(--vc-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-html[data-vc-shell] .vc-tabstrip__scroller::-webkit-scrollbar {
-  display: none;
+/* One pane: the top bar already shows its title. The pane's status button
+   and actions stay. */
+html[data-vc-shell] [data-vc-center][data-vc-single-pane] .poracode-thread-pane-title {
+  visibility: hidden;
 }
 
-html[data-vc-shell] .vc-tabstrip__actions {
+/* Right sidebar toggle at the strip's far end. No caption-button reserve: on
+   Windows/Linux the content-header row above the strip already clears them,
+   and Zen has its own pill reserve. */
+html[data-vc-shell] .vc-tabstrip__end {
   padding: 0 var(--vc-space-2);
 }
 
 html[data-vc-shell] .vc-tabstrip__new {
-  border-radius: var(--vc-radius-sm);
+  border-radius: var(--vc-radius-md);
   color: var(--vc-text-muted);
 }
 
@@ -164,12 +177,16 @@ html[data-vc-shell] .vc-tabstrip__new:hover {
   color: var(--vc-text);
 }
 
+/* Each tab is an inset rounded rect on the flat strip: no separators. Height
+   comes from the strip's stretch minus the vertical inset. */
 html[data-vc-shell] .vc-tab {
   box-sizing: border-box;
-  height: 100%;
   min-width: var(--vc-tab-min-width);
   max-width: var(--vc-tab-max-width);
-  border-right: 1px solid var(--vc-border-subtle);
+  margin: var(--vc-space-1) var(--vc-space-0) var(--vc-space-1) 0;
+  border-radius: var(--vc-radius-md);
+  /* Keeps the agent-state underline inside the rounded corners. */
+  overflow: clip;
   color: var(--vc-text-muted);
   transition:
     background-color var(--vc-motion-fast) var(--vc-ease-standard),
@@ -185,36 +202,32 @@ html[data-vc-shell] .vc-tab:hover {
   color: var(--vc-text);
 }
 
-/* Shown in another pane of the split: readable, but not the active tab. */
-html[data-vc-shell] .vc-tab[data-on-screen] {
+/* Active chip: a neutral fill plus a hairline ring, no accent edge. */
+html[data-vc-shell] .vc-tab[data-selected] {
+  background: var(--vc-active);
+  box-shadow: inset 0 0 0 1px var(--vc-border);
   color: var(--vc-text);
 }
 
-/* Active tab: content-coloured, joined to the pane below, accent top edge. */
-html[data-vc-shell] .vc-tab[data-selected] {
-  background: color-mix(
-    in oklab,
-    var(--vc-panel-bg) calc(var(--vc-panel-alpha) * 100%),
-    transparent
-  );
-  box-shadow: inset 0 1px 0 var(--vc-accent);
-  color: var(--vc-text);
+html[data-vc-shell] .vc-tab[data-selected] .vc-tab__main {
+  font-weight: var(--vc-font-weight-medium);
 }
 
 html[data-vc-shell] .vc-tab__main {
   height: 100%;
   min-height: 0;
-  padding: 0 var(--vc-space-1) 0 var(--vc-space-4);
+  padding: 0 var(--vc-space-1) 0 var(--vc-space-3);
   border: 0;
-  border-radius: 0;
+  /* Follows the tab's corners so the focus ring traces the inset rect. */
+  border-radius: inherit;
   background: transparent;
   color: inherit;
   font-size: var(--vc-font-size-md);
-  font-weight: 400;
+  font-weight: var(--vc-font-weight-regular);
 }
 
 html[data-vc-shell] .vc-tab--editor .vc-tab__main {
-  padding-right: var(--vc-space-4);
+  padding-right: var(--vc-space-3);
 }
 
 /* The tab row owns hover; HeroUI's ghost hover/press wash would double it. */
@@ -298,7 +311,7 @@ html[data-vc-shell] .vc-tab__close[data-focus-visible] {
   opacity: 1;
 }
 
-/* The tab strip sits above every pane, so headers inside the center no longer
+/* The top bar sits above every pane, so headers inside the center no longer
    meet the window's top edge: drop their macOS traffic-light inset and keep
    the padding their own utilities give them. */
 html[data-vc-shell] [data-vc-center-body] .poracode-mac-traffic-light-pad {
@@ -329,13 +342,33 @@ html[data-vc-shell] .poracode-pane-divider-horizontal:hover::after {
   transition-delay: var(--vc-motion-fast);
 }
 
-html[data-vc-shell] .poracode-pane-divider:is(:hover, :active, :focus-visible)::after,
+/* Hover and drag thicken the hairline in a neutral tone; keyboard focus and
+   drop targets keep a coloured cue. */
+html[data-vc-shell] .poracode-pane-divider:is(:hover, :active)::after {
+  width: var(--vc-sash-size);
+  background: var(--vc-border);
+}
+
+html[data-vc-shell] .poracode-pane-divider-horizontal:is(:hover, :active)::after {
+  height: var(--vc-sash-size);
+  background: var(--vc-border);
+}
+
+html[data-vc-shell] .poracode-pane-divider:focus-visible::after {
+  width: var(--vc-sash-size);
+  background: var(--vc-focus-ring);
+}
+
+html[data-vc-shell] .poracode-pane-divider-horizontal:focus-visible::after {
+  height: var(--vc-sash-size);
+  background: var(--vc-focus-ring);
+}
+
 html[data-vc-shell] .poracode-pane-divider.is-highlighted::after {
   width: var(--vc-sash-size);
   background: var(--vc-accent);
 }
 
-html[data-vc-shell] .poracode-pane-divider-horizontal:is(:hover, :active, :focus-visible)::after,
 html[data-vc-shell] .poracode-pane-divider-horizontal.is-highlighted::after {
   height: var(--vc-sash-size);
   background: var(--vc-accent);
@@ -376,34 +409,61 @@ html[data-vc-shell] [data-vc-center-body] .poracode-thread-pane-project {
 }
 
 /* === Composer ============================================================
-   Keeps upstream's 1px hairline colour (chosen to stay visible in
-   low-contrast palettes); only the radius and the focus treatment change. */
+   A soft card: 16px radius on the composer surface with a 1px hairline.
+   Toolbar toggles and menus are quiet ghost pickers; send and stop are a
+   small accent circle. The draft layout around it is first-run-ui's. */
 html[data-vc-shell] .poracode-composer-shell {
-  border-width: 1px;
-  border-radius: var(--vc-radius-lg);
-  transition:
-    border-color var(--vc-motion-fast) var(--vc-ease-standard),
-    box-shadow var(--vc-motion-fast) var(--vc-ease-standard);
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-composer-radius);
+  background: var(--composer-surface);
+  transition: border-color var(--vc-motion-fast) var(--vc-ease-standard);
 }
 
-/* Upstream clears the shell's focus shadow with !important; the fork's accent
-   halo has to match that to show. Drafts keep their one-shot border glow,
-   tinted to the accent below. */
-html[data-vc-shell] .poracode-composer-shell:not(.poracode-composer-shell--draft):focus-within {
+/* Focus is a border-colour change only; upstream's !important box-shadow reset
+   stays in force. Drafts included: upstream hides their border on focus in
+   favour of the draft glow, which the shell drops below. */
+html[data-vc-shell] .poracode-composer-shell:focus-within {
   border-color: var(--vc-focus-ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--vc-focus-ring) 30%, transparent) !important;
 }
 
-html[data-vc-shell] .poracode-composer-border-glow::before {
-  background: conic-gradient(
-    transparent 0%,
-    var(--vc-accent) 15%,
-    var(--vc-accent) 35%,
-    transparent 50%,
-    var(--vc-accent) 65%,
-    var(--vc-accent) 85%,
-    transparent 100%
-  );
+/* No conic-gradient draft glow in the shell (also frees its compositor layer). */
+html[data-vc-shell] .poracode-composer-border-glow {
+  display: none;
+}
+
+html[data-vc-shell]
+  .poracode-composer-toolbar
+  :is(.poracode-composer-toggle, .poracode-composer-menu:not(.poracode-composer-menu--compact)) {
+  height: var(--vc-control-height);
+  min-height: 0;
+  min-width: var(--vc-control-height);
+  padding-inline: var(--vc-space-2);
+  border: 0;
+  border-radius: var(--vc-radius-md);
+  background: transparent;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+}
+
+html[data-vc-shell]
+  .poracode-composer-toolbar
+  :is(
+    .poracode-composer-toggle,
+    .poracode-composer-menu:not(.poracode-composer-menu--compact)
+  ):hover {
+  background: var(--vc-hover);
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .poracode-composer-toolbar .poracode-composer-send {
+  width: var(--vc-control-height);
+  height: var(--vc-control-height);
+  min-width: var(--vc-control-height);
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-accent);
+  color: var(--vc-accent-foreground);
 }
 
 /* === Command palette ===================================================== */
@@ -414,7 +474,7 @@ html[data-vc-shell] [data-vc-palette-backdrop] {
 }
 
 html[data-vc-shell] [data-vc-palette-container] {
-  padding-top: calc(var(--vc-titlebar-height) + var(--vc-space-2));
+  padding-top: 12vh;
 }
 
 html[data-vc-shell] [data-vc-palette] {
@@ -457,7 +517,19 @@ html[data-vc-shell] [data-vc-palette] [role="toolbar"] button {
 
 html[data-vc-shell] [data-vc-palette] [role="listbox"] [role="option"],
 html[data-vc-shell] [data-vc-palette] [role="listbox"] [role="group"] > div {
-  border-radius: var(--vc-radius-sm);
+  border-radius: var(--vc-radius-md);
+}
+
+/* One-line rows are control height; rows with a subtitle grow to fit it. */
+html[data-vc-shell] [data-vc-palette] [role="listbox"] [role="option"] {
+  height: auto;
+  min-height: var(--vc-control-height);
+  padding-block: var(--vc-space-1);
+}
+
+/* Right-hand shortcut hint (the row's third child: icon, label, hint). */
+html[data-vc-shell] [data-vc-palette] [role="listbox"] [role="option"] > span:nth-child(3) {
+  font-size: var(--vc-font-size-xs);
 }
 
 html[data-vc-shell] [data-vc-palette] [role="listbox"] [role="group"] {

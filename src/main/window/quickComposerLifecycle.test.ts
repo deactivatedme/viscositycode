@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 // Focused regression for the shared quick-composer device lifecycle used by
 // managed and standalone attach: pending submit flush (no loss while main is
 // loading/closed, no duplicates), graceful dismiss with main reveal,
@@ -6,17 +7,26 @@
 import type { BrowserWindow } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { QuickComposerSubmission } from "@/shared/ipc";
-import { QuickComposerLifecycle, type QuickComposerLifecycleHost } from "./quickComposerLifecycle";
+import {
+  QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS,
+  QUICK_COMPOSER_SUBMIT_RECEIPT_WINDOW_MS,
+  QuickComposerLifecycle,
+  type QuickComposerLifecycleHost,
+} from "./quickComposerLifecycle";
 
 interface FakeWindow {
   destroyed: boolean;
   visible: boolean;
+  closes: number;
   asBrowserWindow(): BrowserWindow;
 }
 
 function fakeWindow(): FakeWindow {
-  const state = { destroyed: false, visible: false };
+  const state = { destroyed: false, visible: false, closes: 0 };
   return {
+    get closes() {
+      return state.closes;
+    },
     get destroyed() {
       return state.destroyed;
     },
@@ -33,6 +43,10 @@ function fakeWindow(): FakeWindow {
       return {
         isDestroyed: () => state.destroyed,
         isVisible: () => state.visible,
+        close: () => {
+          state.closes += 1;
+          state.destroyed = true;
+        },
       } as unknown as BrowserWindow;
     },
   };
@@ -191,6 +205,87 @@ describe("quick composer lifecycle", () => {
       "picked.ts",
     ]);
     expect(host.shown).toEqual([]);
+  });
+
+  // ViscosityCode: the hidden overlay's renderer is freed after 2 minutes idle.
+  it("closes a hidden overlay after the idle delay and recreates it on toggle", async () => {
+    const { lifecycle, host, overlay } = harness();
+    lifecycle.finishDismiss(overlay.asBrowserWindow());
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS - 1);
+    expect(overlay.closes).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(overlay.closes).toBe(1);
+    lifecycle.toggle();
+    expect(host.createdOverlays).toHaveLength(1);
+  });
+
+  it("keeps an overlay that is shown again before the idle delay", async () => {
+    const { lifecycle, overlay } = harness();
+    lifecycle.finishDismiss(overlay.asBrowserWindow());
+    await vi.advanceTimersByTimeAsync(60_000);
+    lifecycle.toggle(); // re-show the hidden overlay
+    overlay.visible = true;
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS * 2);
+    expect(overlay.closes).toBe(0);
+  });
+
+  it("does not close a visible overlay when the idle timer fires", async () => {
+    const { lifecycle, overlay } = harness();
+    lifecycle.finishDismiss(overlay.asBrowserWindow());
+    overlay.visible = true; // shown by a path other than toggle
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+    expect(overlay.closes).toBe(0);
+  });
+
+  it("waits for an open picker or queued work before closing", async () => {
+    const { lifecycle, host, overlay } = harness();
+    let finishPick: (paths: string[] | null) => void = () => {};
+    host.pickFiles = () =>
+      new Promise((resolve) => {
+        finishPick = resolve;
+      });
+    const pick = lifecycle.handlePickFiles(overlay.asBrowserWindow());
+    lifecycle.finishDismiss(overlay.asBrowserWindow());
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+    expect(overlay.closes).toBe(0);
+    finishPick(null);
+    await pick;
+
+    // Main has not sent its ready ping, so the submit stays queued.
+    lifecycle.handleSubmit(overlay.asBrowserWindow(), submission());
+    await vi.advanceTimersByTimeAsync(800); // submit dismiss re-arms the idle timer
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+    expect(lifecycle.pendingCount()).toBe(1);
+    expect(overlay.closes).toBe(0);
+
+    lifecycle.handleMainReady();
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_SUBMIT_RECEIPT_WINDOW_MS);
+    expect(overlay.closes).toBe(1);
+  });
+
+  // ViscosityCode: the overlay renderer awaits the launch receipt after main
+  // has flushed the submit; closing it would lose the failure/uncertain notice.
+  it("keeps a hidden overlay while a submit may still await its receipt", async () => {
+    const { lifecycle, overlay } = harness();
+    lifecycle.handleMainReady();
+    lifecycle.handleSubmit(overlay.asBrowserWindow(), submission());
+    expect(lifecycle.pendingCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(800 + QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+    expect(overlay.closes).toBe(0);
+    await vi.advanceTimersByTimeAsync(
+      QUICK_COMPOSER_SUBMIT_RECEIPT_WINDOW_MS - QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS * 2,
+    );
+    expect(overlay.closes).toBe(0);
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS * 2);
+    expect(overlay.closes).toBe(1);
+  });
+
+  it("cancels the idle close on dispose", async () => {
+    const { lifecycle, overlay } = harness();
+    lifecycle.finishDismiss(overlay.asBrowserWindow());
+    lifecycle.dispose();
+    await vi.advanceTimersByTimeAsync(QUICK_COMPOSER_IDLE_CLOSE_DELAY_MS);
+    expect(overlay.closes).toBe(0);
   });
 
   it("drops pending work on dispose without delivering", () => {

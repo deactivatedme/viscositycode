@@ -3,10 +3,10 @@ import { msg } from "@lingui/core/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import type { SettingsSection } from "./types";
 import { createSearchQuery, scoreSearchFields } from "@/shared/searchMatching";
-// ViscosityCode: Settings → Effects rows live beside the section in src/renderer/fx/settings.
-import { EFFECTS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/fx/settings/effectsSettingsSearch";
-// ViscosityCode: Settings → Bots rows live beside the section in src/renderer/viscosity/bots/settings.
-import { BOTS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/viscosity/bots/settings/botsSettingsSearch";
+// ViscosityCode: Settings → Playbooks rows live beside the section in src/renderer/viscosity/playbooks/settings.
+import { PLAYBOOKS_SETTINGS_SEARCH_ENTRIES } from "@/renderer/viscosity/playbooks/settings/playbooksSettingsSearch";
+// ViscosityCode: Settings → xAI API rows live beside the section in src/renderer/viscosity/xai/settings.
+import { XAI_SETTINGS_SEARCH_ENTRIES } from "@/renderer/viscosity/xai/settings/xaiSettingsSearch";
 
 /**
  * Static index of individual settings, powering the sidebar's "Search settings"
@@ -282,8 +282,14 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
     keywords: "agent color colors colour marker stripe line accent pane header tab sidebar",
   },
 
-  // ViscosityCode: Effects (animated background + agent effects)
-  ...EFFECTS_SETTINGS_SEARCH_ENTRIES,
+  // ViscosityCode: Lightweight mode (src/renderer/viscosity/performance/LightweightModeSetting.tsx).
+  {
+    section: "appearance",
+    anchor: "appearance.lightweight",
+    title: msg`Lightweight mode`,
+    description: msg`Uses less memory, GPU and power on this device: no window glass, fewer animations, and lighter caching of background chats.`,
+    keywords: "lightweight performance memory ram gpu power battery fast slow low-end light mode",
+  },
 
   // Terminal
   {
@@ -651,8 +657,11 @@ export const SETTINGS_SEARCH_INDEX: readonly SettingsSearchEntry[] = [
       "crews crew lead roles sidekick builder reviewer scout helpers crossagents fusion team",
   },
 
-  // ViscosityCode: Bots (xAI key and Grok defaults)
-  ...BOTS_SETTINGS_SEARCH_ENTRIES,
+  // ViscosityCode: xAI API key (Grok Roundtable seats)
+  ...XAI_SETTINGS_SEARCH_ENTRIES,
+
+  // ViscosityCode: Playbooks
+  ...PLAYBOOKS_SETTINGS_SEARCH_ENTRIES,
 
   // Browser
   {

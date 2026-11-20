@@ -2,7 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const installSessionPermissions = vi.hoisted(() => vi.fn<() => void>());
-const dbGetState = vi.hoisted(() => vi.fn<() => string | null>(() => null));
+const dbGetState = vi.hoisted(() => vi.fn<(key: string) => string | null>(() => null));
+const getGpuFeatureStatus = vi.hoisted(() =>
+  vi.fn<() => { gpu_compositing?: string }>(() => ({ gpu_compositing: "enabled" })),
+);
 const dbSetState = vi.hoisted(() => vi.fn<() => void>());
 const setUserAgent = vi.hoisted(() => vi.fn<(userAgent: string) => void>());
 const openDevToolsAfterStartup = vi.hoisted(() => vi.fn<() => void>());
@@ -15,6 +18,7 @@ let windowHandlers: Record<string, (...args: never[]) => void> = {};
 let windowOnceHandlers: Record<string, (...args: never[]) => void> = {};
 
 vi.mock("electron", () => ({
+  app: { getGPUFeatureStatus: getGpuFeatureStatus },
   BrowserWindow: class BrowserWindow {
     webContents = {
       session: {},
@@ -361,6 +365,7 @@ describe("createMainWindow native chrome", () => {
     browserWindowOptions = null;
     dbGetState.mockReturnValue(null);
     supportsNativeWindowMaterial.mockReturnValue(false);
+    getGpuFeatureStatus.mockReturnValue({ gpu_compositing: "enabled" });
   });
 
   afterEach(async () => {
@@ -403,8 +408,8 @@ describe("createMainWindow native chrome", () => {
   }
 
   it.each([
-    ["dark", "#0a0a0b", "#fafafa"],
-    ["light", "#f4f4f5", "#1f2937"],
+    ["dark", "#000000", "#fafafa"],
+    ["light", "#fafafa", "#1f2937"],
   ] as const)(
     "paints the %s first frame in the base colour with OS caption buttons",
     async (appearance, background, symbolColor) => {
@@ -441,7 +446,42 @@ describe("createMainWindow native chrome", () => {
       windowMaterial: "none",
     });
     expect(none.backgroundMaterial).toBeUndefined();
-    expect(none.backgroundColor).toBe("#0a0a0b");
+    expect(none.backgroundColor).toBe("#000000");
+  });
+
+  it("opens a cold launch with the persisted preference instead of Auto (Mica)", async () => {
+    supportsNativeWindowMaterial.mockReturnValue(true);
+    dbGetState.mockImplementation((key) =>
+      key === "viscosity-window-material-v1" ? "none" : null,
+    );
+    const options = await createOnPlatform("win32", {
+      appearance: "dark",
+      sidebarTranslucency: true,
+    });
+    expect(options.backgroundMaterial).toBeUndefined();
+    expect(options.backgroundColor).toBe("#000000");
+  });
+
+  it("tells the renderer about software compositing for Lightweight Auto", async () => {
+    const argumentsOf = (options: Record<string, unknown>) =>
+      (options.webPreferences as { additionalArguments: string[] }).additionalArguments;
+    expect(
+      argumentsOf(
+        await createOnPlatform("darwin", { appearance: "dark", sidebarTranslucency: true }),
+      ),
+    ).not.toContain("--vc-low-power-graphics");
+    getGpuFeatureStatus.mockReturnValue({ gpu_compositing: "disabled_software" });
+    // macOS keeps its memory-only Auto.
+    expect(
+      argumentsOf(
+        await createOnPlatform("darwin", { appearance: "dark", sidebarTranslucency: true }),
+      ),
+    ).not.toContain("--vc-low-power-graphics");
+    expect(
+      argumentsOf(
+        await createOnPlatform("win32", { appearance: "dark", sidebarTranslucency: true }),
+      ),
+    ).toContain("--vc-low-power-graphics");
   });
 
   it("applies no material on Windows builds without the capability", async () => {
@@ -452,7 +492,7 @@ describe("createMainWindow native chrome", () => {
       windowMaterial: "mica",
     });
     expect(options.backgroundMaterial).toBeUndefined();
-    expect(options.backgroundColor).toBe("#f4f4f5");
+    expect(options.backgroundColor).toBe("#fafafa");
   });
 
   it.each(["thread", "sideChat", "browserExtract"] as const)(
@@ -478,6 +518,7 @@ describe("createMainWindow native chrome", () => {
     });
     expect(options.titleBarStyle).toBe("hiddenInset");
     expect(options.vibrancy).toBe("sidebar");
+    expect(options.visualEffectState).toBe("followWindow"); // ViscosityCode: inactive windows go flat.
     expect(options.transparent).toBe(true);
     expect(options.backgroundColor).toBe("#00000000");
     expect(options.backgroundMaterial).toBeUndefined();

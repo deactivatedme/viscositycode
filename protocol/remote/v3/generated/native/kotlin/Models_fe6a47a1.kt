@@ -69,26 +69,26 @@ data class RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7(
     }
 }
 
-@Serializable(with = RouteexperimentU2DCommandRequest_45f37b4e85.Serializer::class)
-sealed interface RouteexperimentU2DCommandRequest_45f37b4e85 {
-    data class Option1(val value: RouteexperimentU2DCommandRequestU2DOptionU2D1_045e333a69) : RouteexperimentU2DCommandRequest_45f37b4e85
-    data class Option2(val value: RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530) : RouteexperimentU2DCommandRequest_45f37b4e85
-    data class Option3(val value: RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7) : RouteexperimentU2DCommandRequest_45f37b4e85
-    object Serializer : KSerializer<RouteexperimentU2DCommandRequest_45f37b4e85> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RouteexperimentU2DCommandRequest_45f37b4e85")
-        override fun deserialize(decoder: Decoder): RouteexperimentU2DCommandRequest_45f37b4e85 {
-            val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("RouteexperimentU2DCommandRequest_45f37b4e85 supports JSON only")
+@Serializable(with = RouteexperimentU2DCommandRequest_f82c06f174.Serializer::class)
+sealed interface RouteexperimentU2DCommandRequest_f82c06f174 {
+    data class Option1(val value: RouteexperimentU2DCommandRequestU2DOptionU2D1_832bb77191) : RouteexperimentU2DCommandRequest_f82c06f174
+    data class Option2(val value: RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530) : RouteexperimentU2DCommandRequest_f82c06f174
+    data class Option3(val value: RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7) : RouteexperimentU2DCommandRequest_f82c06f174
+    object Serializer : KSerializer<RouteexperimentU2DCommandRequest_f82c06f174> {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RouteexperimentU2DCommandRequest_f82c06f174")
+        override fun deserialize(decoder: Decoder): RouteexperimentU2DCommandRequest_f82c06f174 {
+            val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("RouteexperimentU2DCommandRequest_f82c06f174 supports JSON only")
             val element = jsonDecoder.decodeJsonElement()
-            val matches = mutableListOf<RemoteUnionMatch<RouteexperimentU2DCommandRequest_45f37b4e85>>()
-            RemoteUnionCodec.tryOption(matches, 1, RemoteUnionCodec.matchesProperty(element, "kind", listOf(JsonPrimitive("create")))) { Option1(jsonDecoder.json.decodeFromJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D1_045e333a69>(element)) }
+            val matches = mutableListOf<RemoteUnionMatch<RouteexperimentU2DCommandRequest_f82c06f174>>()
+            RemoteUnionCodec.tryOption(matches, 1, RemoteUnionCodec.matchesProperty(element, "kind", listOf(JsonPrimitive("create")))) { Option1(jsonDecoder.json.decodeFromJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D1_832bb77191>(element)) }
             RemoteUnionCodec.tryOption(matches, 2, RemoteUnionCodec.matchesProperty(element, "kind", listOf(JsonPrimitive("replace")))) { Option2(jsonDecoder.json.decodeFromJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530>(element)) }
             RemoteUnionCodec.tryOption(matches, 3, RemoteUnionCodec.matchesProperty(element, "kind", listOf(JsonPrimitive("remove")))) { Option3(jsonDecoder.json.decodeFromJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7>(element)) }
-            return RemoteUnionCodec.single("RouteexperimentU2DCommandRequest_45f37b4e85", matches)
+            return RemoteUnionCodec.single("RouteexperimentU2DCommandRequest_f82c06f174", matches)
         }
-        override fun serialize(encoder: Encoder, value: RouteexperimentU2DCommandRequest_45f37b4e85) {
-            val jsonEncoder = encoder as? JsonEncoder ?: throw SerializationException("RouteexperimentU2DCommandRequest_45f37b4e85 supports JSON only")
+        override fun serialize(encoder: Encoder, value: RouteexperimentU2DCommandRequest_f82c06f174) {
+            val jsonEncoder = encoder as? JsonEncoder ?: throw SerializationException("RouteexperimentU2DCommandRequest_f82c06f174 supports JSON only")
             val element = when (value) {
-                is Option1 -> jsonEncoder.json.encodeToJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D1_045e333a69>(value.value)
+                is Option1 -> jsonEncoder.json.encodeToJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D1_832bb77191>(value.value)
                 is Option2 -> jsonEncoder.json.encodeToJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D2_aafcd63530>(value.value)
                 is Option3 -> jsonEncoder.json.encodeToJsonElement<RouteexperimentU2DCommandRequestU2DOptionU2D3_c133c6f7b7>(value.value)
             }

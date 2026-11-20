@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   dropPendingThreadLaunch,
   peekPendingThreadLaunch,
@@ -187,8 +188,11 @@ function discardReplacedDraftContents(targetProjectId: string): void {
  * navigated away from. The remembered pick comes second so returning to a
  * workspace resumes its last project, while the project currently on screen
  * still wins when it belongs to this workspace.
+ *
+ * ViscosityCode: exported; a `preferredProjectId` (the New session landing's
+ * most recently used project) is tried first under the same visibility rules.
  */
-function resolveNewThreadProjectId(): string | undefined {
+export function resolveNewThreadProjectId(preferredProjectId?: string): string | undefined {
   const store = useAppStore.getState();
   const knownWorkspaceIds = new Set(
     (useSharedSettings.getState().workspaces ?? []).map((workspace) => workspace.id),
@@ -208,6 +212,7 @@ function resolveNewThreadProjectId(): string | undefined {
     )?.id;
 
   return (
+    visibleId(preferredProjectId) ?? // ViscosityCode: preferred project first
     visibleId(getCurrentProjectId()) ??
     visibleId(getLastWorkspaceProjectId()) ??
     // A browser client mirrors one Home per paired machine; skip offline ones.

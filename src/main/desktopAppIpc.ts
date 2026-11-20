@@ -16,12 +16,13 @@ import { registerThreadWindowIpc } from "./window/threadWindows";
 // ViscosityCode: fork-owned xAI (Grok API) channels, main process only.
 import { registerViscosityXaiIpc } from "./viscosity/xai/registerXaiIpc";
 import { registerViscosityThemeFetchIpc } from "./viscosity/themeFetch/registerThemeFetchIpc"; // ViscosityCode:
+import { registerViscosityLiveReIpc } from "./viscosity/liveRe/registerLiveReIpc"; // ViscosityCode:
 import { QuickComposerShortcutManager } from "./quickComposerShortcut";
 import type { AutoUpdaterController } from "./updates/autoUpdater";
 import type { BackendHostClient } from "./backend/BackendHostClient";
 import type { SshEnvironmentController } from "@/host/ssh/sshEnvironmentController";
 import type { QuickComposerLifecycle } from "./window/quickComposerLifecycle";
-import { updatePowerSaveBlocker } from "./desktopAppShell";
+import { resolveDesktopResourceDirs, updatePowerSaveBlocker } from "./desktopAppShell";
 import { desktopApp, isDev, requirePoracodePaths } from "./desktopAppState";
 import {
   extractBrowserToWindow,
@@ -77,6 +78,7 @@ export function registerDesktopIpc(deps: DesktopIpcDeps): void {
   // ViscosityCode: xAI client channels (viscosity:xai:*), outside the procedure map.
   registerViscosityXaiIpc();
   registerViscosityThemeFetchIpc(); // ViscosityCode: theme import from an https link (viscosity:theme:fetch).
+  registerViscosityLiveReIpc(resolveDesktopResourceDirs().wslHelpersDir); // ViscosityCode: live_re setup check.
 
   registerSideChatWindowIpc({
     getMainWindow: () => desktopApp.mainWindow,

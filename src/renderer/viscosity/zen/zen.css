@@ -34,12 +34,8 @@ html[data-vc-shell][data-vc-zen] {
   --vc-zen-pill-reserve: calc(
     var(--vc-zen-pill-right) + var(--vc-zen-pill-width, 7.5rem) + var(--vc-space-2)
   );
-  /* Strength of the animated background while zen is on (1 = unchanged). */
-  --vc-zen-background-opacity: 0.4;
-  /* Content fill floor over the background while zen is on. */
-  --vc-zen-panel-fill-floor: 0.86;
-  /* Stacking (root context): above the shell's own layers (activity bar z-40,
-     right-panel overlays z-45), below full-window overlays (z-50). */
+  /* Stacking (root context): above the shell's own layers (right-panel
+     overlays z-45), below full-window overlays (z-50). */
   --vc-zen-hotzone-z: 44;
   --vc-zen-pill-z: 46;
 }
@@ -58,15 +54,14 @@ html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] [data-vc-p
   display: none;
 }
 
-/* The activity bar and the sidebar leave the row and disappear, but their
-   boxes keep their size. AppShell measures both (useActivityBarWidth and the
-   sidebar's ResizeObserver) to decide when the sidebar and the right/git
-   panels must float over the content; display: none would measure 0 px, so a
-   floating panel would count as docked during zen and be auto-dismissed on
-   the way out, and the sidebar's auto-collapse would flip back and forth.
-   content-visibility: hidden also skips their contents' layout and paint
-   while zen is on, and keeps them out of focus and the accessibility tree. */
-html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] .vc-activitybar,
+/* The sidebar leaves the row and disappears, but its box keeps its size.
+   AppShell measures it (the sidebar's ResizeObserver) to decide when the
+   sidebar and the right/git panels must float over the content; display: none
+   would measure 0 px, so a floating panel would count as docked during zen and
+   be auto-dismissed on the way out, and the sidebar's auto-collapse would flip
+   back and forth. content-visibility: hidden also skips its contents' layout
+   and paint while zen is on, and keeps them out of focus and the
+   accessibility tree. */
 html[data-vc-shell][data-vc-zen] .poracode-shell[data-vc-activitybar] .poracode-sidebar-aside {
   position: fixed;
   inset-block: 0;
@@ -138,19 +133,6 @@ html[data-vc-shell][data-vc-zen][data-platform="darwin"][data-client-host="elect
   [data-vc-center]
   > .vc-tabstrip.poracode-mac-traffic-light-pad {
   padding-left: calc(var(--vc-traffic-light-reach) + var(--vc-space-5));
-}
-
-/* === Dimmed background =================================================== */
-
-html[data-vc-shell][data-vc-zen] .vc-bg-layer > .vc-bg-canvas {
-  opacity: var(--vc-zen-background-opacity);
-  transition: opacity var(--vc-motion-slow) var(--vc-ease-standard);
-}
-
-/* Panels turn (nearly) opaque. Important: themes such as Viscosity Showcase
-   cap the fill with a more specific rule (fx/background/background.css). */
-html[data-vc-shell][data-vc-zen][data-vc-bg="on"] {
-  --vc-panel-fill-alpha: clamp(var(--vc-zen-panel-fill-floor), var(--vc-panel-alpha), 1) !important;
 }
 
 /* === Reveal band and "Exit Zen" pill (portalled into <body>) ============== */

@@ -4,10 +4,6 @@ import type { Project } from "@/shared/contracts";
 import { buildCommandRegistry } from "@/renderer/commands/registry";
 import { useAppStore } from "@/renderer/state/appStore";
 import {
-  BOTS_ACTIVITY_ITEM_ID,
-  registerBotsChrome,
-} from "@/renderer/viscosity/bots/registerBotsChrome";
-import {
   BUILTIN_ACTIVITY_ITEM_IDS,
   registerBuiltinActivityItems,
 } from "@/renderer/viscosity/layout/activityBar/builtinActivityItems";
@@ -20,7 +16,6 @@ const BUILTIN_IDS: string[] = Object.values(VISCOSITY_COMMAND_IDS);
 
 /** Commands available everywhere (they do not depend on the desktop shell). */
 const EVERYWHERE_IDS = new Set<string>([
-  VISCOSITY_COMMAND_IDS.openEffectsSettings,
   VISCOSITY_COMMAND_IDS.themeViscosity,
   VISCOSITY_COMMAND_IDS.themeViscosityShowcase,
   VISCOSITY_COMMAND_IDS.toggleLightDark,
@@ -36,7 +31,6 @@ function builtins() {
 
 beforeAll(() => {
   registerBuiltinActivityItems();
-  registerBotsChrome();
   useAppStore.setState({
     projects: [{ id: "project-1", name: "Project" } as Project],
     threads: [],
@@ -106,7 +100,17 @@ describe("built-in ViscosityCode palette commands", () => {
 
   it("targets the activity bar ids the shell registers", () => {
     expect(ACTIVITY_ITEM_IDS.agents).toBe(BUILTIN_ACTIVITY_ITEM_IDS.agents);
-    expect(ACTIVITY_ITEM_IDS.explorer).toBe(BUILTIN_ACTIVITY_ITEM_IDS.explorer);
-    expect(ACTIVITY_ITEM_IDS.bots).toBe(BOTS_ACTIVITY_ITEM_ID);
+  });
+
+  it("never reuses the retired Bots, Effects and Grok Bots command ids", () => {
+    // They may still be bound in users' keybindings.json.
+    expect(
+      BUILTIN_IDS.filter(
+        (id) =>
+          id.startsWith("viscosity.bots.") ||
+          id.startsWith("viscosity.effects.") ||
+          id === "viscosity.view.grokBots",
+      ),
+    ).toEqual([]);
   });
 });

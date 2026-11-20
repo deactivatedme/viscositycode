@@ -1,5 +1,5 @@
 /**
- * ViscosityCode activity bar public API. Later fork steps (Bots, Mission
+ * ViscosityCode activity bar public API. Later fork steps (Mission
  * control, …) add their entry with `registerActivityBarItem` and need nothing
  * else from this folder.
  */

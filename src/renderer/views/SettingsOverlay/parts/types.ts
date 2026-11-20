@@ -6,7 +6,6 @@ export const SETTINGS_SECTIONS = [
   "general",
   "audio",
   "appearance",
-  "effects", // ViscosityCode: animated background + agent effects (src/renderer/fx/settings)
   "terminal",
   "threads",
   "git",
@@ -24,7 +23,8 @@ export const SETTINGS_SECTIONS = [
   "mcpServers",
   "plugins",
   "crews",
-  "bots", // ViscosityCode: named AI teammates + xAI key (src/renderer/viscosity/bots/settings)
+  "xai", // ViscosityCode: xAI API key for Grok Roundtable seats (src/renderer/viscosity/xai/settings)
+  "playbooks", // ViscosityCode: Playbooks (src/renderer/viscosity/playbooks/settings)
   "browser",
   "usage",
   "import",

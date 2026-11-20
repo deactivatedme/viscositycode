@@ -1,31 +1,31 @@
 // ViscosityCode: the built-in activity bar items (Step 2 checklist).
 import { describe, expect, it } from "vitest";
 import { getActivityBarItems, isActivityViewItem } from "./activityBarRegistry";
+import { DEFAULT_ACTIVITY_VIEW_ID, resolveActivityViewId } from "./activityViewPreference";
 import { BUILTIN_ACTIVITY_ITEM_IDS, registerBuiltinActivityItems } from "./builtinActivityItems";
 
 describe("built-in activity bar items", () => {
-  it("registers Agents, Explorer, Search, Source Control, Browser and Settings once", () => {
+  it("registers Chats, Search, Playbooks, Subscriptions and Cloud agents once, without Settings", () => {
     registerBuiltinActivityItems();
     registerBuiltinActivityItems();
     const items = getActivityBarItems();
 
-    expect(items.map((item) => [item.id, item.position])).toEqual([
-      [BUILTIN_ACTIVITY_ITEM_IDS.agents, "top"],
-      [BUILTIN_ACTIVITY_ITEM_IDS.explorer, "top"],
-      [BUILTIN_ACTIVITY_ITEM_IDS.search, "top"],
-      [BUILTIN_ACTIVITY_ITEM_IDS.sourceControl, "top"],
-      [BUILTIN_ACTIVITY_ITEM_IDS.browser, "top"],
-      [BUILTIN_ACTIVITY_ITEM_IDS.settings, "bottom"],
+    expect(items.map((item) => [item.id, item.position, item.order])).toEqual([
+      [BUILTIN_ACTIVITY_ITEM_IDS.search, "top", 90],
+      [BUILTIN_ACTIVITY_ITEM_IDS.agents, "top", 100],
+      [BUILTIN_ACTIVITY_ITEM_IDS.playbooks, "top", 120],
+      [BUILTIN_ACTIVITY_ITEM_IDS.subscriptions, "bottom", 100],
+      [BUILTIN_ACTIVITY_ITEM_IDS.cloudAgents, "bottom", 110],
     ]);
-    expect(items.filter(isActivityViewItem).map((item) => item.id)).toEqual(["agents", "explorer"]);
+    // The sidebar profile row owns Settings now.
+    expect(items.map((item) => item.id)).not.toContain("settings");
+    expect(items.filter(isActivityViewItem).map((item) => item.id)).toEqual(["agents"]);
+    expect(items.filter((item) => item.toggle)).toEqual([]);
   });
 
-  it("marks only the show/hide panels as toggle buttons", () => {
+  it("opens Agents for a view saved before Explorer left the sidebar (pre-upgrade)", () => {
     registerBuiltinActivityItems();
-    expect(
-      getActivityBarItems()
-        .filter((item) => item.toggle)
-        .map((item) => item.id),
-    ).toEqual([BUILTIN_ACTIVITY_ITEM_IDS.sourceControl, BUILTIN_ACTIVITY_ITEM_IDS.browser]);
+    // `viscosity:activity-view:v1` may still hold "explorer" from an older build.
+    expect(resolveActivityViewId("explorer", getActivityBarItems())).toBe(DEFAULT_ACTIVITY_VIEW_ID);
   });
 });

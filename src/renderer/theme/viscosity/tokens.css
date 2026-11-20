@@ -38,6 +38,18 @@
   --vc-font-size-sm: 12px;
   --vc-font-size-md: 13px;
   --vc-font-size-lg: 14px;
+  --vc-line-height-ui: 18px; /* 13px chrome text */
+  --vc-line-height-meta: 16px; /* 11-12px metadata */
+  --vc-font-weight-regular: 400;
+  --vc-font-weight-medium: 500; /* chrome uses only these two weights */
+
+  /* Control metrics */
+  --vc-control-height: 28px; /* composer pills, rail buttons, palette and settings rows */
+  --vc-control-height-sm: 24px; /* send/stop, pane-header icon buttons */
+  --vc-row-height: 26px; /* sidebar thread rows */
+  --vc-prompt-radius: var(--vc-radius-lg);
+  --vc-composer-radius: 10px;
+  --vc-chat-column-max: 768px;
 
   /* Shell metrics */
   --vc-activitybar-width: 48px;
@@ -59,6 +71,8 @@
   --vc-motion-base: 200ms;
   --vc-motion-slow: 360ms;
   --vc-motion-pulse: 1800ms;
+  --vc-motion-enter: 180ms; /* panels and sidebar views appearing */
+  --vc-motion-enter-sm: 120ms; /* tabs, thread panes */
   --vc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --vc-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
   --vc-ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -69,6 +83,8 @@
   --vc-chrome-bg: var(--sidebar-background, var(--background));
   --vc-panel-bg: var(--content-background, var(--background));
   --vc-surface: var(--surface);
+  /* Prompt boxes: a faint lift over the panel. */
+  --vc-surface-raised: color-mix(in oklab, var(--foreground) 3%, var(--vc-panel-bg));
   --vc-border: var(--border);
   --vc-border-subtle: color-mix(in oklab, var(--border) 65%, transparent);
   --vc-text: var(--foreground);
@@ -91,13 +107,44 @@
   --vc-chrome-alpha: 1;
 }
 
+/* ViscosityCode: denser desktop shell. Only the main window's fork shell
+   (html[data-vc-shell]) gets the tighter metrics and quicker motion; compact,
+   PWA and extension windows keep the :root values. Placed before the
+   reduced-motion block below, which shares this specificity and must win. */
+html[data-vc-shell] {
+  /* No vertical rail: the sidebar nav list draws the activity registry. Kept
+     as a token (0px) so the traffic-light and overlay maths still resolve. */
+  --vc-activitybar-width: 0px;
+  --vc-statusbar-height: 22px;
+  --vc-tabstrip-height: 32px;
+  --vc-row-height: 30px;
+  --vc-composer-radius: 16px;
+  --vc-prompt-radius: var(--vc-radius-xl);
+  --vc-motion-base: 160ms;
+  --vc-motion-slow: 240ms;
+  --vc-motion-enter: 140ms;
+  --vc-motion-enter-sm: 100ms;
+  --vc-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+}
+
+/* ViscosityCode: calmer state effects on the monochrome base theme. Unlayered
+   like :root above, and html[...] (0,1,1) outranks it. */
+html[data-theme-preset="default"] {
+  --vc-state-thinking: color-mix(in oklab, var(--vc-accent) 60%, var(--vc-text-muted));
+  --vc-shadow-glow: 0 0 0 1px color-mix(in oklab, var(--vc-accent) 35%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  /* html[data-vc-shell] too: it outranks :root and sets its own durations. */
+  :root,
+  html[data-vc-shell] {
     --vc-motion-instant: 0ms;
     --vc-motion-fast: 0ms;
     --vc-motion-base: 0ms;
     --vc-motion-slow: 0ms;
     --vc-motion-pulse: 0ms;
+    --vc-motion-enter: 0ms;
+    --vc-motion-enter-sm: 0ms;
   }
 }
 
@@ -115,8 +162,9 @@
  * Values mirror the `default` anchors in theme/themePresets.ts and the
  * derivation in theme/themeTokens.ts (viscosityPalette.test.ts keeps them in
  * sync). Only secondary text, placeholder, scrollbar and row washes are tuned
- * by hand for a Cursor-like hierarchy: near-black panels, 1px hairlines,
- * muted grey text and a single accent.
+ * by hand for a Cursor-like hierarchy. The look is monochrome: black/white
+ * chrome, 1px hairlines, a grey text hierarchy and low-chroma status colours.
+ * The original sky-accent palette lives on as the "viscosity-blue" preset.
  */
 @layer base {
   /* HeroUI v3 multiplies --radius (x3 buttons and popovers, x2 menu rows), so
@@ -128,67 +176,171 @@
 
   .dark,
   [data-theme="dark"] {
-    --background: #0a0a0b;
-    --foreground: #e6e6e8;
-    --surface: #111113;
-    --surface-secondary: color-mix(in oklab, #111113 92%, #e6e6e8 8%);
-    --surface-tertiary: color-mix(in oklab, #111113 85%, #e6e6e8 15%);
-    --overlay: color-mix(in oklab, #111113 98%, #e6e6e8 2%);
-    --muted: #8a8a93;
-    --scrollbar: color-mix(in oklab, #8a8a93 45%, transparent);
-    --default: color-mix(in oklab, #111113 86%, #e6e6e8 14%);
-    --accent: #38bdf8;
-    --accent-foreground: #04121c;
-    --field-background: color-mix(in oklab, #111113 95%, #e6e6e8 5%);
-    --field-foreground: #e6e6e8;
-    --field-placeholder: #6e6e76;
-    --field-border: color-mix(in oklab, #1f1f23 70%, transparent);
-    --segment: color-mix(in oklab, #111113 78%, #e6e6e8 22%);
-    --border: #1f1f23;
-    --separator: color-mix(in oklab, #1f1f23 75%, transparent);
+    --background: #000000;
+    --foreground: #ededed;
+    --surface: #111111;
+    --surface-secondary: color-mix(in oklab, #111111 92%, #ededed 8%);
+    --surface-tertiary: color-mix(in oklab, #111111 85%, #ededed 15%);
+    --overlay: color-mix(in oklab, #111111 98%, #ededed 2%);
+    --muted: #a1a1a1;
+    --scrollbar: color-mix(in oklab, #a1a1a1 40%, transparent);
+    --default: color-mix(in oklab, #111111 86%, #ededed 14%);
+    --accent: #ffffff;
+    --accent-foreground: #000000;
+    --field-background: color-mix(in oklab, #111111 95%, #ededed 5%);
+    --field-foreground: #ededed;
+    --field-placeholder: #8a8a8a;
+    --field-border: color-mix(in oklab, #262626 70%, transparent);
+    --segment: color-mix(in oklab, #111111 78%, #ededed 22%);
+    --border: #262626;
+    --separator: color-mix(in oklab, #262626 75%, transparent);
     --sidebar-row-active: color-mix(in oklab, var(--foreground) 10%, transparent);
-    --sidebar-background: #0d0d0f;
-    --content-background: #0e0e10;
-    --composer-surface: #141417;
+    --sidebar-background: #000000;
+    --content-background: #0a0a0a;
+    --composer-surface: #141414;
   }
 
   .light,
   [data-theme="light"] {
-    --background: #f4f4f5;
-    --foreground: #18181b;
+    --background: #fafafa;
+    --foreground: #0a0a0a;
     --surface: #ffffff;
-    --surface-secondary: color-mix(in oklab, #ffffff 92%, #18181b 8%);
-    --surface-tertiary: color-mix(in oklab, #ffffff 85%, #18181b 15%);
-    --overlay: color-mix(in oklab, #ffffff 93%, #18181b 7%);
-    --muted: #6b6b73;
-    --scrollbar: color-mix(in oklab, #6b6b73 45%, transparent);
-    --default: color-mix(in oklab, #ffffff 82%, #18181b 18%);
-    --accent: #0279bb;
+    --surface-secondary: color-mix(in oklab, #ffffff 92%, #0a0a0a 8%);
+    --surface-tertiary: color-mix(in oklab, #ffffff 85%, #0a0a0a 15%);
+    --overlay: color-mix(in oklab, #ffffff 93%, #0a0a0a 7%);
+    --muted: #666666;
+    --scrollbar: color-mix(in oklab, #666666 40%, transparent);
+    --default: color-mix(in oklab, #ffffff 82%, #0a0a0a 18%);
+    --accent: #0a0a0a;
     --accent-foreground: #ffffff;
-    --field-background: color-mix(in oklab, #ffffff 95%, #18181b 5%);
-    --field-foreground: #18181b;
-    --field-placeholder: #84848b;
-    --field-border: color-mix(in oklab, #e3e3e8 70%, transparent);
+    --field-background: color-mix(in oklab, #ffffff 95%, #0a0a0a 5%);
+    --field-foreground: #0a0a0a;
+    --field-placeholder: #6e6e6e;
+    --field-border: color-mix(in oklab, #e5e5e5 70%, transparent);
     --segment: #ffffff;
-    --border: #e3e3e8;
-    --separator: color-mix(in oklab, #e3e3e8 75%, transparent);
+    --border: #e5e5e5;
+    --separator: color-mix(in oklab, #e5e5e5 75%, transparent);
     --sidebar-row-active: color-mix(in oklab, var(--foreground) 9%, transparent);
-    --sidebar-background: #efeff1;
-    --content-background: #fafafa;
+    --sidebar-background: #f5f5f5;
+    --content-background: #ffffff;
     --composer-surface: #ffffff;
   }
 
-  /* Row washes are not preset-managed variables, so scope the quieter
-     Cursor-style hover/selection to the Viscosity base theme only; other
-     presets keep upstream's washes. */
+  /* Row washes, status colours, state tones and agent tints are not
+     preset-managed variables, so scope the monochrome treatment to the
+     Viscosity base theme only; other presets keep upstream's values.
+     Status colours stay hued but low in chroma (each clears 4.5:1 as text on
+     content and surface, and against its label). Agent tints feed
+     agentColors/palette.ts ahead of --project-icon-*, so project icons and
+     Roundtable seats keep their colours. */
+  /* ViscosityCode: warm grey surfaces for the base theme in the desktop shell
+     only (our own values). THEME_SPECS, the .dark/.light blocks above (which
+     the Android theme generator reads), compact/PWA and other presets keep
+     the monochrome palette. Text, accent and status colours clear 4.5:1 on
+     every surface (viscosityPalette.test.ts). */
+  html[data-vc-shell].dark[data-theme-preset="default"] {
+    --background: #1e1d1b;
+    --foreground: #ecebe6;
+    --surface: #2a2926;
+    --surface-secondary: color-mix(in oklab, #2a2926 92%, #ecebe6 8%);
+    --surface-tertiary: color-mix(in oklab, #2a2926 85%, #ecebe6 15%);
+    --overlay: color-mix(in oklab, #2a2926 98%, #ecebe6 2%);
+    --muted: #a19f97;
+    --scrollbar: color-mix(in oklab, #a19f97 40%, transparent);
+    --default: color-mix(in oklab, #2a2926 86%, #ecebe6 14%);
+    --accent: #ecebe6;
+    --accent-foreground: #1e1d1b;
+    --field-background: color-mix(in oklab, #2a2926 95%, #ecebe6 5%);
+    --field-foreground: #ecebe6;
+    --field-placeholder: #8d8b84;
+    --field-border: color-mix(in oklab, #393834 70%, transparent);
+    --segment: color-mix(in oklab, #2a2926 78%, #ecebe6 22%);
+    --border: #393834;
+    --separator: color-mix(in oklab, #393834 75%, transparent);
+    --sidebar-background: #1a1918;
+    --content-background: #232220;
+    --composer-surface: #2d2c29;
+  }
+
+  html[data-vc-shell].light[data-theme-preset="default"] {
+    --background: #f5f4ef;
+    --foreground: #1f1e1c;
+    --surface: #ffffff;
+    --surface-secondary: color-mix(in oklab, #ffffff 92%, #1f1e1c 8%);
+    --surface-tertiary: color-mix(in oklab, #ffffff 85%, #1f1e1c 15%);
+    --overlay: color-mix(in oklab, #ffffff 93%, #1f1e1c 7%);
+    --muted: #6b6961;
+    --scrollbar: color-mix(in oklab, #6b6961 40%, transparent);
+    --default: color-mix(in oklab, #ffffff 82%, #1f1e1c 18%);
+    --accent: #1f1e1c;
+    --accent-foreground: #ffffff;
+    --field-background: color-mix(in oklab, #ffffff 95%, #1f1e1c 5%);
+    --field-foreground: #1f1e1c;
+    --field-placeholder: #75736b;
+    --field-border: color-mix(in oklab, #e2e0d8 70%, transparent);
+    --segment: #ffffff;
+    --border: #e2e0d8;
+    --separator: color-mix(in oklab, #e2e0d8 75%, transparent);
+    --sidebar-background: #efeee8;
+    --content-background: #faf9f5;
+    --composer-surface: #ffffff;
+  }
+
   .dark[data-theme-preset="default"],
   [data-theme="dark"][data-theme-preset="default"] {
     --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
     --row-active: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --success: #74c692; /* oklch(0.76 0.11 155) */
+    --success-foreground: #000000;
+    --warning: #e6bd77; /* oklch(0.82 0.1 80) */
+    --warning-foreground: #000000;
+    --danger: #e47c75; /* oklch(0.7 0.13 25) */
+    --danger-foreground: #000000;
+    /* Mid grey, not the foreground: idle icons are foreground-coloured and the
+       working shine sweep is a white band. */
+    --working-tone: var(--muted);
+    --finished-tone: #d1d1d1;
+    --pr-merged: #aba3d4;
+    --vc-agent-hue-red: oklch(0.7 0.05 25);
+    --vc-agent-hue-orange: oklch(0.75 0.05 55);
+    --vc-agent-hue-amber: oklch(0.8 0.05 85);
+    --vc-agent-hue-green: oklch(0.74 0.05 150);
+    --vc-agent-hue-teal: oklch(0.75 0.05 195);
+    --vc-agent-hue-blue: oklch(0.7 0.05 255);
+    --vc-agent-hue-violet: oklch(0.71 0.05 292);
+    --vc-agent-hue-pink: oklch(0.74 0.05 345);
   }
 
   .light[data-theme-preset="default"],
   [data-theme="light"][data-theme-preset="default"] {
+    --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --row-active: color-mix(in oklab, var(--foreground) 9%, transparent);
+    --success: #236e44; /* oklch(0.48 0.1 155) */
+    --warning: #875814; /* oklch(0.5 0.1 70) */
+    --danger: #a83634; /* oklch(0.5 0.15 25) */
+    --working-tone: var(--foreground);
+    --finished-tone: #3a3a3a;
+    --pr-merged: #645992;
+    --git-branch-tone: var(--muted);
+    --vc-agent-hue-red: oklch(0.55 0.05 25);
+    --vc-agent-hue-orange: oklch(0.58 0.05 55);
+    --vc-agent-hue-amber: oklch(0.6 0.05 85);
+    --vc-agent-hue-green: oklch(0.52 0.05 150);
+    --vc-agent-hue-teal: oklch(0.53 0.05 195);
+    --vc-agent-hue-blue: oklch(0.53 0.05 255);
+    --vc-agent-hue-violet: oklch(0.53 0.05 292);
+    --vc-agent-hue-pink: oklch(0.56 0.05 345);
+  }
+
+  /* Viscosity Blue keeps the released base theme's quieter row washes. */
+  .dark[data-theme-preset="viscosity-blue"],
+  [data-theme="dark"][data-theme-preset="viscosity-blue"] {
+    --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --row-active: color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+
+  .light[data-theme-preset="viscosity-blue"],
+  [data-theme="light"][data-theme-preset="viscosity-blue"] {
     --row-hover: color-mix(in oklab, var(--foreground) 5%, transparent);
     --row-active: color-mix(in oklab, var(--foreground) 9%, transparent);
   }

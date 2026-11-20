@@ -71,8 +71,12 @@ export function smartStartProviderOf(agentKind: string): string {
 /** Headroom points for an account, or undefined when it is out of usage. */
 export function headroomPoints(availability: MemberAvailability): number | undefined {
   if (availability.kind === "exhausted") return undefined;
-  if (availability.kind === "unknown") return UNKNOWN_HEADROOM;
-  return Math.max(0, Math.min(100, availability.headroomPercent));
+  // A failed poll ranks by its last good reading, like the pool pick (`bestPoolMember`).
+  const percent =
+    availability.kind === "unknown"
+      ? (availability.headroomPercent ?? UNKNOWN_HEADROOM)
+      : availability.headroomPercent;
+  return Math.max(0, Math.min(100, percent));
 }
 
 export function preferenceBonus(rank: number | undefined): number {

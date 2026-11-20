@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { msg } from "@lingui/core/macro";
 import { migrateClaudeUltracodeEffort } from "@/shared/agents/claudeEfforts";
 import type { RendererProviderManifest } from "../providerManifest";
@@ -19,4 +20,6 @@ export default {
   // Fast mode bills at a premium; keep it an explicit choice.
   defaultFastEnabled: false,
   normalizeModelConfig: normalizeClaudeModelConfig,
+  // ViscosityCode: plan suggestions for the Subscriptions editor (display only).
+  subscriptionPlanNames: ["Free", "Pro", "Max", "Ultra"],
 } satisfies RendererProviderManifest;

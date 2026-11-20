@@ -1,4 +1,6 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { EventEmitter } from "node:events";
+import { join } from "node:path";
 import { serializeBackendDiagnosticError } from "@/shared/diagnostics/backendDiagnosticError";
 import type { DesktopHostControlGrant } from "@/shared/desktopHostControl";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -279,7 +281,13 @@ describe("BackendHostClient", () => {
     expect(forkMock).toHaveBeenCalledWith(
       "/dist/backendHost.cjs",
       [],
-      expect.objectContaining({ stdio: ["ignore", "pipe", "pipe", "ipc"] }),
+      expect.objectContaining({
+        stdio: ["ignore", "pipe", "pipe", "ipc"],
+        // ViscosityCode: the compile cache lives under the data root's cache dir.
+        env: expect.objectContaining({
+          NODE_COMPILE_CACHE: join("/data", "cache", "node-compile-cache"),
+        }),
+      }),
     );
     expect(setPriorityMock).toHaveBeenCalledExactlyOnceWith(42, expect.any(Number));
     expect(assignPid).toHaveBeenCalledExactlyOnceWith(42);

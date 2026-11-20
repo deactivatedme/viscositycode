@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { ReactNode } from "react";
 import { CommandOutputViewport } from "./CommandOutputViewport";
 import { ItemMarkdown } from "./ItemMarkdown";
@@ -34,7 +35,8 @@ export function ToolCallSections({ sections, leading }: ToolCallSectionsProps) {
           key={section.label}
           className={idx > 0 ? "border-t border-[color:var(--separator)] pt-2" : undefined}
         >
-          <div className="mb-1 font-mono text-[10px] uppercase tracking-wide text-[color:var(--muted)]/80">
+          {/* ViscosityCode: poracode-tool-section-label is a shell styling hook (layout/content.css). */}
+          <div className="poracode-tool-section-label mb-1 font-mono text-[10px] uppercase tracking-wide text-[color:var(--muted)]/80">
             {section.label}
           </div>
           {section.renderAsMarkdown ? (

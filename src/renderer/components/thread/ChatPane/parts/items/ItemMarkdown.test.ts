@@ -1,10 +1,21 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import {
   normalizeGfmTableSeparators,
   normalizeShortCodeFenceClosers,
   shouldUseChunkedPlainText,
   splitStreamingPlainText,
+  streamRevealIntervalMs,
 } from "./ItemMarkdown";
+
+describe("streamRevealIntervalMs", () => {
+  it("reveals at 20 Hz in Lightweight mode and per frame otherwise", () => {
+    expect(streamRevealIntervalMs(false, true)).toBe(50);
+    expect(streamRevealIntervalMs(false, false)).toBe(1_000 / 60);
+    expect(streamRevealIntervalMs(true, true)).toBe(1_000);
+    expect(streamRevealIntervalMs(true, false)).toBe(1_000);
+  });
+});
 
 describe("long streaming text", () => {
   const longLine = "[stream-marker] " + "x".repeat(9_000);

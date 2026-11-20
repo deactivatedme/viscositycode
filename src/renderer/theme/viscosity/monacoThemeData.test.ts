@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { contrastRatio } from "@/renderer/theme/colorMath";
 import { buildMonacoThemeData, type MonacoThemeColors } from "./monacoThemeData";
-import { deriveAnsiColors } from "./terminalPalette";
+import { deriveAnsiColors, parseCssRgb } from "./terminalPalette";
 
 const MONACO_COLOR = /^#[0-9a-f]{6}([0-9a-f]{2})?$/i;
 const TOKEN_COLOR = /^[0-9a-f]{6}$/;
@@ -65,6 +66,39 @@ describe("buildMonacoThemeData", () => {
     expect(rule(data, "type")?.foreground).toBe(ansi.cyan.slice(1));
     const invalidRules = data.rules.filter((entry) => !TOKEN_COLOR.test(entry.foreground ?? ""));
     expect(invalidRules).toEqual([]);
+  });
+
+  it("uses greyscale syntax with weight steps when the accent is grey", () => {
+    const data = buildMonacoThemeData("dark", {
+      ...GITHUB_DARK,
+      content: "#0a0a0a",
+      foreground: "#ededed",
+      muted: "#a1a1a1",
+      accent: "#ffffff",
+    });
+    expect(rule(data, "keyword")).toEqual({
+      token: "keyword",
+      foreground: "ededed",
+      fontStyle: "bold",
+    });
+    const string = `#${rule(data, "string")!.foreground!}`;
+    expect(contrastRatio(string, "#0a0a0a")).toBeGreaterThanOrEqual(4.5);
+    const chromatic = data.rules.filter((entry) => {
+      const [r, g, b] = parseCssRgb(`#${entry.foreground!}`)!;
+      return Math.max(r, g, b) - Math.min(r, g, b) > 0;
+    });
+    expect(chromatic).toEqual([]);
+    // No inherited vs-dark rules (coloured JSON keys, variables, YAML keys, SQL).
+    expect(data.inherit).toBe(false);
+    const brackets = Object.entries(data.colors).filter(([key]) =>
+      /^editorBracketHighlight\.foreground[1-6]$/.test(key),
+    );
+    expect(brackets).toHaveLength(6);
+    for (const [, value] of brackets) {
+      const [r, g, b] = parseCssRgb(value)!;
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBe(0);
+    }
+    expect(data.colors["editorBracketHighlight.unexpectedBracket.foreground"]).toBe("#f85149");
   });
 
   it("falls back to the Viscosity palette per appearance for missing values", () => {

@@ -39,17 +39,15 @@ import {
 import { SIDEBAR_COLLAPSED_WIDTH, useSidebarOverlayEffects } from "./parts/useSidebarOverlay";
 import { AsideSlot } from "./parts/AsideSlot";
 import { usePanelVisibility } from "./parts/usePanelVisibility";
-// ViscosityCode: fork shell flag + Cursor-style activity bar.
+// ViscosityCode: fork shell flag + sidebar state for the fork CSS.
 import { useViscosityShellFlag } from "@/renderer/viscosity/shellFlag";
-import {
-  ActivityBar,
-  ActivitySidebarStateTracker,
-} from "@/renderer/viscosity/layout/activityBar/ActivityBar";
+import { ActivitySidebarStateTracker } from "@/renderer/viscosity/layout/activityBar/ActivityBar";
 import {
   ActivityBarActiveProvider,
   isMainSidebarElement,
 } from "@/renderer/viscosity/layout/activityBar/activityBarHost";
-import { useActivityBarWidth } from "@/renderer/viscosity/layout/activityBar/useActivityBarWidth";
+// ViscosityCode: the sidebar slide snaps under Reduce Motion.
+import { interfaceMotionAllowed } from "@/renderer/viscosity/motion";
 
 const RIGHT_OVERLAY_MIN_GUTTER = 80;
 const RIGHT_OVERLAY_EXIT_MS = 300;
@@ -175,7 +173,12 @@ function SidebarWidthDriver(props: {
     //   - skipTransition (the closing-overlay → collapsed snap)
     //   - already at target (e.g. drag end syncing React state with the DOM)
     const fromWidth = el.getBoundingClientRect().width;
-    if (isInitial || skipTransition || Math.abs(fromWidth - targetWidth) < 0.5) {
+    if (
+      isInitial ||
+      skipTransition ||
+      Math.abs(fromWidth - targetWidth) < 0.5 ||
+      !interfaceMotionAllowed() // ViscosityCode: Reduce Motion in the fork shell.
+    ) {
       el.style.width = `${targetWidth}px`;
       el.style.minWidth = `${targetWidth}px`;
       return;
@@ -418,12 +421,10 @@ export function AppShell(props: {
   const { sidebar, content, sidebarHeader, contentHeader, rightPanel, gitPanel } = props;
   const forceSidebarExpanded = props.forceSidebarExpanded === true;
   const compactLayout = useCompactLayout();
-  // ViscosityCode: only the shell hosting the main Sidebar gets the activity
-  // bar; it replaces the 48px collapsed rail, so the sidebar collapses to 0.
+  // ViscosityCode: only the shell hosting the main Sidebar gets the fork
+  // sidebar chrome; it replaces the 48px collapsed rail, so the sidebar collapses to 0.
   const vcShell = useViscosityShellFlag();
   const activityBarActive = vcShell && !forceSidebarExpanded && isMainSidebarElement(sidebar);
-  const activityBarRef = useRef<HTMLElement>(null);
-  const activityBarWidth = useActivityBarWidth(activityBarRef, activityBarActive);
   const collapsedSidebarWidth = compactLayout || activityBarActive ? 0 : SIDEBAR_COLLAPSED_WIDTH;
   const terminalPosition = useSharedSettings((s) => s.terminalPosition);
 
@@ -473,8 +474,6 @@ export function AppShell(props: {
     sidebarWidth,
     shellRef,
     disabled: forceSidebarExpanded,
-    // ViscosityCode: the activity bar shares the shell row with the sidebar.
-    reservedWidth: activityBarWidth,
   });
 
   // `shellWidth` is observed and published by `useSidebarOverlayEffects` so the
@@ -519,7 +518,6 @@ export function AppShell(props: {
   // the transition between modes is driven by a stable signal.
   const wouldBeMainWidth = layoutMetricsReady
     ? shellWidth -
-      activityBarWidth - // ViscosityCode: activity bar is part of the shell row.
       observedSidebarWidth -
       (dockedRightPanelOpen ? panelWidth : 0) -
       (gitPanelOpen ? gitPanelWidth : 0)
@@ -645,9 +643,7 @@ export function AppShell(props: {
   // dock again. Re-docking mid-drag would swap the docked/overlay <aside> under
   // the cursor and drop the drag, so a resize must never flip the mode. The
   // floor ignores a second open panel's width, which only makes it stricter.
-  // ViscosityCode: subtract the activity bar, which shares the shell row.
-  const overlayDockFloor =
-    shellWidth - activityBarWidth - observedSidebarWidth - CONTENT_MIN_WIDTH + 1;
+  const overlayDockFloor = shellWidth - observedSidebarWidth - CONTENT_MIN_WIDTH + 1;
   function getResizeLimits(target: ResizeTarget): ResizeLimits | null {
     if (!rightOverlayActive || overlayMaxWidth === undefined) return null;
     const isOverlaySlot =
@@ -667,8 +663,6 @@ export function AppShell(props: {
       style={hasHeaders ? { paddingTop: 0 } : undefined}
     >
       <MacCollapsedTracker shellRef={shellRef} forceSidebarExpanded={forceSidebarExpanded} />
-      {/* ViscosityCode: Cursor-style activity bar at the far left of the main window. */}
-      {activityBarActive ? <ActivityBar ref={activityBarRef} /> : null}
       {activityBarActive ? <ActivitySidebarStateTracker shellRef={shellRef} /> : null}
 
       {!hasHeaders && <div aria-hidden="true" className="poracode-drag-region" />}

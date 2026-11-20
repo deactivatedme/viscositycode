@@ -39,6 +39,11 @@ const electron = vi.hoisted(() => {
   };
 });
 
+const dnsLookup = vi.hoisted(() =>
+  vi.fn<(hostname: string, options: unknown) => Promise<{ address: string; family: number }[]>>(),
+);
+vi.mock("node:dns/promises", () => ({ lookup: dnsLookup }));
+
 vi.mock("electron", () => ({
   ipcMain: { handle: electron.handle },
   session: { fromPartition: electron.fromPartition },
@@ -106,16 +111,17 @@ describe("registerViscosityThemeFetchIpc", () => {
       expect.objectContaining({ method: "GET", redirect: "follow", credentials: "omit" }),
     );
 
-    // Every hop of that session passes the guard.
-    const cancelled = (url: string) => {
-      let cancel: boolean | undefined;
-      electron.state.beforeRequest?.({ id: 99, url }, (response) => {
-        cancel = response.cancel;
+    // Every hop of that session passes the guard, which resolves the name.
+    const cancelled = (url: string) =>
+      new Promise<boolean | undefined>((resolve) => {
+        electron.state.beforeRequest?.({ id: 99, url }, (response) => resolve(response.cancel));
       });
-      return cancel;
-    };
-    expect(cancelled(URL_A)).toBe(false);
-    expect(cancelled("https://127.0.0.1/night.json")).toBe(true);
+    dnsLookup.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+    await expect(cancelled(URL_A)).resolves.toBe(false);
+    expect(dnsLookup).toHaveBeenCalledWith("themes.example.com", { all: true });
+    dnsLookup.mockResolvedValue([{ address: "127.0.0.1", family: 4 }]);
+    await expect(cancelled(URL_A)).resolves.toBe(true);
+    await expect(cancelled("https://127.0.0.1/night.json")).resolves.toBe(true);
 
     await handler()(fromMainFrame, URL_A);
     expect(electron.fromPartition).toHaveBeenCalledTimes(1);

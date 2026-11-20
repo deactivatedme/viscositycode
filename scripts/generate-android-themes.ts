@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Generates android/app/src/main/kotlin/com/poracode/app/ui/theme/PoracodeThemePresets.kt
  * from the PWA theme source of truth.
@@ -10,7 +11,10 @@
  *  - `default`: the base `.light` / `.dark` cascade in src/renderer/styles.css
  *    plus the `html[data-compact-layout]` mobile overrides — because the renderer
  *    clears all managed-var overrides for the base theme, styles.css is the
- *    runtime source of truth for `default`.
+ *    runtime source of truth for `default`. ViscosityCode: followed by the fork's
+ *    src/renderer/theme/viscosity/tokens.css (monochrome base, preset-default
+ *    status tones); non-default presets read getThemePreset() (buildVariant plus
+ *    Viscosity Blue's released overrides).
  *  - Shared non-managed tokens (hairlines, row wash, accent-soft foreground,
  *    status tones) come from `:root` / `.light` / `.dark` and reference the
  *    themed --foreground / --accent / --muted, so they adapt per preset.
@@ -25,8 +29,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { THEME_SPECS } from "@/renderer/theme/themePresets";
-import { buildVariant } from "@/renderer/theme/themeTokens";
+import { THEME_SPECS, getThemePreset, isDarkOnlyTheme } from "@/renderer/theme/themePresets"; // ViscosityCode:
 
 // ---------------------------------------------------------------------------
 // CSS color engine (sRGB <-> OKLab, color-mix(in oklab,...) premultiplied alpha)
@@ -226,10 +229,12 @@ function resolveVars(raw: Record<string, string>): Record<string, Rgba | null> {
 
 // Strip comments so they cannot pollute selector text (a `/* … */` between rules
 // would otherwise be absorbed into the next selector and rejected as a component rule).
-const STYLES_CSS = readFileSync(
-  resolve(import.meta.dirname, "../src/renderer/styles.css"),
-  "utf8",
-).replace(/\/\*[\s\S]*?\*\//g, "");
+// ViscosityCode: the fork's base palette (tokens.css) loads after styles.css
+// (see tailwind.css), so its rules join the cascade later in source order.
+const STYLES_CSS = ["../src/renderer/styles.css", "../src/renderer/theme/viscosity/tokens.css"]
+  .map((path) => readFileSync(resolve(import.meta.dirname, path), "utf8"))
+  .join("\n")
+  .replace(/\/\*[\s\S]*?\*\//g, "");
 
 interface Decl {
   sel: string;
@@ -461,6 +466,19 @@ function mixOk(c1: Rgba, w1: number, c2: Rgba): Rgba {
   return [clamp01(r), clamp01(g), clamp01(b), w1 * c1[3] + w2 * c2[3]];
 }
 
+// ViscosityCode: custom properties a `[data-theme-preset="default"]` theme rule
+// (not a compact-layout one) declares for `mode`.
+function defaultScopedNames(mode: "light" | "dark"): Set<string> {
+  const names = new Set<string>();
+  for (const d of decls) {
+    const scoped = scopesOf(d.sel).some(
+      (sc) => sc.presetDefaultOnly && !sc.compact && (sc.mode === mode || sc.mode === "both"),
+    );
+    if (scoped) names.add(d.name);
+  }
+  return names;
+}
+
 /** Build one PoracodeColors for a preset+mode. */
 function buildColors(presetId: string, mode: "light" | "dark"): Map<string, Rgba | boolean> {
   const isDefault = presetId === "default";
@@ -470,8 +488,7 @@ function buildColors(presetId: string, mode: "light" | "dark"): Map<string, Rgba
     const v = resolveStylesCss(mode, "default");
     for (const k of Object.keys(v)) themed[k] = v[k];
   } else {
-    const spec = THEME_SPECS.find((s) => s.id === presetId)!;
-    const vars = buildVariant(mode === "dark" ? spec.dark : spec.light, mode);
+    const vars = getThemePreset(presetId)[mode]; // ViscosityCode: includes Viscosity Blue's released overrides
     const resolved = resolveVars(vars);
     for (const k of Object.keys(resolved)) themed[k] = resolved[k];
   }
@@ -523,11 +540,9 @@ function buildColors(presetId: string, mode: "light" | "dark"): Map<string, Rgba
   // is `color-mix(accent 65%, foreground)` (#444e91/#aeb7f5) but the hand-tuned
   // Android values are deeper/lighter. `default` keeps the tuned literals; other
   // presets derive an accent-tinted equivalent via accent ~74% + foreground.
-  if (isDefault) {
-    out.set("accentSoftForeground", mode === "light" ? parseHex("#4A54A6") : parseHex("#A5AEF4"));
-  } else {
-    out.set("accentSoftForeground", mixOk(accent, 0.74, fg));
-  }
+  // ViscosityCode: the indigo literals were tuned for upstream's default; the
+  // monochrome default derives like the other presets.
+  out.set("accentSoftForeground", mixOk(accent, 0.74, fg));
 
   // Interaction washes derived from --foreground.
   out.set("hairline", fade(fg, 9));
@@ -541,6 +556,15 @@ function buildColors(presetId: string, mode: "light" | "dark"): Map<string, Rgba
   // by every preset (presets do not theme them).
   const fx = FIXED[mode];
   for (const k of FIXED_FIELDS) out.set(k, fx[k]);
+  // ViscosityCode: tones the default preset declares in its own rules
+  // (tokens.css, the monochrome base) replace the fixed values.
+  if (isDefault) {
+    const own = defaultScopedNames(mode);
+    for (const k of [...FIXED_FIELDS, "gitBranchTone"]) {
+      const name = `--${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
+      if (own.has(name)) out.set(k, g(name));
+    }
+  }
   return out;
 }
 
@@ -579,7 +603,8 @@ function emit(): string {
   lines.push("internal val PoracodeThemePresets: List<PoracodeThemePreset> = listOf(");
 
   for (const spec of THEME_SPECS) {
-    const light = buildColors(spec.id, "light");
+    // ViscosityCode: a dark-only preset (Hostile Binary) shows dark in light mode too.
+    const light = buildColors(spec.id, isDarkOnlyTheme(spec.id) ? "dark" : "light");
     const dark = buildColors(spec.id, "dark");
     const label = spec.label.replace(/"/g, '\\"');
     lines.push(`    preset("${spec.id}", "${label}",`);

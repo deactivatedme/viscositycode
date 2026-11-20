@@ -1,7 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { Suspense, useState } from "react";
 import { AlertDialog } from "@heroui/react";
 import { Trans } from "@lingui/react/macro";
-import { AgentDiscoveryOverlay } from "@/renderer/components/thread/AgentDiscoveryOverlay";
 import { PixelLoader } from "@/renderer/components/common/PixelLoader";
 import { buildWorktreeLocation } from "@/shared/worktree";
 import {
@@ -38,7 +38,6 @@ import { readBridge } from "@/renderer/bridge";
 import { Button } from "@/renderer/components/common/Button";
 import { useBrowserPanelStore } from "@/renderer/state/browserPanelStore";
 import type { UsageLoginConfirmationAction } from "@/shared/contracts";
-import { WelcomeOverlay } from "@/renderer/views/WelcomeOverlay";
 import { WhatsNewOverlay } from "@/renderer/views/WhatsNewOverlay";
 import { useLoginTerminalStore } from "@/renderer/state/loginTerminalStore";
 import { findExperimentByWorktree } from "@/renderer/state/experimentStore";
@@ -114,9 +113,8 @@ export function AppOverlays() {
 
   return (
     <>
-      <WelcomeOverlay />
+      {/* ViscosityCode: the welcome and agent-discovery overlays are gone; detection runs in the background. */}
       <WhatsNewOverlay />
-      <AgentDiscoveryOverlay />
       {forkSourceThreadId ? (
         <Suspense fallback={null}>
           <DeferredThreadForkDialog

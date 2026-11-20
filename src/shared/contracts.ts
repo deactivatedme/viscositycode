@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 export * from "./contracts/common";
 export * from "./contracts/config";
 export * from "./contracts/agent";
@@ -33,6 +34,7 @@ export * from "./contracts/experiment";
 export * from "./contracts/plugin";
 export * from "./contracts/pluginCatalog";
 export * from "./contracts/sessionImport";
+export * from "./contracts/cloudAgents"; // ViscosityCode: cloud agents
 export * from "./contracts/threadTransferGit";
 export * from "./contracts/workspace";
 export * from "./contracts/computerUse";

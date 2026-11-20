@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Monitor, Settings2, Webhook } from "lucide-react";
@@ -126,6 +127,7 @@ import {
   visibleCapabilities,
   withoutLaunchSelection,
 } from "./continueTargetConfig";
+import { withCarriedPlaybook } from "@/renderer/viscosity/playbooks/applyPlaybook"; // ViscosityCode:
 
 type Phase = "select" | "extracting" | "error";
 type PendingSubmission = { prompt: string; segments?: PromptSegment[] };
@@ -330,8 +332,11 @@ export function ContinueInProviderDialog(props: {
   // target cannot lead one, so the crew stays behind. The roster, the picker's
   // current crew, and the submitted config all follow this one value.
   const launchCrew = targetCanLeadCrew ? targetCrew : undefined;
-  const targetConfigForHandoff =
-    sourceCrew || crewTouched ? { ...targetConfig, crew: launchCrew ?? null } : targetConfig;
+  // ViscosityCode: the playbook (and the servers it switched on) follows the task.
+  const targetConfigForHandoff = withCarriedPlaybook(
+    thread.config,
+    sourceCrew || crewTouched ? { ...targetConfig, crew: launchCrew ?? null } : targetConfig,
+  );
 
   // --- Crew selection (the same picker + roster the draft composer offers) ---
   const roleTemplates = CREW_ROLE_TEMPLATE_DESCRIPTORS.map(({ brief, label, ...template }) => ({

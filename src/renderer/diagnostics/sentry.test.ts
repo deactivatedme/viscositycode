@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteClientError } from "@/shared/remote/clientErrors";
 
 const sentry = vi.hoisted(() => {
@@ -8,6 +9,9 @@ const sentry = vi.hoisted(() => {
     setTags: vi.fn<(tags: Record<string, unknown>) => void>(),
   };
   return {
+    bridge: { sentryEnabled: true } as Record<string, unknown>,
+    init: vi.fn<(options: unknown) => void>(),
+    setContext: vi.fn<(name: string, value: Record<string, unknown>) => void>(),
     captureException: vi.fn<(error: unknown) => void>(),
     getCurrentScope: vi.fn<() => typeof scope>(() => scope),
     isEnabled: vi.fn<() => boolean>(() => true),
@@ -19,20 +23,64 @@ const sentry = vi.hoisted(() => {
 });
 
 vi.mock("@sentry/electron/renderer", () => ({
+  init: sentry.init,
+  setContext: sentry.setContext,
   captureException: sentry.captureException,
   getCurrentScope: sentry.getCurrentScope,
   isEnabled: sentry.isEnabled,
   withScope: sentry.withScope,
 }));
+vi.mock("@/renderer/bridge", () => ({ readBridge: () => sentry.bridge }));
 
 import {
   captureRendererException,
   extractSafeReactComponentTree,
+  initializeRendererSentry,
   prepareRendererSentryEvent,
   setRendererRuntimeDiagnosticContext,
 } from "./sentry";
 
+describe("renderer Sentry lazy SDK", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it("never initializes the SDK while disabled and keeps capture a safe no-op", async () => {
+    sentry.bridge = { sentryEnabled: false };
+    const fresh = await import("./sentry");
+    expect(fresh.initializeRendererSentry()).toBe(false);
+    await vi.dynamicImportSettled();
+    expect(() => fresh.captureRendererException(new Error("boom"))).not.toThrow();
+    expect(() => fresh.setRendererRuntimeDiagnosticContext(null)).not.toThrow();
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(sentry.isEnabled).not.toHaveBeenCalled();
+    expect(sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("loads and initializes the SDK once when enabled, then captures", async () => {
+    sentry.bridge = { sentryEnabled: true, appVersion: "1.0.0", channel: "stable" };
+    const fresh = await import("./sentry");
+    const error = new Error("boom");
+    expect(fresh.initializeRendererSentry()).toBe(true);
+    await vi.dynamicImportSettled();
+    fresh.captureRendererException(error);
+    expect(sentry.init).toHaveBeenCalledOnce();
+    expect(sentry.setContext).toHaveBeenCalledWith(
+      "poracode",
+      expect.objectContaining({ process: "renderer" }),
+    );
+    expect(sentry.captureException).toHaveBeenCalledWith(error);
+  });
+});
+
 describe("renderer Sentry diagnostics", () => {
+  beforeAll(async () => {
+    sentry.bridge = { sentryEnabled: true };
+    initializeRendererSentry();
+    await vi.dynamicImportSettled();
+  });
+
   it("retains the safe remote classification without inferring the redacted server cause", () => {
     const error = new RemoteClientError("Internal server error.", 500, "internal_error");
     captureRendererException(error, { featureArea: "file-editor" });

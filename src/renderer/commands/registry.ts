@@ -159,7 +159,7 @@ export function buildCommandRegistry(): AppCommand[] {
     ...projectScriptCommands(),
     ...activeChatCommands(),
     ...roundtableChatCommands(), // ViscosityCode:
-    ...viscosityCommands(), // ViscosityCode: effects, themes, Bots, layout + feature commands
+    ...viscosityCommands(), // ViscosityCode: effects, themes, account pools, layout + feature commands
   ];
 }
 

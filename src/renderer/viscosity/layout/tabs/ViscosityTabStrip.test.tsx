@@ -1,9 +1,12 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project, Thread } from "@/shared/contracts";
 import { useAppStore } from "@/renderer/state/appStore";
 import { type FileEditorRootContext, useFileEditorStore } from "@/renderer/state/fileEditorStore";
+import { useSidebarOverlayStore } from "@/renderer/state/sidebarOverlayStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
+import { interfaceMotionAllowed } from "@/renderer/viscosity/motion";
+import { resetNavHistory } from "../topBar/navHistory";
 import { useOpenTabsStore } from "./openTabsStore";
 import { ViscosityCenterFrame } from "./ViscosityCenterFrame";
 
@@ -35,11 +38,17 @@ function renderCenter() {
   );
 }
 
+function title(): string | null {
+  return document.querySelector("[data-vc-session-title]")?.textContent ?? null;
+}
+
 beforeEach(() => {
   threadActions.openThread.mockReset();
   threadActions.openNewThread.mockReset();
+  resetNavHistory();
   useOpenTabsStore.setState({ ids: [] });
   useFileEditorStore.setState({ rootContext: null, overlayMode: null, tabs: [] });
+  useSidebarOverlayStore.setState({ isCollapsed: false });
   useAppStore.setState({
     threads: [thread("a"), thread("b", { status: "needs_reply" })],
     projects: [{ id: "p1", name: "Project", location: { kind: "local" } } as unknown as Project],
@@ -53,54 +62,35 @@ afterEach(() => {
   delete document.documentElement.dataset.windowKind;
 });
 
-describe("ViscosityTabStrip", () => {
-  it("leaves the center unchanged outside the desktop main window", () => {
+describe("ViscosityTabStrip (top bar)", () => {
+  it("leaves the center unchanged outside the desktop main window", async () => {
     document.documentElement.dataset.windowKind = "thread";
     renderCenter();
     expect(screen.getByTestId("content")).toBeTruthy();
-    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(document.querySelector("[data-vc-tabstrip]")).toBeNull();
   });
 
-  it("opens a tab for the visible thread and marks it selected", () => {
+  it("shows no thread tabs, only the session title of the focused thread", async () => {
     renderCenter();
-    expect(screen.getByTestId("content")).toBeTruthy();
-    const tab = screen.getByRole("tab", { name: /Thread a/ });
-    expect(tab.getAttribute("aria-selected")).toBe("true");
-    expect(useOpenTabsStore.getState().ids).toEqual(["a"]);
+    expect(screen.queryByRole("tab", { name: /Thread a/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New thread" })).toBeNull();
+    expect(title()).toBe("Thread a");
+
+    await act(async () =>
+      useAppStore.setState({ view: { kind: "thread", panes: ["a", "b"] }, focusedPaneId: "b" }),
+    );
+    expect(title()).toBe("Thread b");
   });
 
-  it("shows a tab's status tone and opens it in the focused pane on press", () => {
-    useOpenTabsStore.setState({ ids: ["b"] });
+  it("reads New session on a draft or home", async () => {
+    useAppStore.setState({ view: { kind: "draft", projectId: "p1" } as never });
     renderCenter();
-    const tab = screen.getByRole("tab", { name: /Thread b/ });
-    expect(tab.getAttribute("aria-selected")).toBe("false");
-    expect(tab.querySelector('.vc-tab__dot[data-tone="attention"]')).not.toBeNull();
-    fireEvent.click(tab);
-    expect(threadActions.openThread).toHaveBeenCalledWith("b");
+    expect(title()).toBe("New session");
+    await act(async () => useAppStore.setState({ view: { kind: "home" } as never }));
+    expect(title()).toBe("New session");
   });
 
-  it("closes a tab with a middle click and with its close button", () => {
-    useOpenTabsStore.setState({ ids: ["b"] });
-    renderCenter();
-    expect(useOpenTabsStore.getState().ids).toEqual(["b", "a"]);
-
-    const tabB = screen.getByRole("tab", { name: /Thread b/ }).closest("[data-vc-tab]")!;
-    fireEvent(tabB, new MouseEvent("auxclick", { bubbles: true, cancelable: true, button: 1 }));
-    expect(useOpenTabsStore.getState().ids).toEqual(["a"]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Close Thread a" }));
-    expect(useOpenTabsStore.getState().ids).toEqual([]);
-    // No other tab can take the focused pane, so the existing close action runs.
-    expect(useAppStore.getState().view.kind).toBe("home");
-  });
-
-  it("starts a new thread draft from the + button", () => {
-    renderCenter();
-    fireEvent.click(screen.getByRole("button", { name: "New thread" }));
-    expect(threadActions.openNewThread).toHaveBeenCalled();
-  });
-
-  it("adds an Editor tab that toggles the file editor panel", () => {
+  it("keeps the Editor chip and the right sidebar toggle at the end", async () => {
     useFileEditorStore.setState({
       rootContext: {
         projectId: "p1",
@@ -115,8 +105,54 @@ describe("ViscosityTabStrip", () => {
     expect(screen.getByRole("tab", { name: "Hide editor" }).getAttribute("aria-selected")).toBe(
       "true",
     );
-    expect(screen.getByRole("tab", { name: /Thread a/ }).getAttribute("aria-selected")).toBe(
-      "false",
+    const bar = document.querySelector("[data-vc-tabstrip]")!;
+    expect(
+      bar.lastElementChild?.querySelector('[aria-label="Toggle right sidebar"]'),
+    ).not.toBeNull();
+  });
+
+  it("shows the nav controls only while the sidebar is collapsed", async () => {
+    renderCenter();
+    const bar = () => document.querySelector("[data-vc-tabstrip]")!;
+    expect(bar().querySelector(".vc-nav-controls")).toBeNull();
+    await act(async () => useSidebarOverlayStore.setState({ isCollapsed: true }));
+    expect(bar().querySelector(".vc-nav-controls")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Show sidebar" })).toBeTruthy();
+  });
+
+  it("feeds back/forward from the focused thread", async () => {
+    useSidebarOverlayStore.setState({ isCollapsed: true });
+    renderCenter();
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
+    await act(async () =>
+      useAppStore.setState({ view: { kind: "thread", panes: ["b"] }, focusedPaneId: "b" }),
     );
+    const back = screen.getByRole("button", { name: "Back" });
+    expect(back).not.toBeDisabled();
+    fireEvent.click(back);
+    expect(threadActions.openThread).toHaveBeenCalledWith("a");
+  });
+});
+
+describe("interfaceMotionAllowed", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-vc-shell");
+    vi.unstubAllGlobals();
+  });
+
+  it("is off in the shell only when the OS asks to reduce motion", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({ media: query, matches: false }));
+    expect(interfaceMotionAllowed()).toBe(true);
+    document.documentElement.setAttribute("data-vc-shell", "");
+    expect(interfaceMotionAllowed()).toBe(true);
+
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      media: query,
+      matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+    expect(interfaceMotionAllowed()).toBe(false);
+    document.documentElement.removeAttribute("data-vc-shell");
+    // Outside the shell, upstream layouts keep their own behaviour.
+    expect(interfaceMotionAllowed()).toBe(true);
   });
 });

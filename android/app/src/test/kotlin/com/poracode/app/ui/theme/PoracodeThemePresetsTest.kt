@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 package com.poracode.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
@@ -8,10 +9,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Guards the generated Android theme presets. The expected `default` literals are
- * the hand-tuned palette that previously lived in PoracodeColors.kt — the generated
- * data must reproduce it within 1/255 per channel so the switch to generated data is
- * visually lossless.
+ * Guards the generated Android theme presets. The expected `default` literals pin
+ * the generated palette within 1/255 per channel.
+ * ViscosityCode: the default is the fork's monochrome palette, not upstream indigo.
  */
 class PoracodeThemePresetsTest {
 
@@ -45,7 +45,9 @@ class PoracodeThemePresetsTest {
     @Test
     fun everyPresetHasBothVariants() {
         PoracodeThemePresets.forEach { preset ->
-            assertTrue(preset.light.isDark.not())
+            // ViscosityCode: Hostile Binary is dark-only; its light slot is the dark variant.
+            if (preset.id == "hostile-binary") assertEquals(preset.dark, preset.light)
+            else assertTrue(preset.light.isDark.not())
             assertTrue(preset.dark.isDark)
             assertTrue(preset.label.isNotBlank())
         }
@@ -113,45 +115,45 @@ class PoracodeThemePresetsTest {
     private fun hex(argb: Int) = "0x" + argb.toUInt().toString(16).uppercase().padStart(8, '0')
 
     private companion object {
-        // Hand-tuned palette that previously lived in PoracodeColors.kt (0xAARRGGBB).
+        // ViscosityCode: the fork's monochrome default (generated from themePresets.ts).
         val EXPECTED_LIGHT = mapOf(
-            "background" to 0xFFF1F1F4.toInt(), "foreground" to 0xFF18181B.toInt(),
-            "muted" to 0xFF68686F.toInt(), "surface" to 0xFFFAFAFB.toInt(),
-            "surfaceSecondary" to 0xFFF0F0F2.toInt(), "surfaceTertiary" to 0xFFEBEBED.toInt(),
-            "overlay" to 0xFFFBFCFD.toInt(), "listRow" to 0xFFFFFFFF.toInt(),
-            "glass" to 0xCCF9F9FA.toInt(), "composerSurface" to 0xFFF9F9FA.toInt(),
-            "default" to 0xFFD0D1D3.toInt(), "accent" to 0xFF5F6CD9.toInt(),
-            "accentForeground" to 0xFFFCFCFC.toInt(), "accentSoft" to 0x265F6CD9.toInt(),
-            "accentSoftForeground" to 0xFF4A54A6.toInt(), "success" to 0xFF006C1A.toInt(),
-            "successForeground" to 0xFFFCFCFC.toInt(), "warning" to 0xFF8E5500.toInt(),
-            "warningForeground" to 0xFFFCFCFC.toInt(), "danger" to 0xFFB30018.toInt(),
-            "dangerForeground" to 0xFFFCFCFC.toInt(), "fieldBackground" to 0xFFF6F6F8.toInt(),
-            "fieldPlaceholder" to 0xFF717177.toInt(), "fieldBorder" to 0xB3CACACE.toInt(),
-            "segment" to 0xFFF6F6F8.toInt(), "border" to 0xB3CACACE.toInt(),
-            "separator" to 0xE6D7D7DA.toInt(), "hairline" to 0x1718181B.toInt(),
-            "hairlineStrong" to 0x2618181B.toInt(), "rowActive" to 0x1C18181B.toInt(),
-            "finishedTone" to 0xFF306CE2.toInt(), "prMerged" to 0xFF6946BF.toInt(),
-            "gitBranchTone" to 0xFF3E5FAD.toInt(), "floatingShadow" to 0x140F172A.toInt(),
+            "background" to 0xFFFAFAFA.toInt(), "foreground" to 0xFF0A0A0A.toInt(),
+            "muted" to 0xFF666666.toInt(), "surface" to 0xFFFFFFFF.toInt(),
+            "surfaceSecondary" to 0xFFE8E8E8.toInt(), "surfaceTertiary" to 0xFFD5D5D5.toInt(),
+            "overlay" to 0xFFEBEBEB.toInt(), "listRow" to 0xFFFFFFFF.toInt(),
+            "glass" to 0xCCFFFFFF.toInt(), "composerSurface" to 0xFFFFFFFF.toInt(),
+            "default" to 0xFFCCCCCC.toInt(), "accent" to 0xFF0A0A0A.toInt(),
+            "accentForeground" to 0xFFFFFFFF.toInt(), "accentSoft" to 0x260A0A0A.toInt(),
+            "accentSoftForeground" to 0xFF0A0A0A.toInt(), "success" to 0xFF236E44.toInt(),
+            "successForeground" to 0xFFFCFCFC.toInt(), "warning" to 0xFF875814.toInt(),
+            "warningForeground" to 0xFFFCFCFC.toInt(), "danger" to 0xFFA83634.toInt(),
+            "dangerForeground" to 0xFFFCFCFC.toInt(), "fieldBackground" to 0xFFF1F1F1.toInt(),
+            "fieldPlaceholder" to 0xFF6E6E6E.toInt(), "fieldBorder" to 0xB3E5E5E5.toInt(),
+            "segment" to 0xFFFFFFFF.toInt(), "border" to 0xFFE5E5E5.toInt(),
+            "separator" to 0xBFE5E5E5.toInt(), "hairline" to 0x170A0A0A.toInt(),
+            "hairlineStrong" to 0x260A0A0A.toInt(), "rowActive" to 0x1C0A0A0A.toInt(),
+            "finishedTone" to 0xFF3A3A3A.toInt(), "prMerged" to 0xFF645992.toInt(),
+            "gitBranchTone" to 0xFF666666.toInt(), "floatingShadow" to 0x140F172A.toInt(),
             "scrim" to 0x52000000.toInt(),
         )
         val EXPECTED_DARK = mapOf(
-            "background" to 0xFF000000.toInt(), "foreground" to 0xFFFAFAFA.toInt(),
-            "muted" to 0xFF9A9FA5.toInt(), "surface" to 0xFF0E0E14.toInt(),
-            "surfaceSecondary" to 0xFF1A1A1E.toInt(), "surfaceTertiary" to 0xFF17171D.toInt(),
-            "overlay" to 0xFF121216.toInt(), "listRow" to 0xFF1C1C1E.toInt(),
-            "glass" to 0xFF1C1C1E.toInt(), "composerSurface" to 0xFF17171D.toInt(),
-            "default" to 0xFF242429.toInt(), "accent" to 0xFF8892EF.toInt(),
-            "accentForeground" to 0xFF0A0A12.toInt(), "accentSoft" to 0x1F8892EF.toInt(),
-            "accentSoftForeground" to 0xFFA5AEF4.toInt(), "success" to 0xFF17C964.toInt(),
-            "successForeground" to 0xFF18181B.toInt(), "warning" to 0xFFF7B750.toInt(),
-            "warningForeground" to 0xFF18181B.toInt(), "danger" to 0xFFED4A4A.toInt(),
-            "dangerForeground" to 0xFFFCFCFC.toInt(), "fieldBackground" to 0xFF18181B.toInt(),
-            "fieldPlaceholder" to 0xFF6B6B7B.toInt(), "fieldBorder" to 0xD937373B.toInt(),
-            "segment" to 0xFF2E2F33.toInt(), "border" to 0xE6303033.toInt(),
-            "separator" to 0xD92D2D31.toInt(), "hairline" to 0x17FAFAFA.toInt(),
-            "hairlineStrong" to 0x26FAFAFA.toInt(), "rowActive" to 0x33FAFAFA.toInt(),
-            "finishedTone" to 0xFF96C5FF.toInt(), "prMerged" to 0xFFA287FE.toInt(),
-            "gitBranchTone" to 0xFF9A9FA5.toInt(), "floatingShadow" to 0x59000000.toInt(),
+            "background" to 0xFF000000.toInt(), "foreground" to 0xFFEDEDED.toInt(),
+            "muted" to 0xFFA1A1A1.toInt(), "surface" to 0xFF111111.toInt(),
+            "surfaceSecondary" to 0xFF1F1F1F.toInt(), "surfaceTertiary" to 0xFF2C2C2C.toInt(),
+            "overlay" to 0xFF141414.toInt(), "listRow" to 0xFF1C1C1E.toInt(),
+            "glass" to 0xFF1C1C1E.toInt(), "composerSurface" to 0xFF141414.toInt(),
+            "default" to 0xFF2A2A2A.toInt(), "accent" to 0xFFFFFFFF.toInt(),
+            "accentForeground" to 0xFF000000.toInt(), "accentSoft" to 0x1FFFFFFF.toInt(),
+            "accentSoftForeground" to 0xFFFAFAFA.toInt(), "success" to 0xFF74C692.toInt(),
+            "successForeground" to 0xFF000000.toInt(), "warning" to 0xFFE6BD77.toInt(),
+            "warningForeground" to 0xFF000000.toInt(), "danger" to 0xFFE47C75.toInt(),
+            "dangerForeground" to 0xFF000000.toInt(), "fieldBackground" to 0xFF1A1A1A.toInt(),
+            "fieldPlaceholder" to 0xFF8A8A8A.toInt(), "fieldBorder" to 0xB3262626.toInt(),
+            "segment" to 0xFF3A3A3A.toInt(), "border" to 0xFF262626.toInt(),
+            "separator" to 0xBF262626.toInt(), "hairline" to 0x17EDEDED.toInt(),
+            "hairlineStrong" to 0x26EDEDED.toInt(), "rowActive" to 0x33EDEDED.toInt(),
+            "finishedTone" to 0xFFD1D1D1.toInt(), "prMerged" to 0xFFABA3D4.toInt(),
+            "gitBranchTone" to 0xFFA1A1A1.toInt(), "floatingShadow" to 0x59000000.toInt(),
             "scrim" to 0x99000000.toInt(),
         )
     }

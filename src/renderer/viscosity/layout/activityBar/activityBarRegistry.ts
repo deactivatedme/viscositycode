@@ -2,7 +2,7 @@
  * ViscosityCode activity bar registry (fork of Poracode).
  *
  * The activity bar (Cursor-style, far left of the main window) renders whatever
- * is registered here, so later fork steps (Bots, Mission control, …) add their
+ * is registered here, so later fork steps (Mission control, …) add their
  * entry with one `registerActivityBarItem` call instead of editing the bar.
  *
  * An item is either a *view* (it owns a left-sidebar view and switches the

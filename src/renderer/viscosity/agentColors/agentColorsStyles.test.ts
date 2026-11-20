@@ -48,10 +48,9 @@ describe("agentColors.css", () => {
     for (const value of paints) expect(value).toContain(AGENT_ACCENT_CSS);
   });
 
-  it("leaves the agent-state ring, glow and tab underline to the effects", () => {
+  it("leaves the pane's pseudo-elements and the agent-state attributes alone", () => {
     for (const rule of styleRules()) {
       for (const selector of selectorsOf(rule)) {
-        // agentState.css owns the pane's ::before / ::after and the tab button's ::after.
         expect(selector).not.toMatch(/\[data-poracode-thread-pane\][^ >]*::(before|after)/);
         expect(selector).not.toContain("[data-vc-tab-id]");
         expect(selector).not.toContain("data-vc-fx-");
@@ -59,7 +58,7 @@ describe("agentColors.css", () => {
     }
   });
 
-  it("draws a 2px line on the pane header and a 2px marker on the tab edge", () => {
+  it("draws a 2px line on the pane header", () => {
     const header = styleRules().find((rule) =>
       selectorsOf(rule).some((selector) => selector.endsWith("> [data-poracode-thread-header]")),
     );
@@ -68,14 +67,7 @@ describe("agentColors.css", () => {
       (node) => node.type === "decl" && node.prop === "background-size",
     );
     expect(headerSize && "value" in headerSize ? headerSize.value : "").toBe("100% 2px");
-
-    const tab = styleRules().find((rule) =>
-      selectorsOf(rule).some((selector) =>
-        selector.endsWith(`.vc-tab[${AGENT_KIND_ATTRIBUTE}]::before`),
-      ),
-    );
-    expect(tab).toBeDefined();
-    const tabWidth = tab!.nodes.find((node) => node.type === "decl" && node.prop === "width");
-    expect(tabWidth && "value" in tabWidth ? tabWidth.value : "").toBe("2px");
+    // The thread tabs are gone, so nothing styles a tab marker any more.
+    expect(css).not.toContain(".vc-tab");
   });
 });

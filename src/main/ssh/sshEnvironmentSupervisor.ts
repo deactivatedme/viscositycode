@@ -52,6 +52,8 @@ export interface SshEnvironmentSupervisorOptions {
   readonly exitTimeoutMs?: number;
   /** Bounded wait for the real exit after a kill; a timeout retains custody. */
   readonly killTimeoutMs?: number;
+  /** ViscosityCode: idle time before an unused utility is retired (tests shrink it). */
+  readonly idleRetirementMs?: number;
   readonly log?: (message: string) => void;
 }
 
@@ -59,6 +61,8 @@ export const SSH_ENVIRONMENT_SPAWN_TIMEOUT_MS = 10_000;
 export const SSH_ENVIRONMENT_READY_TIMEOUT_MS = 10_000;
 export const SSH_ENVIRONMENT_EXIT_TIMEOUT_MS = 15_000;
 export const SSH_ENVIRONMENT_KILL_TIMEOUT_MS = 5_000;
+// ViscosityCode: retire the idle utility (~25-40 MB) like RemoteHttpBridgeSupervisor; the next call re-forks.
+export const SSH_ENVIRONMENT_IDLE_RETIREMENT_MS = 60_000;
 
 interface PendingRequest {
   readonly requestId: string;
@@ -127,6 +131,9 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
   private requestSeq = 0;
   private utilityStarts = 0;
   private readonly requests = new Map<string, PendingRequest>();
+  // ViscosityCode: connections whose tunnel lives in the current utility; any keeps it alive.
+  private readonly openConnections = new Set<string>();
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: SshEnvironmentSupervisorOptions) {
     this.options = options;
@@ -163,6 +170,7 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
   }
 
   async disconnect(connectionId: string): Promise<void> {
+    this.openConnections.delete(connectionId);
     const owned = [...this.requests.values()].filter(
       (record) => record.kind === "connect" && record.connectionId === connectionId,
     );
@@ -172,6 +180,8 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
         sshOperationAbortError("The SSH connection was disconnected while connecting."),
       );
     }
+    // ViscosityCode: no live utility means no tunnel (a retiring or fatal one in custody has none); do not fork one just to disconnect.
+    if (!this.child && !this.startPromise) return;
     await this.request({ kind: "disconnect", connectionId });
   }
 
@@ -196,6 +206,7 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
 
   dispose(): Promise<void> {
     this.disposed = true;
+    this.clearIdleTimer();
     this.shutdownEpoch += 1;
     if (!this.disposeStarted) {
       const started = this.disposeInternal();
@@ -277,6 +288,7 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
     if (options.signal?.aborted) {
       return Promise.reject(sshOperationAbortError(options.signal.reason));
     }
+    this.clearIdleTimer();
     const requestId = `ssh-${++this.requestSeq}`;
     return new Promise<unknown>((resolve, reject) => {
       const record: PendingRequest = {
@@ -355,6 +367,48 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
     record.detachAbort?.();
     record.detachAbort = null;
     if (this.requests.get(record.requestId) === record) this.requests.delete(record.requestId);
+    this.scheduleIdleRetirement();
+  }
+
+  // ViscosityCode: idle retirement, modelled on RemoteHttpBridgeSupervisor.
+  private scheduleIdleRetirement(): void {
+    if (this.disposed || this.idleTimer !== null || !this.child) return;
+    if (this.requests.size > 0 || this.openConnections.size > 0) return;
+    const attempt = this.attempt;
+    if (!attempt || attempt.child !== this.child) return;
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      void this.retireIdle(attempt);
+    }, this.options.idleRetirementMs ?? SSH_ENVIRONMENT_IDLE_RETIREMENT_MS);
+    this.idleTimer.unref?.();
+  }
+
+  private clearIdleTimer(): void {
+    if (this.idleTimer !== null) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
+  }
+
+  /**
+   * Ask an idle utility to shut down, keeping it in custody until its real
+   * exit. A request arriving meanwhile reaps it before forking a successor.
+   */
+  private async retireIdle(attempt: UtilityAttempt): Promise<void> {
+    if (this.disposed || this.child !== attempt.child || this.attempt !== attempt) return;
+    if (this.requests.size > 0 || this.openConnections.size > 0) return;
+    this.postToUtility({
+      v: SSH_ENVIRONMENT_PROTOCOL_VERSION,
+      generation: attempt.generation,
+      requestId: `shutdown-${attempt.generation}`,
+      request: { kind: "shutdown" },
+    });
+    attempt.retired = true;
+    this.child = null;
+    this.currentGeneration = 0;
+    this.options.log?.("[poracode] ssh-environment utility retired while idle");
+    const graceful = await attempt.liveness.waitForExit(this.exitTimeoutMs);
+    if (this.attempt !== attempt) return;
+    if (graceful !== null) this.releaseAttempt(attempt);
+    else await this.reapAttempt(attempt);
   }
 
   private async ensureStarted(): Promise<number> {
@@ -371,6 +425,9 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
           "A previous SSH utility process has not exited; refusing to start another.",
         );
       }
+      // ViscosityCode: a concurrent caller may have started the successor during the reap.
+      if (this.child) return this.currentGeneration;
+      if (this.startPromise) return this.startPromise;
     }
     const pending = this.start();
     this.startPromise = pending;
@@ -491,6 +548,8 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
     this.options.log?.(
       `[poracode] ssh-environment utility started generation=${generation} pid=${child.pid ?? "unknown"}`,
     );
+    // ViscosityCode: arm retirement even if every caller cancelled while it started.
+    this.scheduleIdleRetirement();
     return generation;
   }
 
@@ -563,6 +622,7 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
     if (this.child === attempt.child) {
       this.child = null;
       this.currentGeneration = 0;
+      this.openConnections.clear();
     }
   }
 
@@ -599,8 +659,12 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
   private handleExit(attempt: UtilityAttempt): void {
     if (this.attempt !== attempt && this.child !== attempt.child) return;
     this.releaseAttempt(attempt);
-    const rejected = this.requests.size;
-    for (const record of [...this.requests.values()]) {
+    // ViscosityCode: only this generation's callers; one waiting on a successor (after idle retirement) lives on.
+    const owned = [...this.requests.values()].filter(
+      (record) => record.generation === attempt.generation,
+    );
+    const rejected = owned.length;
+    for (const record of owned) {
       this.releaseRecord(record);
       record.reject(new Error("The SSH utility exited."));
     }
@@ -623,6 +687,7 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
       if (this.child === attempt.child) {
         this.child = null;
         this.currentGeneration = 0;
+        this.openConnections.clear();
       }
       const error = new Error(message.message);
       for (const record of [...this.requests.values()]) {
@@ -635,6 +700,9 @@ export class SshEnvironmentSupervisor implements SshEnvironmentController {
     if (message.generation !== generation) return;
     const record = this.requests.get(message.requestId);
     if (!record || record.cancelled) return;
+    if (message.ok && record.kind === "connect" && record.connectionId) {
+      this.openConnections.add(record.connectionId);
+    }
     this.releaseRecord(record);
     if (!message.ok) {
       record.reject(deserializeSshEnvironmentError(message.error));

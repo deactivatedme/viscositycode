@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { AsyncWorkTracker } from "@/shared/asyncWorkTracker";
 import { serializeBackendDiagnosticError } from "@/shared/diagnostics/backendDiagnosticError";
 import { classifyErrorCause } from "@/shared/diagnostics/errorCause";
@@ -27,6 +28,9 @@ import { getRuntimePersistenceSample } from "@/host/db/runtimePersistenceRuntime
 import { serverLogFilePath, startServerLogFile } from "@/server/serverLogFile";
 import { SupervisorIpcSender } from "@/supervisor/supervisorIpcSender";
 import type { SupervisorEvent } from "@/shared/ipc";
+
+// ViscosityCode: this process already loaded with the compile cache; children opt in explicitly.
+delete process.env.NODE_COMPILE_CACHE;
 
 /** Bare wholesale-replace RPCs refused at the mutation owner (see the
  * `call-database` case); the host-internal DB functions stay available to the

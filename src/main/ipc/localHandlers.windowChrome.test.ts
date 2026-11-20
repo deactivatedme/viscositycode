@@ -29,6 +29,7 @@ function createWindowStub() {
     setTitleBarOverlay: vi.fn<(options: Record<string, unknown>) => void>(),
     setBackgroundMaterial: vi.fn<(material: string) => void>(),
     setBackgroundColor: vi.fn<(color: string) => void>(),
+    setVibrancy: vi.fn<(type: string | null) => void>(), // ViscosityCode:
   };
 }
 
@@ -106,7 +107,21 @@ describe("setWindowChrome on Windows 11", () => {
       windowMaterial: "mica",
     });
     expect(window.setBackgroundMaterial).toHaveBeenCalledExactlyOnceWith("none");
-    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#f4f4f5");
+    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#fafafa");
+  });
+
+  it("paints the opaque base in the shown appearance when it differs", async () => {
+    const window = createWindowStub();
+    await createHandlers(window).setWindowChrome({
+      ...basePayload,
+      materialEnabled: false,
+      appearance: "light",
+      shownAppearance: "dark",
+      windowMaterial: "mica",
+    });
+    expect(window.setBackgroundMaterial).toHaveBeenCalledExactlyOnceWith("none");
+    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#000000");
+    expect(syncNativeThemeForMaterial).not.toHaveBeenCalled();
   });
 
   it("reports no native material for None so the renderer keeps its CSS tint", async () => {
@@ -117,7 +132,7 @@ describe("setWindowChrome on Windows 11", () => {
     });
     expect(result).toEqual({ nativeCapable: false });
     expect(window.setBackgroundMaterial).toHaveBeenCalledExactlyOnceWith("none");
-    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#0a0a0b");
+    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#000000");
     expect(syncNativeThemeForMaterial).not.toHaveBeenCalled();
   });
 
@@ -130,7 +145,7 @@ describe("setWindowChrome on Windows 11", () => {
     });
     expect(result).toEqual({ nativeCapable: false });
     expect(window.setBackgroundMaterial).toHaveBeenCalledExactlyOnceWith("none");
-    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#0a0a0b");
+    expect(window.setBackgroundColor).toHaveBeenCalledExactlyOnceWith("#000000");
   });
 
   it("answers without a main window", async () => {
@@ -153,15 +168,51 @@ describe("setWindowChrome on macOS", () => {
     resetRememberedWindowMaterialPreferenceForTests();
   });
 
-  it("leaves vibrancy to CSS and ignores the Windows-only preference", async () => {
+  it("attaches vibrancy and ignores the Windows-only preference", async () => {
     const window = createWindowStub();
     const result = await createHandlers(window).setWindowChrome({
       ...basePayload,
       windowMaterial: "none",
     });
     expect(result).toEqual({ nativeCapable: true });
+    expect(window.setVibrancy).toHaveBeenCalledExactlyOnceWith("sidebar");
     expect(window.setBackgroundMaterial).not.toHaveBeenCalled();
     expect(window.setTitleBarOverlay).not.toHaveBeenCalled();
     expect(syncNativeThemeForMaterial).toHaveBeenCalledWith("dark");
+  });
+
+  // ViscosityCode: glass off (or Lightweight) detaches the live blur.
+  it("detaches vibrancy while the material is off and reattaches it live", async () => {
+    const window = createWindowStub();
+    const handlers = createHandlers(window);
+    await handlers.setWindowChrome({ ...basePayload, materialEnabled: false });
+    expect(window.setVibrancy).toHaveBeenLastCalledWith(null);
+    await handlers.setWindowChrome(basePayload);
+    expect(window.setVibrancy).toHaveBeenLastCalledWith("sidebar");
+    expect(window.setBackgroundMaterial).not.toHaveBeenCalled();
+  });
+
+  // ViscosityCode: the window stays opaque from the moment vibrancy detaches.
+  it("pairs vibrancy with an opaque base while off and transparency while on", async () => {
+    const window = createWindowStub();
+    const handlers = createHandlers(window);
+    await handlers.setWindowChrome({ ...basePayload, materialEnabled: false });
+    expect(window.setBackgroundColor).toHaveBeenLastCalledWith("#000000");
+    await handlers.setWindowChrome({
+      ...basePayload,
+      materialEnabled: false,
+      appearance: "dark",
+      shownAppearance: "light",
+    });
+    expect(window.setBackgroundColor).toHaveBeenLastCalledWith("#fafafa");
+    await handlers.setWindowChrome(basePayload);
+    expect(window.setBackgroundColor).toHaveBeenLastCalledWith("#00000000");
+  });
+
+  it("never touches vibrancy on Windows", async () => {
+    Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+    const window = createWindowStub();
+    await createHandlers(window).setWindowChrome({ ...basePayload, materialEnabled: false });
+    expect(window.setVibrancy).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { applyExternalSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import {
   REMOTE_SETTINGS_KEYS,
@@ -26,6 +27,7 @@ const additiveRemoteSettingsKeys = new Set<keyof RemoteSettings>([
   "searchUseIgnoreFiles",
   "searchExclude",
   "crews",
+  "playbooks", // ViscosityCode
 ]);
 // Monotonic id of the most recent push. Only its resolution may write back to
 // desktopSettings, so a slow or failed earlier push can't clobber the value a
@@ -48,13 +50,16 @@ export function applyDesktopSettings(settings: RemoteSettings): void {
   // before that edit; let the push response win instead of flip-flopping.
   if (pendingPushes > 0) return;
   desktopSettings = settings;
-  const { usage, searchUseIgnoreFiles, searchExclude, crews, ...requiredSettings } = settings;
+  // ViscosityCode: playbooks is additive like crews.
+  const { usage, searchUseIgnoreFiles, searchExclude, crews, playbooks, ...requiredSettings } =
+    settings;
   applyExternalSharedSettings({
     ...requiredSettings,
     ...(usage !== undefined ? { usage } : {}),
     ...(searchUseIgnoreFiles !== undefined ? { searchUseIgnoreFiles } : {}),
     ...(searchExclude !== undefined ? { searchExclude } : {}),
     ...(crews !== undefined ? { crews } : {}),
+    ...(playbooks !== undefined ? { playbooks } : {}), // ViscosityCode
   });
 }
 

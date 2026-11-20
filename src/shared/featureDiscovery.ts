@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Stable ids for features the news line can promote to people who have not
  * tried them. The same ids appear in `changelog.json` (`feature` on a change)
@@ -23,6 +24,7 @@ export const DISCOVERABLE_FEATURE_IDS = [
   "workspaces",
   "ai-git",
   "voice-input",
+  "playbooks", // ViscosityCode: Settings → Playbooks
 ] as const;
 
 export type DiscoverableFeatureId = (typeof DISCOVERABLE_FEATURE_IDS)[number];

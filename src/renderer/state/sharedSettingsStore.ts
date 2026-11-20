@@ -3,6 +3,8 @@ import { create } from "zustand";
 import { reconcileAcpRegistryInstalls } from "./reconcileAcpRegistryInstalls";
 // ViscosityCode: account pools are a shared setting persisted like every other.
 import type { AccountPools } from "@/shared/accountPools";
+// ViscosityCode: saved playbooks are a shared setting persisted like every other.
+import { normalizeSavedPlaybooks, type SavedPlaybook } from "@/shared/viscosity/playbook";
 import { isRemoteSession, readBridge } from "../bridge";
 import { hasAnyClientBridge, isStandaloneAttachRuntime } from "../clientRuntime";
 import { msg } from "@lingui/core/macro";
@@ -245,6 +247,8 @@ interface SharedSettingsState extends SharedSettings {
   removeAgentInstance: (instanceId: string) => void;
   // ViscosityCode: account pools (src/renderer/viscosity/accountPools/poolSettings.ts).
   setAccountPools: (pools: AccountPools) => void;
+  // ViscosityCode: saved playbooks (src/renderer/viscosity/playbooks/usePlaybooks.ts).
+  setPlaybooks: (playbooks: SavedPlaybook[]) => void;
   setNotificationStatuses: (value: {
     done?: boolean;
     needsAttention?: boolean;
@@ -1177,6 +1181,11 @@ export const useSharedSettings = create<SharedSettingsState>()((set, get) => ({
     set({ accountPools });
     persistSettings(selectSharedSettings(get()));
   },
+  // ViscosityCode: saved playbooks; normalized so the host's parse-back check accepts the write.
+  setPlaybooks: (playbooks) => {
+    set({ playbooks: normalizeSavedPlaybooks(playbooks) });
+    persistSettings(selectSharedSettings(get()));
+  },
   setNotificationStatuses: (partial) => {
     const current = get().notificationStatuses;
     const next = { ...current, ...partial };
@@ -1407,6 +1416,8 @@ function selectSharedSettings(state: SharedSettingsState): SharedSettingsInput {
     agentInstances: state.agentInstances,
     // ViscosityCode: account pools; absent (never undefined) so the host keeps its value.
     ...(state.accountPools ? { accountPools: state.accountPools } : {}),
+    // ViscosityCode: saved playbooks; absent (never undefined) so the host keeps its value.
+    ...(state.playbooks ? { playbooks: state.playbooks } : {}),
     collapseTerminalComposer: state.collapseTerminalComposer,
     followUpBehavior: state.followUpBehavior,
     cliPickerTarget: state.cliPickerTarget,

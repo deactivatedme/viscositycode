@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -29,9 +30,6 @@ describe("HomeView", () => {
       wslAgentStatuses: [],
       windowsLoaded: false,
       wslLoaded: false,
-      inFirstLaunchDiscovery: false,
-      discoveryScope: undefined,
-      discoveredAgents: [],
     });
     useRemoteServersStore.setState({ servers: [], runtime: {} });
     useProjectGroupStore.setState({ manualGroups: {}, lastUsedAt: {} });

@@ -14,7 +14,6 @@ import {
 import { useAppStore } from "@/renderer/state/appStore";
 import { getProjectMap, getThreadMap } from "@/renderer/state/useThread";
 import { useExperimentStore } from "@/renderer/state/experimentStore";
-import { useWelcomeGateStore } from "@/renderer/state/welcomeGateStore";
 import { buildWslProjectDistrosKey, parseWslProjectDistrosKey } from "@/renderer/state/projectKeys";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { AppDndProvider, CompactDndProvider } from "@/renderer/dnd";
@@ -43,8 +42,8 @@ import { MobileTopLevelPage } from "./parts/MobileTopLevelPage";
 import { useMobilePageHistory } from "./parts/mobilePageHistory";
 // ViscosityCode: status bar below the desktop shell.
 import { ViscosityStatusBarFrame } from "@/renderer/viscosity/layout/statusBar";
-// ViscosityCode: animated background + agent-state effects (desktop shell only).
-import { FxRoot } from "@/renderer/fx/FxRoot";
+// ViscosityCode: desktop-shell runtime (Lightweight attribute, on-screen rule, tools count).
+import { ViscosityShellRuntime } from "@/renderer/viscosity/ViscosityShellRuntime";
 
 function findMissingWslDistro(distros: readonly string[], statuses: readonly AgentStatus[]) {
   const cachedDistros = new Set(
@@ -60,7 +59,6 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
   const wslProjectDistrosKey = useAppStore((state) => buildWslProjectDistrosKey(state.projects));
   const homeScopeEnabled = useSharedSettings((state) => state.homeScopeEnabled);
   const sharedSettingsHydrated = useSharedSettings((state) => state.sharedSettingsHydrated);
-  const backgroundWorkReleased = useWelcomeGateStore((state) => state.backgroundWorkReleased);
   const compactLayout = useCompactLayout();
   const mobilePage = usePanelStore((state) => state.mobileUtilityPage);
   const mobileTopLevelPage =
@@ -89,12 +87,8 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
   }, [storeHydrated, sharedSettingsHydrated, homeScopeEnabled]);
 
   useEffect(() => {
-    // Hold first-launch detection until the welcome animation has settled (or
-    // the user dismissed it). `backgroundWorkReleased` is seeded true for
-    // returning users, so this only defers on a genuine first launch — the
-    // cold detection sweep's process spawns and `agent-detected` re-render
-    // churn would otherwise starve the welcome animation's first paint.
-    if (!storeHydrated || !backgroundWorkReleased) {
+    // ViscosityCode: detection starts as soon as the store is hydrated (no welcome gate).
+    if (!storeHydrated) {
       return;
     }
 
@@ -135,14 +129,15 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
         // a complete inventory. Keep them available while discovery finishes.
         applyPartialAgentStatuses(response, statusesBeforeRequest);
         const missingWslDistro = findMissingWslDistro(wslDistros, response.wsl);
-        useAgentStatusesStore
-          .getState()
-          .beginStartupDiscovery(
-            missingWslDistro ? { kind: "wsl", distro: missingWslDistro } : undefined,
-          );
+        // ViscosityCode: only a missing WSL distro needs a loading state; detection itself is silent.
+        if (missingWslDistro) {
+          useAgentStatusesStore
+            .getState()
+            .beginStartupDiscovery({ kind: "wsl", distro: missingWslDistro });
+        }
       })
       .catch(() => undefined);
-  }, [storeHydrated, wslProjectDistrosKey, backgroundWorkReleased]);
+  }, [storeHydrated, wslProjectDistrosKey]);
 
   const page = mobileTopLevelPage ? (
     <MobileTopLevelPage />
@@ -152,8 +147,8 @@ export function MainView(props: { storeHydrated: boolean; runtimeSnapshotsReady:
       checkingConnection={!browserConnectionChecked}
       fallback={<BrowserConnectionPage />}
     >
-      {/* ViscosityCode: background layer + agent-state effects; renders nothing outside the desktop shell. */}
-      <FxRoot />
+      {/* ViscosityCode: desktop-shell runtime; renders nothing. */}
+      <ViscosityShellRuntime />
       {/* ViscosityCode: status bar below the desktop shell (not on the connection page). */}
       <ViscosityStatusBarFrame>
         <MainPageLayout onTitleClick={() => startTransition(() => openHome())} />

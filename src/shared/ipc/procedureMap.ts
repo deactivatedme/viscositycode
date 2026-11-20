@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { agentCredentialProcedures } from "./procedures/agentCredentials";
 import { modelProviderProcedures } from "./procedures/modelProviders";
 import { appProcedures } from "./procedures/app";
@@ -24,6 +25,7 @@ import { threadProcedures } from "./procedures/thread";
 import { sessionActionProcedures } from "./procedures/sessionActions";
 import { updatesProcedures } from "./procedures/updates";
 import { usageProcedures } from "./procedures/usage";
+import { cloudAgentProcedures } from "./procedures/cloudAgents"; // ViscosityCode: cloud agents
 import { CLIENT_HOST_HOP_VERSION } from "../clientHostHop";
 
 export const groupedIpcProcedures = {
@@ -53,6 +55,7 @@ export const groupedIpcProcedures = {
   agentCredentials: agentCredentialProcedures,
   modelProviders: modelProviderProcedures,
   sessionImport: sessionImportProcedures,
+  cloudAgents: cloudAgentProcedures, // ViscosityCode: cloud agents
 } as const;
 
 export const ipcProcedureMap = {
@@ -82,6 +85,7 @@ export const ipcProcedureMap = {
   ...agentCredentialProcedures,
   ...modelProviderProcedures,
   ...sessionImportProcedures,
+  ...cloudAgentProcedures, // ViscosityCode: cloud agents
 } as const;
 
 export type IpcProcedureMap = typeof ipcProcedureMap;
@@ -196,6 +200,7 @@ export const MAIN_LOCAL_PROCEDURE_NAMES = [
   "openMicrophoneSettings",
   "focusWindow",
   "showNotification",
+  "isUserViewingThread", // ViscosityCode
   "relaunchApp",
   "getHomeScopeLocation",
   "listLocalPorts",

@@ -1,216 +1,21 @@
-/* ViscosityCode: activity bar + sidebar views. Scoped to html[data-vc-shell]. */
+/* ViscosityCode: main sidebar chrome (header row, nav list, Pinned, profile
+   row) and sidebar views. Scoped to html[data-vc-shell]. The vertical activity
+   rail is gone; the activity registry feeds the nav list and the view switch. */
 
 html[data-vc-shell] {
-  /* The left sidebar's one header row (view title + actions). It replaces
-     upstream's titlebar header row, so it matches the bar's title-bar zone. */
+  /* The left sidebar's one header row (nav controls + view switch). It
+     replaces upstream's titlebar header row and sits in the title-bar zone. */
   --vc-sidebar-view-header-height: max(var(--vc-titlebar-height), env(titlebar-area-height, 0px));
-  /* Compact icon buttons on the right of that row. */
+  /* Compact icon buttons in that row and in the Projects row. */
   --vc-sidebar-action-size: 22px;
-  /* Activity bar metrics beyond the shared token contract. */
-  --vc-activity-indicator-width: 2px;
-  --vc-activity-indicator-height: 20px;
-  --vc-activity-badge-size: 14px;
-  --vc-activity-badge-inset: 3px;
-  --vc-activity-dot-size: 7px;
-  --vc-activity-dot-inset: 6px;
+  --vc-sidebar-padding-inline: 10px;
+  --vc-sidebar-avatar-size: 22px;
 }
 
-/* === Activity bar ========================================================
-   Lives inside .poracode-shell as its first flex child. Stacking (root
-   context): narrow-window backdrop z-30 < floating sidebar z-39 < bar z-40 <
-   right-panel overlays z-45/z-50 and full-window overlays (OverlayShell z-50). */
-html[data-vc-shell] .vc-activitybar {
-  position: relative;
-  z-index: 40;
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: stretch;
-  box-sizing: border-box;
-  width: var(--vc-activitybar-width);
-  min-width: var(--vc-activitybar-width);
-  height: 100%;
-  min-height: 0;
-  border-right: 1px solid var(--vc-border-subtle);
-  background: color-mix(
-    in oklab,
-    var(--vc-chrome-bg) calc(var(--vc-chrome-alpha) * 100%),
-    transparent
-  );
-  color: var(--vc-text-muted);
-  font-family: var(--vc-font-ui);
-  user-select: none;
-}
+/* === Sidebar beside the content ========================================== */
 
-/* Native window material (macOS vibrancy / Windows acrylic): the sidebar is
-   glass, so the bar shows the same material instead of an opaque strip. */
-html[data-vc-shell][data-native-material="on"] .vc-activitybar {
-  background: transparent;
-}
-
-/* The floating (narrow-window) sidebar slides in and out underneath the bar.
-   While it is mounted the bar must not let it show through: a translucent
-   chrome (--vc-chrome-alpha below 1) turns opaque… */
-html[data-vc-shell]
-  .poracode-shell[data-vc-activitybar][data-vc-sidebar-overlay]
-  > .vc-activitybar {
-  background: var(--vc-chrome-bg);
-}
-
-/* …and on native material, where the bar is clear glass, it takes the
-   material tint upstream gives that floating sidebar (the glass tint at full
-   strength), so bar and overlay read as one opaque panel. */
-html[data-vc-shell][data-native-material="on"]
-  .poracode-shell[data-vc-activitybar][data-vc-sidebar-overlay]
-  > .vc-activitybar {
-  background: var(--vc-panel-bg);
-}
-
-/* Title-bar zone: macOS traffic lights sit over it; elsewhere it stays a
-   window drag strip. Icons always start below it. */
-html[data-vc-shell] .vc-activitybar__titlebar {
-  flex: none;
-  height: max(var(--vc-titlebar-height), env(titlebar-area-height, 0px));
-  -webkit-app-region: drag;
-  app-region: drag;
-}
-
-html[data-vc-shell] .vc-activitybar__group {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--vc-space-0);
-  padding: var(--vc-space-1) 0;
-}
-
-html[data-vc-shell] .vc-activitybar__group--bottom {
-  padding-bottom: var(--vc-space-3);
-}
-
-html[data-vc-shell] .vc-activitybar__spacer {
-  flex: 1 1 auto;
-  min-height: var(--vc-space-3);
-}
-
-html[data-vc-shell] .vc-activitybar__slot {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-/* Active indicator: accent bar flush with the window's left edge. */
-html[data-vc-shell] .vc-activitybar__slot::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: var(--vc-activity-indicator-width);
-  height: var(--vc-activity-indicator-height);
-  margin-top: calc(var(--vc-activity-indicator-height) / -2);
-  border-radius: 0 var(--vc-radius-pill) var(--vc-radius-pill) 0;
-  background: var(--vc-accent);
-  opacity: 0;
-  transform: scaleY(0.2);
-  transition:
-    opacity var(--vc-motion-fast) var(--vc-ease-standard),
-    transform var(--vc-motion-base) var(--vc-ease-emphasized);
-  pointer-events: none;
-}
-
-html[data-vc-shell] .vc-activitybar__slot[data-active]::before {
-  opacity: 1;
-  transform: scaleY(1);
-}
-
-html[data-vc-shell] .vc-activitybar__trigger {
-  display: flex;
-}
-
-html[data-vc-shell] .vc-activitybar__item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--vc-activitybar-width) - var(--vc-space-4));
-  height: calc(var(--vc-activitybar-width) - var(--vc-space-4));
-  padding: 0;
-  border: 0;
-  border-radius: var(--vc-radius-md);
-  background: transparent;
-  color: var(--vc-text-muted);
-  cursor: default;
-  outline: none;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-  transition:
-    color var(--vc-motion-fast) var(--vc-ease-standard),
-    background-color var(--vc-motion-fast) var(--vc-ease-standard),
-    box-shadow var(--vc-motion-fast) var(--vc-ease-standard);
-}
-
-html[data-vc-shell] .vc-activitybar__item:hover {
-  background: var(--vc-hover);
-  color: var(--vc-text);
-}
-
-html[data-vc-shell] .vc-activitybar__item:active {
-  background: var(--vc-active);
-}
-
-html[data-vc-shell] .vc-activitybar__item[data-active] {
-  color: var(--vc-text);
-}
-
-html[data-vc-shell] .vc-activitybar__item:focus-visible {
-  box-shadow: 0 0 0 2px var(--vc-focus-ring);
-  color: var(--vc-text);
-}
-
-html[data-vc-shell] .vc-activitybar__badge {
-  position: absolute;
-  right: 1px;
-  bottom: var(--vc-activity-badge-inset);
-  box-sizing: border-box;
-  min-width: var(--vc-activity-badge-size);
-  height: var(--vc-activity-badge-size);
-  padding: 0 var(--vc-activity-badge-inset);
-  border-radius: var(--vc-radius-pill);
-  background: var(--vc-accent);
-  box-shadow: 0 0 0 var(--vc-space-0) var(--vc-chrome-bg);
-  color: var(--vc-accent-foreground);
-  font-size: var(--vc-font-size-2xs);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  line-height: var(--vc-activity-badge-size);
-  text-align: center;
-  pointer-events: none;
-}
-
-html[data-vc-shell] .vc-activitybar__badge--dot {
-  position: absolute;
-  top: var(--vc-activity-dot-inset);
-  right: var(--vc-activity-dot-inset);
-  width: var(--vc-activity-dot-size);
-  height: var(--vc-activity-dot-size);
-  border-radius: var(--vc-radius-pill);
-  background: var(--vc-accent);
-  box-shadow: 0 0 0 var(--vc-space-0) var(--vc-chrome-bg);
-  pointer-events: none;
-}
-
-/* === Sidebar beside the bar ============================================== */
-
-/* Narrow window: the floating sidebar opens beside the bar (and slides out
-   underneath it) instead of covering it. */
-html[data-vc-shell] .poracode-shell[data-vc-activitybar] > .poracode-sidebar-aside--overlay {
-  left: var(--vc-activitybar-width);
-  z-index: 39;
-}
-
-/* Collapsed: the aside is 0 wide. Drop its divider so it does not double the
-   bar's own edge. */
+/* Collapsed: the aside is 0 wide. Drop its divider so no stray hairline
+   shows at the window's left edge. */
 html[data-vc-shell]
   .poracode-shell[data-vc-activitybar][data-vc-sidebar-collapsed]
   > .poracode-sidebar-aside:not(.poracode-sidebar-aside--overlay),
@@ -221,21 +26,13 @@ html[data-vc-shell]
   border-right-width: 0;
 }
 
-/* macOS: the traffic lights straddle the bar and the sidebar header. Upstream
-   reserves a 68px gutter (--vc-traffic-light-reach, shell.css) after the
-   header's own 12px inset; the bar already covers part of it. */
-html[data-vc-shell]
-  .poracode-shell[data-vc-activitybar]
-  > .poracode-sidebar-aside
-  .vc-traffic-light-gutter {
-  width: max(0px, calc(var(--vc-traffic-light-reach) - var(--vc-activitybar-width)));
-}
-
 /* === Sidebar views ======================================================= */
 
-/* Upstream's sidebar column (the Agents view) leaves room for the header row. */
+/* Upstream's sidebar column (the Chats view) leaves room for the header row,
+   with a little more breathing room at the sides. */
 html[data-vc-shell] .vc-sidebar-host-column {
   padding-top: var(--vc-sidebar-view-header-height);
+  padding-inline: var(--vc-sidebar-padding-inline);
 }
 
 /* Title row (and, for registry views, the body) drawn over the column. The
@@ -258,9 +55,10 @@ html[data-vc-shell] .vc-sidebar-views > * {
   pointer-events: auto;
 }
 
-/* One row: title (+ view accessory) on the left, actions on the right. It sits
-   at the window's top edge, so it drags the window like upstream's header row;
-   the actions opt out through upstream's .poracode-overlay-header__controls. */
+/* One row: nav controls (+ view accessory) on the left, the view switch on the
+   right. It sits at the window's top edge, so it drags the window like
+   upstream's header row; the controls opt out through upstream's
+   .poracode-overlay-header__controls. */
 html[data-vc-shell] .vc-sidebar-view-header {
   box-sizing: border-box;
   display: flex;
@@ -289,24 +87,7 @@ html[data-vc-shell] .poracode-sidebar-aside--overlay .vc-sidebar-view-header {
   app-region: no-drag;
 }
 
-/* Cursor-style section title: small, tracked caps. */
-html[data-vc-shell] .vc-sidebar-view-title {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  margin: 0;
-  color: var(--vc-text-muted);
-  font-family: var(--vc-font-ui);
-  font-size: var(--vc-font-size-xs);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* A view's accessory (e.g. Explorer's root) gives way before the title. */
+/* A view's accessory (e.g. Explorer's root) gives way before the controls. */
 html[data-vc-shell] .vc-sidebar-view-subtitle {
   flex: 0 100 auto;
   min-width: 0;
@@ -318,19 +99,189 @@ html[data-vc-shell] .vc-sidebar-view-subtitle {
   white-space: nowrap;
 }
 
-html[data-vc-shell] .vc-sidebar-view-actions,
-html[data-vc-shell] .vc-sidebar-view-actions > .poracode-overlay-header__controls {
+/* === Nav controls (sidebar header and collapsed top bar) ================= */
+
+html[data-vc-shell] .vc-nav-controls {
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--vc-space-0);
 }
 
-html[data-vc-shell] .vc-sidebar-view-actions {
-  margin-left: auto;
+html[data-vc-shell] .vc-nav-controls__button {
+  width: var(--vc-control-height);
+  height: var(--vc-control-height);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--vc-radius-md);
+  color: var(--vc-text-muted);
 }
 
-html[data-vc-shell] .vc-sidebar-view-actions button {
+html[data-vc-shell] .vc-nav-controls__button:hover {
+  background: var(--vc-hover);
+  color: var(--vc-text);
+}
+
+/* === View switch (Chats | Roundtable) ==================================== */
+
+html[data-vc-shell] .vc-view-switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-0);
+  padding: var(--vc-space-0);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-hover);
+}
+
+html[data-vc-shell] .vc-view-switch__segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--vc-control-height-sm);
+  height: calc(var(--vc-control-height-sm) - var(--vc-space-1));
+  padding: 0;
+  border: 0;
+  border-radius: var(--vc-radius-sm);
+  background: transparent;
+  color: var(--vc-text-muted);
+  outline: none;
+  transition:
+    color var(--vc-motion-fast) var(--vc-ease-standard),
+    background-color var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-view-switch__segment:hover {
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-view-switch__segment[data-active] {
+  background: var(--vc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--vc-border);
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-view-switch__segment:focus-visible {
+  box-shadow: 0 0 0 2px var(--vc-focus-ring);
+}
+
+html[data-vc-shell] .vc-view-switch__dot {
+  position: absolute;
+  top: var(--vc-space-0);
+  right: var(--vc-space-0);
+  width: 6px;
+  height: 6px;
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-accent);
+  pointer-events: none;
+}
+
+/* === Nav list ============================================================ */
+
+html[data-vc-shell] .vc-sidebar-nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html[data-vc-shell] .vc-sidebar-nav__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-3);
+  width: 100%;
+  height: var(--vc-row-height);
+  min-height: 0;
+  padding: 0 var(--vc-space-2);
+  border: 0;
+  border-radius: var(--vc-radius-lg);
+  background: transparent;
+  color: var(--vc-text);
+  font-family: var(--vc-font-ui);
+  font-size: var(--vc-font-size-md);
+  font-weight: var(--vc-font-weight-regular);
+  text-align: left;
+  outline: none;
+  transition: background-color var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-sidebar-nav__row:hover,
+html[data-vc-shell] .vc-sidebar-nav__row[data-hovered] {
+  background: var(--vc-hover);
+}
+
+html[data-vc-shell] .vc-sidebar-nav__row[data-active] {
+  background: var(--vc-active);
+}
+
+html[data-vc-shell] .vc-sidebar-nav__row:focus-visible,
+html[data-vc-shell] .vc-sidebar-nav__row[data-focus-visible] {
+  box-shadow: inset 0 0 0 1px var(--vc-focus-ring);
+}
+
+/* "+ New" stands out with a raised fill. */
+html[data-vc-shell] .vc-sidebar-nav__row--new {
+  background: var(--vc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--vc-border-subtle);
+}
+
+html[data-vc-shell] .vc-sidebar-nav__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--vc-text-muted);
+}
+
+html[data-vc-shell] .vc-sidebar-nav__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-vc-shell] .vc-sidebar-nav__badge {
+  flex: none;
+  min-width: 18px;
+  padding: 0 var(--vc-space-1);
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-active);
+  color: var(--vc-text);
+  font-size: var(--vc-font-size-2xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Quiet "Projects" label row carrying upstream's sidebar header controls. */
+html[data-vc-shell] .vc-sidebar-projects {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-height: var(--vc-control-height);
+  padding-left: var(--vc-space-2);
+}
+
+html[data-vc-shell] .vc-sidebar-projects__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+  font-weight: var(--vc-font-weight-medium);
+}
+
+html[data-vc-shell] .vc-sidebar-projects__actions,
+html[data-vc-shell] .vc-sidebar-projects__actions > .poracode-overlay-header__controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--vc-space-0);
+}
+
+html[data-vc-shell] .vc-sidebar-projects__actions button {
   width: var(--vc-sidebar-action-size);
   height: var(--vc-sidebar-action-size);
   min-width: 0;
@@ -338,18 +289,206 @@ html[data-vc-shell] .vc-sidebar-view-actions button {
   border-radius: var(--vc-radius-sm);
 }
 
-/* The activity bar already provides Search and Browser: drop upstream's header
-   copies (their tooltip triggers, which wrap the buttons). Keyed on the icon,
-   which does not change with the UI language. */
+/* The nav list already provides Search, and the right sidebar the browser:
+   drop upstream's header copies (their tooltip triggers, which wrap the
+   buttons). Keyed on the icon, which does not change with the UI language. */
 html[data-vc-shell]
-  .vc-sidebar-view-actions
+  .vc-sidebar-projects__actions
   > .poracode-overlay-header__controls
   > :has(svg.lucide-search, svg.lucide-globe) {
   display: none;
+}
+
+/* === Pinned ============================================================== */
+
+html[data-vc-shell] .vc-sidebar-pinned {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__header {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-1);
+  height: var(--vc-control-height-sm);
+  padding: 0 var(--vc-space-2);
+  border: 0;
+  border-radius: var(--vc-radius-md);
+  background: transparent;
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+  font-weight: var(--vc-font-weight-medium);
+  outline: none;
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__header:is(:hover, :focus-visible) {
+  color: var(--vc-text);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__header:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--vc-focus-ring);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--vc-motion-fast) var(--vc-ease-standard);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__header[aria-expanded="true"] .vc-sidebar-pinned__chevron {
+  transform: rotate(90deg);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--vc-row-height);
+  padding: 0 var(--vc-space-2);
+  border: 0;
+  border-radius: var(--vc-radius-lg);
+  background: transparent;
+  color: var(--vc-text);
+  font-size: var(--vc-font-size-md);
+  text-align: left;
+  outline: none;
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__row:hover {
+  background: var(--vc-hover);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__row[data-active] {
+  background: var(--vc-active);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__row:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--vc-focus-ring);
+}
+
+html[data-vc-shell] .vc-sidebar-pinned__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Profile row ========================================================= */
+
+html[data-vc-shell] .vc-sidebar-profile {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: var(--vc-space-2);
+  border-top: 1px solid var(--vc-border-subtle);
+}
+
+html[data-vc-shell] .vc-sidebar-profile__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-2);
+  width: 100%;
+  height: calc(var(--vc-row-height) + var(--vc-space-2));
+  padding: 0 var(--vc-space-2);
+  border: 0;
+  border-radius: var(--vc-radius-lg);
+  background: transparent;
+  color: var(--vc-text);
+  font-size: var(--vc-font-size-md);
+  text-align: left;
+  outline: none;
+}
+
+html[data-vc-shell] .vc-sidebar-profile__row:hover,
+html[data-vc-shell] .vc-sidebar-profile__row[data-hovered] {
+  background: var(--vc-hover);
+}
+
+html[data-vc-shell] .vc-sidebar-profile__row:focus-visible,
+html[data-vc-shell] .vc-sidebar-profile__row[data-focus-visible] {
+  box-shadow: inset 0 0 0 1px var(--vc-focus-ring);
+}
+
+html[data-vc-shell] .vc-sidebar-profile__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--vc-sidebar-avatar-size);
+  height: var(--vc-sidebar-avatar-size);
+  border-radius: var(--vc-radius-pill);
+  background: var(--vc-accent);
+  color: var(--vc-accent-foreground);
+  font-size: var(--vc-font-size-xs);
+  font-weight: var(--vc-font-weight-medium);
+}
+
+html[data-vc-shell] .vc-sidebar-profile__name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--vc-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-vc-shell] .vc-sidebar-profile__plan {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--vc-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-vc-shell] .vc-sidebar-profile__chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: var(--vc-text-muted);
 }
 
 html[data-vc-shell] .vc-sidebar-view-body {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* === Agents view density ================================================= */
+
+/* Thread rows: one dense line (icon | title | meta). Keyed on the thread hook
+   inside the host column, never the bare row class: device, ports and GitHub
+   Actions lists share .poracode-sidebar-thread-row. min-height, not height:
+   the two-line flat-list rows keep their two lines, just tighter. */
+html[data-vc-shell] .vc-sidebar-host-column [data-vc-sidebar-thread] .poracode-sidebar-thread-row {
+  min-height: var(--vc-row-height);
+  padding-block: var(--vc-space-0);
+  border-radius: var(--vc-radius-lg);
+}
+
+/* Project headers: 12px medium muted, like the group headers. The name span
+   has no hook of its own; .font-semibold is its weight utility. */
+html[data-vc-shell] .vc-sidebar-host-column .poracode-sidebar-project-nudge {
+  border-radius: var(--vc-radius-md);
+}
+
+html[data-vc-shell] .vc-sidebar-host-column .poracode-sidebar-project-nudge .font-semibold {
+  color: var(--vc-text-muted);
+  font-size: var(--vc-font-size-sm);
+  font-weight: var(--vc-font-weight-medium);
+}
+
+html[data-vc-shell]
+  .vc-sidebar-host-column
+  .poracode-sidebar-project-nudge:is(:hover, :focus-visible)
+  .font-semibold {
+  color: var(--vc-text);
 }

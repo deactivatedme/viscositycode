@@ -73,5 +73,5 @@ public extension RemoteRootCodecs {
 }
 
 public extension RemoteRootCodecs {
-  static let routeU2EProjectU2DCommandU2ERequest: RemoteRootCodec<RouteprojectU2DCommandRequest_3e58e9f152> = .init(id: "route.project-command.request", schema: RemoteSchemas.schema_3e58e9f152d76240)
+  static let routeU2EProjectU2DCommandU2ERequest: RemoteRootCodec<RouteprojectU2DCommandRequest_d0fa16fc6e> = .init(id: "route.project-command.request", schema: RemoteSchemas.schema_d0fa16fc6e0ff55d)
 }

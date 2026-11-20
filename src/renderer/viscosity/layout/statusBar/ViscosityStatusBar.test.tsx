@@ -8,7 +8,8 @@ import {
   VISCOSITY_SHELL_ATTRIBUTE,
 } from "@/renderer/viscosity/shellFlag";
 import { ViscosityStatusBarFrame } from "./ViscosityStatusBar";
-import { registerStatusBarItem } from "./statusBarRegistry";
+import { BUILTIN_STATUS_BAR_ITEM_IDS } from "./builtinStatusBarItems";
+import { getStatusBarItems, registerStatusBarItem } from "./statusBarRegistry";
 
 const threadActions = vi.hoisted(() => ({
   openThread: vi.fn<(threadId: string) => void>(),
@@ -83,8 +84,25 @@ describe("ViscosityStatusBarFrame", () => {
     expect(screen.getByTestId("page")).toBeTruthy();
     const bar = document.querySelector("[data-vc-statusbar]");
     expect(bar).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Version 9.8.7" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Switch to (light|dark) theme/ })).toBeTruthy();
+  });
+
+  it("keeps the bar minimal: no theme toggle or version item", () => {
+    document.documentElement.dataset.windowKind = "main";
+    renderFrame();
+    // The bridge mock reports a version, so a registered version item would render.
+    expect(screen.queryByRole("button", { name: "Version 9.8.7" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Switch to (light|dark) theme/ })).toBeNull();
+    const builtinIds: readonly string[] = Object.values(BUILTIN_STATUS_BAR_ITEM_IDS);
+    const items = getStatusBarItems();
+    const ids = items.map((item) => item.id);
+    expect(ids).toEqual(expect.arrayContaining([...builtinIds]));
+    // Pin the right side to the registry, so a theme or version item re-added under a new id fails.
+    const rightBuiltinIds = items
+      .filter((item) => item.align === "right" && builtinIds.includes(item.id))
+      .map((item) => item.id);
+    expect(rightBuiltinIds).toEqual([BUILTIN_STATUS_BAR_ITEM_IDS.agentModel]);
+    expect(ids).not.toContain("theme");
+    expect(ids).not.toContain("version");
   });
 
   it("shows agent counts and opens the first waiting thread", () => {

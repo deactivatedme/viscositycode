@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useRef } from "react";
 import type { AgentStatus, Thread } from "@/shared/contracts";
 import { agentStatusForPresentation } from "@/shared/agentSelection";
@@ -16,6 +17,7 @@ import { buildControls } from "@/renderer/components/thread/buildModelPickerCont
 import { formatEffortLabel } from "@/renderer/components/thread/threadDraftViewHelpers";
 import { modelFamilyMemberLabel } from "@/renderer/components/common/ProviderModelMenu/parts/modelFamilyDisplay";
 import { modelFamilyDisplayConfig } from "@/shared/modelFamilySelection";
+import { PlaybookCompactLabel } from "@/renderer/viscosity/playbooks/PlaybookTabBadge"; // ViscosityCode:
 
 type PresentedAgentStatus = NonNullable<ReturnType<typeof agentStatusForPresentation>>;
 
@@ -161,6 +163,8 @@ function ComposerSummaryBody(props: {
           <span className="m-compose-summary__model">{props.modelLabel}</span>
         </>
       )}
+      {/* ViscosityCode: the chat's playbook, read-only. */}
+      <PlaybookCompactLabel playbook={thread.config.playbook} className="m-compose-summary__item" />
       {props.crewName === undefined && props.effortLabel ? (
         <span className="m-compose-summary__effort">{props.effortLabel}</span>
       ) : null}

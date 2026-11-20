@@ -1,8 +1,11 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import type { UsageSnapshot, UsageStatus, UsageWindow } from "@poracode/agents-usage";
-import type { AgentInstanceConfigMap } from "@/shared/contracts";
+import type { AgentInstanceConfigMap, AgentStatus } from "@/shared/contracts";
 import {
+  detectedUsageIds,
   hasRailUsage,
+  isUsageProviderShown,
   isClaudeUsageProvider,
   needsBrowserSessionForUsage,
   pickUsageRings,
@@ -362,5 +365,80 @@ describe("hasRailUsage", () => {
         windows: [{ id: "weekly", label: "Weekly", usedPercent: 56 }],
       }),
     ).toBe(true);
+  });
+});
+
+describe("isUsageProviderShown", () => {
+  const snapshot = (status: UsageStatus, withReading = false): UsageSnapshot => ({
+    providerId: "kimi",
+    status,
+    windows: withReading ? [{ id: "weekly", label: "Weekly", usedPercent: 20 }] : [],
+    fetchedAt: 0,
+  });
+
+  it.each<[string, UsageSnapshot | undefined, boolean, boolean]>([
+    // Not installed (e.g. an unrelated provider whose binary is absent).
+    ["app-not-running, not detected, no data", snapshot("app-not-running"), false, false],
+    // Signed in, but its usage source returns nothing.
+    ["auth-missing, detected, no data", snapshot("auth-missing"), true, false],
+    ["ok, detected, data", snapshot("ok", true), true, true],
+    // A usage-only API-key provider with no agent installed.
+    ["ok, not detected, data", snapshot("ok", true), false, true],
+    ["no snapshot yet, detected", undefined, true, true],
+    ["no snapshot yet, not detected", undefined, false, false],
+    ["unsupported, detected", snapshot("unsupported"), true, false],
+    ["error, detected, no data", snapshot("error"), true, true],
+    ["auth-missing, not detected, retained data", snapshot("auth-missing", true), false, true],
+  ])("%s → %s", (_name, value, detected, expected) => {
+    expect(isUsageProviderShown(value, detected)).toBe(expected);
+  });
+
+  it("counts cost, tokens and credits as a reading", () => {
+    expect(isUsageProviderShown({ ...snapshot("ok"), credits: { balance: 3 } }, false)).toBe(true);
+  });
+});
+
+describe("detectedUsageIds", () => {
+  const status = (kind: string, partial: Partial<AgentStatus> = {}): AgentStatus =>
+    ({
+      kind,
+      label: kind,
+      installed: true,
+      authState: "authenticated",
+      capabilities: {},
+      ...partial,
+    }) as AgentStatus;
+
+  it("keeps installed, enabled, not signed-out agents, native or WSL", () => {
+    const ids = detectedUsageIds(
+      {
+        windows: [
+          status("codex", { installed: false }),
+          status("kimi", { authState: "unknown" }),
+          status("qwen", { authState: "missing" }),
+          status("cursor"),
+          status("gone", { installed: false }),
+        ],
+        wsl: [status("codex")],
+      },
+      ["cursor"],
+      undefined,
+    );
+    expect([...ids].toSorted()).toEqual(["codex", "kimi"]);
+  });
+
+  it("resolves profile kinds and manifest aliases to their usage ids", () => {
+    const ids = detectedUsageIds(
+      { windows: [status("claude:work"), status("opencode2")], wsl: [] },
+      [],
+      agentInstances,
+    );
+    expect(ids.has("opencode")).toBe(true);
+    expect(ids.has("opencode2")).toBe(false);
+    expect(ids.has("claude:work")).toBe(true);
+  });
+
+  it("detects nothing before statuses arrive", () => {
+    expect(detectedUsageIds(undefined, [], undefined).size).toBe(0);
   });
 });

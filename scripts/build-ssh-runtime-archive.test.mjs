@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -94,6 +95,10 @@ function writeFixture() {
     "mach-o\n",
   );
   writeFileSync(join(wslHelpersDir, "git-helper", "linux-x64", "poracode-git-helper"), "elf\n");
+  // ViscosityCode: live_re never ships to SSH hosts.
+  mkdirSync(join(wslHelpersDir, "live-re", "win32-x64"), { recursive: true });
+  writeFileSync(join(wslHelpersDir, "live-re", "win32-x64", "viscosity-live-re.exe"), "pe\n");
+  writeFileSync(join(wslHelpersDir, "live-re", "manifest.json"), "{}\n");
   writeFileSync(join(skillsDir, "demo", "SKILL.md"), "skill\n");
   writeFileSync(join(pluginsDir, "demo", "plugin.json"), "{}\n");
   writeFileSync(
@@ -275,6 +280,7 @@ void test("buildSshRuntimeArchive emits the loader manifest from the frozen clos
   assert.ok(
     existsSync(join(extract, "wsl-helpers", "git-helper", "linux-x64", "poracode-git-helper")),
   );
+  assert.equal(existsSync(join(extract, "wsl-helpers", "live-re")), false);
   assert.ok(existsSync(join(extract, "skills", "demo", "SKILL.md")));
   assert.ok(existsSync(join(extract, "plugins", "demo", "plugin.json")));
   assert.ok(existsSync(join(extract, "npm-shrinkwrap.json")));

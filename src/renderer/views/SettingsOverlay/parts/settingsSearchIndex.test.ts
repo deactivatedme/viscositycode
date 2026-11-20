@@ -10,12 +10,13 @@ import { SETTINGS_SEARCH_INDEX, searchSettings } from "./settingsSearchIndex";
 
 /** Anchor literals wired onto rows across the section components. */
 function anchorsDeclaredInComponents(): Set<string> {
-  // ViscosityCode: Settings → Effects and Bots rows, and the Appearance → Agent colours
-  // group, live beside the fork features they configure.
+  // ViscosityCode: Settings → xAI API rows, and the Appearance → Agent colours and
+  // Lightweight rows, live beside the fork features they configure.
   const dirs = [
     import.meta.dirname,
-    join(import.meta.dirname, "../../../fx/settings"),
-    join(import.meta.dirname, "../../../viscosity/bots/settings"),
+    join(import.meta.dirname, "../../../viscosity/performance"),
+    join(import.meta.dirname, "../../../viscosity/xai/settings"),
+    join(import.meta.dirname, "../../../viscosity/playbooks/settings"), // ViscosityCode:
     join(import.meta.dirname, "../../../viscosity/agentColors"),
   ];
   const anchorAttr =
@@ -128,6 +129,16 @@ describe("searchSettings", () => {
     expect(
       searchSettings("ui font", t, { remoteSession: true }).map((result) => result.anchor),
     ).toContain("appearance.uiFont");
+  });
+
+  // ViscosityCode: Lightweight mode moved to Appearance when Settings → Effects was removed.
+  it("finds Lightweight mode in Appearance and lists no Effects section", () => {
+    expect(searchSettings("lightweight", t).map((result) => result.anchor)).toContain(
+      "appearance.lightweight",
+    );
+    expect(
+      SETTINGS_SEARCH_INDEX.filter((entry) => (entry.section as string) === "effects"),
+    ).toEqual([]);
   });
 
   it("finds Computer Use options through plugin settings", () => {

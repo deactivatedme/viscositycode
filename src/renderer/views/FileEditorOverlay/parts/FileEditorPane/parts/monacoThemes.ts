@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { useResolvedAppearance } from "@/renderer/components/ui/provider";
+import { useAppThemeOverride } from "@/renderer/theme/applyAppTheme"; // ViscosityCode:
 import { resolveTerminalColor } from "@/renderer/components/terminal/terminalColors";
 import {
   buildMonacoThemeData,
@@ -69,6 +70,7 @@ export function useResolvedTheme(): "light" | "dark" {
   const activeCustomTheme = useSharedSettings((s) =>
     s.customThemes.find((theme) => theme.id === s.themePreset),
   );
+  const themeOverride = useAppThemeOverride(); // ViscosityCode: playbook theme override
 
   // AppProvider rewrites the theme CSS variables in its own (parent) effect,
   // which runs after this child effect; wait a frame to read fresh values.
@@ -78,9 +80,10 @@ export function useResolvedTheme(): "light" | "dark" {
     });
     return () => cancelAnimationFrame(frame);
     // The preset and active custom theme change the CSS variables read inside
-    // defineAppThemes, so they must retrigger the redefinition.
+    // defineAppThemes, so they must retrigger the redefinition. ViscosityCode:
+    // so does a playbook theme override.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [appearance, themePreset, activeCustomTheme]);
+  }, [appearance, themePreset, activeCustomTheme, themeOverride]);
 
   return appearance;
 }

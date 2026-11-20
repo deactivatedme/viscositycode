@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, Tooltip, Card, toast } from "@heroui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -33,7 +34,6 @@ import { isWindows, readBridge } from "@/renderer/bridge";
 import { i18n } from "@/renderer/i18n/i18n";
 import { runAgentInstallCommand, runAgentLoginCommand } from "@/renderer/actions/agentLoginActions";
 import { useHostAgentStatusPools } from "@/renderer/hooks/useHostAgentStatuses";
-import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { useAppStore } from "@/renderer/state/appStore";
 import {
   machineIdForStatus,
@@ -309,7 +309,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
     distrosForAgentHost(targetHost, env, wslDistros);
 
   const requestStatusRefresh = (options?: {
-    reset?: boolean;
     scope?: RefreshAgentScope;
     host?: typeof agentHost;
     distros?: string[];
@@ -317,20 +316,12 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
   }) => {
     const targetHost = options?.host ?? agentHost;
     const targetDistros = options?.distros ?? wslDistros;
-    if (
-      !targetHost.isRemote &&
-      options?.reset !== false &&
-      !useAgentStatusesStore.getState().inFirstLaunchDiscovery
-    ) {
-      useAgentStatusesStore.getState().resetDiscoveredAgents();
-    }
     return options?.rediscover
       ? targetHost.rediscoverAgents(targetDistros, options?.scope)
       : targetHost.refreshAgentStatuses(targetDistros, options?.scope);
   };
 
   const refreshStatuses = (options?: {
-    reset?: boolean;
     scope?: RefreshAgentScope;
     host?: typeof agentHost;
     distros?: string[];
@@ -501,7 +492,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
       .then(async (result) => {
         const adapterKind = acpGenericKind(agentId);
         const response = await refreshStatuses({
-          reset: false,
           host: targetHost,
           distros: distrosForHost(targetHost, targetEnv),
           scope: { agentKinds: [adapterKind], envs: [targetEnv] },
@@ -568,7 +558,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
       .then(async (result) => {
         const adapterKind = acpGenericKind(agentId);
         await refreshStatuses({
-          reset: false,
           host: targetHost,
           distros: distrosForHost(targetHost, targetEnv),
           scope: { agentKinds: [adapterKind], envs: [targetEnv] },
@@ -605,7 +594,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
       .then(() => targetHost.focusAfterAuth())
       .then(() =>
         refreshStatuses({
-          reset: false,
           host: targetHost,
           distros: distrosForHost(targetHost, targetEnv),
           rediscover: true,
@@ -652,7 +640,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
           return;
         }
         void refreshStatuses({
-          reset: false,
           host: targetHost,
           distros: distrosForHost(targetHost, targetEnv),
           rediscover: true,
@@ -822,7 +809,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
           const targetDistros = distrosForHost(targetHost, targetEnv);
           if (target.verifyRuntimeId) {
             const detected = await requestStatusRefresh({
-              reset: false,
               host: targetHost,
               distros: targetDistros,
               rediscover: true,
@@ -858,7 +844,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
           }
           try {
             response = await requestStatusRefresh({
-              reset: false,
               host: targetHost,
               distros: targetDistros,
               rediscover: target.command !== undefined,
@@ -981,7 +966,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
           try {
             const targetEnv = scopeEnvForStatus(action.status);
             response = await requestStatusRefresh({
-              reset: false,
               host: targetHost,
               distros: distrosForHost(targetHost, targetEnv),
               rediscover: action.command !== undefined,
@@ -1284,7 +1268,8 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
                     <Button
                       size="sm"
                       variant="tertiary"
-                      className="text-danger hover:bg-danger hover:text-white"
+                      // ViscosityCode: white on the low-chroma dark danger fails AA.
+                      className="text-danger hover:bg-danger hover:text-danger-foreground"
                       isPending={isAgentPending}
                       isDisabled={!isMachineOnline}
                       onPress={() => removeAgent(agent.id)}
@@ -1509,7 +1494,6 @@ export function AcpRegistrySettings(props: { onOpenAgentSettings?: (kind: string
                               .catch(() => undefined);
                           } else {
                             void refreshStatuses({
-                              reset: false,
                               host: targetHost,
                               distros: wslDistros,
                             });

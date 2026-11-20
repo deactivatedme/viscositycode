@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -353,10 +354,11 @@ export function PrSection(props: {
                       onChange={setBypass}
                       isDisabled={prLoading}
                       aria-label={t`Bypass branch protection rules`}
+                      // ViscosityCode: white on the low-chroma dark danger fails AA.
                       className={`size-5 shrink-0 ${
                         isSoftBlock
                           ? "text-warning data-[selected=true]:bg-warning data-[selected=true]:text-warning-foreground"
-                          : "text-danger data-[selected=true]:bg-danger data-[selected=true]:text-white"
+                          : "text-danger data-[selected=true]:bg-danger data-[selected=true]:text-danger-foreground"
                       }`}
                     >
                       <ShieldOff className="size-3" />

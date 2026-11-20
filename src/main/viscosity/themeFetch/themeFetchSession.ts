@@ -14,6 +14,7 @@
  * Electron-free (structural types only) so it runs under unit tests.
  */
 import { ThemeFetchHopRefused, type ThemeFetchFn, type ThemeHopGuard } from "./themeFetch";
+import { resolvesToPublicThemeHost, type ThemeHostLookup } from "./themeFetchHosts";
 
 /** Not "persist:": the session lives in memory only. */
 export const THEME_FETCH_PARTITION = "viscosity-theme-fetch";
@@ -39,13 +40,25 @@ export interface ThemeFetchSession {
 }
 
 /**
- * Enforces the hop policy on every request of the (dedicated) session. Each
- * webRequest event takes one listener per session, so the session must not
- * be shared with anything else.
+ * Enforces the hop policy on every request of the (dedicated) session, and
+ * resolves each hop's host name so one that points at a local or private
+ * address is refused too. Each webRequest event takes one listener per
+ * session, so the session must not be shared with anything else.
  */
-export function installThemeHopGuard(session: ThemeFetchSession, guard: ThemeHopGuard): void {
+export function installThemeHopGuard(
+  session: ThemeFetchSession,
+  guard: ThemeHopGuard,
+  lookup: ThemeHostLookup,
+): void {
   session.webRequest.onBeforeRequest((details, callback) => {
-    callback({ cancel: !guard.allow(details) });
+    if (!guard.allow(details)) {
+      callback({ cancel: true });
+      return;
+    }
+    resolvesToPublicThemeHost(new URL(details.url).hostname, lookup).then(
+      (allowed) => callback({ cancel: !allowed }),
+      () => callback({ cancel: true }),
+    );
   });
   session.webRequest.onCompleted((details) => guard.forget(details.id));
   session.webRequest.onErrorOccurred((details) => guard.forget(details.id));

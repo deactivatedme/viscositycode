@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fork, spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter, once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -701,6 +702,177 @@ describe("SSH environment supervisor", () => {
     });
     await expect(third).resolves.toEqual(connectResult());
     await supervisor.dispose();
+  });
+
+  describe("idle retirement (ViscosityCode)", () => {
+    function reply(
+      child: FakeUtilityProcess,
+      frame: { generation: number; requestId: string },
+      result: unknown,
+    ) {
+      child.emit("message", {
+        v: SSH_ENVIRONMENT_PROTOCOL_VERSION,
+        kind: "result",
+        generation: frame.generation,
+        requestId: frame.requestId,
+        ok: true,
+        result,
+      });
+    }
+
+    it("shuts an idle utility down after the last request and re-forks on the next call", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const first = supervisor.discoverHosts();
+      const child = await readyChild(children);
+      reply(child, await waitForFrame(child, "discover-hosts"), []);
+      await expect(first).resolves.toEqual([]);
+
+      await waitForFrame(child, "shutdown");
+      expect(supervisor.localStats().generation).toBe(0);
+      child.exitCode = 0;
+      child.emit("exit", 0);
+
+      const second = supervisor.discoverHosts();
+      const next = await vi.waitFor(() => {
+        expect(children).toHaveLength(2);
+        return children[1]!;
+      });
+      next.emit("message", { v: SSH_ENVIRONMENT_PROTOCOL_VERSION, kind: "ready" });
+      const frame = await waitForFrame(next, "discover-hosts");
+      expect(frame.generation).toBe(2);
+      reply(next, frame, []);
+      await expect(second).resolves.toEqual([]);
+      expect(child.killCalls).toBe(0);
+      await supervisor.dispose();
+    });
+
+    it("keeps the utility while a connection is open and retires it after disconnect", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const connecting = supervisor.connect({ connection: connection() });
+      const child = await readyChild(children);
+      reply(child, await waitForFrame(child, "connect"), connectResult());
+      await expect(connecting).resolves.toEqual(connectResult());
+
+      await new Promise((resolveWait) => setTimeout(resolveWait, 50));
+      expect(() => requestFrame(child, "shutdown")).toThrow("No shutdown frame was posted.");
+
+      const disconnecting = supervisor.disconnect(connection().id);
+      reply(child, await waitForFrame(child, "disconnect"), undefined);
+      await expect(disconnecting).resolves.toBeUndefined();
+      await waitForFrame(child, "shutdown");
+      child.exitCode = 0;
+      child.emit("exit", 0);
+      await supervisor.dispose();
+      expect(children).toHaveLength(1);
+    });
+
+    it("does not fork a utility just to disconnect", async () => {
+      const { supervisor, children } = createSupervisor();
+      await expect(supervisor.disconnect(connection().id)).resolves.toBeUndefined();
+      expect(children).toHaveLength(0);
+      await supervisor.dispose();
+    });
+
+    it("does not reap a retiring utility or fork a successor just to disconnect", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const first = supervisor.discoverHosts();
+      const child = await readyChild(children);
+      reply(child, await waitForFrame(child, "discover-hosts"), []);
+      await expect(first).resolves.toEqual([]);
+      await waitForFrame(child, "shutdown");
+
+      // Retired but not yet exited: the utility is still in custody.
+      await expect(supervisor.disconnect(connection().id)).resolves.toBeUndefined();
+      expect(children).toHaveLength(1);
+      expect(child.killCalls).toBe(0);
+      child.exitCode = 0;
+      child.emit("exit", 0);
+      await supervisor.dispose();
+    });
+
+    it("clears open connections when the utility crashes so the successor still retires", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const connecting = supervisor.connect({ connection: connection() });
+      const child = await readyChild(children);
+      reply(child, await waitForFrame(child, "connect"), connectResult());
+      await expect(connecting).resolves.toEqual(connectResult());
+      child.exitCode = 1;
+      child.emit("exit", 1);
+      await vi.waitFor(() => expect(supervisor.localStats().generation).toBe(0));
+
+      const second = supervisor.discoverHosts();
+      const next = await vi.waitFor(() => {
+        expect(children).toHaveLength(2);
+        return children[1]!;
+      });
+      next.emit("message", { v: SSH_ENVIRONMENT_PROTOCOL_VERSION, kind: "ready" });
+      reply(next, await waitForFrame(next, "discover-hosts"), []);
+      await expect(second).resolves.toEqual([]);
+      await waitForFrame(next, "shutdown");
+      next.exitCode = 0;
+      next.emit("exit", 0);
+      await supervisor.dispose();
+    });
+
+    it("does not count a refused connect as open and still retires the utility", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const connecting = supervisor.connect({ connection: connection() });
+      const child = await readyChild(children);
+      const frame = await waitForFrame(child, "connect");
+      child.emit("message", {
+        v: SSH_ENVIRONMENT_PROTOCOL_VERSION,
+        kind: "result",
+        generation: frame.generation,
+        requestId: frame.requestId,
+        ok: false,
+        error: { name: "Error", message: "auth failed" },
+      });
+      await expect(connecting).rejects.toThrow("auth failed");
+      await waitForFrame(child, "shutdown");
+      child.exitCode = 0;
+      child.emit("exit", 0);
+      await supervisor.dispose();
+    });
+
+    it("does not count an aborted connect as open and still retires the utility", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const controller = new AbortController();
+      const connecting = supervisor.connect(
+        { connection: connection() },
+        { signal: controller.signal },
+      );
+      const child = await readyChild(children);
+      const frame = await waitForFrame(child, "connect");
+      controller.abort();
+      await expect(connecting).rejects.toMatchObject({ name: "AbortError" });
+      // A late success for the cancelled connect must not pin the utility.
+      reply(child, frame, connectResult());
+      await waitForFrame(child, "shutdown");
+      child.exitCode = 0;
+      child.emit("exit", 0);
+      await supervisor.dispose();
+    });
+
+    it("reaps a utility still shutting down and serves a new caller on a successor", async () => {
+      const { supervisor, children } = createSupervisor({ idleRetirementMs: 10 });
+      const first = supervisor.discoverHosts();
+      const child = await readyChild(children);
+      reply(child, await waitForFrame(child, "discover-hosts"), []);
+      await expect(first).resolves.toEqual([]);
+      await waitForFrame(child, "shutdown");
+
+      // The old utility has not exited yet; the new call must reap it, not fail.
+      const second = supervisor.discoverHosts();
+      const next = await vi.waitFor(() => {
+        expect(children).toHaveLength(2);
+        return children[1]!;
+      });
+      expect(child.killCalls).toBe(1);
+      next.emit("message", { v: SSH_ENVIRONMENT_PROTOCOL_VERSION, kind: "ready" });
+      reply(next, await waitForFrame(next, "discover-hosts"), []);
+      await expect(second).resolves.toEqual([]);
+      await supervisor.dispose();
+    });
   });
 
   it("joins a real IPC utility over the versioned protocol and its real exit", async () => {

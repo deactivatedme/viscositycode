@@ -1,0 +1,51 @@
+/* ViscosityCode: shared agent-activity styles. Scoped to html[data-vc-shell].
+ *
+ * - The "N tools running" status bar item (tool tone and its .vc-fx-spin icon).
+ * - The vc-fx-dot-pulse keyframe that Mission Control cards and Roundtable
+ *   chips use for their own data-vc-fx-state dots (missionControl.css,
+ *   roundtable.css). The vc-fx-* names are kept so those stylesheets need no change.
+ *
+ * Continuous motion pauses while the window is hidden or unfocused
+ * (html[data-app-hidden|data-app-unfocused], uiAnimationActivity.ts) and stops
+ * under reduced motion and Lightweight mode.
+ */
+
+html[data-vc-shell] .vc-statusbar .vc-statusbar__item[data-tone="tool"] {
+  color: var(--vc-state-tool);
+}
+
+html[data-vc-shell] .vc-fx-spin {
+  animation: vc-fx-rotate 0.9s linear infinite;
+}
+
+@keyframes vc-fx-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vc-fx-dot-pulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+html[data-vc-shell]:is([data-app-hidden], [data-app-unfocused]) .vc-fx-spin {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-vc-shell] .vc-fx-spin {
+    animation: none;
+  }
+}
+
+html[data-vc-shell][data-vc-lightweight] .vc-fx-spin {
+  animation: none;
+}

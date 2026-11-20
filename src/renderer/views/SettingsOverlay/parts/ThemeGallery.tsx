@@ -1,7 +1,8 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { startTransition, type CSSProperties } from "react";
 import { Check } from "lucide-react";
 import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
-import { useResolvedAppearance } from "@/renderer/components/ui/provider";
+import { useThemeModeAppearance } from "@/renderer/components/ui/provider"; // ViscosityCode: was useResolvedAppearance
 import {
   APP_THEME_PRESETS,
   buildThemePreset,
@@ -19,7 +20,7 @@ export function ThemeGallery() {
   const setThemePreset = useSharedSettings((state) => state.setThemePreset);
   const customThemes = useSharedSettings((state) => state.customThemes);
   const presets = [...APP_THEME_PRESETS, ...customThemes.map(buildThemePreset)];
-  const appearance = useResolvedAppearance();
+  const appearance = useThemeModeAppearance(); // ViscosityCode: swatches preview the Mode, not a playbook override
 
   return (
     <div className="space-y-3">

@@ -1,3 +1,4 @@
 /* ViscosityCode: Cursor-style shell layout. Scoped to html[data-vc-shell]. */
 @import "./activityBar.css";
 @import "./shell.css";
+@import "./content.css";

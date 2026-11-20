@@ -1,4 +1,6 @@
-import * as Sentry from "@sentry/electron/renderer";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+// ViscosityCode: the SDK loads only when Sentry is enabled (fork builds ship no DSN).
+type SentryRenderer = typeof import("@sentry/electron/renderer");
 import { readBridge } from "@/renderer/bridge";
 import { buildErrorCauseTags } from "@/shared/diagnostics/errorCause";
 import {
@@ -92,12 +94,26 @@ function buildBaseTags(): PoracodeDiagnosticTags {
   };
 }
 
+let loadedSentry: SentryRenderer | null = null; // ViscosityCode: null until the lazy SDK has initialized.
+
 export function initializeRendererSentry(): boolean {
   const bridge = readBridge();
   if (!bridge.sentryEnabled) {
     return false;
   }
 
+  // ViscosityCode: exceptions captured before the import resolves are dropped; init runs before mount.
+  void import("@sentry/electron/renderer").then(
+    (Sentry) => {
+      startRendererSentry(Sentry, bridge);
+      loadedSentry = Sentry;
+    },
+    (error: unknown) => console.warn("Renderer Sentry failed to load", error),
+  );
+  return true;
+}
+
+function startRendererSentry(Sentry: SentryRenderer, bridge: ReturnType<typeof readBridge>): void {
   Sentry.init({
     sendDefaultPii: false,
     enableLogs: false,
@@ -129,14 +145,13 @@ export function initializeRendererSentry(): boolean {
     isDev: bridge.isDev,
     process: "renderer",
   });
-
-  return true;
 }
 
 export function setRendererRuntimeDiagnosticContext(
   context: PoracodeRuntimeDiagnosticContext | null,
 ): void {
-  if (!Sentry.isEnabled()) return;
+  const Sentry = loadedSentry; // ViscosityCode:
+  if (!Sentry?.isEnabled()) return;
   const scope = Sentry.getCurrentScope();
   const tags = context ? buildRuntimeDiagnosticTags(context) : {};
   for (const key of RUNTIME_TAG_KEYS) {
@@ -149,7 +164,8 @@ export function captureRendererException(
   context?: PoracodeRuntimeDiagnosticContext,
   componentStack?: string,
 ): void {
-  if (!Sentry.isEnabled()) return;
+  const Sentry = loadedSentry; // ViscosityCode:
+  if (!Sentry?.isEnabled()) return;
   Sentry.withScope((scope) => {
     scope.setTags({
       ...(context ? buildRuntimeDiagnosticTags(context) : {}),

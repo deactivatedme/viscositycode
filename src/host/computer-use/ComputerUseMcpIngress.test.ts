@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ComputerUseMcpIngress, type ComputerUseMcpIngressOptions } from "./ComputerUseMcpIngress";
 import { AgentVisionService } from "@/host/AgentVisionService";
@@ -135,13 +136,17 @@ describe("ComputerUseMcpIngress", () => {
     clock.mockRestore();
     expect(driver.getWindowState).toHaveBeenCalledTimes(2);
   });
-  it("prewarms the native driver after the MCP ingress starts", async () => {
+  it("does not touch the native driver until the first tool call", async () => {
     const driver = createDriver();
     ingress = new ComputerUseMcpIngress({ driver, observationSettleMs: 0 });
 
-    await ingress.start();
+    const info = await ingress.start();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(driver.describeStatus).not.toHaveBeenCalled();
+    expect(driver.listWindows).not.toHaveBeenCalled();
 
-    await vi.waitFor(() => expect(driver.describeStatus).toHaveBeenCalledOnce());
+    expect((await callTool(info, "list_windows", {})).status).toBe(200);
+    expect(driver.listWindows).toHaveBeenCalledOnce();
   });
 
   it("advertises computer_use instructions and tools on initialize", async () => {
@@ -766,30 +771,7 @@ describe("ComputerUseMcpIngress", () => {
   });
 });
 
-it("joins a pending prewarm before permanent native ingress disposal completes", async () => {
-  const status = await createDriver().describeStatus();
-  const held = Promise.withResolvers<typeof status>();
-  const driver = createDriver({ describeStatus: () => held.promise });
-  ingress = new ComputerUseMcpIngress({ driver });
-  await ingress.start();
-  let joined = false;
-  const closing = Promise.resolve(ingress.dispose()).then(() => {
-    joined = true;
-  });
-  try {
-    await new Promise<void>((resolve) => setImmediate(resolve));
-    expect(joined).toBe(false);
-    expect(driver.close).toHaveBeenCalledOnce();
-    held.resolve(status);
-    await closing;
-    expect(driver.dispose).not.toHaveBeenCalled();
-  } finally {
-    held.resolve(status);
-    await closing;
-  }
-});
-
-it("refuses prewarm after stop even when its listener-ready promise already resolved", async () => {
+it("rejects start after stop even when its listener-ready promise already resolved", async () => {
   const listening = vi
     .spyOn(StreamableHttpMcpIngress.prototype, "start")
     .mockResolvedValue({ url: "http://127.0.0.1:1", token: "synthetic", port: 1 });

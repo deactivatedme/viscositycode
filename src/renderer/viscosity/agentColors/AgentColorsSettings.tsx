@@ -16,7 +16,7 @@ import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { isChatSidebarSurface } from "@/renderer/clientSurface";
 import { Button, ToggleSwitch } from "@/renderer/components/common";
 import { ProviderIcon } from "@/renderer/components/providers/ProviderIcon";
-import { EffectsSettingsGroup } from "@/renderer/fx/settings/EffectsSettingsControls";
+import { SettingsGroup } from "@/renderer/viscosity/settings/SettingsGroup";
 import { useAgentStatusesStore } from "@/renderer/state/agentStatusesStore";
 import { shouldEnableViscosityShell } from "@/renderer/viscosity/shellFlag";
 import { SettingRow } from "@/renderer/views/SettingsOverlay/parts/SettingsForm";
@@ -154,7 +154,7 @@ export function AgentColorsSettings() {
   const rows = buildAgentColorRows(agentStatuses, wslAgentStatuses, overrides);
 
   return (
-    <EffectsSettingsGroup
+    <SettingsGroup
       anchorId="appearance.agentColors"
       title={t`Agent colours`}
       description={
@@ -185,6 +185,6 @@ export function AgentColorsSettings() {
           ))}
         </ul>
       )}
-    </EffectsSettingsGroup>
+    </SettingsGroup>
   );
 }
