@@ -232,6 +232,17 @@ Every agent implements `AgentAdapter` (`src/supervisor/agents/base.ts`).
   passthrough and import with the host's `import-session` thread command
   (capability `sessionImport` v1); `importSessionTranscript` stays desktop-local.
   The scan cache is in-memory.
+- Cloud agents (ViscosityCode fork): `cloudAgents?: CloudAgentSource`
+  (`base/cloudAgents.ts`) lists a provider's cloud agents with the profile's own
+  key: `listAgents(cursor)`, `getAgent(id)`, `readTranscript(id)` and
+  `providerSessionId(id)`. Sources normalize vendor statuses and errors and throw
+  only `CloudAgentSourceError` (`auth` | `plan` | `rate_limited` | `unavailable`,
+  with `retryAfterMs`). The shared `CloudAgentsService`
+  (`src/supervisor/cloudAgents/service.ts`) owns the 30 s cache, one request at
+  a time, backoff from 60 s up to 15 min, the 50-item page cap, the 4 KB result
+  cap, the 1000-message replay cap and follow (an `inactive` GUI thread under
+  Home whose `sessionRef` resumes the agent). The procedures
+  (`listCloudAgents`, `getCloudAgent`, `followCloudAgent`) are desktop-local.
 
 ### Provider folder layout
 

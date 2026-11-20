@@ -56,6 +56,53 @@ from a later response, and rejects at turn end, Stop, restart or close, because
 Claude Code drops hook context when a tool result ends the turn. The attachment
 stays off the SDK stream and out of the session import.
 
+## Cursor (ViscosityCode fork: cloud agents)
+
+**Cloud profiles.** A Cursor profile whose config says
+`runtimeTarget: "cloud"` (Settings → Agents → the profile → Run in) runs Cursor
+cloud agents through the same supervisor-owned SDK worker, with no local agent
+process and no PTY, using the profile's own `CURSOR_API_KEY`. Use a User API key
+from cursor.com/dashboard/api; team `grok_` keys and `crsr_` admin keys are not
+supported.
+
+- **Launch rule** (`cloudLaunch.ts`): the repo is `origin`, normalized to
+  https, and `startingRef` is the current branch's upstream on `origin`. A
+  detached HEAD, a branch with no `origin` upstream, or a branch with local
+  commits that are not pushed is refused with a localized message; the default
+  branch is never used silently. A project folder with no `origin`, including
+  one that is not a git work tree, is refused ("no git origin; start it from
+  Home"). Only Home threads (`isHomeScopeLocation`) start a repo-less agent,
+  without asking git. The renderer's `checkCloudLaunchBranch` is only an early
+  hint (it lets a non-git folder through); the host decides.
+- **What is sent:** no host MCP servers, `settingSources`, sandbox or
+  auto-review; `/summarize` is not offered. Stop cancels the cloud run. SDK
+  steer always resolves `revert_to_followup`, so a mid-run message is queued as
+  a follow-up. On resume, a still-running latest run is attached and streamed.
+  Each finished run posts one notice with the branch, PR and Cursor link.
+- **Agent creation:** the SDK posts a cloud agent's create with its first
+  `send()` (`Agent.resume` assumes the agent exists). Until a send is accepted,
+  the session keeps the launch repos and `autoCreatePR`, and any worker
+  replacement creates the agent again under the thread's deterministic `bc-`
+  id; the worker adopts it on 409 `agent_id_conflict`. After a restart, the
+  agent is recreated only if Cursor reports it missing (`cloudAgentMissing`)
+  and the id is this thread's own launch id.
+- **Session refs:** cloud threads store `sdk:bc-<uuid>`, local threads
+  `sdk:agent-<uuid>`; the runtime follows the prefix, not the current profile
+  setting (see [versioning](versioning.md)).
+- **Visibility:** agents the SDK creates are hidden in cursor.com's default list
+  (Filter → Source → SDK).
+- **Cloud tab** (Mission Control, desktop shell, local host only): lists agents
+  with the SDK's `Agent.list({ runtime: "cloud" })`, which carries no run
+  status, so list rows show `unknown` until fetched in detail. The Cursor source
+  spawns one short-lived SDK worker per call; `readTranscript` opens one stream
+  per finished run (at most 20), so long histories can approach the service's
+  30 s request timeout (the worker's own timeout is 60 s). Follow files the
+  agent under Home and waits up to 10 s for the host's `sessionRef` before it
+  opens the thread. Remote/native inbox, REST steer and archive/delete are v2.
+- **Not checked live yet:** there was no API key when this was built, so
+  everything is tested against mocks shaped from the documented API and
+  `@cursor/sdk` 1.3.1.
+
 ## Devin
 
 - Exec input streams after the call opens, and commands run in Poracode-hosted

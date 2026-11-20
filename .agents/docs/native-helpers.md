@@ -35,9 +35,12 @@ workload and again after an idle minute, because V8 heaps shrink late.
 | `native/computer-use-helper` | `poracode-computer-use` | `computer_use` backends ([computer-use.md](computer-use.md))                            | `resources/computer-use-helper/<target>/`    | legacy foreground driver (Windows, macOS)              |
 | `native/mcp-relay`           | `poracode-mcp-relay`    | MCP HTTP relay, stdio cwd launcher, and tool-filter/schema proxy for stdio & plain HTTP | `resources/wsl-helpers/mcp-relay/<target>/`  | `mcp-relay.mjs`, `mcp-stdio.mjs`, and `mcp-filter.mjs` |
 | `native/git-helper`          | `poracode-git-helper`   | in-process local Git status, scoped filesystem watching, and project search             | `resources/wsl-helpers/git-helper/<target>/` | TypeScript status/search and bundled watcher worker    |
+| `native/live-re` (fork)      | `viscosity-live-re`     | `live_re` LLDB live-debugging MCP server (stdio, drives `lldb-dap`)                     | `resources/wsl-helpers/live-re/<target>/`    | `live_re` is absent; launches are unaffected           |
 
 Targets are `darwin-universal` (lipo of x86_64 and aarch64), `win32-x64`,
-`win32-arm64`, and `linux-x64` (static musl). The Linux MCP relay is also
+`win32-arm64`, and `linux-x64` (static musl). `viscosity-live-re` has no Linux target;
+it is staged by `scripts/prepare-live-re.mjs` (`PORACODE_ALLOW_MISSING_LIVE_RE=1`
+skips it in packaging without Rust). The Linux MCP relay is also
 packaged into Windows desktop builds for x64 WSL distros and Linux SSH runtime
 archives. Linux arm64, arm64 WSL distros, `https:`/SSE/failure-isolated MCP
 upstreams, and macOS SSH hosts use the MCP `.mjs` fallbacks. Git operations in
