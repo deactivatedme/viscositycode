@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import { isThreadConfigEqual } from "@/shared/contracts";
 import { msg } from "@/shared/messages";
@@ -48,9 +49,14 @@ import {
   CursorSdkWorkerStartupError,
   spawnCursorSdkWorker,
 } from "./sdkWorkerClient";
+import type { CursorSdkRunResult } from "./sdkProtocol";
+import { resolveCursorCloudLaunch, type CursorCloudLaunchResult } from "./cloudLaunch";
+import { isCursorCloudAgentId } from "./sdkWorkerCloud";
+import { cursorCloudAgentWebUrl } from "./cloudAgentSource";
 import type {
   CursorSdkWorkerAgentMessage,
   CursorSdkWorkerAgentOptions,
+  CursorSdkWorkerCloudOptions,
   CursorSdkWorkerEvent,
   CursorSdkWorkerInitializeInput,
   CursorSdkWorkerInitializeResult,
@@ -63,6 +69,7 @@ import { CursorSdkSteering } from "./sdkSteering";
 import {
   buildCursorSdkAgentOptions,
   buildCursorSdkSendOptions,
+  cursorCloudAgentId,
   sameSdkSafetyPosture,
   sdkSafetyPosture,
   type CursorSdkSafetyPosture,
@@ -82,6 +89,8 @@ interface CursorSdkWorkerHandle {
   reload(): Promise<void>;
   listMessages(input?: { limit?: number; offset?: number }): Promise<CursorSdkWorkerAgentMessage[]>;
   listModels(apiKey?: string): Promise<CursorSdkWorkerProbeResult>;
+  /** ViscosityCode: stream a resumed cloud agent's running run. */
+  attach?(runId: string): Promise<CursorSdkWorkerStartResult>;
   onEvent(listener: (event: CursorSdkWorkerEvent) => void): () => void;
   onTransportError(listener: (error: Error) => void): () => void;
   dispose(): Promise<void>;
@@ -112,6 +121,42 @@ export interface CursorSdkSessionDependencies {
   spawnWorker(input: CursorSdkWorkerSpawnInput): Promise<CursorSdkWorkerHandle>;
   newId(): string;
   idleTimeoutMs?: number;
+  /** ViscosityCode: repo and branch a new cloud agent starts from. */
+  resolveCloudLaunch?(location: ProjectLocation): Promise<CursorCloudLaunchResult>;
+}
+
+/**
+ * ViscosityCode: where new threads of this session's profile run. `cloud`
+ * starts Cursor cloud agents; a resumed `sdk:bc-` ref is always cloud and a
+ * resumed `sdk:agent-` ref always local, whatever the profile says now.
+ */
+export interface CursorSdkSessionRuntime {
+  cloud?: { autoCreatePR?: boolean };
+}
+
+/** Cloud agents have no local sandbox or auto-review to rebind. */
+const CLOUD_SAFETY_POSTURE: CursorSdkSafetyPosture = { autoReview: false, sandboxEnabled: false };
+
+/**
+ * One conversation notice for a finished cloud run: the branches and pull
+ * requests it pushed, then the agent's Cursor page. Nothing when it pushed
+ * nothing.
+ */
+export function cursorCloudRunNotice(
+  result: CursorSdkRunResult,
+  agentId: string,
+): string | undefined {
+  const lines = (result.git?.branches ?? []).flatMap((entry) => [
+    ...(entry.branch
+      ? [msg("cursor.cloud.branchPushed", { branch: entry.branch, repo: entry.repoUrl })]
+      : []),
+    ...(entry.prUrl ? [msg("cursor.cloud.pullRequest", { url: entry.prUrl })] : []),
+  ]);
+  if (!lines.length) return undefined;
+  return [
+    ...lines,
+    msg("cursor.cloud.openInCursor", { url: cursorCloudAgentWebUrl(agentId) }),
+  ].join("\n");
 }
 
 export const DEFAULT_CURSOR_SDK_WORKER_IDLE_TIMEOUT_MS = 60_000;
@@ -120,6 +165,7 @@ const DEFAULT_DEPENDENCIES: CursorSdkSessionDependencies = {
   spawnWorker: async (input) => spawnCursorSdkWorker(input),
   newId: randomUUID,
   idleTimeoutMs: DEFAULT_CURSOR_SDK_WORKER_IDLE_TIMEOUT_MS,
+  resolveCloudLaunch: (location) => resolveCursorCloudLaunch(location),
 };
 
 interface ActiveTurn {
@@ -247,6 +293,13 @@ export class CursorSdkSession implements StructuredSessionHandle {
   private slashCommands: StructuredSessionUpdate["slashCommands"];
   private mcpRevision = 0;
   private readonly steering: CursorSdkSteering;
+  // ViscosityCode: the open agent runs in Cursor's cloud; `cloudOptions` are
+  // its create options (repos) until the agent exists, then `{}` for resumes.
+  // The SDK posts a cloud agent's create with its first send, so until a send
+  // is accepted a worker replacement must create again, not resume.
+  private cloudAgent = false;
+  private cloudServerCreated = false;
+  private cloudOptions: CursorSdkWorkerCloudOptions | undefined;
 
   private get apiKey(): string | undefined {
     // The shared GUI session factory normally leaves `input.env` absent and
@@ -268,6 +321,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
   private constructor(
     private readonly input: CreateStructuredSessionInput,
     private readonly dependencies: CursorSdkSessionDependencies,
+    private readonly runtime: CursorSdkSessionRuntime = {},
   ) {
     this.currentConfig = input.config;
     this.mcpServers = input.mcpServers ?? [];
@@ -321,12 +375,17 @@ export class CursorSdkSession implements StructuredSessionHandle {
   static create(
     input: CreateStructuredSessionInput,
     dependencies: Partial<CursorSdkSessionDependencies> = {},
+    runtime: CursorSdkSessionRuntime = {},
   ): Promise<CursorSdkSession> {
     return Promise.resolve(
-      new CursorSdkSession(input, {
-        ...DEFAULT_DEPENDENCIES,
-        ...dependencies,
-      }),
+      new CursorSdkSession(
+        input,
+        {
+          ...DEFAULT_DEPENDENCIES,
+          ...dependencies,
+        },
+        runtime,
+      ),
     );
   }
 
@@ -380,6 +439,15 @@ export class CursorSdkSession implements StructuredSessionHandle {
     this.currentConfig = config;
 
     const resumeAgentId = nativeAgentId(sessionRef);
+    this.cloudAgent = resumeAgentId
+      ? isCursorCloudAgentId(resumeAgentId)
+      : this.runtime.cloud !== undefined;
+    this.cloudOptions = this.cloudAgent ? {} : undefined;
+    this.cloudServerCreated = resumeAgentId !== undefined;
+    if (this.cloudAgent && !resumeAgentId) {
+      // Refuse an unpushed branch before any Cursor call.
+      this.cloudOptions = await this.resolveCloudCreateOptions();
+    }
     // Catalog lookup authenticates the externally-installed SDK and gives us
     // the parameter definitions needed for lossless model selection. A
     // resumed local conversation must still be readable during a temporary
@@ -410,9 +478,20 @@ export class CursorSdkSession implements StructuredSessionHandle {
       ...(resumeAgentId ? { resumeAgentId } : {}),
       createOptions: initializeOptions,
     });
+    // Our own launch never reached Cursor (restart before its first send was
+    // accepted): leave no worker posture so the next send replaces the worker
+    // with a fresh create of the same id.
+    const recreateCloud =
+      initialized.cloudAgentMissing === true &&
+      this.runtime.cloud !== undefined &&
+      resumeAgentId === cursorCloudAgentId(this.input.threadId);
+    if (recreateCloud) {
+      this.cloudOptions = await this.resolveCloudCreateOptions();
+      this.cloudServerCreated = false;
+    }
     this.forceStaleRunOnNextSend =
       resumeAgentId !== undefined || initialized.recoveredExisting === true;
-    this.workerSafetyPosture = sdkSafetyPosture(config);
+    this.workerSafetyPosture = recreateCloud ? undefined : this.safetyPosture(config);
     this.sessionId = initialized.agentId;
     this.stateRoot = initialized.stateRoot;
     this.supportsSummarize = initialized.supportsSummarize === true;
@@ -444,7 +523,45 @@ export class CursorSdkSession implements StructuredSessionHandle {
     });
     this.scheduleIdleReapIfIdle();
     void this.refreshContextUsage();
+    if (initialized.activeRunId) this.attachActiveRun(worker, initialized.activeRunId, config);
     return prefixedId;
+  }
+
+  /**
+   * ViscosityCode: a resumed cloud agent is still working remotely. Open a
+   * turn for that run before asking the worker to stream it, so no event can
+   * arrive without a turn to land in.
+   */
+  private attachActiveRun(worker: CursorSdkWorkerHandle, runId: string, config: ThreadConfig) {
+    if (typeof worker.attach !== "function") return;
+    this.clearIdleTimer();
+    const turn = createActiveTurn(`turn-${this.dependencies.newId()}`);
+    turn.worker = worker;
+    this.activeTurn = turn;
+    this.emitRuntimeEvents(startCursorSdkTurn(this.mapperState, turn.turnId));
+    turn.runId = runId;
+    this.mapperState.currentRunId = runId;
+    this.emitUpdate({ status: "working", attention: "working", config });
+    turn.resolveReady();
+    worker.attach(runId).catch((error: unknown) => {
+      if (!turn.settled && !this.disposed) this.failTurn(turn, errorMessage(error));
+    });
+  }
+
+  /** ViscosityCode: repos and PR choice of a new cloud agent; throws the launch refusal. */
+  private async resolveCloudCreateOptions(): Promise<CursorSdkWorkerCloudOptions> {
+    const resolveLaunch = this.dependencies.resolveCloudLaunch ?? resolveCursorCloudLaunch;
+    const launch = await resolveLaunch(this.input.projectLocation);
+    if (!launch.ok) throw new Error(launch.message);
+    const autoCreatePR = this.runtime.cloud?.autoCreatePR;
+    return {
+      ...(launch.repos.length ? { repos: launch.repos } : {}),
+      ...(autoCreatePR !== undefined ? { autoCreatePR } : {}),
+    };
+  }
+
+  private safetyPosture(config: ThreadConfig): CursorSdkSafetyPosture {
+    return this.cloudAgent ? CLOUD_SAFETY_POSTURE : sdkSafetyPosture(config);
   }
 
   startTurn(
@@ -554,6 +671,11 @@ export class CursorSdkSession implements StructuredSessionHandle {
       this.resumedWithoutModelCatalog = false;
       turn.runId = started.runId;
       this.mapperState.currentRunId = started.runId;
+      // ViscosityCode: an accepted send means the cloud agent exists server-side.
+      if (this.cloudAgent) {
+        this.cloudServerCreated = true;
+        this.cloudOptions = {};
+      }
       turn.resolveReady();
       if (turn.settled) {
         if (turn.cancelRequested) await this.sendTurnCancel(turn);
@@ -744,6 +866,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
       this.modelSelection(config),
       this.input,
       this.mcpServers,
+      this.cloudOptions,
     );
   }
 
@@ -757,6 +880,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
       this.mcpServers,
       idempotencyKey,
       this.forceStaleRunOnNextSend,
+      this.cloudAgent,
     );
   }
 
@@ -782,7 +906,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
   ): Promise<CursorSdkWorkerHandle> {
     this.assertSessionOpened();
     this.clearIdleTimer();
-    const nextSafetyPosture = sdkSafetyPosture(config);
+    const nextSafetyPosture = this.safetyPosture(config);
 
     while (
       !this.worker ||
@@ -836,7 +960,10 @@ export class CursorSdkSession implements StructuredSessionHandle {
 
     const previousWorker = this.worker;
     const createOptions = { ...this.buildAgentOptions(config) };
-    delete createOptions.agentId;
+    // ViscosityCode: a cloud agent whose create never landed is created again
+    // under the same id; the worker adopts it on a 409 if the POST did land.
+    const cloudCreate = this.cloudAgent && !this.cloudServerCreated;
+    if (!cloudCreate) delete createOptions.agentId;
     if (!previousWorker && options?.preserveOfflineResume && this.resumedWithoutModelCatalog) {
       delete createOptions.model;
     }
@@ -855,7 +982,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
       const initialized = await Promise.race([
         replacementWorker.initialize({
           ...(this.apiKey ? { apiKey: this.apiKey } : {}),
-          resumeAgentId: previousSessionId,
+          ...(cloudCreate ? {} : { resumeAgentId: previousSessionId }),
           createOptions,
         }),
         operation.cancellation.then(() => {
@@ -1033,6 +1160,20 @@ export class CursorSdkSession implements StructuredSessionHandle {
     }
     if (event.type === "result") {
       this.emitRuntimeEvents(mapCursorSdkRunResult(event.result, this.mapperState));
+      const notice =
+        this.cloudAgent && this.sessionId
+          ? cursorCloudRunNotice(event.result, this.sessionId)
+          : undefined;
+      if (notice) {
+        this.emitRuntimeEvents([
+          {
+            type: "warning",
+            threadId: this.input.threadId,
+            message: notice,
+            presentation: "notice",
+          },
+        ]);
+      }
       this.settleTurn(turn, event.result.status, event.result.error?.message);
       return;
     }
@@ -1215,7 +1356,8 @@ export class CursorSdkSession implements StructuredSessionHandle {
    */
   private async refreshContextUsage(): Promise<void> {
     const agentId = this.sessionId;
-    if (!agentId || this.disposed) return;
+    // Cloud agents keep no local checkpoint store to read.
+    if (!agentId || this.disposed || this.cloudAgent) return;
     const generation = ++this.contextUsageRefreshGeneration;
     const cwd = resolveSessionCwd(this.input.projectLocation);
     try {
@@ -1279,6 +1421,7 @@ export class CursorSdkSession implements StructuredSessionHandle {
 export function createCursorSdkSession(
   input: CreateStructuredSessionInput,
   dependencies?: Partial<CursorSdkSessionDependencies>,
+  runtime?: CursorSdkSessionRuntime,
 ): Promise<CursorSdkSession> {
-  return CursorSdkSession.create(input, dependencies);
+  return CursorSdkSession.create(input, dependencies, runtime);
 }

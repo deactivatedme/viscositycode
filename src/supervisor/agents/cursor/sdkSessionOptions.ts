@@ -1,10 +1,15 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createHash } from "node:crypto";
 import type { ResolvedMcpServer, ThreadConfig } from "@/shared/contracts";
 import type { CreateStructuredSessionInput } from "../base";
 import { resolveSessionCwd } from "../acp/sessionPaths";
 import { buildCursorSdkMcpServers } from "../userMcp";
 import type { CursorSdkModelSelection } from "./sdkModels";
-import type { CursorSdkWorkerAgentOptions, CursorSdkWorkerSendOptions } from "./sdkWorkerProtocol";
+import type {
+  CursorSdkWorkerAgentOptions,
+  CursorSdkWorkerCloudOptions,
+  CursorSdkWorkerSendOptions,
+} from "./sdkWorkerProtocol";
 
 export interface CursorSdkSafetyPosture {
   autoReview: boolean;
@@ -45,13 +50,26 @@ export function sameSdkSafetyPosture(
  * second conversation.
  */
 export function cursorSdkAgentId(threadId: string): string {
+  return `agent-${deterministicUuid("poracode/cursor-sdk/agent-id\0", threadId)}`;
+}
+
+/**
+ * ViscosityCode: the cloud counterpart of `cursorSdkAgentId`. Cursor routes
+ * `bc-` ids to its cloud runtime, and a retry after a crash adopts the same
+ * agent instead of creating a second one.
+ */
+export function cursorCloudAgentId(threadId: string): string {
+  return `bc-${deterministicUuid("viscositycode/cursor-cloud/agent-id\0", threadId)}`;
+}
+
+function deterministicUuid(namespace: string, threadId: string): string {
   const digest = createHash("sha256")
-    .update("poracode/cursor-sdk/agent-id\0", "utf8")
+    .update(namespace, "utf8")
     .update(threadId, "utf8")
     .digest("hex");
   const versioned = `5${digest.slice(13, 16)}`;
   const variant = ((Number.parseInt(digest[16]!, 16) & 0x3) | 0x8).toString(16);
-  return `agent-${digest.slice(0, 8)}-${digest.slice(8, 12)}-${versioned}-${variant}${digest.slice(17, 20)}-${digest.slice(20, 32)}`;
+  return `${digest.slice(0, 8)}-${digest.slice(8, 12)}-${versioned}-${variant}${digest.slice(17, 20)}-${digest.slice(20, 32)}`;
 }
 
 export function buildCursorSdkAgentOptions(
@@ -59,7 +77,19 @@ export function buildCursorSdkAgentOptions(
   model: CursorSdkModelSelection,
   input: CreateStructuredSessionInput,
   mcpServers: readonly ResolvedMcpServer[],
+  cloud?: CursorSdkWorkerCloudOptions,
 ): CursorSdkWorkerAgentOptions {
+  // ViscosityCode: cloud agents run on Cursor's VMs. Host MCP servers, local
+  // setting sources, the sandbox and auto-review cannot reach them.
+  if (cloud) {
+    return {
+      model,
+      name: `poracode/${input.threadId.slice(0, 8)}`,
+      cloud,
+      mode: sdkMode(config),
+      agentId: cursorCloudAgentId(input.threadId),
+    };
+  }
   const safetyPosture = sdkSafetyPosture(config);
   return {
     model,
@@ -82,7 +112,9 @@ export function buildCursorSdkSendOptions(
   mcpServers: readonly ResolvedMcpServer[],
   idempotencyKey: string,
   force: boolean,
+  cloud = false,
 ): CursorSdkWorkerSendOptions {
+  if (cloud) return { model, mode: sdkMode(config), idempotencyKey }; // ViscosityCode:
   return {
     model,
     mode: sdkMode(config),

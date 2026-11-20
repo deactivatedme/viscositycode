@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { existsSync, readFileSync, watch as fsWatch } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, win32 } from "node:path";
@@ -117,6 +118,7 @@ export * from "./shellBasics";
 export * from "./spawnEnv";
 export type { DetectedPowerShell } from "../../shellPreference";
 export * from "./sessionFs";
+export * from "./cloudAgents"; // ViscosityCode: cloud agents
 export function buildWindowsCmdCommand(cwd: string, command: string, args: string[]): CommandSpec {
   return {
     command: "C:\\Windows\\System32\\cmd.exe",

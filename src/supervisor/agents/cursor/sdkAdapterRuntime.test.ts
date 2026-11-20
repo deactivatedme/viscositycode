@@ -1,10 +1,13 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateStructuredSessionInput, StructuredSessionHandle } from "../base";
 
 const mocks = vi.hoisted(() => ({
   createAcpStructuredSession: vi.fn<(...args: unknown[]) => StructuredSessionHandle>(),
   createSdkSession:
-    vi.fn<(input: CreateStructuredSessionInput) => Promise<StructuredSessionHandle>>(),
+    vi.fn<
+      (input: CreateStructuredSessionInput, ...rest: unknown[]) => Promise<StructuredSessionHandle>
+    >(),
 }));
 
 vi.mock("../acp", async (importActual) => {
@@ -28,7 +31,7 @@ vi.mock("../base/processRuntime", async (importActual) => {
   return { ...actual, resolveWslShellPath: () => "/bin/bash" };
 });
 
-import { createCursorAdapter } from "./index";
+import { createCursorAdapter, createCursorProfileAdapter } from "./index";
 
 function session(name: string): StructuredSessionHandle {
   return {
@@ -83,6 +86,23 @@ describe("Cursor structured runtime selection", () => {
 
     expect(mocks.createSdkSession).toHaveBeenCalledWith(request);
     expect(mocks.createAcpStructuredSession).not.toHaveBeenCalled();
+  });
+
+  it("opens a cloud profile's GUI threads with the cloud runtime target", async () => {
+    const adapter = createCursorProfileAdapter({
+      id: "cloud",
+      driver: "cursor",
+      environment: { CURSOR_API_KEY: { value: "profile-key", sensitive: true } },
+      config: { format: 1, runtimeTarget: "cloud", autoCreatePR: true },
+    });
+
+    await adapter.createStructuredSession?.(input());
+
+    expect(mocks.createSdkSession).toHaveBeenCalledWith(
+      expect.objectContaining({ threadId: "thread-1" }),
+      {},
+      { cloud: { autoCreatePR: true } },
+    );
   });
 
   it("keeps historical unprefixed GUI resumes on ACP", async () => {

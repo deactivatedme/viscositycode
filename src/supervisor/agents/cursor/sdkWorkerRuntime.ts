@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { isAbsolute, dirname, join, relative, resolve, sep, toNamespacedPath } from "node:path";
 import { readFile, realpath } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -48,6 +49,16 @@ export interface RuntimeRun {
   steer?(text: string): Promise<CursorSdkWorkerSteerResult>;
 }
 
+/** ViscosityCode: the fields of an SDK cloud `Run` handle the worker reads. */
+export interface RuntimeCloudRun extends RuntimeRun {
+  readonly status: string;
+  readonly result?: string;
+  readonly durationMs?: number;
+  readonly createdAt?: number;
+  readonly git?: { branches: Array<{ repoUrl: string; branch?: string; prUrl?: string }> };
+  conversation?(): Promise<unknown[]>;
+}
+
 interface RuntimeAgentApi {
   create(options: CursorSdkWorkerAgentOptions & { apiKey?: string }): Promise<RuntimeAgent>;
   resume(
@@ -60,6 +71,23 @@ interface RuntimeAgentApi {
       options?: { limit?: number; offset?: number; runtime?: "local"; cwd?: string },
     ): Promise<CursorSdkWorkerAgentMessage[]>;
   };
+  // ViscosityCode: cloud reads (`@cursor/sdk` cloud runtime); optional so an
+  // SDK without them fails the cloud call, not the module validation.
+  list?(options: {
+    runtime: "cloud";
+    limit?: number;
+    cursor?: string;
+    apiKey?: string;
+  }): Promise<{ items: unknown[]; nextCursor?: string }>;
+  get?(agentId: string, options?: { apiKey?: string }): Promise<unknown>;
+  listRuns?(
+    agentId: string,
+    options: { runtime: "cloud"; limit?: number; cursor?: string; apiKey?: string },
+  ): Promise<{ items: RuntimeCloudRun[]; nextCursor?: string }>;
+  getRun?(
+    runId: string,
+    options: { runtime: "cloud"; agentId: string; apiKey?: string },
+  ): Promise<RuntimeCloudRun>;
   archive(agentId: string, options?: { cwd?: string; apiKey?: string }): Promise<void>;
   unarchive(agentId: string, options?: { cwd?: string; apiKey?: string }): Promise<void>;
   delete(agentId: string, options?: { cwd?: string; apiKey?: string }): Promise<void>;

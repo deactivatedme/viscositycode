@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 /**
  * Structural public-protocol types for `@cursor/sdk` (verified through 1.2.0).
  *
@@ -283,4 +284,6 @@ export interface CursorSdkRunResult {
   model?: CursorSdkModelSelection;
   durationMs?: number;
   usage?: CursorSdkTokenUsage;
+  /** ViscosityCode: cloud runs report the branches and pull requests they pushed. */
+  git?: { branches: Array<{ repoUrl: string; branch?: string; prUrl?: string }> };
 }

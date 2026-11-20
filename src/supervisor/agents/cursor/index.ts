@@ -1,8 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { cursorMcpLaunch } from "./mcp";
 import { RequestError } from "@agentclientprotocol/sdk";
 import type { AgentInstanceConfig, AgentStatus, PromptSegment } from "@/shared/contracts";
 import { cursorProfileKind } from "@/shared/contracts";
 import { DiagnosticError } from "@/shared/diagnostics/sentryPolicy";
+import { parseCursorProfileConfig } from "@/shared/agents/cursor/profileConfig"; // ViscosityCode:
 import { inlinePromptSegmentText } from "@/shared/promptContent";
 import { createAcpStructuredSession } from "../acp";
 import {
@@ -39,7 +41,8 @@ import {
 import { createCursorChat } from "./session";
 import { CURSOR_IDLE_RE, CURSOR_WORKING_RE, detectCursorTerminalStatus } from "./terminal";
 import { applyCursorSdkProbe, probeCursorSdkRuntime } from "./sdkDetection";
-import { CursorSdkSession } from "./sdkSession";
+import { CursorSdkSession, type CursorSdkSessionRuntime } from "./sdkSession";
+import { createCursorCloudAgentSource } from "./cloudAgentSource"; // ViscosityCode:
 import {
   buildCursorAgentCommand,
   buildCursorArgvSpec,
@@ -69,6 +72,8 @@ interface CursorAdapterOptions {
   kind?: string;
   label?: string;
   apiKey?: string;
+  /** ViscosityCode: profile threads run as Cursor cloud agents. */
+  cloud?: NonNullable<CursorSdkSessionRuntime["cloud"]>;
 }
 
 export function createCursorProfileAdapter(instance: AgentInstanceConfig): AgentAdapter {
@@ -76,11 +81,19 @@ export function createCursorProfileAdapter(instance: AgentInstanceConfig): Agent
   if (!apiKey) {
     throw new Error("Cursor profiles require a CURSOR_API_KEY.");
   }
+  // ViscosityCode: an unusable config disables the profile (the registry
+  // skips it) and leaves the stored config untouched.
+  const profileConfig = parseCursorProfileConfig(instance.config);
+  if (profileConfig.status !== "ok") throw new Error(profileConfig.reason);
   const profileLabel = instance.displayName ?? instance.id;
+  const autoCreatePR = profileConfig.config.autoCreatePR;
   return createCursorAdapter({
     kind: cursorProfileKind(instance.id),
     label: `Cursor ${profileLabel}`,
     apiKey,
+    ...(profileConfig.runtimeTarget === "cloud"
+      ? { cloud: autoCreatePR === undefined ? {} : { autoCreatePR } }
+      : {}),
   });
 }
 
@@ -150,6 +163,10 @@ export function createCursorAdapter(options: CursorAdapterOptions = {}): AgentAd
     kind,
     label,
     binary: detectionSpec.binary,
+    // ViscosityCode: a cloud profile lists the cloud agents its own key can see.
+    ...(options.cloud && options.apiKey
+      ? { cloudAgents: createCursorCloudAgentSource(options.apiKey) }
+      : {}),
     skillSupport: {
       roots: [
         {
@@ -235,7 +252,17 @@ export function createCursorAdapter(options: CursorAdapterOptions = {}): AgentAd
       // — that would share (or overwrite) the main tile's CLI/ACP session.
       if (options.apiKey) {
         const sdkProbe = await probeCursorSdkRuntime(ctx, {}, options.apiKey);
-        return applyCursorSdkProbe(cursorProfileCliStub(kind, label), sdkProbe, "sdk");
+        const status = applyCursorSdkProbe(cursorProfileCliStub(kind, label), sdkProbe, "sdk");
+        // ViscosityCode: host MCP servers cannot reach Cursor's cloud VMs.
+        return options.cloud
+          ? {
+              ...status,
+              capabilities: {
+                ...status.capabilities,
+                mcpScope: { ...status.capabilities.mcpScope, gui: "none" },
+              },
+            }
+          : status;
       }
       const [detectedCliStatus, sdkProbe] = await Promise.all([
         detectAgentInstall(ctx, detectionSpec),
@@ -277,11 +304,15 @@ export function createCursorAdapter(options: CursorAdapterOptions = {}): AgentAd
         const resolved = resolveCursorStructuredRuntime(agentSettings, input.sessionRef);
         if (resolved.runtime === "sdk") {
           const env = mergeSpawnEnv(input.env, mergeSpawnEnv(input.baseSpawnEnv, profileKeyEnv));
-          return CursorSdkSession.create({
+          const sdkInput = {
             ...input,
             ...(agentSettings ? { agentSettings } : {}),
             ...(env ? { env } : {}),
-          });
+          };
+          // ViscosityCode: cloud profiles open Cursor cloud agents.
+          return options.cloud
+            ? CursorSdkSession.create(sdkInput, {}, { cloud: options.cloud })
+            : CursorSdkSession.create(sdkInput);
         }
       }
       await prepareAgentLocationEnvironment(input.projectLocation);

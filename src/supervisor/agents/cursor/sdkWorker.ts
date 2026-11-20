@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 
 /**
  * Isolated runtime for a user-installed `@cursor/sdk`.
@@ -18,6 +19,7 @@ import type {
 import {
   CURSOR_SDK_WORKER_PROTOCOL_VERSION,
   type CursorSdkWorkerAgentMessage,
+  type CursorSdkWorkerCloudParams,
   type CursorSdkWorkerEvent,
   type CursorSdkWorkerInitializeParams,
   type CursorSdkWorkerInitializeResult,
@@ -44,6 +46,15 @@ import {
   type RuntimeRun,
 } from "./sdkWorkerRuntime";
 import { probeCursorSdkAccountEmail } from "./sdkAccount";
+import {
+  getCursorCloudAgent,
+  isCursorCloudAgentId,
+  isCursorCloudAgentIdConflict,
+  latestCursorCloudRun,
+  listCursorCloudAgentMessages,
+  listCursorCloudAgents,
+  readCursorCloudTranscript,
+} from "./sdkWorkerCloud";
 import { installCursorSdkCancellationHandler } from "./sdkCancellation";
 
 installCursorSdkCancellationHandler();
@@ -67,6 +78,10 @@ let agent: RuntimeAgent | undefined;
 let agentCwd: string | undefined;
 let agentApiKey: string | undefined;
 let agentModel: CursorSdkWorkerModelSelection | undefined;
+// ViscosityCode: the open agent is a Cursor cloud agent (created with `cloud`
+// options or resumed from a `bc-` id); `agentCreated` marks a fresh create.
+let agentCloud = false;
+let agentCreated = false;
 let activeRun: ActiveRun | undefined;
 let startInFlight = false;
 let disposed = false;
@@ -79,6 +94,10 @@ const workerMethods = new Set([
   "reload",
   "messages.list",
   "models.list",
+  "attach",
+  "cloud.list",
+  "cloud.get",
+  "cloud.transcript",
   "dispose",
 ]);
 
@@ -142,6 +161,26 @@ async function dispatch(request: CursorSdkWorkerRequest): Promise<unknown> {
       return listMessages(request.params);
     case "models.list":
       return listModels(request.params);
+    case "attach":
+      return attachRun(request.id, request.params.runId);
+    case "cloud.list":
+      return listCursorCloudAgents(await loadForCloud(request.params), {
+        limit: request.params.limit,
+        ...(request.params.cursor ? { cursor: request.params.cursor } : {}),
+        ...(request.params.apiKey ? { apiKey: request.params.apiKey } : {}),
+      });
+    case "cloud.get":
+      return getCursorCloudAgent(await loadForCloud(request.params), {
+        agentId: request.params.agentId,
+        ...(request.params.apiKey ? { apiKey: request.params.apiKey } : {}),
+      });
+    case "cloud.transcript":
+      return readCursorCloudTranscript(await loadForCloud(request.params), {
+        agentId: request.params.agentId,
+        maxRuns: request.params.maxRuns,
+        maxBytes: request.params.maxBytes,
+        ...(request.params.apiKey ? { apiKey: request.params.apiKey } : {}),
+      });
     case "dispose":
       await disposeRuntime();
       return {};
@@ -159,12 +198,15 @@ async function initialize(
   }
   diagnostics.rememberSecret(params.apiKey);
   diagnostics.rememberMcpSecrets(params.createOptions.mcpServers);
-  const cwd = firstCwd(params.createOptions.local.cwd);
+  const cloud =
+    params.createOptions.cloud !== undefined || isCursorCloudAgentId(params.resumeAgentId);
+  const cwd = params.createOptions.local ? firstCwd(params.createOptions.local.cwd) : process.cwd();
   const loaded = await sdkRuntime.load(params.sdk, cwd, params.apiKey);
   if (!params.resumeAgentId) {
     await sdkRuntime.prepareModelSelection(params.createOptions.model, params.apiKey);
   }
-  await sdkRuntime.prepareLocalStore(cwd);
+  // Cloud agents keep no local SQLite store.
+  if (!cloud) await sdkRuntime.prepareLocalStore(cwd);
   const options = {
     ...params.createOptions,
     // Max Mode travels on the public selection field; without a live catalog
@@ -192,6 +234,22 @@ async function initialize(
   agentCwd = cwd;
   agentApiKey = params.apiKey;
   agentModel = agent.model ?? params.createOptions.model;
+  agentCloud = cloud;
+  agentCreated = !params.resumeAgentId;
+  // A resumed cloud agent may still be working remotely (started elsewhere,
+  // or before the app closed). Report it so the host can `attach`.
+  // A 404 means the agent's create never reached Cursor.
+  let activeRunId: string | undefined;
+  let cloudAgentMissing = false;
+  if (cloud && params.resumeAgentId) {
+    try {
+      const run = await latestCursorCloudRun(loaded, agent.agentId, params.apiKey);
+      if (run?.status === "running") activeRunId = run.id;
+    } catch (error) {
+      const record = asWorkerRecord(error);
+      cloudAgentMissing = record?.status === 404 || record?.code === "agent_not_found";
+    }
+  }
   return {
     agentId: agent.agentId,
     ...(agent.model ? { model: agent.model } : {}),
@@ -199,8 +257,34 @@ async function initialize(
       ? { stateRoot: loaded.getDefaultSdkStateRoot(cwd) }
       : {}),
     ...(opened.recoveredExisting ? { recoveredExisting: true } : {}),
-    ...(typeof agent.summarize === "function" ? { supportsSummarize: true } : {}),
+    ...(typeof agent.summarize === "function" && !cloud ? { supportsSummarize: true } : {}),
+    ...(activeRunId ? { activeRunId } : {}),
+    ...(cloudAgentMissing ? { cloudAgentMissing } : {}),
   };
+}
+
+/** ViscosityCode: stream a cloud run that is already running instead of sending. */
+async function attachRun(requestId: string, runId: string): Promise<CursorSdkWorkerStartResult> {
+  const currentAgent = requireAgent();
+  const getRun = sdkRuntime.module?.Agent.getRun;
+  if (!agentCloud || typeof getRun !== "function") {
+    throw new WorkerDiagnosticError(
+      "cloud_unsupported",
+      "Only a Cursor cloud agent run can be attached.",
+    );
+  }
+  return launchRun(requestId, () =>
+    getRun(runId, {
+      runtime: "cloud",
+      agentId: currentAgent.agentId,
+      ...(agentApiKey ? { apiKey: agentApiKey } : {}),
+    }),
+  );
+}
+
+async function loadForCloud(params: CursorSdkWorkerCloudParams) {
+  diagnostics.rememberSecret(params.apiKey);
+  return sdkRuntime.module ?? (await sdkRuntime.load(params.sdk, params.projectCwd, params.apiKey));
 }
 
 /**
@@ -274,7 +358,22 @@ async function startRun(
           }
         },
       };
-      const run = await currentAgent.send(input.message, options);
+      let run: RuntimeRun;
+      try {
+        run = await currentAgent.send(input.message, options);
+      } catch (error) {
+        // A cloud agent posts its create on the first send. A conflict on our
+        // deterministic id means an earlier create reached Cursor before a
+        // crash: adopt that agent and send this message as its follow-up.
+        if (!agentCloud || !agentCreated || !isCursorCloudAgentIdConflict(error)) throw error;
+        agent = await sdkRuntime.module!.Agent.resume(currentAgent.agentId, {
+          cloud: {},
+          ...(agentApiKey ? { apiKey: agentApiKey } : {}),
+        });
+        agentCreated = false;
+        void disposeCursorSdkAgent(currentAgent);
+        run = await agent.send(input.message, options);
+      }
       runId = run?.id;
       agentModel = model;
       return run;
@@ -387,6 +486,14 @@ async function listMessages(input: {
   offset?: number;
 }): Promise<CursorSdkWorkerAgentMessage[]> {
   const currentAgent = requireAgent();
+  if (agentCloud) {
+    return listCursorCloudAgentMessages(sdkRuntime.module!, {
+      agentId: currentAgent.agentId,
+      ...(agentApiKey ? { apiKey: agentApiKey } : {}),
+      ...(input.limit !== undefined ? { limit: input.limit } : {}),
+      ...(input.offset !== undefined ? { offset: input.offset } : {}),
+    });
+  }
   const cwd = currentAgentCwd();
   return sdkRuntime.module!.Agent.messages.list(currentAgent.agentId, {
     runtime: "local",
@@ -431,6 +538,8 @@ async function disposeRuntime(): Promise<void> {
   agentCwd = undefined;
   agentApiKey = undefined;
   agentModel = undefined;
+  agentCloud = false;
+  agentCreated = false;
   if (currentAgent) {
     await disposeCursorSdkAgent(currentAgent);
   }

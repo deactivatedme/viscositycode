@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type {
   CursorSdkInteractionUpdate,
   CursorSdkMessage,
@@ -6,6 +7,14 @@ import type {
 import type { CursorSdkPackageSource, CursorSdkPinHint } from "./sdkLoaderSupport";
 
 /**
+ * ViscosityCode: version 7 adds Cursor cloud agents. Agent options become a
+ * `local` | `cloud` union, `initialize` reports a resumed cloud agent's
+ * still-running run (`activeRunId`) or its absence (`cloudAgentMissing`) and
+ * the new `attach` method streams the run,
+ * and the session-less `cloud.list`, `cloud.get` and `cloud.transcript`
+ * methods read the key's cloud agents. A staged v6 helper knows none of
+ * them, so it must fail the handshake and be re-staged.
+ *
  * Version 6 adds the `summarize` RPC and the additive
  * `InitializeResult.supportsSummarize` capability flag (feature-detected on
  * the real agent handle, present on `@cursor/sdk` 1.2.0+). A stale staged
@@ -37,7 +46,7 @@ import type { CursorSdkPackageSource, CursorSdkPinHint } from "./sdkLoaderSuppor
  * gets it re-staged from current source (the SSH runtime bundle re-installs
  * whenever the built worker bytes change).
  */
-export const CURSOR_SDK_WORKER_PROTOCOL_VERSION = 6;
+export const CURSOR_SDK_WORKER_PROTOCOL_VERSION = 7;
 
 export interface CursorSdkWorkerModelParameter {
   id: string;
@@ -123,15 +132,26 @@ export interface CursorSdkWorkerLocalOptions {
  * callbacks and cannot cross a process boundary. Poracode exposes external
  * tools through serializable MCP server definitions instead.
  */
-export interface CursorSdkWorkerAgentOptions {
+interface CursorSdkWorkerAgentOptionsBase {
   model?: CursorSdkWorkerModelSelection;
   name?: string;
-  local: CursorSdkWorkerLocalOptions;
   mcpServers?: Record<string, CursorSdkWorkerMcpServer>;
   mode?: "agent" | "plan";
   agentId?: string;
   idempotencyKey?: string;
 }
+
+/** ViscosityCode: serializable subset of the SDK's `CloudAgentOptions`. */
+export interface CursorSdkWorkerCloudOptions {
+  repos?: Array<{ url: string; startingRef?: string }>;
+  autoCreatePR?: boolean;
+}
+
+export type CursorSdkWorkerAgentOptions = CursorSdkWorkerAgentOptionsBase &
+  (
+    | { local: CursorSdkWorkerLocalOptions; cloud?: never }
+    | { cloud: CursorSdkWorkerCloudOptions; local?: never }
+  );
 
 export type CursorSdkWorkerImage =
   | {
@@ -176,6 +196,10 @@ export interface CursorSdkWorkerInitializeResult {
   recoveredExisting?: boolean;
   /** The agent handle exposes `summarize()` (`@cursor/sdk` 1.2.0+). */
   supportsSummarize?: boolean;
+  /** ViscosityCode: a resumed cloud agent's latest run is still running; `attach` streams it. */
+  activeRunId?: string;
+  /** ViscosityCode: Cursor reports no such cloud agent (its create never landed). */
+  cloudAgentMissing?: boolean;
 }
 
 export interface CursorSdkWorkerStartInput {
@@ -255,6 +279,51 @@ export interface CursorSdkWorkerModelsListParams {
   projectCwd: string;
 }
 
+/** ViscosityCode: session-less cloud reads carry their own key, like `models.list`. */
+export interface CursorSdkWorkerCloudParams {
+  apiKey?: string;
+  sdk: CursorSdkWorkerDiscovery;
+  projectCwd: string;
+}
+
+export interface CursorSdkWorkerCloudAgent {
+  agentId: string;
+  name: string;
+  summary?: string;
+  status?: string;
+  archived?: boolean;
+  createdAt?: number;
+  lastModified: number;
+  repos?: string[];
+}
+
+export interface CursorSdkWorkerCloudRun {
+  id: string;
+  status: string;
+  /** Truncated to `CURSOR_SDK_WORKER_CLOUD_RESULT_MAX_CHARS`. */
+  result?: string;
+  durationMs?: number;
+  git?: { branches: Array<{ repoUrl: string; branch?: string; prUrl?: string }> };
+}
+
+export const CURSOR_SDK_WORKER_CLOUD_RESULT_MAX_CHARS = 4_096;
+
+export interface CursorSdkWorkerCloudListResult {
+  items: CursorSdkWorkerCloudAgent[];
+  nextCursor?: string;
+}
+
+export interface CursorSdkWorkerCloudGetResult {
+  agent: CursorSdkWorkerCloudAgent;
+  latestRun?: CursorSdkWorkerCloudRun;
+}
+
+export interface CursorSdkWorkerCloudTranscriptResult {
+  /** Chronological, bounded newest-first by run count and text bytes. */
+  messages: Array<{ role: "user" | "assistant"; text: string }>;
+  truncated: boolean;
+}
+
 export type CursorSdkWorkerMethod =
   | "initialize"
   | "start"
@@ -264,6 +333,10 @@ export type CursorSdkWorkerMethod =
   | "reload"
   | "messages.list"
   | "models.list"
+  | "attach"
+  | "cloud.list"
+  | "cloud.get"
+  | "cloud.transcript"
   | "dispose";
 
 export type CursorSdkWorkerRequest =
@@ -275,6 +348,16 @@ export type CursorSdkWorkerRequest =
   | CursorSdkWorkerRequestFor<"reload", Record<string, never>>
   | CursorSdkWorkerRequestFor<"messages.list", { limit?: number; offset?: number }>
   | CursorSdkWorkerRequestFor<"models.list", CursorSdkWorkerModelsListParams>
+  | CursorSdkWorkerRequestFor<"attach", { runId: string }>
+  | CursorSdkWorkerRequestFor<
+      "cloud.list",
+      CursorSdkWorkerCloudParams & { cursor?: string; limit: number }
+    >
+  | CursorSdkWorkerRequestFor<"cloud.get", CursorSdkWorkerCloudParams & { agentId: string }>
+  | CursorSdkWorkerRequestFor<
+      "cloud.transcript",
+      CursorSdkWorkerCloudParams & { agentId: string; maxRuns: number; maxBytes: number }
+    >
   | CursorSdkWorkerRequestFor<"dispose", Record<string, never>>;
 
 interface CursorSdkWorkerRequestFor<Method extends CursorSdkWorkerMethod, Params> {

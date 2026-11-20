@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { NativeMcpConfigFile } from "../../mcp/nativeSetup/configFile";
 import type { SessionImportSource } from "./sessionImport";
+import type { CloudAgentSource } from "./cloudAgents"; // ViscosityCode: cloud agents
 import type {
   ManageAgentCredentialsPayload,
   ManageAgentCredentialsResult,
@@ -1223,6 +1225,13 @@ export interface AgentAdapter
    * user-initiated and read-only; it never becomes a second thread index.
    */
   readonly sessionImport?: SessionImportSource;
+
+  /**
+   * ViscosityCode: agents this profile's provider runs in its own cloud, listed
+   * with the profile's own key and followable as threads. Optional; only the
+   * shared cloud agents service calls it.
+   */
+  readonly cloudAgents?: CloudAgentSource;
 }
 
 export interface TerminalStatusHint {

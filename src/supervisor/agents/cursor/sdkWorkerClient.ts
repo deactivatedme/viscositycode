@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { randomUUID } from "node:crypto";
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -20,6 +21,9 @@ import {
 import {
   CURSOR_SDK_WORKER_PROTOCOL_VERSION,
   type CursorSdkWorkerAgentMessage,
+  type CursorSdkWorkerCloudGetResult,
+  type CursorSdkWorkerCloudListResult,
+  type CursorSdkWorkerCloudTranscriptResult,
   type CursorSdkWorkerDiscovery,
   type CursorSdkWorkerError,
   type CursorSdkWorkerEvent,
@@ -48,6 +52,7 @@ const FATAL_REQUEST_TIMEOUT_METHODS = new Set([
   "initialize",
   "start",
   "summarize",
+  "attach",
   "cancel",
   "reload",
 ]);
@@ -275,6 +280,52 @@ export class CursorSdkWorkerClient {
 
   async listModels(apiKey?: string): Promise<CursorSdkWorkerProbeResult> {
     return this.probe(apiKey);
+  }
+
+  /** ViscosityCode: stream an already-running cloud run (see `activeRunId`). */
+  async attach(runId: string): Promise<CursorSdkWorkerStartResult> {
+    return this.request<CursorSdkWorkerStartResult>("attach", { runId });
+  }
+
+  /** ViscosityCode: one page of the key's Cursor cloud agents. */
+  async cloudList(input: {
+    apiKey?: string;
+    cursor?: string;
+    limit: number;
+  }): Promise<CursorSdkWorkerCloudListResult> {
+    return this.request<CursorSdkWorkerCloudListResult>("cloud.list", {
+      ...this.cloudParams(input.apiKey),
+      limit: input.limit,
+      ...(input.cursor ? { cursor: input.cursor } : {}),
+    });
+  }
+
+  async cloudGet(input: {
+    apiKey?: string;
+    agentId: string;
+  }): Promise<CursorSdkWorkerCloudGetResult> {
+    return this.request<CursorSdkWorkerCloudGetResult>("cloud.get", {
+      ...this.cloudParams(input.apiKey),
+      agentId: input.agentId,
+    });
+  }
+
+  async cloudTranscript(input: {
+    apiKey?: string;
+    agentId: string;
+    maxRuns: number;
+    maxBytes: number;
+  }): Promise<CursorSdkWorkerCloudTranscriptResult> {
+    return this.request<CursorSdkWorkerCloudTranscriptResult>("cloud.transcript", {
+      ...this.cloudParams(input.apiKey),
+      agentId: input.agentId,
+      maxRuns: input.maxRuns,
+      maxBytes: input.maxBytes,
+    });
+  }
+
+  private cloudParams(apiKey: string | undefined) {
+    return { sdk: this.discovery, projectCwd: this.projectCwd, ...(apiKey ? { apiKey } : {}) };
   }
 
   onEvent(listener: CursorSdkWorkerEventListener): () => void {

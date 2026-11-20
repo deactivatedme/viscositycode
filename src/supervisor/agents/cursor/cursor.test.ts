@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RequestError } from "@agentclientprotocol/sdk";
 import { DiagnosticError } from "@/shared/diagnostics/sentryPolicy";
@@ -141,6 +142,27 @@ describe("createCursorAdapter capabilities", () => {
     });
 
     expect(session).toBeInstanceOf(CursorSdkSession);
+  });
+
+  it("lists cloud agents only for a cloud profile and disables a future config format", () => {
+    const profile = (config?: unknown) =>
+      createCursorProfileAdapter({
+        id: "work",
+        driver: "cursor",
+        environment: { CURSOR_API_KEY: { value: "profile-key", sensitive: true } },
+        ...(config === undefined ? {} : { config }),
+      });
+
+    expect(profile().cloudAgents).toBeUndefined();
+    expect(profile({ format: 1, runtimeTarget: "local" }).cloudAgents).toBeUndefined();
+    const cloud = profile({ format: 1, runtimeTarget: "cloud" });
+    expect(cloud.cloudAgents?.providerSessionId("bc-1")).toBe("sdk:bc-1");
+    expect(cloud.capabilities.presentationModes).toEqual(["gui"]);
+    expect(cloud.supportsStructuredWorkspaceDirectories).not.toBe(true);
+    expect(cloud.supportsDeferredMcpAuthorization).not.toBe(true);
+    expect(() => profile({ format: 2, runtimeTarget: "cloud" })).toThrow(
+      /Unknown Cursor profile config format 2/,
+    );
   });
 
   it("rejects a profile without its own API key", () => {
