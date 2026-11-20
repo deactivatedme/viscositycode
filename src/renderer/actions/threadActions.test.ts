@@ -1572,7 +1572,19 @@ describe("threadActions", () => {
     expect(bridge.closeThread).toHaveBeenCalledWith({ threadId: selected.id });
   });
 
+  // ViscosityCode: with nothing stored, a delete does not ask.
+  it("deletes without asking when confirmation was never turned on", () => {
+    const thread = makeThread({});
+    useAppStore.setState((state) => ({ ...state, threads: [thread] }));
+
+    requestDeleteThread(thread.id, undefined, thread.projectId);
+
+    expect(useAppStore.getState().threads).toHaveLength(0);
+    expect(useWorktreeDeleteStore.getState().dialog).toBeNull();
+  });
+
   it("prompts to remove the worktree when deleting the sole thread using it", () => {
+    localStorage.setItem("poracode-delete-worktree-pref", "ask"); // ViscosityCode: asking is opt-in
     const worktreePath = "/repo/.worktrees/feature";
     const thread = makeThread({
       worktreePath,
@@ -1615,6 +1627,7 @@ describe("threadActions", () => {
   });
 
   it("confirms a thread that has no worktree without naming one", () => {
+    localStorage.setItem("poracode-delete-worktree-pref", "ask"); // ViscosityCode: asking is opt-in
     const thread = makeThread({});
     useAppStore.setState((state) => ({ ...state, threads: [thread] }));
 
@@ -1633,6 +1646,7 @@ describe("threadActions", () => {
   });
 
   it("confirms a shared-worktree thread without promising to remove the worktree", () => {
+    localStorage.setItem("poracode-delete-worktree-pref", "ask"); // ViscosityCode: asking is opt-in
     const worktreePath = "/repo/.worktrees/feature";
     const firstThread = makeThread({ id: "thread-a", worktreePath });
     const secondThread = makeThread({ id: "thread-b", worktreePath });
