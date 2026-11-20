@@ -1,0 +1,52 @@
+[package]
+name = "viscositycode-desktop"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "Apache-2.0"
+publish = false
+description = "ViscosityCode desktop shell: opens the standalone host's web client in a native window"
+
+[lib]
+name = "viscositycode_desktop"
+path = "src/lib.rs"
+
+[[bin]]
+name = "viscositycode-desktop"
+path = "src/main.rs"
+
+# Exact pins: newest releases at least 7 days old on 2026-11-20 (tauri >= 2.11.1
+# for the remote-origin ACL fix).
+[build-dependencies]
+tauri-build = { version = "=2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.5", features = [
+  "tray-icon",
+  "webview-data-url",
+] } # webview-data-url: the loading and error pages are data: URLs
+tauri-plugin-notification = "=2.8.1"
+tauri-plugin-opener = "=2.7.3"
+tauri-plugin-single-instance = "=2.5.5"
+tauri-plugin-window-state = "=2.5.0"
+# Already in the lockfile through tauri; pinned to the locked versions.
+serde_json = "=1.0.154"
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.191"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"

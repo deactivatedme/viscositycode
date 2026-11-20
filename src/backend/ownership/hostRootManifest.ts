@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { writeFileAtomic } from "@/shared/atomicFile";
@@ -29,7 +30,11 @@ const MAX_MANIFEST_BYTES = 4_096;
  * directories still counts as empty for first start:
  * - `server`: the one-line installer's default prefix (`~/.poracode/server`);
  * - `runtime`: the npx launcher cache (`<PORACODE_BASE_DIR>/runtime`);
- * - `tls`: `init-tls` / `up --lan` certificate material (`<profile>/tls`).
+ * - `tls`: `init-tls` / `up --lan` certificate material (`<profile>/tls`);
+ * - `agent-probe`: the supervisor's empty ACP probe cwd
+ *   (`src/supervisor/agents/probeCwd.ts`), which a desktop shell's probes can
+ *   create before any owned host exists. Probe CLIs may leave scratch files
+ *   (e.g. `agent-probe/skills/...`) there; none of it is profile state.
  * Only real directories qualify: a regular file or a symlink under one of
  * these names still counts as namespace content.
  */
@@ -37,6 +42,7 @@ const NON_CUSTODIAL_NAMESPACE_DIRECTORIES: ReadonlySet<string> = new Set([
   "server",
   "runtime",
   "tls",
+  "agent-probe",
 ]);
 
 export interface HostRootManifest {
@@ -190,7 +196,7 @@ export interface PrepareOwnedHostRootOptions {
    * server keeps the strict default: an arbitrary nonempty
    * PORACODE_BASE_DIR still requires an explicit import, except that
    * directories Poracode's own CLI tooling creates before first start
-   * (`server`, `runtime`, `tls` — see
+   * (`server`, `runtime`, `tls`, `agent-probe` — see
    * NON_CUSTODIAL_NAMESPACE_DIRECTORIES) do not count as content.
    */
   readonly allowNonCustodialNamespace?: boolean;

@@ -1,4 +1,5 @@
-import { fork } from "node:child_process";
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
+import { fork, spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,6 +10,7 @@ import { HostOwnerLease } from "@/backend/ownership/hostOwnerLease";
 import { resolveHostRootPaths } from "@/backend/ownership/hostRootPaths";
 import { buildCliProcessFixture, buildSyntheticCliEntry } from "./cliTestBundle";
 import { expectOwned, signalOwnedChild, stopOwnedChild, withinDeadline } from "./cliTestHelpers";
+import { PARENT_PID_ENV } from "./parentWatchdog";
 import { ensureDeclaredAssetsDir } from "./testDeclaredAssets";
 
 let directory: string;
@@ -201,6 +203,36 @@ describe.skipIf(process.platform === "win32")("actual CLI startup signals", () =
       test.child.send("inspect");
       expect(await test.waitFor("state")).toMatchObject({ disposeCalls: 1, exitCode: 1 });
     } finally {
+      await stopOwnedChild(test, 3_000);
+    }
+  });
+
+  it("drains a started serve and releases its lease after its parent pid dies", async () => {
+    const profile = join(directory, "parent-exit");
+    const parent = spawn("sleep", ["60"], { stdio: "ignore" });
+    const test = runChild(profile, "listener", "joined", process.execPath, {
+      [PARENT_PID_ENV]: String(parent.pid),
+    });
+    try {
+      await test.waitFor("pending");
+      test.child.send("release-startup");
+      test.child.send("inspect");
+      // Started, owning, and no longer exporting the shell's pid to its children.
+      expect(await test.waitFor("state")).toMatchObject({
+        cancelled: false,
+        startCalls: 1,
+        disposeCalls: 0,
+        parentPidEnv: null,
+      });
+      expectOwned(profile);
+      parent.kill("SIGKILL");
+      await test.waitFor("disposing");
+      test.child.send("release-drain");
+      await test.waitFor("released");
+      expect(await test.waitForExit()).toEqual({ code: 0, signal: null });
+      HostOwnerLease.acquire(resolveHostRootPaths(profile), "desktop").release();
+    } finally {
+      parent.kill("SIGKILL");
       await stopOwnedChild(test, 3_000);
     }
   });

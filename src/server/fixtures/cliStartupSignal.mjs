@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { createRequire } from "node:module";
 import { HostOwnerLease } from "../../backend/ownership/hostOwnerLease.ts";
 import { resolveHostRootPaths } from "../../backend/ownership/hostRootPaths.ts";
@@ -20,6 +21,7 @@ const snapshot = () => ({
   startCalls,
   disposeCalls,
   diagnosticStops,
+  parentPidEnv: process.env.PORACODE_PARENT_PID ?? null,
   exitCode: process.exitCode ?? null,
 });
 

@@ -1,58 +1,109 @@
-// ViscosityCode: guards the fork's desktop installer workflow.
+// ViscosityCode: guards the fork's desktop installer workflow (Tauri shell).
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { createRequire } from "node:module";
+import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { parse } from "yaml";
-
-const require = createRequire(import.meta.url);
-const channelTable = require("../electron-builder.shared.cjs");
 
 const workflow = parse(
   await readFile(new URL("../../.github/workflows/viscosity-desktop.yml", import.meta.url), "utf8"),
 );
 const allSteps = Object.values(workflow.jobs).flatMap((job) => job.steps ?? []);
+const tauri = workflow.jobs.tauri;
+const step = (name) => tauri.steps.find((candidate) => candidate.name === name);
 
-void test("builds macOS DMGs and Windows NSIS installers for both architectures", () => {
-  const legs = workflow.jobs.build.strategy.matrix.include;
-  const byPlatform = Object.fromEntries(legs.map((leg) => [leg.platform, leg]));
-  assert.equal(byPlatform.mac.target, "dmg");
-  assert.equal(byPlatform.win.target, "nsis");
-  assert.match(byPlatform.mac["rust-targets"], /aarch64-apple-darwin/u);
-  assert.match(byPlatform.mac["rust-targets"], /x86_64-apple-darwin/u);
-  assert.match(byPlatform.win["rust-targets"], /aarch64-pc-windows-msvc/u);
-  assert.match(byPlatform.win["rust-targets"], /x86_64-pc-windows-msvc/u);
-  assert.deepEqual(workflow.jobs.build.needs, "wsl-relay");
+void test("builds Tauri DMGs for both Mac architectures and a Windows x64 NSIS installer", () => {
+  const legs = Object.fromEntries(tauri.strategy.matrix.include.map((leg) => [leg.target, leg]));
+  assert.deepEqual(Object.keys(legs).sort(), ["darwin-arm64", "darwin-x64", "win32-x64"]);
+  assert.equal(legs["darwin-arm64"].bundles, "app,dmg");
+  assert.equal(legs["darwin-x64"].bundles, "app,dmg");
+  assert.equal(legs["win32-x64"].bundles, "nsis");
+  assert.equal(workflow.env.TAURI_CLI, "@tauri-apps/cli@2.12.4");
+  assert.match(step("Package").run, /npx --yes "\$TAURI_CLI" build/u);
+  assert.match(step("Package").run, /--config tauri\.bundle\.conf\.json/u);
 });
 
-void test("uploads installers under the fork's artifact names", () => {
-  const upload = workflow.jobs.build.steps.find((step) => step.name === "Upload installers");
-  for (const channel of channelTable.CHANNELS) {
-    const prefix = channelTable.artifactPrefixFor(channel);
-    assert.ok(prefix.startsWith("ViscosityCode"), `${channel} prefix ${prefix}`);
+void test("no longer packages Electron", () => {
+  const source = JSON.stringify(workflow);
+  assert.doesNotMatch(source, /build-desktop-artifact|electron-builder|CSC_IDENTITY/u);
+});
+
+void test("bundles the qualified standalone archive for each leg's own target", () => {
+  assert.equal(workflow.jobs.server.uses, "./.github/workflows/_server-artifact.yml");
+  assert.deepEqual(tauri.needs, ["version", "server"]);
+  const download = step("Download the standalone archive");
+  assert.equal(download.with.pattern, "viscosity-server-standalone-${{ matrix.target }}-*");
+  assert.match(step("Stage the standalone archive (macOS)").run, /checkLayout/u);
+  assert.match(step("Stage the standalone archive (Windows)").run, /runtime\/node\.exe/u);
+});
+
+void test("a re-run of only the failed legs still finds the server job's archives", async () => {
+  // "Re-run failed jobs" bumps run_attempt without re-running the server job.
+  assert.doesNotMatch(JSON.stringify(tauri), /run_attempt/u);
+  assert.ok(workflow.jobs.server.with.retention_days >= 3, "re-runs need the archives for days");
+  const dir = await mkdtemp(join(tmpdir(), "viscosity-pick-"));
+  try {
+    const downloads = join(dir, "standalone");
+    for (const attempt of [1, 2, 10])
+      await mkdir(join(downloads, `viscosity-server-standalone-darwin-arm64-${attempt}`), {
+        recursive: true,
+      });
+    const envFile = join(dir, "github-env");
+    const picked = spawnSync("bash", ["-c", step("Pick the newest attempt's archive").run], {
+      env: { ...process.env, DOWNLOAD_DIR: downloads, GITHUB_ENV: envFile },
+      encoding: "utf8",
+    });
+    assert.equal(picked.status, 0, picked.stderr);
+    assert.equal(
+      await readFile(envFile, "utf8"),
+      `ARCHIVE_DIR=${join(downloads, "viscosity-server-standalone-darwin-arm64-10")}\n`,
+    );
+    for (const name of [
+      "Stage the standalone archive (macOS)",
+      "Stage the standalone archive (Windows)",
+    ])
+      assert.equal(step(name).env?.ARCHIVE_DIR, undefined, `${name} must use the picked folder`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
-  assert.match(upload.with.path, /release\/ViscosityCode\*\.dmg/u);
-  assert.match(upload.with.path, /release\/ViscosityCode\*\.exe/u);
+});
+
+void test("draft release notes warn that Electron-created data folders are refused", () => {
+  const create = workflow.jobs["draft-release"].steps[1].run;
+  assert.match(create, /Electron/u);
+  assert.match(create, /VISCOSITY_TAURI_BASE_DIR/u);
+});
+
+void test("uploads only installers under the fork's names, and releases only those", () => {
+  const upload = step("Upload installers");
+  assert.match(upload.with.path, /bundle\/dmg\/ViscosityCode_\*\.dmg/u);
+  assert.match(upload.with.path, /bundle\/nsis\/ViscosityCode_\*-setup\.exe/u);
   assert.doesNotMatch(upload.with.path, /Poracode/u);
+  for (const leg of tauri.strategy.matrix.include) assert.match(leg.artifact, /^viscositycode-/u);
+  const download = workflow.jobs["draft-release"].steps[0];
+  assert.equal(download.with.pattern, "viscositycode-*");
 });
 
 void test("signing secrets only reach the packaging step", () => {
-  const secretSteps = allSteps.filter((step) =>
-    /secrets\.(MAC_CSC|WIN_CSC|APPLE_ID|APPLE_APP_SPECIFIC)/u.test(JSON.stringify(step.env ?? {})),
+  const secretSteps = allSteps.filter((candidate) =>
+    /secrets\.(MAC_CSC|WIN_CSC|APPLE_|AZURE_)/u.test(JSON.stringify(candidate.env ?? {})),
   );
   assert.deepEqual(
-    secretSteps.map((step) => step.name),
+    secretSteps.map((candidate) => candidate.name),
     ["Package"],
   );
+  assert.equal(workflow.jobs.server.secrets, undefined, "the server build gets no secrets");
 });
 
 void test("run scripts never interpolate expressions directly", () => {
-  for (const step of allSteps) {
-    if (typeof step.run !== "string") continue;
+  for (const candidate of allSteps) {
+    if (typeof candidate.run !== "string") continue;
     assert.doesNotMatch(
-      step.run,
+      candidate.run,
       /\$\{\{/u,
-      `step "${step.name ?? step.run}" inlines an expression`,
+      `step "${candidate.name ?? candidate.run}" inlines an expression`,
     );
   }
 });

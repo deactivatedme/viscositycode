@@ -116,31 +116,33 @@ Install and run any agent from the [Agent Client Protocol](https://agentclientpr
 
 ## Build from source
 
-ViscosityCode does not publish prebuilt releases yet. Build it yourself:
+ViscosityCode does not publish prebuilt releases yet. The desktop app is a Tauri shell around the bundled standalone host; build it yourself:
 
-| Platform | Format                        |
-| -------- | ----------------------------- |
-| macOS    | DMG (Apple silicon or Intel)  |
-| Windows  | NSIS installer (x64 or Arm64) |
+| Platform | Format                                                    |
+| -------- | --------------------------------------------------------- |
+| macOS    | DMG (Apple silicon locally; Apple silicon or Intel in CI) |
+| Windows  | NSIS installer (x64, built by the GitHub workflow)        |
 
 ```sh
-bun install          # Bun version pinned in package.json; Node.js 26.13.0 or newer
-bun run dev          # run the desktop app in development
-bun run build        # build the app
-bun run dist         # package an installer into release/
+bun install          # Bun version pinned in package.json; Node.js 26.13.0 or newer; Rust 1.98.1
+bun run tauri:stage  # build the standalone host and stage it for the bundle
+bun run tauri:build  # build ViscosityCode.app and the DMG
+bun run tauri:smoke  # headless check of the bundled host
 ```
 
-Packaged builds have no update feed unless you set `VISCOSITYCODE_UPDATE_REPO=owner/repo` (your own GitHub repository) when running `bun run dist`; without it the app never checks for updates.
+`bun run dev` still runs the Electron app for development; Electron is no longer packaged or released. The Tauri app has no in-app updates yet: to update, quit it and replace the app with the new build.
 
-[BUILDING.md](BUILDING.md) covers each installer, signing and notarisation, building without Rust, and the GitHub Actions workflow that builds the macOS and Windows installers for you.
+**Coming from the Electron app?** The Tauri app cannot open a data folder (`~/.viscositycode`) that the Electron ViscosityCode app created: that app sealed its credential key with the macOS keychain, and there is no migration yet. The Tauri app installs over `ViscosityCode.app` (same identifier) and then shows an error page for that folder; nothing in it is changed or deleted. Until a migration ships, keep the Electron build for that data, or start the Tauri app on another folder, for example `VISCOSITY_TAURI_BASE_DIR=~/.viscositycode-tauri /Applications/ViscosityCode.app/Contents/MacOS/viscositycode-desktop`.
+
+[BUILDING.md](BUILDING.md) covers prerequisites, each installer, signing and notarisation, and the GitHub Actions workflow that builds the macOS and Windows installers for you.
 
 ### Command line
 
-Packaged desktop builds register a `viscositycode` command (`viscositycode-next` for Nightly builds) that runs the server bundled with the app, for example:
+The Tauri app does not register a `viscositycode` command yet. Its bundled launcher works from a terminal and uses the same data folder (`~/.viscositycode`), for example on macOS:
 
 ```sh
-viscositycode -p "PROMPT" --directory PATH     # one-shot run
-viscositycode serve --open                     # serve and open the web app
+/Applications/ViscosityCode.app/Contents/Resources/standalone/bin/poracode -p "PROMPT" --directory PATH   # one-shot run
+/Applications/ViscosityCode.app/Contents/Resources/standalone/bin/poracode serve --open                   # serve and open the web app
 ```
 
 ### Getting Started

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { isAbsolute, join, resolve } from "node:path";
 import { closeSync, writeSync, existsSync } from "node:fs";
 import { z } from "zod";
@@ -62,6 +63,7 @@ import {
 } from "./serverUpgrade";
 import { abandonServerUpgrade, resumeServerUpgrade } from "./serverUpgradeRecovery";
 import { stopRunningServer } from "./serverStop";
+import { PARENT_PID_ENV, watchParentPid } from "./parentWatchdog";
 import { ServerUpgradeBusyError, ServerUpgradeLockUnreadableError } from "./serverUpgradeLock";
 import { ServerUpgradeServiceTargetError } from "./serverUpgradeRestart";
 import { requestPairingFromRunningServer } from "./pairingControl";
@@ -268,6 +270,13 @@ async function serve(
     },
     { drainDeadlineMs: settings.shutdownDrainDeadlineMs },
   );
+  // A supervising shell (the Tauri desktop app) passes its pid: if it dies
+  // without stopping us, drain through the same path as SIGTERM.
+  const stopParentWatchdog = watchParentPid(process.env, (pid) =>
+    shutdownControl.requestShutdown(`parent process ${pid} exit`),
+  );
+  // Agents and terminals spawned by this host must not inherit the shell's pid.
+  delete process.env[PARENT_PID_ENV];
   let info;
   const isDev = process.env.PORACODE_IS_DEV === "1" || Boolean(process.env.VITE_DEV_SERVER_URL);
   try {
@@ -369,6 +378,7 @@ async function serve(
     }
     startup.resolve();
     if (cancellation.signal.aborted) return;
+    stopParentWatchdog();
     shutdownControl.uninstall();
     throw error;
   }

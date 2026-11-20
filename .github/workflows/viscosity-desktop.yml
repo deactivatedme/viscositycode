@@ -1,9 +1,12 @@
 # ViscosityCode: desktop installers for the fork.
 #
-# Builds the macOS DMGs (Apple silicon + Intel) and the Windows NSIS installers
-# (x64 + ARM64). Signing and notarisation are optional: each runs only when its
-# repository secrets are set, so a fork without certificates still gets
-# working (unsigned) installers. See BUILDING.md for the secret names.
+# The shipped app is the Tauri shell in desktop-tauri/; Electron is no longer
+# packaged. Each leg stages the qualified standalone archive for its target
+# (built once by the repo's _server-artifact.yml) into the bundle and builds
+# with @tauri-apps/cli: macOS Apple silicon and Intel DMGs, and a Windows x64
+# NSIS installer. Signing and notarisation are optional: without the
+# certificate secrets macOS builds are ad-hoc signed ("-" in tauri.conf.json)
+# and Windows builds are unsigned. See BUILDING.md for the secret names.
 #
 # Triggers: run it by hand (Actions → "ViscosityCode desktop" → Run workflow),
 # or push a tag like `v1.2.3` to also attach the installers to a draft release.
@@ -19,12 +22,6 @@ on:
         required: false
         type: string
         default: ""
-      channel:
-        description: "Release channel"
-        required: false
-        type: choice
-        options: [stable, nightly]
-        default: stable
   push:
     tags: ["v*"]
 
@@ -38,185 +35,221 @@ concurrency:
 env:
   BUN_INSTALL_GLOBAL_STORE: "0"
   RUST_VERSION: 1.98.1
-  PORACODE_CHANNEL: ${{ inputs.channel || 'stable' }}
-  # The fork ships no telemetry or crash reporting keys.
+  TAURI_CLI: "@tauri-apps/cli@2.12.4"
+  # The fork ships no telemetry or crash reporting keys. The server artifact
+  # workflow receives no secrets, so its web build has no keys either.
   POSTHOG_ENABLED: "0"
 
 jobs:
-  # Windows installers embed a Linux MCP relay for WSL projects; build it once
-  # on Linux and hand it to the Windows job.
-  wsl-relay:
-    name: Linux MCP relay (for WSL)
+  version:
+    name: Resolve version
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
-      - run: sudo apt-get update && sudo apt-get install --yes musl-tools
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          targets: x86_64-unknown-linux-musl
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
-        with:
-          workspaces: native/mcp-relay
-          prefix: mcp-relay-rust
-      - uses: ./.github/actions/setup-bun
-      - run: bun install --frozen-lockfile
+      - id: resolve
         env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-      - run: node scripts/prepare-mcp-relay.mjs --platform linux --require
-      - uses: actions/upload-artifact@v7
-        with:
-          name: mcp-relay-linux-x64
-          path: resources/wsl-helpers/mcp-relay/linux-x64/
-          if-no-files-found: error
-          retention-days: 1
+          INPUT_VERSION: ${{ inputs.version }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="$INPUT_VERSION"
+          if [ -z "$version" ] && [ "$IS_TAG" = "true" ]; then version="$REF_NAME"; fi
+          echo "version=${version#v}" >> "$GITHUB_OUTPUT"
 
-  build:
+  # Builds and qualifies the standalone host archives (bundled Node + server)
+  # for every target; the Tauri legs below bundle the exact qualified bytes.
+  server:
+    name: Standalone host archives
+    needs: version
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/_server-artifact.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      artifact_name: viscosity-server
+      # Long enough to "Re-run failed jobs" after a weekend.
+      retention_days: 5
+
+  tauri:
     name: build (${{ matrix.name }})
-    needs: wsl-relay
+    needs: [version, server]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: macOS DMG (arm64 + x64)
+          - name: macOS DMG (arm64)
             os: macos-15
             platform: mac
-            target: dmg
-            rust-targets: x86_64-apple-darwin,aarch64-apple-darwin
-            artifact: viscositycode-macos
-          - name: Windows NSIS (x64 + arm64)
+            target: darwin-arm64
+            bundles: app,dmg
+            artifact: viscositycode-macos-arm64
+          - name: macOS DMG (x64)
+            os: macos-15-intel
+            platform: mac
+            target: darwin-x64
+            bundles: app,dmg
+            artifact: viscositycode-macos-x64
+          - name: Windows NSIS (x64)
             os: windows-latest
             platform: win
-            target: nsis
-            rust-targets: x86_64-pc-windows-msvc,aarch64-pc-windows-msvc
-            artifact: viscositycode-windows
+            target: win32-x64
+            bundles: nsis
+            artifact: viscositycode-windows-x64
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 75
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
     env:
       TARGET_PLATFORM: ${{ matrix.platform }}
-      TARGET_KIND: ${{ matrix.target }}
+      TARGET: ${{ matrix.target }}
+      BUNDLES: ${{ matrix.bundles }}
     steps:
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "26.13.0"
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
-          targets: ${{ matrix.rust-targets }}
+          components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
-          workspaces: |
-            native/computer-use-helper
-            native/mcp-relay
-            native/git-helper
-
-      - uses: ./.github/actions/setup-bun
-        with:
-          registry-cache: ${{ runner.os == 'Windows' && 'none' || 'all' }}
+          workspaces: desktop-tauri
+          prefix: desktop-tauri-rust
 
       - name: Set package version
-        if: inputs.version != '' || startsWith(github.ref, 'refs/tags/v')
-        shell: bash
+        if: needs.version.outputs.version != ''
         env:
-          RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
-        run: node scripts/set-release-version.mjs "${RELEASE_VERSION#v}"
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        # tauri.conf.json reads its version from the root package.json.
+        run: node scripts/set-release-version.mjs "$RELEASE_VERSION"
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - name: Test the shell
+        working-directory: desktop-tauri
+        run: cargo test --locked
 
-      - name: Build app
-        run: bun run build
-        shell: bash
-
-      - name: Prepare native helpers
-        shell: bash
-        run: |
-          node scripts/prepare-computer-use-helper.mjs --platform "$TARGET_PLATFORM" --require
-          node scripts/prepare-git-helper.mjs --platform "$TARGET_PLATFORM" --require
-          if [ "$TARGET_PLATFORM" != "win" ]; then
-            node scripts/prepare-mcp-relay.mjs --platform "$TARGET_PLATFORM" --require
-          fi
-
-      - name: Download the Linux MCP relay
-        if: matrix.platform == 'win'
+      # By pattern, not this attempt's name: "Re-run failed jobs" bumps
+      # run_attempt but keeps the server job's artifacts from its own attempt.
+      # Each match lands in its own folder named after the artifact.
+      - name: Download the standalone archive
         uses: actions/download-artifact@v7
         with:
-          name: mcp-relay-linux-x64
-          path: resources/wsl-helpers/mcp-relay/linux-x64
+          pattern: viscosity-server-standalone-${{ matrix.target }}-*
+          path: ${{ runner.temp }}/standalone
 
-      - name: Prepare the Windows MCP relay
-        if: matrix.platform == 'win'
-        shell: bash
-        run: node scripts/prepare-mcp-relay.mjs --platform win --require
-
-      - name: Prepare locked computer use plug-in
-        if: matrix.platform == 'mac'
-        shell: bash
-        # Without a team id the plug-in builds but always denies; signed
-        # builds pin it to the Developer ID team.
-        run: node scripts/prepare-locked-computer-use.mjs
+      - name: Pick the newest attempt's archive
         env:
-          PORACODE_LCU_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Prepare packaged assets
-        shell: bash
+          DOWNLOAD_DIR: ${{ runner.temp }}/standalone
         run: |
-          bun run prepare:package-assets
-          node scripts/build-ssh-runtime-archive.mjs
-          bun run clean:sourcemaps
+          node -e '
+            const { appendFileSync, readdirSync } = require("node:fs");
+            const { join } = require("node:path");
+            const attempt = (name) => Number(name.split("-").pop());
+            const [newest] = readdirSync(process.env.DOWNLOAD_DIR).sort((a, b) => attempt(b) - attempt(a));
+            if (!newest) throw new Error("no standalone archive was downloaded");
+            console.log(`using ${newest}`);
+            appendFileSync(process.env.GITHUB_ENV, `ARCHIVE_DIR=${join(process.env.DOWNLOAD_DIR, newest)}\n`);
+          '
+
+      - name: Stage the standalone archive (macOS)
+        if: matrix.platform == 'mac'
+        run: |
+          set -euo pipefail
+          mkdir -p desktop-tauri/resources/standalone
+          tar -xzpf "$ARCHIVE_DIR"/poracode-*-"$TARGET".tar.gz -C desktop-tauri/resources/standalone
+          node --input-type=module -e "const m = await import('./desktop-tauri/scripts/stage-standalone.mjs'); console.log(m.checkLayout('desktop-tauri/resources/standalone'))"
+
+      - name: Stage the standalone archive (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem (Join-Path $env:ARCHIVE_DIR "poracode-*-$env:TARGET.zip") | Select-Object -First 1
+          if (-not $archive) { throw "no standalone archive for $env:TARGET" }
+          Expand-Archive -Path $archive.FullName -DestinationPath desktop-tauri/resources/standalone
+          foreach ($path in "runtime/node.exe", "lib/server.cjs", "renderer/index.html", "standalone.json") {
+            if (-not (Test-Path (Join-Path desktop-tauri/resources/standalone $path))) { throw "missing $path" }
+          }
 
       - name: Package
-        shell: bash
+        working-directory: desktop-tauri
         run: |
-          # Turn off certificate discovery when no certificate is configured so
-          # electron-builder makes an unsigned build instead of failing.
-          if [ "$TARGET_PLATFORM" = "mac" ] && [ -z "${CSC_LINK:-}" ]; then
-            export CSC_IDENTITY_AUTO_DISCOVERY=false
-            echo "::notice::No macOS certificate configured; building an unsigned DMG."
+          set -euo pipefail
+          CONFIG_ARGS=(--config tauri.bundle.conf.json)
+          if [ "$TARGET_PLATFORM" = "mac" ]; then
+            if [ -n "${APPLE_CERTIFICATE:-}" ]; then
+              # Tauri imports APPLE_CERTIFICATE and refuses an identity ("-")
+              # that does not match it, so drop the ad-hoc identity.
+              echo '{"bundle":{"macOS":{"signingIdentity":null}}}' > "$RUNNER_TEMP/sign.json"
+              CONFIG_ARGS+=(--config "$RUNNER_TEMP/sign.json")
+              for name in APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+                [ -n "${!name:-}" ] || unset "$name"
+              done
+            else
+              unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+              echo "::notice::No macOS certificate configured; building an ad-hoc signed DMG."
+            fi
           fi
-          if [ "$TARGET_PLATFORM" = "win" ] && [ -z "${WIN_CSC_LINK:-}" ]; then
-            export CSC_IDENTITY_AUTO_DISCOVERY=false
-            echo "::notice::No Windows certificate configured; building an unsigned installer."
+          if [ "$TARGET_PLATFORM" = "win" ]; then
+            if [ -n "${WIN_CSC_LINK:-}" ]; then
+              THUMBPRINT=$(pwsh -NoProfile -Command '
+                $pfx = Join-Path $env:RUNNER_TEMP "signing.pfx"
+                [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WIN_CSC_LINK))
+                $password = ConvertTo-SecureString $env:WIN_CSC_KEY_PASSWORD -AsPlainText -Force
+                $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
+                Remove-Item $pfx
+                $cert.Thumbprint' | tr -d '\r')
+              printf '{"bundle":{"windows":{"certificateThumbprint":"%s","digestAlgorithm":"sha256","timestampUrl":"http://timestamp.digicert.com"}}}' "$THUMBPRINT" > "$RUNNER_TEMP/sign.json"
+              CONFIG_ARGS+=(--config "$RUNNER_TEMP/sign.json")
+            else
+              echo "::notice::No Windows certificate configured; building an unsigned installer."
+            fi
           fi
-          node scripts/build-desktop-artifact.mjs --platform "$TARGET_PLATFORM" --target "$TARGET_KIND" --skip-build
+          npx --yes "$TAURI_CLI" build --ci --bundles "$BUNDLES" "${CONFIG_ARGS[@]}"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # macOS: Developer ID Application certificate (base64 .p12) + password.
-          CSC_LINK: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
-          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+          APPLE_CERTIFICATE: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
           # macOS notarisation (Apple ID + app-specific password + team).
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
           # Windows: code-signing certificate (base64 .pfx) + password.
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ matrix.platform == 'win' && secrets.WIN_CSC_LINK || '' }}
+          WIN_CSC_KEY_PASSWORD: ${{ matrix.platform == 'win' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+
+      - name: Smoke the bundled host (macOS)
+        if: matrix.platform == 'mac'
+        run: node desktop-tauri/scripts/smoke.mjs
 
       - name: Upload installers
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: |
-            release/ViscosityCode*.dmg
-            release/ViscosityCode*.exe
-            release/*.blockmap
-            release/latest*.yml
+            desktop-tauri/target/release/bundle/dmg/ViscosityCode_*.dmg
+            desktop-tauri/target/release/bundle/nsis/ViscosityCode_*-setup.exe
           if-no-files-found: error
           retention-days: 14
 
   draft-release:
     name: Draft GitHub release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: tauri
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v7
         with:
+          # Only the installers, not the server artifacts this run also uploads.
+          pattern: viscositycode-*
           path: installers
           merge-multiple: true
       - name: Create a draft release with the installers
@@ -230,4 +263,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --draft \
             --title "ViscosityCode $TAG" \
-            --notes "Desktop installers for ViscosityCode $TAG."
+            --notes "Desktop installers for ViscosityCode $TAG. This app cannot open a data folder (~/.viscositycode) created by the earlier Electron ViscosityCode app yet: it shows an error page and changes nothing. Keep the Electron app for that data, or start this app on another folder with VISCOSITY_TAURI_BASE_DIR."

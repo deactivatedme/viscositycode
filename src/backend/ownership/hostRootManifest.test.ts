@@ -1,8 +1,10 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -77,6 +79,19 @@ describe("owned host-root activation boundary", () => {
         "tooling",
       );
     }
+  });
+
+  it("accepts a pre-upgrade namespace holding only a desktop agent-probe tree, untouched", () => {
+    const lease = owner();
+    // Written by an older desktop build's probe cwd before any owned host existed.
+    const skill = join(lease.paths.profileNamespace, "agent-probe", "skills", "demo", "SKILL.md");
+    mkdirSync(join(skill, ".."), { recursive: true });
+    writeFileSync(skill, "probe scratch");
+    const manifest = prepareOwnedHostRoot(lease);
+    expect(manifest.source).toEqual({ kind: "empty", activation: "ready" });
+    expect(readFileSync(skill, "utf8")).toBe("probe scratch");
+    expect(readdirSync(lease.paths.profileNamespace)).toEqual(["agent-probe"]);
+    expect(readdirSync(join(lease.paths.profileNamespace, "agent-probe"))).toEqual(["skills"]);
   });
 
   it("still refuses a tooling name held by a regular file", () => {
