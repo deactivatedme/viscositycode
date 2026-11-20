@@ -1274,7 +1274,8 @@ private val PoracodeThemePresetsById = PoracodeThemePresets.associateBy { it.id 
 fun poracodeThemePreset(id: String?): PoracodeThemePreset =
     PoracodeThemePresetsById[normalizeThemeId(id)] ?: PoracodeThemePresetsById.getValue(DEFAULT_PORACODE_THEME_ID)
 
-const val DEFAULT_PORACODE_THEME_ID = "default"
+/** The preset a fresh install selects (shared DEFAULT_SELECTED_THEME_ID); "default" is the monochrome preset. */
+const val DEFAULT_PORACODE_THEME_ID = "viscosity-blue"
 
 /** Map legacy persisted ids onto the PWA/iOS theme ids; unknown -> default. */
 fun normalizeThemeId(id: String?): String {

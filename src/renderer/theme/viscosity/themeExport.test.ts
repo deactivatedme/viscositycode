@@ -31,9 +31,10 @@ describe("built-in theme export", () => {
 
   it("resolves legacy, unknown and uninstalled custom ids like the app does", () => {
     expect(builtInThemeDocument("lightcode-legacy")?.label).toBe("Graphite");
-    expect(builtInThemeDocument("no-such-theme")?.label).toBe("Viscosity");
-    // A deleted custom theme renders the base theme, so that is what exports.
-    expect(builtInThemeDocument("custom:deleted")?.label).toBe("Viscosity");
+    expect(builtInThemeDocument("no-such-theme")?.label).toBe("Viscosity Blue");
+    // A deleted custom theme renders the default selection, so that is what exports.
+    expect(builtInThemeDocument("custom:deleted")?.label).toBe("Viscosity Blue");
+    expect(builtInThemeDocument("default")?.label).toBe("Viscosity");
   });
 
   it("copies palettes so edits to an export never touch the catalog", () => {

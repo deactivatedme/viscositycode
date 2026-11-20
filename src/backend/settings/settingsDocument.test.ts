@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { describe, expect, it } from "vitest";
 import { defaultSharedSettings } from "@/shared/settings";
 import {
@@ -7,6 +8,18 @@ import {
 } from "./settingsDocument";
 
 describe("settings document migration", () => {
+  // ViscosityCode: the fresh-install theme changed; stored choices must not move.
+  it("keeps a stored default theme preset and fills only an absent one with Viscosity Blue", () => {
+    expect(
+      decodeSettingsDocument({ $poracodeSettingsVersion: 3, themePreset: "default" }).settings
+        .themePreset,
+    ).toBe("default");
+    const fresh = decodeSettingsDocument({});
+    expect(fresh.settings.themePreset).toBe("viscosity-blue");
+    expect(fresh.raw.themePreset).toBe("viscosity-blue");
+    expect(defaultSharedSettings.themePreset).toBe("viscosity-blue");
+  });
+
   it("adds native voice defaults while preserving legacy audio choices", () => {
     const document = decodeSettingsDocument({
       $poracodeSettingsVersion: 3,

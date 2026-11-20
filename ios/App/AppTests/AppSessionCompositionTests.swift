@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import SwiftUI
 import XCTest
 
@@ -571,6 +572,7 @@ final class AppSessionCompositionTests: XCTestCase {
       PoracodeThemePreset.all.map(\.id),
       [
         "default",
+        "viscosity-blue",  // ViscosityCode:
         "poracode-legacy",
         "catppuccin",
         "github",
@@ -612,7 +614,10 @@ final class AppSessionCompositionTests: XCTestCase {
 
   func testNativeThemePreferencesTolerateLegacyAndUnknownStoredValues() {
     XCTAssertEqual(PoracodeThemePreset.resolve("lightcode-legacy").id, "poracode-legacy")
-    XCTAssertEqual(PoracodeThemePreset.resolve("unknown-theme").id, "default")
+    // ViscosityCode: unknown ids select Viscosity Blue; a stored "default" keeps its preset.
+    XCTAssertEqual(PoracodeThemePreset.defaultID, "viscosity-blue")
+    XCTAssertEqual(PoracodeThemePreset.resolve("unknown-theme").id, "viscosity-blue")
+    XCTAssertEqual(PoracodeThemePreset.resolve("default").id, "default")
     XCTAssertEqual(PoracodeAppearanceMode.resolve("unknown-mode"), .system)
     XCTAssertEqual(PoracodeChatTextSize.resolve(7), 8)
     XCTAssertEqual(PoracodeChatTextSize.resolve(13), 13)

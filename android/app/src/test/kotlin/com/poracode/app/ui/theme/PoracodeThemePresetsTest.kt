@@ -17,10 +17,20 @@ class PoracodeThemePresetsTest {
 
     @Test
     fun defaultPresetMatchesTheHandTunedPaletteWithinOneByte() {
-        val preset = poracodeThemePreset(DEFAULT_PORACODE_THEME_ID)
+        // ViscosityCode: "default" is the monochrome preset, not the fresh-install selection.
+        val preset = poracodeThemePreset("default")
         assertEquals("default", preset.id)
         assertChannels(preset.light, EXPECTED_LIGHT)
         assertChannels(preset.dark, EXPECTED_DARK)
+    }
+
+    @Test
+    fun freshSelectionIsViscosityBlueWhileStoredDefaultStaysMonochrome() {
+        // ViscosityCode: absent/unknown ids select Viscosity Blue; a stored "default" is kept.
+        assertEquals("viscosity-blue", DEFAULT_PORACODE_THEME_ID)
+        assertEquals("viscosity-blue", poracodeThemePreset(null).id)
+        assertEquals("default", normalizeThemeId("default"))
+        assertEquals("Viscosity", poracodeThemePreset("default").label)
     }
 
     @Test

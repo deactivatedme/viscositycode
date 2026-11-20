@@ -16,6 +16,7 @@
  */
 
 import type { CustomTheme } from "@/shared/customThemes";
+import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings";
 
 import { buildVariant, type ThemeSpec, type ThemeVariantVars } from "./themeTokens";
 
@@ -33,6 +34,10 @@ export interface AppThemePreset {
   dark: ThemeVariantVars;
 }
 
+/**
+ * ViscosityCode: id of the monochrome "Viscosity" preset (the CSS base theme).
+ * Not what a fresh install selects; that is `DEFAULT_SELECTED_THEME_ID`.
+ */
 export const DEFAULT_THEME_ID = "default";
 /** ViscosityCode: bold showcase preset id (persisted in settings; keep stable). */
 export const VISCOSITY_SHOWCASE_THEME_ID = "viscosity-showcase";
@@ -522,7 +527,7 @@ export function getThemePreset(
   const custom = customThemes.find((theme) => theme.id === id);
   if (custom) return buildThemePreset(custom);
   const currentId = id === "lightcode-legacy" ? "poracode-legacy" : id;
-  return PRESETS_BY_ID.get(currentId) ?? PRESETS_BY_ID.get(DEFAULT_THEME_ID)!;
+  return PRESETS_BY_ID.get(currentId) ?? PRESETS_BY_ID.get(DEFAULT_SELECTED_THEME_ID)!; // ViscosityCode:
 }
 
 /** ViscosityCode: whether `id` names a built-in or one of `customThemes` (no fallback). */

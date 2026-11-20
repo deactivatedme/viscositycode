@@ -21,6 +21,7 @@ import {
 } from "./sharedSettingsAuthority";
 import { customThemeSchema, MAX_CUSTOM_THEMES, type CustomTheme } from "@/shared/customThemes";
 import {
+  DEFAULT_SELECTED_THEME_ID,
   defaultSharedSettings,
   normalizeSidebarShortcutOrder,
   normalizeKeepAwakeConditions,
@@ -508,7 +509,7 @@ export const useSharedSettings = create<SharedSettingsState>()((set, get) => ({
     if (!current.customThemes.some((entry) => entry.id === id)) return;
     set({
       customThemes: current.customThemes.filter((entry) => entry.id !== id),
-      themePreset: current.themePreset === id ? "default" : current.themePreset,
+      themePreset: current.themePreset === id ? DEFAULT_SELECTED_THEME_ID : current.themePreset, // ViscosityCode:
     });
     persistSettings(selectSharedSettings(get()));
   },

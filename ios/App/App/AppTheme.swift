@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import SwiftUI
 
 enum PoracodeAppearanceMode: String, CaseIterable, Identifiable, Sendable {
@@ -51,7 +52,8 @@ struct PoracodeThemeVariant: Sendable {
 
 struct PoracodeThemePreset: Identifiable, Sendable {
   static let storageKey = "ios.theme.preset"
-  static let defaultID = "default"
+  // ViscosityCode: fresh installs select Viscosity Blue; a stored "default" keeps its preset.
+  static let defaultID = "viscosity-blue"
 
   let id: String
   let name: String
@@ -64,7 +66,8 @@ struct PoracodeThemePreset: Identifiable, Sendable {
 
   static func resolve(_ storedValue: String) -> Self {
     let currentID = storedValue == "lightcode-legacy" ? "poracode-legacy" : storedValue
-    return all.first(where: { $0.id == currentID }) ?? all[0]
+    return all.first(where: { $0.id == currentID })
+      ?? all.first(where: { $0.id == defaultID }) ?? all[0]  // ViscosityCode:
   }
 
   // Keep this catalog in the same order as src/renderer/theme/themePresets.ts.
@@ -73,6 +76,12 @@ struct PoracodeThemePreset: Identifiable, Sendable {
       "default", "Poracode",
       light: ("#f1f1f4", "#fafafb", "#18181b", "#5f6cd9", "#cacace", "#ececef", "#f6f6f9"),
       dark: ("#070709", "#0e0e14", "#fafafa", "#8892ef", "#24242e", "#0e0e14", "#0b0b11")
+    ),
+    // ViscosityCode: Viscosity Blue anchors from src/renderer/theme/themePresets.ts.
+    preset(
+      "viscosity-blue", "Viscosity Blue",
+      light: ("#f4f4f5", "#ffffff", "#18181b", "#0279bb", "#e3e3e8", "#efeff1", "#fafafa"),
+      dark: ("#0a0a0b", "#111113", "#e6e6e8", "#38bdf8", "#1f1f23", "#0d0d0f", "#0e0e10")
     ),
     preset(
       "poracode-legacy", "Poracode Legacy",

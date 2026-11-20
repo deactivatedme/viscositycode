@@ -12,6 +12,7 @@ import { normalizeCustomThemes, type CustomTheme } from "@/shared/customThemes";
 
 import { resolveThemeMode } from "@/shared/themeMode";
 import type { ThemeMode } from "@/shared/contracts";
+import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings";
 import { DEFAULT_THEME_ID, getThemePreset, hasThemePreset, isDarkOnlyTheme } from "./themePresets";
 import { MANAGED_THEME_VARS } from "./themeTokens";
 // ViscosityCode: client-side appearance prefs (UI font) applied before mount.
@@ -46,7 +47,8 @@ export function applyAppTheme(
     root.classList.toggle("dark", shown === "dark");
     root.classList.toggle("light", shown === "light");
     root.dataset.theme = shown;
-    root.dataset.themePreset = effective;
+    // ViscosityCode: name the preset actually applied (an unknown id falls back to Blue).
+    root.dataset.themePreset = getThemePreset(effective, customThemes).id;
     writeThemeVars(root, shown, effective, customThemes);
     return;
   }
@@ -190,15 +192,16 @@ export function bootstrapAppThemeFromCache(): void {
   }
   try {
     const raw = localStorage.getItem(SHARED_SETTINGS_CACHE_KEY);
-    if (!raw) return;
-    const cached = JSON.parse(raw) as {
+    // ViscosityCode: no cache (fresh install or origin) boots the default selection.
+    const cached = (raw ? JSON.parse(raw) : {}) as {
       themeMode?: unknown;
       themePreset?: unknown;
       customThemes?: unknown;
     };
     const mode: ThemeMode =
       cached.themeMode === "light" || cached.themeMode === "system" ? cached.themeMode : "dark";
-    const themeId = typeof cached.themePreset === "string" ? cached.themePreset : DEFAULT_THEME_ID;
+    const themeId =
+      typeof cached.themePreset === "string" ? cached.themePreset : DEFAULT_SELECTED_THEME_ID; // ViscosityCode:
     const appearance = resolveThemeMode(mode, systemPrefersDark());
 
     const root = document.documentElement;

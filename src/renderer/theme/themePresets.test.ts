@@ -16,8 +16,10 @@ import {
   hasThemePreset,
   HOSTILE_BINARY_THEME_ID,
   isDarkOnlyTheme,
+  VISCOSITY_BLUE_THEME_ID,
 } from "./themePresets";
 import { MANAGED_THEME_VARS } from "./themeTokens";
+import { DEFAULT_SELECTED_THEME_ID, normalizeSharedSettings } from "@/shared/settings";
 
 // Floors mirror themeTokens: text stays readable on the content background
 // (strict), while muted on panels (surface/sidebar) gets a relaxed floor so it
@@ -96,8 +98,23 @@ describe("theme presets", () => {
     }
   });
 
-  it("falls back to the default preset for unknown ids", () => {
-    expect(getThemePreset("does-not-exist").id).toBe(DEFAULT_THEME_ID);
+  it("falls back to the default selection (Viscosity Blue) for unknown ids", () => {
+    expect(getThemePreset("does-not-exist").id).toBe(DEFAULT_SELECTED_THEME_ID);
+    expect(DEFAULT_SELECTED_THEME_ID).toBe(VISCOSITY_BLUE_THEME_ID);
+  });
+
+  // ViscosityCode: pre-upgrade settings wrote `themePreset: "default"` in full.
+  it("keeps a stored default on the monochrome preset while fresh settings select Blue", () => {
+    const stored = normalizeSharedSettings({ themeMode: "dark", themePreset: "default" });
+    expect(getThemePreset(stored.themePreset)).toMatchObject({
+      id: DEFAULT_THEME_ID,
+      label: "Viscosity",
+    });
+    const fresh = normalizeSharedSettings({ themeMode: "dark" });
+    expect(getThemePreset(fresh.themePreset).id).toBe(VISCOSITY_BLUE_THEME_ID);
+    expect(getThemePreset(normalizeSharedSettings(undefined).themePreset).id).toBe(
+      VISCOSITY_BLUE_THEME_ID,
+    );
   });
 
   it("maps the pre-rebrand legacy theme id to the current preset", () => {

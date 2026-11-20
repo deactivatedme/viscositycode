@@ -388,13 +388,22 @@ export function reorderVisibleThreadDocks(
   );
 }
 
+/**
+ * ViscosityCode: the theme preset a fresh install selects (Viscosity Blue). It
+ * only fills an absent `themePreset`; a stored "default" still means the
+ * monochrome Viscosity preset. No settings version bump or migration: hosts and
+ * clients write the whole document, so a stored "default" cannot be told apart
+ * from a deliberate monochrome choice.
+ */
+export const DEFAULT_SELECTED_THEME_ID = "viscosity-blue";
+
 export const sharedSettingsSchema = z.object({
   themeMode: themeModeSchema,
   /**
    * Selected app theme preset id (see `renderer/theme/themePresets`). The
    * matching light/dark variant is chosen by `themeMode`. Free-form string so
-   * the catalog can grow without a schema bump; unknown ids fall back to the
-   * base "default" theme at apply time.
+   * the catalog can grow without a schema bump; unknown ids fall back to
+   * `DEFAULT_SELECTED_THEME_ID` at apply time. ViscosityCode:
    */
   themePreset: z.string(),
   customThemes: customThemesSchema,
@@ -907,7 +916,7 @@ export type SharedSettingsInput = Omit<
 
 export const defaultSharedSettings: SharedSettings = {
   themeMode: "dark",
-  themePreset: "default",
+  themePreset: DEFAULT_SELECTED_THEME_ID, // ViscosityCode:
   customThemes: [],
   locale: "system",
   gitTextLanguage: "en",

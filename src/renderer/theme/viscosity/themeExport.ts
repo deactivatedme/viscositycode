@@ -9,19 +9,20 @@ import {
   serializeThemeDocument,
   type ThemeDocument,
 } from "@/shared/customThemes";
-import { DEFAULT_THEME_ID, THEME_SPECS, getThemePreset } from "@/renderer/theme/themePresets";
+import { THEME_SPECS, getThemePreset } from "@/renderer/theme/themePresets";
+import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings";
 
 /**
  * The v1 document for the built-in preset the app shows for `themeId`.
  * Legacy, unknown and no-longer-installed custom ids resolve the same way the
- * app applies them (to the base theme). Installed custom themes export from
+ * app applies them (to the default selection). Installed custom themes export from
  * their own editor, so callers only offer this while no custom theme is active.
  */
 export function builtInThemeDocument(themeId: string): ThemeDocument | null {
   const resolvedId = getThemePreset(themeId).id;
   const spec =
     THEME_SPECS.find((entry) => entry.id === resolvedId) ??
-    THEME_SPECS.find((entry) => entry.id === DEFAULT_THEME_ID);
+    THEME_SPECS.find((entry) => entry.id === DEFAULT_SELECTED_THEME_ID);
   if (!spec) return null;
   return {
     version: CUSTOM_THEME_VERSION,

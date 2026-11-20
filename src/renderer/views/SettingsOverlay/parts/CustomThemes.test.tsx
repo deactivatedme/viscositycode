@@ -54,9 +54,10 @@ describe("custom theme settings", () => {
     expect(useSharedSettings.getState().customThemes).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Delete theme" }));
     fireEvent.click(screen.getByRole("button", { name: /^Delete$/ }));
-    await waitFor(() => expect(useSharedSettings.getState().themePreset).toBe("default"));
+    // ViscosityCode: deleting the active theme returns to the default selection (Viscosity Blue).
+    await waitFor(() => expect(useSharedSettings.getState().themePreset).toBe("viscosity-blue"));
     expect(useSharedSettings.getState().customThemes).toEqual([]);
-    expect(document.documentElement.style.getPropertyValue("--background")).toBe("");
+    expect(document.documentElement.style.getPropertyValue("--background")).toBe("#0a0a0b");
   });
   it("blocks invalid palettes and cancels without changing settings", () => {
     render(<ThemeGallery />);

@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 package com.poracode.app.storage
 
 import android.content.Context
@@ -83,7 +84,9 @@ data class DeviceSettingsState(
     val notifyError: Boolean = true,
 ) {
     companion object {
-        const val DEFAULT_THEME_ID = "default"
+        // ViscosityCode: fresh installs get Viscosity Blue (= DEFAULT_PORACODE_THEME_ID);
+        // a stored "default" stays the monochrome preset.
+        const val DEFAULT_THEME_ID = "viscosity-blue"
         const val DEFAULT_TERMINAL_TEXT_SIZE_SP = 13
         const val DEFAULT_CHAT_TEXT_SIZE_SP = 14
         const val MIN_TERMINAL_TEXT_SIZE_SP = 8

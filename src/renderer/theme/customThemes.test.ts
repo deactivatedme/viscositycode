@@ -2,6 +2,7 @@
 import { contrastRatio } from "./colorMath";
 import { afterEach, describe, expect, it } from "vitest";
 import { type CustomTheme } from "@/shared/customThemes";
+import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings";
 import { THEME_SPECS, getThemePreset } from "./themePresets";
 import { buildVariant, MANAGED_THEME_VARS } from "./themeTokens";
 import { applyAppTheme, bootstrapAppThemeFromCache, persistThemeBoot } from "./applyAppTheme";
@@ -37,11 +38,14 @@ describe("custom theme application", () => {
     applyAppTheme(root, "light", theme.id, [theme]);
     expect(root.style.getPropertyValue("--background")).toBe(theme.light.bg);
   });
-  it("clears all overrides when a deleted or unknown custom theme is selected", () => {
+  // ViscosityCode: a missing theme falls back to the default selection, Viscosity Blue.
+  it("applies the default selection when a deleted or unknown custom theme is selected", () => {
     const root = document.createElement("div");
     applyAppTheme(root, "dark", theme.id, [theme]);
     applyAppTheme(root, "dark", theme.id, []);
-    for (const key of MANAGED_THEME_VARS) expect(root.style.getPropertyValue(key)).toBe("");
+    const blue = getThemePreset(DEFAULT_SELECTED_THEME_ID).dark;
+    for (const key of MANAGED_THEME_VARS)
+      expect(root.style.getPropertyValue(key)).toBe(blue[key] ?? "");
   });
   it("applies and clears an explicit selected-row override for glass sidebars", () => {
     const root = document.createElement("div");
@@ -92,7 +96,31 @@ describe("custom theme application", () => {
       }),
     );
     bootstrapAppThemeFromCache();
-    expect(document.documentElement.style.getPropertyValue("--background")).toBe("");
+    expect(document.documentElement.style.getPropertyValue("--background")).toBe(
+      getThemePreset(DEFAULT_SELECTED_THEME_ID).dark["--background"],
+    );
+  });
+  // ViscosityCode: a cache without a theme boots the default selection; "default" stays mono.
+  it("boots the default selection when the cache has no theme and keeps a cached default", () => {
+    bootstrapAppThemeFromCache();
+    expect(document.documentElement.dataset.themePreset).toBe(DEFAULT_SELECTED_THEME_ID);
+    expect(document.documentElement.style.getPropertyValue("--accent")).toBe("#38bdf8");
+    for (const key of MANAGED_THEME_VARS) document.documentElement.style.removeProperty(key);
+    localStorage.setItem("poracode-shared-settings", JSON.stringify({ themeMode: "dark" }));
+    bootstrapAppThemeFromCache();
+    expect(document.documentElement.dataset.themePreset).toBe(DEFAULT_SELECTED_THEME_ID);
+    expect(document.documentElement.style.getPropertyValue("--accent")).toBe("#38bdf8");
+    localStorage.setItem("poracode-shared-settings", JSON.stringify({ themePreset: "gone" }));
+    bootstrapAppThemeFromCache();
+    expect(document.documentElement.dataset.themePreset).toBe(DEFAULT_SELECTED_THEME_ID);
+    localStorage.setItem(
+      "poracode-shared-settings",
+      JSON.stringify({ themeMode: "dark", themePreset: "default" }),
+    );
+    bootstrapAppThemeFromCache();
+    expect(document.documentElement.dataset.themePreset).toBe("default");
+    for (const key of MANAGED_THEME_VARS)
+      expect(document.documentElement.style.getPropertyValue(key)).toBe("");
   });
 });
 

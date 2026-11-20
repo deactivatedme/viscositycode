@@ -30,6 +30,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { THEME_SPECS, getThemePreset, isDarkOnlyTheme } from "@/renderer/theme/themePresets"; // ViscosityCode:
+import { DEFAULT_SELECTED_THEME_ID } from "@/shared/settings"; // ViscosityCode:
 
 // ---------------------------------------------------------------------------
 // CSS color engine (sRGB <-> OKLab, color-mix(in oklab,...) premultiplied alpha)
@@ -634,7 +635,11 @@ function emit(): string {
     "    PoracodeThemePresetsById[normalizeThemeId(id)] ?: PoracodeThemePresetsById.getValue(DEFAULT_PORACODE_THEME_ID)",
   );
   lines.push("");
-  lines.push('const val DEFAULT_PORACODE_THEME_ID = "default"');
+  // ViscosityCode: the fresh-install selection; "default" stays the monochrome preset.
+  lines.push(
+    '/** The preset a fresh install selects (shared DEFAULT_SELECTED_THEME_ID); "default" is the monochrome preset. */',
+  );
+  lines.push(`const val DEFAULT_PORACODE_THEME_ID = ${JSON.stringify(DEFAULT_SELECTED_THEME_ID)}`);
   lines.push("");
   lines.push("/** Map legacy persisted ids onto the PWA/iOS theme ids; unknown -> default. */");
   lines.push("fun normalizeThemeId(id: String?): String {");

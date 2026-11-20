@@ -1,5 +1,7 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 package com.poracode.app.storage
 
+import com.poracode.app.ui.theme.DEFAULT_PORACODE_THEME_ID
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -78,6 +80,18 @@ class DeviceSettingsPreferencesTest {
     fun preUpgradeDocumentsWithoutThemeIdLoadAsDefault() {
         // A v2 document written before themeId existed must decode as the default theme.
         val released = """{"version":2,"appearanceMode":"Dark","chatTextSizeSp":16}"""
+        val state = DeviceSettingsPreferences(MemoryStore(released)).state.value
+
+        // ViscosityCode: the default selection is Viscosity Blue, shared with the theme catalog.
+        assertEquals("viscosity-blue", state.themeId)
+        assertEquals(DEFAULT_PORACODE_THEME_ID, DeviceSettingsState.DEFAULT_THEME_ID)
+        assertEquals("viscosity-blue", DeviceSettingsState().themeId)
+    }
+
+    @Test
+    fun storedMonochromeDefaultThemeSurvivesTheNewDefaultSelection() {
+        // ViscosityCode: a released document that chose "default" keeps the monochrome preset.
+        val released = """{"version":2,"appearanceMode":"Dark","themeId":"default"}"""
         val state = DeviceSettingsPreferences(MemoryStore(released)).state.value
 
         assertEquals("default", state.themeId)
