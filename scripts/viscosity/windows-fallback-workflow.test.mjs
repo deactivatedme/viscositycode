@@ -8,7 +8,7 @@ const workflow = parse(
     "utf8",
   ),
 );
-test("Windows fallback qualifies its own server and archive before packaging", () => {
+void test("Windows fallback qualifies its own server and archive before packaging", () => {
   assert.deepEqual(
     workflow.jobs.build.strategy.matrix.include.map(({ name }) => name),
     ["windows"],
