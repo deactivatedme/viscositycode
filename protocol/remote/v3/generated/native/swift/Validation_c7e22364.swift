@@ -61,6 +61,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_3c68a9c5e4f83b78 = RemoteSchema(type: "object", required: Set(["error", "ok"]), properties: ["error": RemoteSchemas.schema_e3fc8b89f137aafe, "ok": RemoteSchemas.schema_b1c287ee97c19775], additionalAllowed: true, unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_3c702b70b3eb4220 = RemoteSchema(type: "string", literals: [.string("ios"), .string("ios-video"), .string("android")], unknownPolicy: .strip)
 }
 
@@ -146,6 +150,10 @@ public extension RemoteSchemas {
 
 public extension RemoteSchemas {
   static let schema_3f5bcd72f92b6f9f = RemoteSchema(type: "string", literals: [.string("browser-watch")], unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
+  static let schema_3fb914ebc32f0418 = RemoteSchema(unionKind: "oneOf", options: [RemoteSchemas.schema_96eae78a55bc0f0c, RemoteSchemas.schema_4fadfdaa19ed55af, RemoteSchemas.schema_02b179207e61cd9b, RemoteSchemas.schema_ebe1a884082ab6bb], unknownPolicy: .strip)
 }
 
 public extension RemoteSchemas {

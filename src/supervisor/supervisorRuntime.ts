@@ -1,3 +1,5 @@
+import { CodeShareFileRuntime } from "./codeShareFileRuntime";
+import { CodeShareRuntime } from "./codeShareRuntime";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { joinRuntimeShutdown } from "@/shared/joinRuntimeShutdown";
 import { McpAuthenticationService } from "./mcp/McpAuthenticationService";
@@ -191,6 +193,7 @@ export class SupervisorRuntime {
     return this.subagentRunManager.cancel(runId, parentThreadId);
   }
   readonly projectTreeService = new ProjectTreeService();
+  readonly codeShareFileRuntime = new CodeShareFileRuntime(this.projectTreeService);
   private readonly adapters = new Map<AgentKind, AgentAdapter>();
   private availableWindowsShellsCache:
     | { shells: Awaited<ReturnType<typeof detectWindowsShells>>; ts: number }
@@ -201,6 +204,7 @@ export class SupervisorRuntime {
   private resolveLaunchWindowsPowerShell =
     createWindowsPowerShellLaunchResolver(resolveExecutablePath);
   readonly agentStatusService: AgentStatusService;
+  readonly codeShareRuntime: CodeShareRuntime;
   readonly usageService: UsageService;
   readonly agentRegistryService: AgentRegistryService;
   readonly generationService: GenerationService;
@@ -325,6 +329,7 @@ export class SupervisorRuntime {
       closeThreadsForAgentKind: (agentKind) => this.closeThreadsForAgentKind(agentKind),
     });
     this.agentRegistryService.refreshAgentRegistryAdapters();
+    this.codeShareRuntime = new CodeShareRuntime(this.adapters);
     mkdirSync(paths.cacheDir, { recursive: true });
     mkdirSync(this.logsDir, { recursive: true });
     this.hexVoiceService = new HexVoiceService({
@@ -1293,6 +1298,8 @@ export class SupervisorRuntime {
 
   async disposeAsync(): Promise<void> {
     await joinRuntimeShutdown([
+      () => this.codeShareRuntime.close(),
+      () => this.codeShareFileRuntime.close(),
       () => this.disposeNativeRuntime(),
       () => retireMacKeychainCommands(),
       () => this.agentRegistryService.disposeAcpAuthentications(),

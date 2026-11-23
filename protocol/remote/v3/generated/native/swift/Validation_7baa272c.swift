@@ -65,6 +65,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_f3b3d8722ad77fc3 = RemoteSchema(type: "string", minLength: 1, maxLength: 1024, pattern: "^(?!\\.{1,2}(?:\\/|$))(?!.*\\/\\.{1,2}(?:\\/|$))[^/\\\\:\\p{Cc}]+(?:\\/[^/\\\\:\\p{Cc}]+)*$", unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_f3c2d2c49187a75b = RemoteSchema(type: "object", required: Set(["action", "objective"]), properties: ["action": RemoteSchemas.schema_10209383e3295873, "objective": RemoteSchemas.schema_422b1e8c8be5e2c0], additionalAllowed: true, unknownPolicy: .strip)
 }
 

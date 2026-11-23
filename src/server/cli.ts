@@ -120,6 +120,19 @@ import { parseStatusCliOptions, runServerStatus } from "./cliStatus";
 import { CLI_LOGS_HELP, parseLogsCliOptions, runServerLogs } from "./cliLogs";
 import { prepareRunCli, runRunCli } from "./cliRun";
 
+const CODESHARE_HELP = `  codeshare                     Run the CodeShare guest site and private owner dashboard.
+    Claude and Codex use the owner's normal OAuth sign-in by default.
+    Set CODESHARE_OWNER_SUBSCRIPTION_MODELS to restrict exact subscription model IDs.
+    Set CODESHARE_MODELS to comma-separated openai:<id>, anthropic:<id>, xai:<id>, or cursor:<id> entries.
+    Supply CODESHARE_OPENAI_API_KEY, CODESHARE_ANTHROPIC_API_KEY, CODESHARE_XAI_API_KEY, or CODESHARE_CURSOR_API_KEY as needed.
+    CODESHARE_SUBSCRIPTION_MODELS also selects owner OAuth models.
+    Set CODESHARE_PARTICIPANT_MODELS for optional participant-funded structured desktop turns.
+    Optionally set CODESHARE_INVITE_MODELS to a comma-separated subset for new invites.
+    Pass --check-models to verify hosted catalogue access without starting the service.
+    Both listeners bind 127.0.0.1. Guest port defaults to 8787 and owner port to 8788.
+    See docs/CODESHARE.md for the HTTPS tunnel, environment variables, and usage limits.
+`;
+
 // Mirrored by DESKTOP_CLI_BOOTSTRAP_VERSION: reject a mismatched packaged entry
 // before dispatch, and retain the verified identity throughout this process.
 export const DESKTOP_CLI_INTEGRATION_VERSION = 1;
@@ -607,6 +620,10 @@ function runVersion(capturedBuild?: HostBuildIdentity): void {
 }
 
 function printHelp(args: readonly string[]): void {
+  if (args[0] === "codeshare") {
+    process.stdout.write(CODESHARE_HELP);
+    return;
+  }
   if (args[0] === "setup") {
     process.stdout.write(SETUP_HELP + CLI_PROFILE_HELP);
     return;
@@ -626,6 +643,7 @@ function printHelp(args: readonly string[]): void {
       SETUP_HELP +
       SERVICE_HELP +
       CLI_COMPLETION_HELP +
+      CODESHARE_HELP +
       "\n" +
       "Usage: poracode [tui [--continue|-c] [--session ID] [--prompt TEXT] [--auto] [--pair LINK [--name NAME] | --server NAME] [DIRECTORY] | " +
       "-p|--print PROMPT [--provider K] [--model M] [--effort E] [--format text|json] [--directory PATH] | " +
@@ -732,6 +750,12 @@ function dispatchCli(capturedBuild?: HostBuildIdentity): void {
     } catch (error) {
       reportAdminError(error, false);
     }
+    return;
+  }
+  if (command === "codeshare") {
+    void import("./cliCodeShare")
+      .then(({ runCodeShare }) => runCodeShare(args.slice(1)))
+      .catch((error: unknown) => reportAdminError(error, false));
     return;
   }
   if (command === "version") {

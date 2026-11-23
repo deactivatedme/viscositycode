@@ -1,3 +1,4 @@
+import type { ShareFileBridge } from "@/shared/codeShareFileTools";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { NativeMcpConfigFile } from "../../mcp/nativeSetup/configFile";
 import type { SessionImportSource } from "./sessionImport";
@@ -746,6 +747,8 @@ export interface AgentMetadata {
   update?: AgentUpdateInfo;
   /** ACP Registry artifact adopted as a runtime of this built-in provider. */
   firstClassAcpRegistryId?: string;
+  /** Install detection can re-read the provider's model catalog without sending a prompt. */
+  refreshModelCatalog?: true;
   spawnEnv?: {
     native?: Record<string, string>;
     wsl?: Record<string, string>;
@@ -760,7 +763,35 @@ export interface AgentMetadata {
   baseSpawnEnv?: Record<string, string>;
 }
 
+export interface CodeShareLogin {
+  url(): string | undefined;
+  done: Promise<void>;
+  cancel(): Promise<void>;
+}
+
+export interface CodeShareStructuredChatInput {
+  remoteTools?: ShareFileBridge;
+  location: ProjectLocation;
+  model: string;
+  prompt: string;
+  signal?: AbortSignal;
+}
+
 export interface AgentLauncher {
+  startCodeShareLogin?(): Promise<CodeShareLogin>;
+  /** Owner-funded SDK/ACP chat. No terminal/print fallback; tools and account-key fallback must be disabled. */
+  runCodeShareStructuredChat?(input: CodeShareStructuredChatInput): Promise<string>;
+  readonly supportsCodeShareRemoteFiles?: true;
+  readonly codeShareKeyChat?: {
+    importDefaultKey?(): Promise<string>;
+    catalog(
+      key: string,
+      location: ProjectLocation,
+      signal?: AbortSignal,
+    ): Promise<{ id: string; label: string }[]>;
+    run(input: CodeShareStructuredChatInput & { key: string }): Promise<string>;
+    remoteEditing?: true;
+  };
   /**
    * May be synchronous or async; the runtime awaits. An adapter that stages
    * launch helpers (e.g. WSL MCP extensions) returns a promise instead of

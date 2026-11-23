@@ -129,6 +129,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_0b1635c919b596ae = RemoteSchema(type: "string", literals: [.string("create_file")], unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_0b2ba27512e423eb = RemoteSchema(type: "object", required: Set(["control", "kind", "version"]), properties: ["control": RemoteSchemas.schema_9040d7586304950d, "kind": RemoteSchemas.schema_6eed5e1fa2ae0e54, "version": RemoteSchemas.schema_7f9f5a0d72de0d9a], additionalAllowed: false, unknownPolicy: .reject)
 }
 

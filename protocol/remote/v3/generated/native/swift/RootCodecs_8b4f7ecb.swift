@@ -37,6 +37,14 @@ public extension RemoteRootCodecs {
 }
 
 public extension RemoteRootCodecs {
+  static let procedureU2ECloseCodeShareWorkspaceU2ERequest: RemoteRootCodec<ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40> = .init(id: "procedure.closeCodeShareWorkspace.request", schema: RemoteSchemas.schema_9c6e793c40a0faa4)
+}
+
+public extension RemoteRootCodecs {
+  static let procedureU2ECloseCodeShareWorkspaceU2EResult: RemoteRootCodec<ProcedurecloseCodeShareWorkspaceResult_493210a9cb> = .init(id: "procedure.closeCodeShareWorkspace.result", schema: RemoteSchemas.schema_493210a9cb3a35fd)
+}
+
+public extension RemoteRootCodecs {
   static let procedureU2EConnectThreadVoiceU2ERequest: RemoteRootCodec<ProcedureconnectThreadVoiceRequest_898057a01b> = .init(id: "procedure.connectThreadVoice.request", schema: RemoteSchemas.schema_898057a01bbe54a3)
 }
 
@@ -110,6 +118,14 @@ public extension RemoteRootCodecs {
 
 public extension RemoteRootCodecs {
   static let procedureU2EEnsureThreadRunningU2EResult: RemoteRootCodec<ProcedurecancelExtractContextRequest_09b78d9c1d> = .init(id: "procedure.ensureThreadRunning.result", schema: RemoteSchemas.schema_09b78d9c1d4c3a6b)
+}
+
+public extension RemoteRootCodecs {
+  static let procedureU2EExecuteCodeShareFileToolU2ERequest: RemoteRootCodec<ProcedureexecuteCodeShareFileToolRequest_16a1dae055> = .init(id: "procedure.executeCodeShareFileTool.request", schema: RemoteSchemas.schema_16a1dae055c53228)
+}
+
+public extension RemoteRootCodecs {
+  static let procedureU2EExecuteCodeShareFileToolU2EResult: RemoteRootCodec<ProcedureexecuteCodeShareFileToolResult_6df5a3ad4f> = .init(id: "procedure.executeCodeShareFileTool.result", schema: RemoteSchemas.schema_6df5a3ad4f75ccaf)
 }
 
 public extension RemoteRootCodecs {
@@ -430,20 +446,4 @@ public extension RemoteRootCodecs {
 
 public extension RemoteRootCodecs {
   static let procedureU2EGhCheckAvailableU2ERequest: RemoteRootCodec<ProceduregetGitStatusRequest_c4d99dd3e3> = .init(id: "procedure.ghCheckAvailable.request", schema: RemoteSchemas.schema_c4d99dd3e3a1ba03)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhCheckAvailableU2EResult: RemoteRootCodec<ProcedureghCheckAvailableResult_e3b2f05936> = .init(id: "procedure.ghCheckAvailable.result", schema: RemoteSchemas.schema_e3b2f0593652d957)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhClosePrU2ERequest: RemoteRootCodec<ProcedureghClosePrRequest_868bf1042a> = .init(id: "procedure.ghClosePr.request", schema: RemoteSchemas.schema_868bf1042a1bbba1)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhCreatePrU2ERequest: RemoteRootCodec<ProcedureghCreatePrRequest_39c209cff9> = .init(id: "procedure.ghCreatePr.request", schema: RemoteSchemas.schema_39c209cff99afe61)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhCreatePrU2EResult: RemoteRootCodec<ProcedureforgeCreatePrResult_ea7fc856bb> = .init(id: "procedure.ghCreatePr.result", schema: RemoteSchemas.schema_ea7fc856bb9aa12e)
 }

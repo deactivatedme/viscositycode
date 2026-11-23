@@ -176,7 +176,7 @@ data class RoutesettingsU2DReadResponseU2DSettingsU2DCrewsU2DItemU2DRolesU2DItem
     @SerialName("fallbacks") val fallbacks: RemoteField<List<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9>> = RemoteField.Missing,
     @SerialName("id") val id: String,
     @SerialName("label") val label: String,
-    @SerialName("noEdits") val noEdits: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("noEdits") val noEdits: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("parallel") val parallel: RemoteField<Long> = RemoteField.Missing,
     @SerialName("selection") val selection: ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9,
 ) {
@@ -186,7 +186,7 @@ data class RoutesettingsU2DReadResponseU2DSettingsU2DCrewsU2DItemU2DRolesU2DItem
             RemoteFieldDescriptor("fallbacks", "List<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9>", false, false, null, null, null, null, null, 3, null, null, listOf()),
             RemoteFieldDescriptor("id", "String", true, false, null, null, null, null, null, null, "^[a-z0-9][a-z0-9-]{0,31}$", null, listOf()),
             RemoteFieldDescriptor("label", "String", true, false, null, null, 1, 24, null, null, null, null, listOf()),
-            RemoteFieldDescriptor("noEdits", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("noEdits", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("parallel", "Long", false, false, 1.0, 4.0, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("selection", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9", true, false, null, null, null, null, null, null, null, null, listOf()),
         ), listOf())
@@ -232,7 +232,7 @@ typealias RoutesettingsU2DReadResponseU2DSettingsU2DHiddenModels_86d5d72e84 = Ma
 
 @Serializable
 data class RoutesettingsU2DReadResponseU2DSettingsU2DPlaybooksU2DItem_5948760853(
-    @SerialName("browserMcp") val browserMcp: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("browserMcp") val browserMcp: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("description") val description: RemoteField<String> = RemoteField.Missing,
     @SerialName("exitPhrases") val exitPhrases: RemoteField<List<String>> = RemoteField.Missing,
     @SerialName("icon") val icon: RemoteField<String> = RemoteField.Missing,
@@ -240,14 +240,14 @@ data class RoutesettingsU2DReadResponseU2DSettingsU2DPlaybooksU2DItem_5948760853
     @SerialName("instructions") val instructions: String,
     @SerialName("label") val label: String,
     @SerialName("mcp") val mcp: RemoteField<List<String>> = RemoteField.Missing,
-    @SerialName("readOnly") val readOnly: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("readOnly") val readOnly: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("switchPhrases") val switchPhrases: RemoteField<List<String>> = RemoteField.Missing,
     @SerialName("themeId") val themeId: RemoteField<String> = RemoteField.Missing,
     @SerialName("updatedAt") val updatedAt: RemoteField<Long> = RemoteField.Missing,
 ) {
     companion object {
         val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.STRIP, listOf(
-            RemoteFieldDescriptor("browserMcp", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("browserMcp", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("description", "String", false, false, null, null, null, 120, null, null, null, null, listOf()),
             RemoteFieldDescriptor("exitPhrases", "List<String>", false, false, null, null, null, null, 1, 10, null, null, listOf()),
             RemoteFieldDescriptor("icon", "String", false, false, null, null, 1, 48, null, null, null, null, listOf()),
@@ -255,7 +255,7 @@ data class RoutesettingsU2DReadResponseU2DSettingsU2DPlaybooksU2DItem_5948760853
             RemoteFieldDescriptor("instructions", "String", true, false, null, null, 1, 6000, null, null, null, null, listOf()),
             RemoteFieldDescriptor("label", "String", true, false, null, null, 1, 32, null, null, null, null, listOf()),
             RemoteFieldDescriptor("mcp", "List<String>", false, false, null, null, null, null, null, 12, null, null, listOf()),
-            RemoteFieldDescriptor("readOnly", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("readOnly", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("switchPhrases", "List<String>", false, false, null, null, null, null, 1, 10, null, null, listOf()),
             RemoteFieldDescriptor("themeId", "String", false, false, null, null, null, null, null, null, "^[A-Za-z0-9][A-Za-z0-9:._-]{0,63}$", null, listOf()),
             RemoteFieldDescriptor("updatedAt", "Long", false, false, 0.0, 9007199254740991.0, null, null, null, null, null, null, listOf()),

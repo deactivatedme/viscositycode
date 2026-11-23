@@ -1615,6 +1615,21 @@
       "scope": "session:read"
     },
     {
+      "name": "openCodeShareWorkspace",
+      "owner": "projectLocation",
+      "scope": "session:operate"
+    },
+    {
+      "name": "executeCodeShareFileTool",
+      "owner": "projectLocation",
+      "scope": "session:operate"
+    },
+    {
+      "name": "closeCodeShareWorkspace",
+      "owner": "projectLocation",
+      "scope": "session:operate"
+    },
+    {
       "name": "readProjectFile",
       "owner": "projectLocation",
       "scope": "session:read"

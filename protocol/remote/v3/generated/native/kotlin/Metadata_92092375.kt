@@ -13,8 +13,8 @@ object RemoteContractMetadata {
     const val protocolVersion = 14
     const val bindingFormatVersion = 2
     const val generatorVersion = 7
-    const val sourceHash = "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199"
-    const val manifestHash = "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3"
+    const val sourceHash = "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910"
+    const val manifestHash = "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c"
     val validationBoundary = RemoteValidationBoundary.ROOT_CODEC_ONLY
     val generatedModelSerializationSemantics = RemoteGeneratedSerializerSemantics.NON_VALIDATING_REPRESENTATION_ONLY
     val portableTransformIds = listOf("agent-settings.strip-sensitive", "push.routing.client-connection-id.lowercase", "string.trim")
@@ -148,6 +148,7 @@ object RemoteContractMetadata {
         RemoteProcedureDescriptor("cancelExtractContext", "session:operate", "thread", "omitted", "ProcedurecancelExtractContextRequest_09b78d9c1d", "RemoteUnit"),
         RemoteProcedureDescriptor("clearMcpServerOauth", "session:operate", "optionalProjectLocation", "omitted", "ProcedureclearMcpServerOauthRequest_db8efd22aa", "RemoteUnit"),
         RemoteProcedureDescriptor("cloneRepo", "projects:manage", "parentLocation", "json", "ProcedurecloneRepoRequest_482895ec91", "ProcedurecloneRepoResult_6a0c18e639"),
+        RemoteProcedureDescriptor("closeCodeShareWorkspace", "session:operate", "projectLocation", "json", "ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40", "ProcedurecloseCodeShareWorkspaceResult_493210a9cb"),
         RemoteProcedureDescriptor("connectThreadVoice", "session:operate", "thread", "json", "ProcedureconnectThreadVoiceRequest_898057a01b", "ProcedureconnectThreadVoiceResult_871fe12f7d"),
         RemoteProcedureDescriptor("controlMcpApp", "session:operate", "thread", "json", "ProcedurecontrolMcpAppRequest_339dd50c84", "ProcedurecontrolMcpAppResult_054db97313"),
         RemoteProcedureDescriptor("createFileCheckpoint", "session:operate", "thread", "json", "ProcedurecreateFileCheckpointRequest_412fb1bbf4", "ProcedurecreateFileCheckpointResult_012b6b31ad"),
@@ -160,6 +161,7 @@ object RemoteContractMetadata {
         RemoteProcedureDescriptor("discoverExternalMcpServers", "session:read", "optionalProjectLocation", "json", "ProcedurediscoverExternalMcpServersRequest_26b6bf09cc", "ProcedurediscoverExternalMcpServersResult_f71a677b4d"),
         RemoteProcedureDescriptor("editQueuedThreadFollowUp", "session:operate", "thread", "omitted", "ProcedureeditQueuedThreadFollowUpRequest_50d5adf9e9", "RemoteUnit"),
         RemoteProcedureDescriptor("ensureThreadRunning", "session:operate", "projectLocation", "json", "ProcedureensureThreadRunningRequest_c33de5654f", "ProcedurecancelExtractContextRequest_09b78d9c1d"),
+        RemoteProcedureDescriptor("executeCodeShareFileTool", "session:operate", "projectLocation", "json", "ProcedureexecuteCodeShareFileToolRequest_16a1dae055", "ProcedureexecuteCodeShareFileToolResult_6df5a3ad4f"),
         RemoteProcedureDescriptor("extractContext", "session:operate", "thread", "json", "ProcedureextractContextRequest_963874114b", "ProcedureextractContextResult_2a2641f29a"),
         RemoteProcedureDescriptor("finalizeFileCheckpoint", "session:operate", "thread", "json", "ProcedurefinalizeFileCheckpointRequest_9cb900aa2d", "ProcedurefinalizeFileCheckpointResult_505ae61467"),
         RemoteProcedureDescriptor("forgeClosePr", "session:operate", "projectLocation", "omitted", "ProcedureforgeClosePrRequest_c5c17f76a2", "RemoteUnit"),
@@ -281,6 +283,7 @@ object RemoteContractMetadata {
         RemoteProcedureDescriptor("logoutAcpAgent", "session:operate", "desktop", "omitted", "ProcedurelogoutAcpAgentRequest_afbd186700", "RemoteUnit"),
         RemoteProcedureDescriptor("lspStart", "session:operate", "projectLocation", "omitted", "ProcedurelspStartRequest_0fbb6754fb", "RemoteUnit"),
         RemoteProcedureDescriptor("moveProjectEntry", "session:operate", "projectLocation", "omitted", "ProceduremoveProjectEntryRequest_47c3f1ae81", "RemoteUnit"),
+        RemoteProcedureDescriptor("openCodeShareWorkspace", "session:operate", "projectLocation", "json", "ProcedureopenCodeShareWorkspaceRequest_490ffb3ac5", "ProcedureopenCodeShareWorkspaceResult_f7a85cf80d"),
         RemoteProcedureDescriptor("pauseThreadFollowUps", "session:operate", "thread", "omitted", "ProcedurepauseThreadFollowUpsRequest_d42717fff2", "RemoteUnit"),
         RemoteProcedureDescriptor("probeMcpServer", "session:operate", "optionalProjectLocation", "json", "ProcedurebeginMcpServerOauthRequest_338293a42e", "ProcedureprobeMcpServerResult_bea1bdef18"),
         RemoteProcedureDescriptor("queueThreadFollowUp", "session:operate", "thread", "omitted", "ProcedurequeueThreadFollowUpRequest_309ba2d2be", "RemoteUnit"),

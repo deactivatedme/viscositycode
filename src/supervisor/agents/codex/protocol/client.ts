@@ -1,4 +1,8 @@
 import type {
+  LoginAccountParams,
+  LoginAccountResponse,
+  CancelLoginAccountParams,
+  CancelLoginAccountResponse,
   ThreadRealtimeStartParams,
   ThreadRealtimeStartResponse,
   ThreadRealtimeStopParams,
@@ -92,6 +96,9 @@ export type {
 };
 
 export interface CodexClientRequestMap {
+  "account/login/start": { params: LoginAccountParams; result: LoginAccountResponse };
+  "account/login/cancel": { params: CancelLoginAccountParams; result: CancelLoginAccountResponse };
+
   "thread/realtime/start": {
     params: ThreadRealtimeStartParams;
     result: ThreadRealtimeStartResponse;

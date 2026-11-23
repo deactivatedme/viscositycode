@@ -1,3 +1,8 @@
+import { CODE_SHARE_REMOTE_TURN_TIMEOUT_MS } from "@/shared/codeShareFileTools";
+import {
+  CODE_SHARE_RUNTIME_REQUEST,
+  type CodeShareRuntimePayload,
+} from "@/shared/codeShareRuntime";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { fork, type ChildProcess } from "node:child_process";
 import type { Readable } from "node:stream";
@@ -841,6 +846,19 @@ export class SupervisorClient {
 
   private cancelQueuedThreadMutations(threadId: string): void {
     this.threadMutationEpochs.set(threadId, (this.threadMutationEpochs.get(threadId) ?? 0) + 1);
+  }
+
+  /** Private CodeShare composition bridge; never forwarded from a remote client. */
+  async callCodeShare<Result>(payload: CodeShareRuntimePayload): Promise<Result> {
+    if (this.disposed) throw new SupervisorUnavailableError();
+    await this.start();
+    const child = this.child;
+    if (!child?.connected) throw new SupervisorUnavailableError();
+    const timeout =
+      (payload.action === "run" || payload.action === "key-run") && payload.remoteTools
+        ? CODE_SHARE_REMOTE_TURN_TIMEOUT_MS + 90_000
+        : 210_000;
+    return this.sendRequest<Result>(child, CODE_SHARE_RUNTIME_REQUEST, payload, timeout);
   }
 
   async call<Name extends SupervisorProcedureName>(

@@ -66,6 +66,12 @@ const workflowRun = {
  * the shared omitted codec (`undefined` on the wire).
  */
 export const REMOTE_PROCEDURE_RESULT_FIXTURES = {
+  openCodeShareWorkspace: {
+    grantId: "7afbc1fc-d098-4a51-9488-353243d2f47c",
+    incarnation: "4fd05fbc-c91f-4fa8-a042-1e31de081f44",
+  },
+  closeCodeShareWorkspace: { closed: true },
+  executeCodeShareFileTool: { ok: false, error: "The approved file turn ended." },
   hexVoice: { kind: "catalog", models: [] },
   forgeGetPrReviewGuide: { status: "empty", guide: null, stale: false },
   forgeWritePrReviewGuide: { status: "generating", guide: null, stale: false },

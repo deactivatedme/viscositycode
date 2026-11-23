@@ -32,6 +32,12 @@ val RemoteRootCodecs.procedureU2ECloneRepoU2ERequest: RemoteRootCodec<Procedurec
 val RemoteRootCodecs.procedureU2ECloneRepoU2EResult: RemoteRootCodec<ProcedurecloneRepoResult_6a0c18e639>
     get() = RemoteRootCodec("procedure.cloneRepo.result", serializer<ProcedurecloneRepoResult_6a0c18e639>(), schema_6a0c18e639dbb000)
 
+val RemoteRootCodecs.procedureU2ECloseCodeShareWorkspaceU2ERequest: RemoteRootCodec<ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40>
+    get() = RemoteRootCodec("procedure.closeCodeShareWorkspace.request", serializer<ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40>(), schema_9c6e793c40a0faa4)
+
+val RemoteRootCodecs.procedureU2ECloseCodeShareWorkspaceU2EResult: RemoteRootCodec<ProcedurecloseCodeShareWorkspaceResult_493210a9cb>
+    get() = RemoteRootCodec("procedure.closeCodeShareWorkspace.result", serializer<ProcedurecloseCodeShareWorkspaceResult_493210a9cb>(), schema_493210a9cb3a35fd)
+
 val RemoteRootCodecs.procedureU2EConnectThreadVoiceU2ERequest: RemoteRootCodec<ProcedureconnectThreadVoiceRequest_898057a01b>
     get() = RemoteRootCodec("procedure.connectThreadVoice.request", serializer<ProcedureconnectThreadVoiceRequest_898057a01b>(), schema_898057a01bbe54a3)
 
@@ -88,6 +94,12 @@ val RemoteRootCodecs.procedureU2EEnsureThreadRunningU2ERequest: RemoteRootCodec<
 
 val RemoteRootCodecs.procedureU2EEnsureThreadRunningU2EResult: RemoteRootCodec<ProcedurecancelExtractContextRequest_09b78d9c1d>
     get() = RemoteRootCodec("procedure.ensureThreadRunning.result", serializer<ProcedurecancelExtractContextRequest_09b78d9c1d>(), schema_09b78d9c1d4c3a6b)
+
+val RemoteRootCodecs.procedureU2EExecuteCodeShareFileToolU2ERequest: RemoteRootCodec<ProcedureexecuteCodeShareFileToolRequest_16a1dae055>
+    get() = RemoteRootCodec("procedure.executeCodeShareFileTool.request", serializer<ProcedureexecuteCodeShareFileToolRequest_16a1dae055>(), schema_16a1dae055c53228)
+
+val RemoteRootCodecs.procedureU2EExecuteCodeShareFileToolU2EResult: RemoteRootCodec<ProcedureexecuteCodeShareFileToolResult_6df5a3ad4f>
+    get() = RemoteRootCodec("procedure.executeCodeShareFileTool.result", serializer<ProcedureexecuteCodeShareFileToolResult_6df5a3ad4f>(), schema_6df5a3ad4f75ccaf)
 
 val RemoteRootCodecs.procedureU2EExtractContextU2ERequest: RemoteRootCodec<ProcedureextractContextRequest_963874114b>
     get() = RemoteRootCodec("procedure.extractContext.request", serializer<ProcedureextractContextRequest_963874114b>(), schema_963874114b1e0922)
@@ -436,15 +448,3 @@ val RemoteRootCodecs.procedureU2EGhMarkPrReadyU2ERequest: RemoteRootCodec<Proced
 
 val RemoteRootCodecs.procedureU2EGhMergePrU2ERequest: RemoteRootCodec<ProcedureghMergePrRequest_39d6579ca7>
     get() = RemoteRootCodec("procedure.ghMergePr.request", serializer<ProcedureghMergePrRequest_39d6579ca7>(), schema_39d6579ca7450396)
-
-val RemoteRootCodecs.procedureU2EGhPollPullRequestsU2ERequest: RemoteRootCodec<ProcedureghPollPullRequestsRequest_559c498a02>
-    get() = RemoteRootCodec("procedure.ghPollPullRequests.request", serializer<ProcedureghPollPullRequestsRequest_559c498a02>(), schema_559c498a020be6ad)
-
-val RemoteRootCodecs.procedureU2EGhPollPullRequestsU2EResult: RemoteRootCodec<ProcedureghPollPullRequestsResult_729d8ec224>
-    get() = RemoteRootCodec("procedure.ghPollPullRequests.result", serializer<ProcedureghPollPullRequestsResult_729d8ec224>(), schema_729d8ec2243ca0f3)
-
-val RemoteRootCodecs.procedureU2EGhPostPrCommentU2ERequest: RemoteRootCodec<ProcedureghPostPrCommentRequest_189279e83c>
-    get() = RemoteRootCodec("procedure.ghPostPrComment.request", serializer<ProcedureghPostPrCommentRequest_189279e83c>(), schema_189279e83c3a2ce4)
-
-val RemoteRootCodecs.procedureU2EGhPostPrCommentU2EResult: RemoteRootCodec<ProcedureforgeGetPrDetailsResultU2DDetailsU2DCommentsU2DItem_cb95bf43ec>
-    get() = RemoteRootCodec("procedure.ghPostPrComment.result", serializer<ProcedureforgeGetPrDetailsResultU2DDetailsU2DCommentsU2DItem_cb95bf43ec>(), schema_cb95bf43ec62db01)

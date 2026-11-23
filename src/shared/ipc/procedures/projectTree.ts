@@ -1,4 +1,13 @@
 import {
+  shareFileScopeSchema,
+  shareFileGrantSchema,
+  shareFileExecuteSchema,
+  shareFileGrantResultSchema,
+  shareFileResultSchema,
+  shareFileClosedSchema,
+} from "../../codeShareFileTools";
+import type { z } from "zod";
+import {
   browseHostDirectoryPayloadSchema,
   createProjectEntryPayloadSchema,
   deleteProjectEntryPayloadSchema,
@@ -55,6 +64,21 @@ import type {
 import { definePayloadProcedure, omittedResultSchema } from "../core";
 
 export const projectTreeProcedures = {
+  openCodeShareWorkspace: definePayloadProcedure<
+    z.input<typeof shareFileScopeSchema>,
+    z.output<typeof shareFileGrantResultSchema>,
+    "supervisor"
+  >("openCodeShareWorkspace", "supervisor", shareFileScopeSchema, shareFileGrantResultSchema),
+  executeCodeShareFileTool: definePayloadProcedure<
+    z.input<typeof shareFileExecuteSchema>,
+    z.output<typeof shareFileResultSchema>,
+    "supervisor"
+  >("executeCodeShareFileTool", "supervisor", shareFileExecuteSchema, shareFileResultSchema),
+  closeCodeShareWorkspace: definePayloadProcedure<
+    z.input<typeof shareFileGrantSchema>,
+    z.output<typeof shareFileClosedSchema>,
+    "supervisor"
+  >("closeCodeShareWorkspace", "supervisor", shareFileGrantSchema, shareFileClosedSchema),
   searchProjectFiles: definePayloadProcedure<
     SearchProjectFilesPayload,
     SearchProjectFilesResult,

@@ -1,5 +1,5 @@
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
-import { Suspense, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { AlertDialog } from "@heroui/react";
 import { Trans } from "@lingui/react/macro";
 import { PixelLoader } from "@/renderer/components/common/PixelLoader";
@@ -43,6 +43,24 @@ import { useLoginTerminalStore } from "@/renderer/state/loginTerminalStore";
 import { findExperimentByWorktree } from "@/renderer/state/experimentStore";
 import { BrowserRemoteConnectionGate } from "./BrowserRemoteConnectionGate";
 import { useCompactLayout } from "@/renderer/adaptiveLayout";
+
+import { useCodeSharePanel } from "@/renderer/viscosity/codeshare/codeShareCommand";
+
+const CodeShareDialog = lazy(() =>
+  import("@/renderer/viscosity/codeshare/CodeShareDialog").then((module) => ({
+    default: module.CodeShareDialog,
+  })),
+);
+
+function CodeShareOverlay() {
+  const open = useCodeSharePanel((state) => state.open);
+  const enabled = useEverEnabled(open);
+  return enabled ? (
+    <Suspense fallback={null}>
+      <CodeShareDialog />
+    </Suspense>
+  ) : null;
+}
 
 function useEverEnabled(active: boolean): boolean {
   const [enabled, setEnabled] = useState(active);
@@ -115,6 +133,7 @@ export function AppOverlays() {
     <>
       {/* ViscosityCode: the welcome and agent-discovery overlays are gone; detection runs in the background. */}
       <WhatsNewOverlay />
+      <CodeShareOverlay />
       {forkSourceThreadId ? (
         <Suspense fallback={null}>
           <DeferredThreadForkDialog

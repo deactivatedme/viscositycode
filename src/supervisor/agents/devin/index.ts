@@ -1,6 +1,11 @@
+import {
+  devinCodeShareKeyCatalog,
+  runDevinCodeShareKeyChat,
+  importDevinCodeShareKey,
+} from "./codeShareChat";
 import { inlinePromptSegmentText } from "@/shared/promptContent";
 import { detectAgentInstall, type AgentAdapter, type AgentEnvContext } from "../base";
-import { resolveAgentBinaryPath } from "../binaryResolver";
+import { resolveDevinBinaryPath, resolveDevinDesktopBinary } from "./binary";
 import { shutdownSharedAcpProcesses } from "../acp";
 import {
   createDevinAdapterContexts,
@@ -76,6 +81,17 @@ export function createDevinAdapter(options: DevinAdapterOptions = {}): AgentAdap
     kind,
     label,
     binary: "devin",
+    ...(!isProfile
+      ? {
+          codeShareKeyChat: {
+            importDefaultKey: importDevinCodeShareKey,
+            catalog: devinCodeShareKeyCatalog,
+            run: runDevinCodeShareKeyChat,
+            remoteEditing: true as const,
+          },
+        }
+      : {}),
+    refreshModelCatalog: true,
     // Cloud sessions cannot connect to the host's loopback OAuth relay.
     supportsDeferredMcpAuthorization: profile?.runtimeTarget !== "cloud",
     ...(detectionSpec.update && !isProfile ? { update: detectionSpec.update } : {}),
@@ -118,7 +134,12 @@ export function createDevinAdapter(options: DevinAdapterOptions = {}): AgentAdap
     },
     spawnEnv: { wsl: { BROWSER: "/bin/true" } },
     async detectInstall(ctx) {
-      const status = await detectAgentInstall(ctx, detectionSpec);
+      let status = await detectAgentInstall(ctx, detectionSpec);
+      if (!status.installed && (!ctx || ctx.envKind === "posix")) {
+        const desktopBinary = resolveDevinDesktopBinary();
+        if (desktopBinary)
+          status = await detectAgentInstall(ctx, { ...detectionSpec, binary: desktopBinary });
+      }
       capabilities = withDevinPresentationCapabilities(status.capabilities);
       return { ...status, capabilities };
     },
@@ -185,13 +206,13 @@ export function createDevinAdapter(options: DevinAdapterOptions = {}): AgentAdap
       return buildDevinCommand(
         location,
         [...(context?.prefixArgs ?? []), "acp"],
-        resolveAgentBinaryPath(location, "devin"),
+        resolveDevinBinaryPath(location),
         context?.env,
       );
     },
     async buildAcpLogoutCommand(ctx?: AgentEnvContext) {
       const { location, context } = await prepareDevinAuthFlow(contexts, ctx);
-      return buildDevinLogoutCommand(location, context, resolveAgentBinaryPath(location, "devin"));
+      return buildDevinLogoutCommand(location, context, resolveDevinBinaryPath(location));
     },
     preferAcpLogoutRpc: false,
     buildDirectInput(prompt) {

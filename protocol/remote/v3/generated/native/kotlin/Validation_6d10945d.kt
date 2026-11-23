@@ -85,6 +85,10 @@ internal val schema_9c44204b656290c2: RemoteSchema by lazy {
     RemoteSchema(type = "object", required = setOf("default", "description", "envVar", "key", "label", "options", "type"), properties = mapOf("default" to schema_bf0b727f7b1c6d07, "description" to schema_bf0b727f7b1c6d07, "envVar" to schema_36fea325bf1aca70, "key" to schema_36fea325bf1aca70, "label" to schema_36fea325bf1aca70, "options" to schema_d0b10c04efa78c87, "platforms" to schema_0f732b9fceb2c6ac, "type" to schema_36b9fe91ec45bcd5), additionalAllowed = true, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_9c6e793c40a0faa4: RemoteSchema by lazy {
+    RemoteSchema(type = "object", required = setOf("grantId", "incarnation", "projectLocation"), properties = mapOf("grantId" to schema_d855999aed5e6438, "incarnation" to schema_d855999aed5e6438, "projectLocation" to schema_080f9cc154af9e27), additionalAllowed = false, unknownPolicy = RemoteUnknownFieldPolicy.REJECT)
+}
+
 internal val schema_9c8337f42f233534: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("shared"), JsonPrimitive("poracode")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

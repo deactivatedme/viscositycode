@@ -136,14 +136,14 @@ data class ProcedurelistImportableSessionsResultU2DSessionsU2DItem_98473b8b46(
 data class ProcedurelistImportableSessionsResult_078fcc8515(
     @SerialName("facets") val facets: ProcedurelistImportableSessionsResultU2DFacets_eaee1dd372,
     @SerialName("sessions") val sessions: List<ProcedurelistImportableSessionsResultU2DSessionsU2DItem_98473b8b46>,
-    @SerialName("superseded") val superseded: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("superseded") val superseded: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("truncated") val truncated: Boolean,
 ) {
     companion object {
         val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.STRIP, listOf(
             RemoteFieldDescriptor("facets", "ProcedurelistImportableSessionsResultU2DFacets_eaee1dd372", true, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("sessions", "List<ProcedurelistImportableSessionsResultU2DSessionsU2DItem_98473b8b46>", true, false, null, null, null, null, null, null, null, null, listOf()),
-            RemoteFieldDescriptor("superseded", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("superseded", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("truncated", "Boolean", true, false, null, null, null, null, null, null, null, null, listOf()),
         ), listOf())
     }
@@ -352,6 +352,30 @@ data class ProceduremoveProjectEntryRequest_47c3f1ae81(
 }
 
 @Serializable
+data class ProcedureopenCodeShareWorkspaceRequest_490ffb3ac5(
+    @SerialName("projectLocation") val projectLocation: ProcedurebeginMcpServerOauthRequestU2DProjectLocation_080f9cc154,
+) {
+    companion object {
+        val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.REJECT, listOf(
+            RemoteFieldDescriptor("projectLocation", "ProcedurebeginMcpServerOauthRequestU2DProjectLocation_080f9cc154", true, false, null, null, null, null, null, null, null, null, listOf()),
+        ), listOf())
+    }
+}
+
+@Serializable
+data class ProcedureopenCodeShareWorkspaceResult_f7a85cf80d(
+    @SerialName("grantId") val grantId: String,
+    @SerialName("incarnation") val incarnation: String,
+) {
+    companion object {
+        val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.STRIP, listOf(
+            RemoteFieldDescriptor("grantId", "String", true, false, null, null, null, null, null, null, "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$", "uuid", listOf()),
+            RemoteFieldDescriptor("incarnation", "String", true, false, null, null, null, null, null, null, "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$", "uuid", listOf()),
+        ), listOf())
+    }
+}
+
+@Serializable
 data class ProcedurepauseThreadFollowUpsRequest_d42717fff2(
     @SerialName("id") val id: String,
     @SerialName("threadId") val threadId: String,
@@ -420,17 +444,4 @@ data class ProcedureprobeMcpServerResultU2DOptionU2D1_d92866345c(
             RemoteFieldDescriptor("tools", "List<String>", false, false, null, null, null, null, null, null, null, null, listOf()),
         ), listOf())
     }
-}
-
-@Serializable
-enum class ProcedureprobeMcpServerResultU2DOptionU2D2U2DErrorU2DAuthScheme_2d52ff1140 {
-    @SerialName("oauth") OAUTH,
-    @SerialName("bearer") BEARER,
-    @SerialName("other") OTHER,
-    @SerialName("unknown") UNKNOWN,
-}
-
-@Serializable
-enum class ProcedureprobeMcpServerResultU2DOptionU2D2U2DErrorU2DCode_e527c3ee29 {
-    @SerialName("auth-required") AUTHU2DREQUIRED,
 }

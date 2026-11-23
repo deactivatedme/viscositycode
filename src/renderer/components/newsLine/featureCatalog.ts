@@ -82,6 +82,18 @@ export interface DiscoverableFeature {
 }
 
 export const FEATURE_CATALOG: readonly DiscoverableFeature[] = [
+  {
+    id: "codeshare",
+    covers: [],
+    icon: Users,
+    pitch: msg({
+      id: "codeShare.discoveryPitch",
+      message: "Code together using a friend's shared model access",
+    }),
+    action: msg({ id: "codeShare.join", message: "Join CodeShare" }),
+    open: () => runAppCommand("viscosity.codeShare.join"),
+    isUsed: (c) => c.seen("command:viscosity.codeShare.join"),
+  },
   // ViscosityCode: Playbooks (src/renderer/viscosity/playbooks).
   {
     id: "playbooks",

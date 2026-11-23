@@ -153,6 +153,34 @@ data class ProcedurecloneRepoResult_6a0c18e639(
 }
 
 @Serializable
+data class ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40(
+    @SerialName("grantId") val grantId: String,
+    @SerialName("incarnation") val incarnation: String,
+    @SerialName("projectLocation") val projectLocation: ProcedurebeginMcpServerOauthRequestU2DProjectLocation_080f9cc154,
+) {
+    companion object {
+        val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.REJECT, listOf(
+            RemoteFieldDescriptor("grantId", "String", true, false, null, null, null, null, null, null, "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$", "uuid", listOf()),
+            RemoteFieldDescriptor("incarnation", "String", true, false, null, null, null, null, null, null, "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$", "uuid", listOf()),
+            RemoteFieldDescriptor("projectLocation", "ProcedurebeginMcpServerOauthRequestU2DProjectLocation_080f9cc154", true, false, null, null, null, null, null, null, null, null, listOf()),
+        ), listOf())
+    }
+}
+
+typealias ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1 = Boolean
+
+@Serializable
+data class ProcedurecloseCodeShareWorkspaceResult_493210a9cb(
+    @SerialName("closed") val closed: ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1,
+) {
+    companion object {
+        val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.STRIP, listOf(
+            RemoteFieldDescriptor("closed", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", true, false, null, null, null, null, null, null, null, null, listOf()),
+        ), listOf())
+    }
+}
+
+@Serializable
 enum class ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DPolicy_5e585becfd {
     @SerialName("crew-only") CREWU2DONLY,
     @SerialName("crew-first") CREWU2DFIRST,
@@ -177,15 +205,13 @@ data class ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOpt
     }
 }
 
-typealias ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1 = Boolean
-
 @Serializable
 data class ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItem_63a5f0fcba(
     @SerialName("brief") val brief: RemoteField<String> = RemoteField.Missing,
     @SerialName("fallbacks") val fallbacks: RemoteField<List<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9>> = RemoteField.Missing,
     @SerialName("id") val id: String,
     @SerialName("label") val label: String,
-    @SerialName("noEdits") val noEdits: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("noEdits") val noEdits: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("parallel") val parallel: RemoteField<Long> = RemoteField.Missing,
     @SerialName("selection") val selection: ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9,
 ) {
@@ -195,7 +221,7 @@ data class ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOpt
             RemoteFieldDescriptor("fallbacks", "List<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9>", false, false, null, null, null, null, null, 3, null, null, listOf()),
             RemoteFieldDescriptor("id", "String", true, false, null, null, null, null, null, null, "^[a-z0-9][a-z0-9-]{0,31}$", null, listOf()),
             RemoteFieldDescriptor("label", "String", true, false, null, null, 1, 24, null, null, null, null, listOf()),
-            RemoteFieldDescriptor("noEdits", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("noEdits", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("parallel", "Long", false, false, 1.0, 4.0, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("selection", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DFallbacksU2DItem_c33d76cdf9", true, false, null, null, null, null, null, null, null, null, listOf()),
         ), listOf())
@@ -304,7 +330,7 @@ data class ProcedureconnectThreadVoiceRequestU2DConfigU2DPlaybookU2DOptionU2D1U2
     @SerialName("instructions") val instructions: String,
     @SerialName("label") val label: String,
     @SerialName("mcpServerIds") val mcpServerIds: RemoteField<List<String>> = RemoteField.Missing,
-    @SerialName("readOnly") val readOnly: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("readOnly") val readOnly: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("switchPhrases") val switchPhrases: RemoteField<List<String>> = RemoteField.Missing,
     @SerialName("themeId") val themeId: RemoteField<String> = RemoteField.Missing,
     @SerialName("version") val version: ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DVersion_7f9f5a0d72,
@@ -317,7 +343,7 @@ data class ProcedureconnectThreadVoiceRequestU2DConfigU2DPlaybookU2DOptionU2D1U2
             RemoteFieldDescriptor("instructions", "String", true, false, null, null, 1, 6000, null, null, null, null, listOf()),
             RemoteFieldDescriptor("label", "String", true, false, null, null, 1, 32, null, null, null, null, listOf()),
             RemoteFieldDescriptor("mcpServerIds", "List<String>", false, false, null, null, null, null, null, 16, null, null, listOf()),
-            RemoteFieldDescriptor("readOnly", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("readOnly", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("switchPhrases", "List<String>", false, false, null, null, null, null, 1, 10, null, null, listOf()),
             RemoteFieldDescriptor("themeId", "String", false, false, null, null, null, null, null, null, "^[A-Za-z0-9][A-Za-z0-9:._-]{0,63}$", null, listOf()),
             RemoteFieldDescriptor("version", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DVersion_7f9f5a0d72", true, false, null, null, null, null, null, null, null, null, listOf()),

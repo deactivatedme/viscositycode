@@ -81,6 +81,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_02b179207e61cd9b = RemoteSchema(type: "object", required: Set(["content", "expectedModifiedAtMs", "name", "path"]), properties: ["content": RemoteSchemas.schema_ee49ed668eec9d78, "expectedModifiedAtMs": RemoteSchemas.schema_f696f11685898ba7, "name": RemoteSchemas.schema_9dd9cb57885336d0, "path": RemoteSchemas.schema_f3b3d8722ad77fc3], additionalAllowed: false, unknownPolicy: .reject)
+}
+
+public extension RemoteSchemas {
   static let schema_02f5d10d12c9f077 = RemoteSchema(type: "object", required: Set(["projectLocation", "sourceScope"]), properties: ["projectLocation": RemoteSchemas.schema_080f9cc154af9e27, "sourceScope": RemoteSchemas.schema_b160fc20dd335dc3], additionalAllowed: false, unknownPolicy: .reject)
 }
 

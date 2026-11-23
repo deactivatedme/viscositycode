@@ -81,5 +81,9 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_9c6e793c40a0faa4 = RemoteSchema(type: "object", required: Set(["grantId", "incarnation", "projectLocation"]), properties: ["grantId": RemoteSchemas.schema_d855999aed5e6438, "incarnation": RemoteSchemas.schema_d855999aed5e6438, "projectLocation": RemoteSchemas.schema_080f9cc154af9e27], additionalAllowed: false, unknownPolicy: .reject)
+}
+
+public extension RemoteSchemas {
   static let schema_9c8337f42f233534 = RemoteSchema(type: "string", literals: [.string("shared"), .string("poracode")], unknownPolicy: .strip)
 }

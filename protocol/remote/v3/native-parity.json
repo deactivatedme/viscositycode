@@ -2838,7 +2838,7 @@
               "ios/App/App/Features/Terminal/TerminalRawKeyInput.swift",
               "screen:ios.terminal-write"
             ],
-            "note": "E.2 device keystroke-to-PTY journey landed (`NativeFamilyJourneyUITests.testTerminalKeystrokeFamilyWritesToPty`). On-screen (touch) typing remains line-buffered through the command field plus the modifier key row \u0432\u0402\u201d the standard mobile-terminal compromise."
+            "note": "E.2 device keystroke-to-PTY journey landed (`NativeFamilyJourneyUITests.testTerminalKeystrokeFamilyWritesToPty`). On-screen (touch) typing remains line-buffered through the command field plus the modifier key row вЂ” the standard mobile-terminal compromise."
           }
         },
         "android": {
@@ -2857,7 +2857,7 @@
               "android/app/src/main/kotlin/com/poracode/app/ui/terminal/TerminalKeyAccessory.kt",
               "screen:android.terminal-write"
             ],
-            "note": "E.2 device keystroke-to-PTY journey landed (`Android37WireLabFamilyInstrumentedTest.familyTerminalKeystrokeWritesToPty`). On-screen (touch) typing remains line-buffered through the command field plus the modifier key row \u0432\u0402\u201d the standard mobile-terminal compromise."
+            "note": "E.2 device keystroke-to-PTY journey landed (`Android37WireLabFamilyInstrumentedTest.familyTerminalKeystrokeWritesToPty`). On-screen (touch) typing remains line-buffered through the command field plus the modifier key row вЂ” the standard mobile-terminal compromise."
           }
         }
       },
@@ -3122,12 +3122,24 @@
         "scopes": ["session:operate"],
         "batch": "thread-lifecycle",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
-          "ui": { "disposition": "planned", "evidence": [] }
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
+          "ui": {
+            "disposition": "planned",
+            "evidence": []
+          }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
-          "ui": { "disposition": "planned", "evidence": [] }
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
+          "ui": {
+            "disposition": "planned",
+            "evidence": []
+          }
         },
         "note": "Thread transfer (Move to another machine) is driven by the shared browser renderer (Electron and web/PWA), which holds grants for both hosts. Native clients can open and continue a moved thread on its new host but have no move surface yet."
       },
@@ -3136,12 +3148,24 @@
         "scopes": ["session:operate"],
         "batch": "thread-lifecycle",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
-          "ui": { "disposition": "planned", "evidence": [] }
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
+          "ui": {
+            "disposition": "planned",
+            "evidence": []
+          }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
-          "ui": { "disposition": "planned", "evidence": [] }
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
+          "ui": {
+            "disposition": "planned",
+            "evidence": []
+          }
         },
         "note": "Thread transfer (Move to another machine) is driven by the shared browser renderer (Electron and web/PWA), which holds grants for both hosts. Native clients can open and continue a moved thread on its new host but have no move surface yet."
       },
@@ -5186,7 +5210,10 @@
         "id": "resolveLinkMetadata",
         "batch": "rich-chat-requests",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5194,7 +5221,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5206,7 +5236,10 @@
         "id": "listImportableSessions",
         "batch": "projects",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5214,7 +5247,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5226,7 +5262,10 @@
         "id": "getLatestAgentVersion",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5234,7 +5273,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5246,7 +5288,10 @@
         "id": "listAcpRegistry",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5254,7 +5299,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5266,7 +5314,10 @@
         "id": "refreshAgentStatuses",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5274,7 +5325,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5286,7 +5340,10 @@
         "id": "updateAgentBinary",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5294,7 +5351,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5306,7 +5366,10 @@
         "id": "updateAcpRegistryAgent",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5314,7 +5377,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5326,7 +5392,10 @@
         "id": "installAcpRegistryAgent",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5334,7 +5403,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5346,7 +5418,10 @@
         "id": "removeAcpRegistryAgent",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5354,7 +5429,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5366,7 +5444,10 @@
         "id": "setAcpRegistryAgentAuth",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5374,7 +5455,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5386,7 +5470,10 @@
         "id": "authenticateAcpAgent",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5394,7 +5481,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5406,7 +5496,10 @@
         "id": "logoutAcpAgent",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5414,7 +5507,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5426,7 +5522,10 @@
         "id": "resolveAgentAccount",
         "batch": "settings-integrations",
         "ios": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -5434,7 +5533,10 @@
           }
         },
         "android": {
-          "wire": { "disposition": "planned", "evidence": [] },
+          "wire": {
+            "disposition": "planned",
+            "evidence": []
+          },
           "ui": {
             "disposition": "planned",
             "evidence": [],
@@ -10059,6 +10161,81 @@
           }
         },
         "note": "Generated native codecs, authenticated transports, exact-host gateways, and account-scoped review UI; device verification remains open."
+      },
+      {
+        "id": "openCodeShareWorkspace",
+        "batch": "explicitly-desktop-only",
+        "ios": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "android": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "note": "CodeShare selected-computer execution is a desktop worker approving a native local project. Native mobile clients have no CodeShare execution surface or local desktop project grant."
+      },
+      {
+        "id": "executeCodeShareFileTool",
+        "batch": "explicitly-desktop-only",
+        "ios": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "android": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "note": "CodeShare selected-computer execution is a desktop worker approving a native local project. Native mobile clients have no CodeShare execution surface or local desktop project grant."
+      },
+      {
+        "id": "closeCodeShareWorkspace",
+        "batch": "explicitly-desktop-only",
+        "ios": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "android": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/roomFileWorker.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx"]
+          }
+        },
+        "note": "CodeShare selected-computer execution is a desktop worker approving a native local project. Native mobile clients have no CodeShare execution surface or local desktop project grant."
       }
     ],
     "webSocketClientMessages": [
@@ -12037,5 +12214,5 @@
       }
     ]
   },
-  "migrationNote": "Format 2 splits each platform claim into independent wire and ui columns so the ledger can no longer present wire coverage as UI parity. Migrated from format 1 (2026-09-18, V5 plan item 5.4): every format-1 claim became the wire claim unchanged, and the ui column was seeded by mirroring it, with the UI-surface subset of the evidence as ui evidence (falling back to the full list for protocol-plumbing entries that have no distinct UI file). ui dispositions: implemented = reachable from a user-visible native surface; partial = reachable in part, with a mandatory reason note; planned = wire present, no UI surface yet; desktop-only and unsupported-by-wire mirror the wire claim. The ui column is now maintained separately from wire: flipping one must not flip the other. E.1 re-derivation (2026-09-20, V6): ui implemented additionally requires independent device evidence \u0432\u0402\u201d a screen-registry entry or a checked-in device test; a note is commentary and grants nothing. Every ui claim failing that rule was honestly downgraded to partial with the evidence gap in its note."
+  "migrationNote": "Format 2 splits each platform claim into independent wire and ui columns so the ledger can no longer present wire coverage as UI parity. Migrated from format 1 (2026-09-18, V5 plan item 5.4): every format-1 claim became the wire claim unchanged, and the ui column was seeded by mirroring it, with the UI-surface subset of the evidence as ui evidence (falling back to the full list for protocol-plumbing entries that have no distinct UI file). ui dispositions: implemented = reachable from a user-visible native surface; partial = reachable in part, with a mandatory reason note; planned = wire present, no UI surface yet; desktop-only and unsupported-by-wire mirror the wire claim. The ui column is now maintained separately from wire: flipping one must not flip the other. E.1 re-derivation (2026-09-20, V6): ui implemented additionally requires independent device evidence вЂ” a screen-registry entry or a checked-in device test; a note is commentary and grants nothing. Every ui claim failing that rule was honestly downgraded to partial with the evidence gap in its note."
 }

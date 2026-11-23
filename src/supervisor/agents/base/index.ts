@@ -76,6 +76,8 @@ export type {
   CapabilitiesProbeResult,
   CommandSpec,
   CreateStructuredSessionInput,
+  CodeShareStructuredChatInput,
+  CodeShareLogin,
   DetectionSpec,
   DetectProbeCtx,
   FindBestHintOptions,

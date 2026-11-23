@@ -122,6 +122,9 @@ export const REMOTE_PROCEDURE_SPECS = {
   listProjectTree: read("projectLocation"),
   browseHostDirectory: manageProjects("none"),
   searchProjectTree: read("projectLocation"),
+  openCodeShareWorkspace: operate("projectLocation"),
+  executeCodeShareFileTool: operate("projectLocation"),
+  closeCodeShareWorkspace: operate("projectLocation"),
   readProjectFile: read("projectLocation"),
   // Arbitrary absolute paths can reach host credentials and app data, so they
   // require project-management scope rather than the basic session read scope.

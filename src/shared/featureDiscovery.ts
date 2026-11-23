@@ -24,6 +24,7 @@ export const DISCOVERABLE_FEATURE_IDS = [
   "workspaces",
   "ai-git",
   "voice-input",
+  "codeshare",
   "playbooks", // ViscosityCode: Settings → Playbooks
 ] as const;
 
@@ -51,6 +52,7 @@ export type FeatureSignal =
  * or evict the device-local signal store.
  */
 export const TRACKED_COMMAND_IDS = [
+  "viscosity.codeShare.join",
   "browser.toggle",
   "git.open",
   "composer.start-dictation",

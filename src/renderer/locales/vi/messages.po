@@ -1104,6 +1104,11 @@ msgstr "{targetLabel} đang ngoại tuyến. Hãy kết nối với máy đó tr
 msgid "{targetLabel} is reached through this computer, so you can't open it while this computer is off."
 msgstr "{targetLabel} được truy cập qua máy tính này, nên bạn không thể mở nó khi máy tính này tắt."
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.timeLeft"
+msgstr "Còn {time}"
+
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "{total, plural, one {# participant} other {# participants}}"
 msgstr "{total, plural, one {# người tham gia} other {# người tham gia}}"
@@ -1111,6 +1116,11 @@ msgstr "{total, plural, one {# người tham gia} other {# người tham gia}}"
 #: src/renderer/views/PrReviewOverlay/parts/PrReviewSidebar.tsx
 #~ msgid "{totalAdditions} additions and {totalDeletions} deletions"
 #~ msgstr "{totalAdditions} dòng thêm và {totalDeletions} dòng xóa"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.turnsLeft"
+msgstr "Số lượt còn lại · {turns}"
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
 msgid "{updateLabel} updated to v{resolvedLatest}."
@@ -2639,6 +2649,11 @@ msgstr "Hãy cho phép quyền truy cập micrô trong cài đặt trang web c�
 msgid "Allow replacing conflicting managed skills"
 msgstr "Cho phép thay thế các skill được quản lý đang xung đột"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.allowRuns"
+msgstr "Cho phép yêu cầu trên máy tính này"
+
 #: src/renderer/pwa/push/WebPushPermissionPrompt.tsx
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 msgid "Allow the browser to show notifications while the app is in the background."
@@ -3136,6 +3151,11 @@ msgstr "Đồng thời"
 #: src/renderer/components/composer/ComposerAddMenu.tsx
 msgid "Attach"
 msgstr "Đính kèm"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.attachFile"
+msgstr "Đính kèm tệp văn bản trên thiết bị"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 #~ msgid "Attach files"
@@ -4276,6 +4296,7 @@ msgstr "đã hủy"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Cancelled"
 msgstr "Đã hủy"
 
@@ -4708,6 +4729,11 @@ msgstr "Hãy chọn một dự án."
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Choose a saved credential to sign out."
 msgstr "Chọn thông tin xác thực đã lưu để đăng xuất."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidFile"
+msgstr "Chọn một tệp văn bản UTF-8 có kích thước nhỏ."
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Choose a voice model"
@@ -5435,6 +5461,16 @@ msgstr "Cmd+Enter"
 msgid "Code copied. "
 msgstr "Đã sao chép mã."
 
+#. js-lingui-explicit-id
+#: src/renderer/components/newsLine/featureCatalog.ts
+msgid "codeShare.discoveryPitch"
+msgstr "Cùng lập trình bằng quyền truy cập mô hình bạn bè chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.requestFailed"
+msgstr "CodeShare không thể hoàn tất yêu cầu. Hãy thử lại."
+
 #: src/renderer/components/providers/codex/manifest.ts
 msgid "Codex"
 msgstr "Codex"
@@ -6083,6 +6119,11 @@ msgstr "Đã kết nối"
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Connecting"
 msgstr "Đang kết nối"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.connecting"
+msgstr "Đang kết nối với CodeShare…"
 
 #: src/renderer/bootstrap.ts
 #: src/renderer/components/thread/ThreadDraftView.tsx
@@ -9678,6 +9719,7 @@ msgstr "thất bại"
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Failed"
 msgstr "Thất bại"
@@ -10040,6 +10082,7 @@ msgstr "Kết thúc bài đánh giá của bạn"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Finished"
 msgstr "Đã hoàn thành"
 
@@ -11281,6 +11324,11 @@ msgstr "Trang chủ"
 msgid "Hooray"
 msgstr "Hoan hô"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.hostComputer"
+msgstr "Máy tính của chủ phòng"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Host credential reference"
 msgstr "Tham chiếu thông tin xác thực máy chủ"
@@ -12356,6 +12404,11 @@ msgstr "Người điều tra"
 msgid "Invite another model into this chat…"
 msgstr "Mời mô hình khác vào cuộc trò chuyện này…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteLink"
+msgstr "Liên kết mời"
+
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 msgid "Invite models into this chat"
 msgstr "Mời mô hình vào cuộc trò chuyện này"
@@ -12411,6 +12464,18 @@ msgstr "Nghiêng"
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 msgid "Jobs"
 msgstr "Công việc"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.joinButton"
+msgstr "Tham gia"
+
+#. js-lingui-explicit-id
+#: src/renderer/components/newsLine/featureCatalog.ts
+#: src/renderer/viscosity/codeshare/codeShareCommand.ts
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.join"
+msgstr "Tham gia CodeShare"
 
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "JSON"
@@ -12764,6 +12829,11 @@ msgstr "Để trống để dùng tổ chức do Devin chọn. Chỉ điền khi
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Leave Roundtable mode"
 msgstr "Thoát chế độ Roundtable"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.leave"
+msgstr "Rời phiên chia sẻ"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Leave the credential reference empty to keep the current one."
@@ -14041,6 +14111,12 @@ msgstr "Đã hợp nhất ứng viên thắng của thử nghiệm vào {sourceB
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrSection.tsx
 msgid "Merging is blocked"
 msgstr "Việc hợp nhất bị chặn"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.message"
+msgstr "Tin nhắn"
 
 #: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
 #~ msgid "Message {name}"
@@ -16137,6 +16213,7 @@ msgstr "Chỉ nguồn chính thức"
 #: src/renderer/components/common/RemoteServerStatusDot.tsx
 #: src/renderer/views/ProfileOverlay/parts/ProfileHeader.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Offline"
 msgstr "Ngoại tuyến"
 
@@ -16340,6 +16417,11 @@ msgstr ""
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Open {title}"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.localProjectRequired"
+msgstr "Mở một dự án cục bộ để dùng gói đăng ký của bạn."
 
 #: src/renderer/commands/registry.ts
 msgid "Open a new browser tab"
@@ -16838,7 +16920,13 @@ msgstr ""
 msgid "Open the model picker"
 msgstr "Mở bộ chọn mô hình"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.desktopRequired"
+msgstr "Mở lời mời dùng gói đăng ký này trong ứng dụng ViscosityCode trên máy tính."
+
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Open thread"
 msgstr "Mở luồng"
@@ -17118,6 +17206,11 @@ msgstr "Đăng nhập riêng biệt"
 msgid "Owner unverified"
 msgstr "Chủ sở hữu chưa xác minh"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.fileApproval"
+msgstr "Lượt do chủ sở hữu chi trả: chia sẻ và chỉnh sửa tệp trong dự án này."
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "owner/name, owner/name"
 msgstr "owner/name, owner/name"
@@ -17303,6 +17396,7 @@ msgstr "Chọn một phần"
 msgid "Participant {seatNumber}"
 msgstr "Người tham gia {seatNumber}"
 
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
@@ -17415,6 +17509,11 @@ msgstr "Dán liên kết ghép nối"
 msgid "Paste pairing URL…"
 msgstr "Dán URL ghép nối…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidLink"
+msgstr "Dán toàn bộ liên kết mời CodeShare."
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Paste the pairing URL from your desktop"
 #~ msgstr "Dán URL ghép nối từ máy tính của bạn"
@@ -17483,6 +17582,7 @@ msgstr "đã tạm dừng"
 #: src/renderer/components/thread/ThreadGoalDock.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Paused"
@@ -18480,6 +18580,7 @@ msgstr ""
 #: src/renderer/views/GitHubActionsView/GitHubActionsProjectPicker.tsx
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Project"
 msgstr "dự án"
@@ -18945,6 +19046,7 @@ msgstr "Xếp tin nhắn vào hàng đợi"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Queued"
 msgstr "Đã xếp hàng"
 
@@ -19118,6 +19220,7 @@ msgid "ready"
 msgstr ""
 
 #: src/renderer/components/devices/DeviceWorkspace.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/playbooks/settings/ReversingSetupCheck.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
@@ -19664,6 +19767,11 @@ msgstr "Xóa biến môi trường"
 #: src/renderer/components/crew/CrewRoleDetails.tsx
 msgid "Remove fallback"
 msgstr "Xóa phương án dự phòng"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.removeFile"
+msgstr "Gỡ tệp"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 msgid "Remove from download history"
@@ -20221,6 +20329,11 @@ msgstr "Đang xử lý…"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Respond to agent requests"
 msgstr "Trả lời yêu cầu của tác nhân"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stopped"
+msgstr "Đã dừng phản hồi."
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDeviceToolbar.tsx
 msgid "Responsive"
@@ -20952,6 +21065,11 @@ msgstr "Chạy thử nghiệm"
 msgid "Run gh auth login in a terminal on {executionHost}, then retry. If GH_TOKEN or GITHUB_TOKEN is set, update or remove the invalid token there."
 msgstr "Chạy gh auth login trong thiết bị đầu cuối trên {executionHost}, rồi thử lại. Nếu GH_TOKEN hoặc GITHUB_TOKEN được đặt, hãy cập nhật hoặc xóa mã thông báo không hợp lệ trên máy đó."
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.runHere"
+msgstr "Chạy tại đây"
+
 #: src/renderer/components/providers/cursor/cloudProfileSettings.tsx
 msgid "Run in"
 msgstr ""
@@ -20972,6 +21090,11 @@ msgstr "Chạy phiên âm cục bộ trên GPU khi có sẵn."
 #: src/renderer/views/SchedulesView/parts/ScheduleRow.tsx
 msgid "Run now"
 msgstr "Chạy ngay"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.runOn"
+msgstr "Chạy trên"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Run once after reopening"
@@ -21028,6 +21151,7 @@ msgstr "đang chạy"
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Running"
 msgstr "Đang chạy"
@@ -21933,8 +22057,14 @@ msgstr "Hàng được chọn ở thanh bên"
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 #: src/renderer/components/thread/SideChat/SideChatBody.tsx
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatComposer.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Send"
+msgstr "Gửi"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.send"
 msgstr "Gửi"
 
 #: src/renderer/components/thread/ThreadComposerSection.tsx
@@ -22170,9 +22300,21 @@ msgstr "Chia sẻ hoạt động của bạn"
 msgid "Shared"
 msgstr "Dùng chung"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.ended"
+msgstr "Quyền truy cập chia sẻ đã kết thúc."
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Shared login owner"
 msgstr "Chủ sở hữu đăng nhập dùng chung"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.model"
+msgstr "Mô hình được chia sẻ"
 
 #. placeholder {0}: owner.displayName ?? owner.id
 #: src/renderer/components/providers/devin/profileSettings.tsx
@@ -22192,6 +22334,11 @@ msgstr "Dùng chung đăng nhập riêng của một hồ sơ khác. Quản lý 
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Shares missing owner {0}"
 msgstr "Dùng chung chủ sở hữu đã mất {0}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.room.shared"
+msgstr "Đang làm việc cùng nhau"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
@@ -22627,6 +22774,8 @@ msgstr "Mô hình phụ"
 #: src/renderer/components/providers/devin/profileSettings.tsx
 #: src/renderer/components/providers/settings/UsageProviderRow.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/parts/UsageProviderCard.tsx
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Sign in"
 msgstr "Đăng nhập"
@@ -22671,6 +22820,12 @@ msgstr ""
 #: src/renderer/components/providers/fx/FxProviderSettings.tsx
 msgid "Sign in to the AI backends fx can use, and sign out of them here."
 msgstr "Đăng nhập vào các backend AI mà fx có thể dùng và đăng xuất khỏi chúng tại đây."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.subscriptionRequired"
+msgstr "Đăng nhập tài khoản có gói đăng ký trên thiết bị này rồi thử lại."
 
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 msgid "Sign in with the agent CLI."
@@ -23261,6 +23416,11 @@ msgstr "Bắt đầu lại từ đầu"
 msgid "Start live voice"
 msgstr "Bắt đầu trò chuyện thoại trực tiếp"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.openLocalChat"
+msgstr "Bắt đầu trò chuyện cục bộ"
+
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Start minimized"
@@ -23365,6 +23525,11 @@ msgstr "Bắt đầu nhập bằng giọng nói"
 msgid "starting…"
 msgstr "bắt đầu…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionLocal"
+msgstr "Bắt đầu cuộc trò chuyện trong dự án cục bộ bằng gói đăng ký của bạn."
+
 #: src/renderer/components/startup/StartupRecoveryScreen.tsx
 msgid "Startup is taking longer than expected"
 msgstr "Quá trình khởi động mất nhiều thời gian hơn dự kiến"
@@ -23441,10 +23606,16 @@ msgstr "Vẫn đang xử lý. Gửi lại để kiểm tra cùng báo cáo này.
 
 #. Button: stop the microphone level test
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Stop"
 msgstr "Dừng lại"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stop"
+msgstr "Dừng"
 
 #. placeholder {0}: action.name
 #. placeholder {0}: props.title
@@ -23480,6 +23651,11 @@ msgstr "Dừng chuyển tiếp"
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Stop on error"
 msgstr "Dừng khi có lỗi"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.stopReceiving"
+msgstr "Ngừng nhận yêu cầu"
 
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
@@ -23530,6 +23706,11 @@ msgstr "Đã dừng"
 #: src/renderer/viscosity/xai/xaiErrorText.ts
 msgid "Stopped."
 msgstr "Đã dừng."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.stopping"
+msgstr "Đang dừng"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Stopping {label}…"
@@ -24428,6 +24609,11 @@ msgstr "Không thể khôi phục điểm kiểm tra."
 msgid "the chosen folder"
 msgstr "thư mục đã chọn"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.offline"
+msgstr "Không thể kết nối với máy chủ CodeShare. Hãy thử lại sau giây lát."
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "The comparison is complete."
 msgstr ""
@@ -24644,10 +24830,20 @@ msgstr "Máy chủ đã chấp nhận tin nhắn này nhưng không thể dọn 
 msgid "The host has more labels than are listed here."
 msgstr "Máy chủ có nhiều nhãn hơn số được liệt kê ở đây."
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.noModels"
+msgstr "Máy chủ không có mô hình nào cho lời mời này."
+
 #: src/renderer/components/thread/RemoteHostUpdateDock.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostUpdateControl.tsx
 msgid "The host is restarting to install the update."
 msgstr "Máy chủ đang khởi động lại để cài đặt bản cập nhật."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.paused"
+msgstr "Chủ máy đã tạm dừng CodeShare."
 
 #: src/renderer/state/remoteServers/environmentManagement.ts
 msgid "The host rejected the request."
@@ -24746,6 +24942,11 @@ msgstr "Cấu hình máy chủ MCP không hợp lệ hoặc sử dụng tên dà
 msgid "The MCP server is invalid."
 msgstr "Máy chủ MCP không hợp lệ."
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.messageTooLong"
+msgstr "Tổng dung lượng tin nhắn và tệp đính kèm vượt giới hạn."
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The move expired. Start it again."
 msgstr "Phiên chuyển đã hết hạn. Hãy bắt đầu lại."
@@ -24842,9 +25043,19 @@ msgstr ""
 msgid "The provider asked us to slow down. Retrying soon."
 msgstr ""
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.providerLimited"
+msgstr "Nhà cung cấp đã đạt giới hạn yêu cầu hoặc hết tín dụng."
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The provider is unavailable. Install or update it in provider settings."
 msgstr "Nhà cung cấp không khả dụng. Cài đặt hoặc cập nhật trong cài đặt nhà cung cấp."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelMismatch"
+msgstr "Nhà cung cấp báo cáo một mô hình khác. CodeShare đã dừng phản hồi."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The provider's sign-in data could not be read. Try again or update Poracode."
@@ -24918,6 +25129,11 @@ msgstr "Đã gửi đánh giá nhưng bình luận bị lỗi. Làm mới trư�
 msgid "The review's changes are merged into its base branch. This cannot be undone here."
 msgstr "Các thay đổi của đánh giá sẽ được hợp nhất vào nhánh cơ sở. Không thể hoàn tác tại đây."
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.failed"
+msgstr "Phòng không thể thực hiện thao tác này. Hãy thử lại."
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "The round limit was reached."
 msgstr "Đã đạt giới hạn số vòng."
@@ -24974,6 +25190,11 @@ msgstr "Mô hình đã chọn so sánh câu trả lời trò chuyện của từ
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeDialog.tsx
 msgid "The selected model compares snapshots of each candidate's changes under anonymous labels. It recommends a winner without merging anything."
 msgstr "Mô hình đã chọn so sánh ảnh chụp nhanh các thay đổi của từng ứng viên bằng nhãn ẩn danh. Mô hình đề xuất người thắng mà không hợp nhất bất kỳ nội dung nào."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelUnavailable"
+msgstr "Mô hình đã chọn không khả dụng."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The selected project is missing commits this thread needs. Fetch its latest changes and try again."
@@ -25562,6 +25783,11 @@ msgstr "Khối HTML này quá lớn để xem trước. Chỉ hiển thị mã n
 #: src/mobile/views/DesktopsView.tsx
 #~ msgid "This HTTPS page couldn't reach the desktop on plain HTTP. Allow local network access for this site and pair again, or continue on the desktop's own address."
 #~ msgstr "Trang HTTPS này không thể kết nối tới desktop dùng HTTP thuần. Hãy cho phép trang này truy cập mạng cục bộ rồi ghép đôi lại, hoặc tiếp tục trên địa chỉ riêng của desktop."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidCode"
+msgstr "Lời mời không hợp lệ, đã hết hạn hoặc đã được sử dụng."
 
 #: src/renderer/views/PullRequestsOverlay/changes/FileDiffCard.tsx
 msgid "This is a large diff, so it has not been loaded."
@@ -26355,6 +26581,11 @@ msgstr "Được dặn không chỉnh sửa tệp. Không được thực thi."
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "Too many HTML previews in this message. Showing source only."
 msgstr "Có quá nhiều bản xem trước HTML trong tin nhắn này. Chỉ hiển thị mã nguồn."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteRateLimited"
+msgstr "Có quá nhiều yêu cầu lời mời. Hãy chờ một phút rồi thử lại."
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Too many moves are in progress. Try again shortly."
@@ -27193,6 +27424,7 @@ msgstr "Tiến trình không xác định"
 
 #: src/renderer/components/providers/usageFormat.ts
 #: src/renderer/components/providers/UsageProviderCardView.tsx
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "Unlimited"
 msgstr "Không giới hạn"
 
@@ -27510,6 +27742,11 @@ msgstr "Cập nhật lên v{0}"
 #~ msgid "Update to v{latestRegistryVersion}"
 #~ msgstr "Cập nhật lên v{latestRegistryVersion}"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.room.updateRequired"
+msgstr "Cập nhật ViscosityCode để mở lời mời vào phòng này."
+
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrSection.tsx
 msgid "Update with merge commit"
 msgstr "Cập nhật bằng commit hợp nhất (merge commit)"
@@ -27755,6 +27992,11 @@ msgstr "Dùng tài khoản"
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectIconPicker.tsx
 msgid "Use an image from the project folder..."
 msgstr "Dùng ảnh từ thư mục dự án..."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.anotherInvite"
+msgstr "Dùng lời mời khác"
 
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Use another profile's account"
@@ -28332,6 +28574,11 @@ msgstr "Đang chờ xác thực {methodName}. Các tác nhân được phát hi�
 #: src/renderer/components/thread/ThreadAgentVisionDock.tsx
 msgid "Waiting for a preview"
 msgstr "Đang chờ bản xem trước"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.waiting"
+msgstr "Đang chờ phản hồi…"
 
 #: src/renderer/components/plugins/ComputerUsePluginSettings.tsx
 msgid "Waiting for administrator approval…"

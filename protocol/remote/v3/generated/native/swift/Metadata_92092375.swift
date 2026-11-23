@@ -8,8 +8,8 @@ public enum RemoteContractMetadata {
   public static let protocolVersion = 14
   public static let bindingFormatVersion = 2
   public static let generatorVersion = 7
-  public static let sourceHash = "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199"
-  public static let manifestHash = "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3"
+  public static let sourceHash = "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910"
+  public static let manifestHash = "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c"
   public static let validationBoundary: RemoteValidationBoundary = .rootCodecOnly
   public static let generatedModelCodableSemantics: RemoteGeneratedSerializerSemantics = .nonValidatingRepresentationOnly
   public static let portableTransformIds = ["agent-settings.strip-sensitive", "push.routing.client-connection-id.lowercase", "string.trim"]
@@ -143,6 +143,7 @@ public enum RemoteContractMetadata {
     .init(name: "cancelExtractContext", scope: "session:operate", owner: "thread", resultKind: "omitted", requestType: "ProcedurecancelExtractContextRequest_09b78d9c1d", resultType: "RemoteUnit"),
     .init(name: "clearMcpServerOauth", scope: "session:operate", owner: "optionalProjectLocation", resultKind: "omitted", requestType: "ProcedureclearMcpServerOauthRequest_db8efd22aa", resultType: "RemoteUnit"),
     .init(name: "cloneRepo", scope: "projects:manage", owner: "parentLocation", resultKind: "json", requestType: "ProcedurecloneRepoRequest_482895ec91", resultType: "ProcedurecloneRepoResult_6a0c18e639"),
+    .init(name: "closeCodeShareWorkspace", scope: "session:operate", owner: "projectLocation", resultKind: "json", requestType: "ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40", resultType: "ProcedurecloseCodeShareWorkspaceResult_493210a9cb"),
     .init(name: "connectThreadVoice", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedureconnectThreadVoiceRequest_898057a01b", resultType: "ProcedureconnectThreadVoiceResult_871fe12f7d"),
     .init(name: "controlMcpApp", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedurecontrolMcpAppRequest_339dd50c84", resultType: "ProcedurecontrolMcpAppResult_054db97313"),
     .init(name: "createFileCheckpoint", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedurecreateFileCheckpointRequest_412fb1bbf4", resultType: "ProcedurecreateFileCheckpointResult_012b6b31ad"),
@@ -155,6 +156,7 @@ public enum RemoteContractMetadata {
     .init(name: "discoverExternalMcpServers", scope: "session:read", owner: "optionalProjectLocation", resultKind: "json", requestType: "ProcedurediscoverExternalMcpServersRequest_26b6bf09cc", resultType: "ProcedurediscoverExternalMcpServersResult_f71a677b4d"),
     .init(name: "editQueuedThreadFollowUp", scope: "session:operate", owner: "thread", resultKind: "omitted", requestType: "ProcedureeditQueuedThreadFollowUpRequest_50d5adf9e9", resultType: "RemoteUnit"),
     .init(name: "ensureThreadRunning", scope: "session:operate", owner: "projectLocation", resultKind: "json", requestType: "ProcedureensureThreadRunningRequest_c33de5654f", resultType: "ProcedurecancelExtractContextRequest_09b78d9c1d"),
+    .init(name: "executeCodeShareFileTool", scope: "session:operate", owner: "projectLocation", resultKind: "json", requestType: "ProcedureexecuteCodeShareFileToolRequest_16a1dae055", resultType: "ProcedureexecuteCodeShareFileToolResult_6df5a3ad4f"),
     .init(name: "extractContext", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedureextractContextRequest_963874114b", resultType: "ProcedureextractContextResult_2a2641f29a"),
     .init(name: "finalizeFileCheckpoint", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedurefinalizeFileCheckpointRequest_9cb900aa2d", resultType: "ProcedurefinalizeFileCheckpointResult_505ae61467"),
     .init(name: "forgeClosePr", scope: "session:operate", owner: "projectLocation", resultKind: "omitted", requestType: "ProcedureforgeClosePrRequest_c5c17f76a2", resultType: "RemoteUnit"),
@@ -276,6 +278,7 @@ public enum RemoteContractMetadata {
     .init(name: "logoutAcpAgent", scope: "session:operate", owner: "desktop", resultKind: "omitted", requestType: "ProcedurelogoutAcpAgentRequest_afbd186700", resultType: "RemoteUnit"),
     .init(name: "lspStart", scope: "session:operate", owner: "projectLocation", resultKind: "omitted", requestType: "ProcedurelspStartRequest_0fbb6754fb", resultType: "RemoteUnit"),
     .init(name: "moveProjectEntry", scope: "session:operate", owner: "projectLocation", resultKind: "omitted", requestType: "ProceduremoveProjectEntryRequest_47c3f1ae81", resultType: "RemoteUnit"),
+    .init(name: "openCodeShareWorkspace", scope: "session:operate", owner: "projectLocation", resultKind: "json", requestType: "ProcedureopenCodeShareWorkspaceRequest_490ffb3ac5", resultType: "ProcedureopenCodeShareWorkspaceResult_f7a85cf80d"),
     .init(name: "pauseThreadFollowUps", scope: "session:operate", owner: "thread", resultKind: "omitted", requestType: "ProcedurepauseThreadFollowUpsRequest_d42717fff2", resultType: "RemoteUnit"),
     .init(name: "probeMcpServer", scope: "session:operate", owner: "optionalProjectLocation", resultKind: "json", requestType: "ProcedurebeginMcpServerOauthRequest_338293a42e", resultType: "ProcedureprobeMcpServerResult_bea1bdef18"),
     .init(name: "queueThreadFollowUp", scope: "session:operate", owner: "thread", resultKind: "omitted", requestType: "ProcedurequeueThreadFollowUpRequest_309ba2d2be", resultType: "RemoteUnit"),

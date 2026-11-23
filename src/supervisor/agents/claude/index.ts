@@ -1,3 +1,5 @@
+import { startClaudeCodeShareLogin } from "./codeShareLogin";
+import { runClaudeCodeShareChat } from "./codeShareChat";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -470,6 +472,9 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
     spoofsIterm2StatusEnv: true,
     oscHintsDeferToHookPlugin: true,
     workingSilenceTimeoutMs: null,
+    startCodeShareLogin: startClaudeCodeShareLogin,
+    supportsCodeShareRemoteFiles: true,
+    runCodeShareStructuredChat: runClaudeCodeShareChat,
     defaultOneShotModel: "haiku",
     async buildOneShotCommand(model, effort, prompt, location, fast, oneShotOptions) {
       const selection = resolveCheckedOneShotBuilderSelection(

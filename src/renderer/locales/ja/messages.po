@@ -1103,6 +1103,11 @@ msgstr "{targetLabel} はオフラインです。先に接続してください�
 msgid "{targetLabel} is reached through this computer, so you can't open it while this computer is off."
 msgstr "{targetLabel} にはこのコンピューター経由でアクセスするため、このコンピューターの電源が切れている間は開けません。"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.timeLeft"
+msgstr "残り {time}"
+
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "{total, plural, one {# participant} other {# participants}}"
 msgstr "{total, plural, one {参加者 # 人} other {参加者 # 人}}"
@@ -1110,6 +1115,11 @@ msgstr "{total, plural, one {参加者 # 人} other {参加者 # 人}}"
 #: src/renderer/views/PrReviewOverlay/parts/PrReviewSidebar.tsx
 #~ msgid "{totalAdditions} additions and {totalDeletions} deletions"
 #~ msgstr "{totalAdditions} 行追加、{totalDeletions} 行削除"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.turnsLeft"
+msgstr "残り {turns} ターン"
 
 #: src/renderer/components/thread/ThreadAgentUpdateDock.tsx
 msgid "{updateLabel} updated to v{resolvedLatest}."
@@ -2638,6 +2648,11 @@ msgstr "ブラウザーのサイト設定でマイクへのアクセスを許可
 msgid "Allow replacing conflicting managed skills"
 msgstr "競合する管理対象スキルの置き換えを許可"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.allowRuns"
+msgstr "このコンピューターでリクエストを受け付ける"
+
 #: src/renderer/pwa/push/WebPushPermissionPrompt.tsx
 #: src/renderer/views/SettingsOverlay/parts/NotificationSettings.tsx
 msgid "Allow the browser to show notifications while the app is in the background."
@@ -3135,6 +3150,11 @@ msgstr "同時実行数"
 #: src/renderer/components/composer/ComposerAddMenu.tsx
 msgid "Attach"
 msgstr "添付する"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.attachFile"
+msgstr "ローカルのテキストファイルを添付"
 
 #: src/renderer/components/thread/ContinueInProviderDialog.tsx
 #~ msgid "Attach files"
@@ -4275,6 +4295,7 @@ msgstr "キャンセルされました"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Cancelled"
 msgstr "キャンセル済み"
 
@@ -4707,6 +4728,11 @@ msgstr "プロジェクトを選択してください。"
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Choose a saved credential to sign out."
 msgstr "ログアウトする保存済み認証情報を選択してください。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidFile"
+msgstr "小さな UTF-8 テキストファイルを選択してください。"
 
 #: src/renderer/views/SettingsOverlay/parts/HexVoiceSettings.tsx
 #~ msgid "Choose a voice model"
@@ -5434,6 +5460,16 @@ msgstr "Cmd+Enter"
 msgid "Code copied. "
 msgstr "コードがコピーされました。"
 
+#. js-lingui-explicit-id
+#: src/renderer/components/newsLine/featureCatalog.ts
+msgid "codeShare.discoveryPitch"
+msgstr "友達が共有するモデルを使って一緒にコーディング"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.requestFailed"
+msgstr "CodeShare でリクエストを完了できませんでした。もう一度お試しください。"
+
 #: src/renderer/components/providers/codex/manifest.ts
 msgid "Codex"
 msgstr "Codex"
@@ -6082,6 +6118,11 @@ msgstr "接続済み"
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 msgid "Connecting"
 msgstr "接続中"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.connecting"
+msgstr "CodeShare に接続中…"
 
 #: src/renderer/bootstrap.ts
 #: src/renderer/components/thread/ThreadDraftView.tsx
@@ -9677,6 +9718,7 @@ msgstr "失敗しました"
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Failed"
 msgstr "失敗"
@@ -10039,6 +10081,7 @@ msgstr "レビューを完了する"
 
 #: src/renderer/components/thread/ThreadHeaderStatus.tsx
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Finished"
 msgstr "完了しました"
 
@@ -11280,6 +11323,11 @@ msgstr "ホームページ"
 msgid "Hooray"
 msgstr "万歳"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.hostComputer"
+msgstr "ホストのコンピューター"
+
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Host credential reference"
 msgstr "ホスト認証情報参照"
@@ -12355,6 +12403,11 @@ msgstr "調査担当"
 msgid "Invite another model into this chat…"
 msgstr "このチャットに別のモデルを招待…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteLink"
+msgstr "招待リンク"
+
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 msgid "Invite models into this chat"
 msgstr "このチャットにモデルを招待"
@@ -12410,6 +12463,18 @@ msgstr "イタリック体"
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunDetail.tsx
 msgid "Jobs"
 msgstr "ジョブ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.joinButton"
+msgstr "参加"
+
+#. js-lingui-explicit-id
+#: src/renderer/components/newsLine/featureCatalog.ts
+#: src/renderer/viscosity/codeshare/codeShareCommand.ts
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.join"
+msgstr "CodeShare に参加"
 
 #: src/renderer/components/mcp/McpServerEditor.tsx
 msgid "JSON"
@@ -12763,6 +12828,11 @@ msgstr "空欄にすると、Devinが選択した組織を使用します。こ�
 #: src/renderer/viscosity/roundtable/chat/RoundtableDraftPanel.tsx
 msgid "Leave Roundtable mode"
 msgstr "Roundtable モードを終了"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.leave"
+msgstr "共有セッションから退出"
 
 #: src/renderer/views/SettingsOverlay/parts/EnvironmentSettingsSection.tsx
 msgid "Leave the credential reference empty to keep the current one."
@@ -14039,6 +14109,12 @@ msgstr "実験の勝者を {sourceBranch} にマージしました。"
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrSection.tsx
 msgid "Merging is blocked"
 msgstr "マージはブロックされています"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.message"
+msgstr "メッセージ"
 
 #: src/renderer/viscosity/bots/ui/BotChatPanel.tsx
 #~ msgid "Message {name}"
@@ -16135,6 +16211,7 @@ msgstr "公式ソースのみ"
 #: src/renderer/components/common/RemoteServerStatusDot.tsx
 #: src/renderer/views/ProfileOverlay/parts/ProfileHeader.tsx
 #: src/renderer/views/PullRequestsOverlay/list/PrListPanel.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Offline"
 msgstr "オフライン"
 
@@ -16338,6 +16415,11 @@ msgstr ""
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 msgid "Open {title}"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.localProjectRequired"
+msgstr "ローカルプロジェクトを開いてサブスクリプションを使用してください。"
 
 #: src/renderer/commands/registry.ts
 msgid "Open a new browser tab"
@@ -16836,7 +16918,13 @@ msgstr ""
 msgid "Open the model picker"
 msgstr "モデルピッカーを開く"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.desktopRequired"
+msgstr "このサブスクリプション招待は ViscosityCode デスクトップアプリで開いてください。"
+
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableTranscript.tsx
 msgid "Open thread"
 msgstr "スレッドを開く"
@@ -17116,6 +17204,11 @@ msgstr "専用の分離ログイン"
 msgid "Owner unverified"
 msgstr "所有者が未確認"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.fileApproval"
+msgstr "オーナー負担のターン：このプロジェクトのファイルを共有・編集します。"
+
 #: src/renderer/components/providers/devin/cloudProfileSettings.tsx
 msgid "owner/name, owner/name"
 msgstr "owner/name, owner/name"
@@ -17301,6 +17394,7 @@ msgstr "一部チェック済み"
 msgid "Participant {seatNumber}"
 msgstr "参加者 {seatNumber}"
 
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
@@ -17413,6 +17507,11 @@ msgstr "ペアリングリンクを貼り付け"
 msgid "Paste pairing URL…"
 msgstr "ペアリング URL を貼り付け…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidLink"
+msgstr "CodeShare の招待リンク全体を貼り付けてください。"
+
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Paste the pairing URL from your desktop"
 #~ msgstr "デスクトップのペアリング URL を貼り付けます"
@@ -17481,6 +17580,7 @@ msgstr "一時停止中"
 #: src/renderer/components/thread/ThreadGoalDock.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 #: src/renderer/views/SchedulesView/SchedulesView.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Paused"
@@ -18478,6 +18578,7 @@ msgstr ""
 #: src/renderer/views/GitHubActionsView/GitHubActionsProjectPicker.tsx
 #: src/renderer/views/ProjectSettingsOverlay/ProjectSettingsOverlay.tsx
 #: src/renderer/views/SchedulesView/ScheduleEditor.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableSetupDialog.tsx
 msgid "Project"
 msgstr "プロジェクト"
@@ -18943,6 +19044,7 @@ msgstr "メッセージをキューに入れる"
 
 #: src/renderer/views/GitHubActionsView/GitHubActionsRunList.tsx
 #: src/renderer/views/SettingsOverlay/parts/ModelOrderSection.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 msgid "Queued"
 msgstr "キュー待ち"
 
@@ -19116,6 +19218,7 @@ msgid "ready"
 msgstr ""
 
 #: src/renderer/components/devices/DeviceWorkspace.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/missionLabels.ts
 #: src/renderer/viscosity/playbooks/settings/ReversingSetupCheck.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableHeader.tsx
@@ -19662,6 +19765,11 @@ msgstr "環境変数を削除"
 #: src/renderer/components/crew/CrewRoleDetails.tsx
 msgid "Remove fallback"
 msgstr "フォールバックを削除"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.removeFile"
+msgstr "ファイルを削除"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDownloadsPage.tsx
 msgid "Remove from download history"
@@ -20219,6 +20327,11 @@ msgstr "応答中…"
 #: src/renderer/views/SettingsOverlay/parts/RemoteConnectionDetails.tsx
 msgid "Respond to agent requests"
 msgstr "エージェントのリクエストに応答"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stopped"
+msgstr "応答を停止しました。"
 
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserDeviceToolbar.tsx
 msgid "Responsive"
@@ -20950,6 +21063,11 @@ msgstr "実験を実行"
 msgid "Run gh auth login in a terminal on {executionHost}, then retry. If GH_TOKEN or GITHUB_TOKEN is set, update or remove the invalid token there."
 msgstr "{executionHost} のターミナルで gh auth login を実行してから再試行してください。GH_TOKEN または GITHUB_TOKEN が設定されている場合は、そのホストで無効なトークンを更新または削除してください。"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.runHere"
+msgstr "ここで実行"
+
 #: src/renderer/components/providers/cursor/cloudProfileSettings.tsx
 msgid "Run in"
 msgstr ""
@@ -20970,6 +21088,11 @@ msgstr "利用可能な場合は、GPU 上でローカル トランスクリプ�
 #: src/renderer/views/SchedulesView/parts/ScheduleRow.tsx
 msgid "Run now"
 msgstr "今すぐ実行"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.runOn"
+msgstr "実行先"
 
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Run once after reopening"
@@ -21026,6 +21149,7 @@ msgstr "実行中"
 #: src/renderer/views/SchedulesView/parts/scheduleRunStatus.ts
 #: src/renderer/views/SchedulesView/parts/TriagePanel.tsx
 #: src/renderer/viscosity/cloudAgents/ui/CloudAgentRow.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "Running"
 msgstr "実行中"
@@ -21931,8 +22055,14 @@ msgstr "サイドバーの選択行"
 #: src/renderer/components/devices/DeviceWorkspace.tsx
 #: src/renderer/components/thread/SideChat/SideChatBody.tsx
 #: src/renderer/views/PullRequestsOverlay/chat/PrAskChatComposer.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Send"
+msgstr "送信"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.send"
 msgstr "送信"
 
 #: src/renderer/components/thread/ThreadComposerSection.tsx
@@ -22168,9 +22298,21 @@ msgstr "アクティビティを共有"
 msgid "Shared"
 msgstr "共有"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.ended"
+msgstr "共有アクセスが終了しました。"
+
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Shared login owner"
 msgstr "共有ログインのオーナー"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.model"
+msgstr "共有モデル"
 
 #. placeholder {0}: owner.displayName ?? owner.id
 #: src/renderer/components/providers/devin/profileSettings.tsx
@@ -22190,6 +22332,11 @@ msgstr "別のプロファイルの分離ログインを共有しています。
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Shares missing owner {0}"
 msgstr "存在しないオーナー {0} を共有"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.room.shared"
+msgstr "共同作業中"
 
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 #: src/renderer/views/SettingsOverlay/parts/TerminalSettings.tsx
@@ -22625,6 +22772,8 @@ msgstr "補助モデル"
 #: src/renderer/components/providers/devin/profileSettings.tsx
 #: src/renderer/components/providers/settings/UsageProviderRow.tsx
 #: src/renderer/views/MainView/parts/RightPanel/parts/UsagePanel/parts/UsageProviderCard.tsx
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/subscriptions/ui/SubscriptionAccountRow.tsx
 msgid "Sign in"
 msgstr "サインイン"
@@ -22669,6 +22818,12 @@ msgstr ""
 #: src/renderer/components/providers/fx/FxProviderSettings.tsx
 msgid "Sign in to the AI backends fx can use, and sign out of them here."
 msgstr "fx が利用できる AI バックエンドにサインインし、ここからサインアウトできます。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.subscriptionRequired"
+msgstr "このデバイスでサブスクリプションのアカウントにログインしてから、再度お試しください。"
 
 #: src/renderer/views/SettingsOverlay/parts/SingleAgentSettings/SingleAgentSettings.tsx
 msgid "Sign in with the agent CLI."
@@ -23259,6 +23414,11 @@ msgstr "ゼロから始める"
 msgid "Start live voice"
 msgstr "リアルタイム音声を開始"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.openLocalChat"
+msgstr "ローカルチャットを開始"
+
 #: src/renderer/views/SettingsOverlay/parts/GeneralSettings.tsx
 #: src/renderer/views/SettingsOverlay/parts/settingsSearchIndex.ts
 msgid "Start minimized"
@@ -23363,6 +23523,11 @@ msgstr "音声入力を開始しています"
 msgid "starting…"
 msgstr "始めています…"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionLocal"
+msgstr "自分のサブスクリプションを使ってローカルプロジェクトでチャットを開始します。"
+
 #: src/renderer/components/startup/StartupRecoveryScreen.tsx
 msgid "Startup is taking longer than expected"
 msgstr "起動に通常より時間がかかっています"
@@ -23439,9 +23604,15 @@ msgstr "処理中です。再送信すると同じ報告を確認できます。
 
 #. Button: stop the microphone level test
 #: src/renderer/views/SettingsOverlay/parts/AudioSettings.tsx
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
 msgid "Stop"
+msgstr "停止"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stop"
 msgstr "停止"
 
 #. placeholder {0}: action.name
@@ -23478,6 +23649,11 @@ msgstr "転送を停止"
 #: src/renderer/views/SchedulesView/parts/ScheduleExecutionSection.tsx
 msgid "Stop on error"
 msgstr "エラー時に停止"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.stopReceiving"
+msgstr "リクエストの受付を停止"
 
 #: src/renderer/viscosity/missionControl/ui/MissionCardView.tsx
 #: src/renderer/viscosity/roundtable/ui/RoundtableControls.tsx
@@ -23528,6 +23704,11 @@ msgstr "停止中"
 #: src/renderer/viscosity/xai/xaiErrorText.ts
 msgid "Stopped."
 msgstr "停止しました。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.stopping"
+msgstr "停止中"
 
 #: src/renderer/components/thread/ThreadBackgroundTaskRow.tsx
 msgid "Stopping {label}…"
@@ -24426,6 +24607,11 @@ msgstr "チェックポイントを復元できませんでした。"
 msgid "the chosen folder"
 msgstr "選択したフォルダー"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.offline"
+msgstr "CodeShare ホストに接続できません。しばらくしてからお試しください。"
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "The comparison is complete."
 msgstr ""
@@ -24642,10 +24828,20 @@ msgstr "ホストはこのメッセージを受け付けましたが、ローカ
 msgid "The host has more labels than are listed here."
 msgstr "ホストには、ここに表示されているより多くのラベルがあります。"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.noModels"
+msgstr "この招待で利用できるモデルがホストにありません。"
+
 #: src/renderer/components/thread/RemoteHostUpdateDock.tsx
 #: src/renderer/views/SettingsOverlay/parts/RemoteHostUpdateControl.tsx
 msgid "The host is restarting to install the update."
 msgstr "アップデートをインストールするためにホストを再起動しています。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.paused"
+msgstr "ホストが CodeShare を一時停止しました。"
 
 #: src/renderer/state/remoteServers/environmentManagement.ts
 msgid "The host rejected the request."
@@ -24744,6 +24940,11 @@ msgstr "MCPサーバー設定が無効か、予約済みの名前を使用して
 msgid "The MCP server is invalid."
 msgstr "MCPサーバーが無効です。"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.messageTooLong"
+msgstr "メッセージと添付ファイルの合計が長すぎます。"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The move expired. Start it again."
 msgstr "移動の有効期限が切れました。もう一度開始してください。"
@@ -24840,9 +25041,19 @@ msgstr ""
 msgid "The provider asked us to slow down. Retrying soon."
 msgstr ""
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.providerLimited"
+msgstr "プロバイダーのレート上限に達したか、クレジットがなくなりました。"
+
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The provider is unavailable. Install or update it in provider settings."
 msgstr "プロバイダーを利用できません。プロバイダー設定でインストールまたは更新してください。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelMismatch"
+msgstr "プロバイダーが別のモデルを報告したため、CodeShare は応答を停止しました。"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The provider's sign-in data could not be read. Try again or update Poracode."
@@ -24916,6 +25127,11 @@ msgstr "レビューは送信されましたが、コメントの送信に失敗
 msgid "The review's changes are merged into its base branch. This cannot be undone here."
 msgstr "このレビューの変更がベースブランチにマージされます。ここでは元に戻せません。"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.room.failed"
+msgstr "ルームで操作を実行できませんでした。もう一度お試しください。"
+
 #: src/renderer/viscosity/roundtable/ui/patterns.ts
 msgid "The round limit was reached."
 msgstr "ラウンド数の上限に達しました。"
@@ -24972,6 +25188,11 @@ msgstr "選択したモデルは、各候補のチャット回答を匿名ラベ
 #: src/renderer/views/ExperimentView/parts/ExperimentJudgeDialog.tsx
 msgid "The selected model compares snapshots of each candidate's changes under anonymous labels. It recommends a winner without merging anything."
 msgstr "選択したモデルは、各候補の変更内容のスナップショットを匿名ラベルで比較します。何もマージせずに勝者を推奨します。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelUnavailable"
+msgstr "選択したモデルは利用できません。"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "The selected project is missing commits this thread needs. Fetch its latest changes and try again."
@@ -25560,6 +25781,11 @@ msgstr "このHTMLブロックはプレビューするには大きすぎます�
 #: src/mobile/views/DesktopsView.tsx
 #~ msgid "This HTTPS page couldn't reach the desktop on plain HTTP. Allow local network access for this site and pair again, or continue on the desktop's own address."
 #~ msgstr "この HTTPS ページは平文 HTTP のデスクトップに接続できませんでした。このサイトにローカルネットワークへのアクセスを許可して再度ペアリングするか、デスクトップ自身のアドレスで続けてください。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidCode"
+msgstr "この招待は無効か、期限切れか、すでに使用されています。"
 
 #: src/renderer/views/PullRequestsOverlay/changes/FileDiffCard.tsx
 msgid "This is a large diff, so it has not been loaded."
@@ -26353,6 +26579,11 @@ msgstr "ファイルを編集しないよう指示。強制ではありません
 #: src/renderer/components/thread/ChatPane/parts/items/HtmlVisual.tsx
 msgid "Too many HTML previews in this message. Showing source only."
 msgstr "このメッセージのHTMLプレビューが多すぎます。ソースのみ表示しています。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteRateLimited"
+msgstr "招待リクエストが多すぎます。1分待ってから再度お試しください。"
 
 #: src/renderer/i18n/sharedMessages.ts
 msgid "Too many moves are in progress. Try again shortly."
@@ -27191,6 +27422,7 @@ msgstr "不明なプロセス"
 
 #: src/renderer/components/providers/usageFormat.ts
 #: src/renderer/components/providers/UsageProviderCardView.tsx
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "Unlimited"
 msgstr "無制限"
 
@@ -27508,6 +27740,11 @@ msgstr "v{0}に更新"
 #~ msgid "Update to v{latestRegistryVersion}"
 #~ msgstr "v{latestRegistryVersion}に更新"
 
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.room.updateRequired"
+msgstr "このルームの招待を開くには、ViscosityCode を更新してください。"
+
 #: src/renderer/views/GitReviewOverlay/parts/GitReviewSidebar/parts/PrSection.tsx
 msgid "Update with merge commit"
 msgstr "マージコミットによる更新"
@@ -27753,6 +27990,11 @@ msgstr "このアカウントを使用"
 #: src/renderer/views/ProjectSettingsOverlay/parts/ProjectIconPicker.tsx
 msgid "Use an image from the project folder..."
 msgstr "プロジェクトフォルダの画像を使用..."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareRoomPanel.tsx
+msgid "codeShare.anotherInvite"
+msgstr "別の招待を使う"
 
 #: src/renderer/components/providers/devin/profileSettings.tsx
 msgid "Use another profile's account"
@@ -28330,6 +28572,11 @@ msgstr "{methodName}認証を待機しています。検出されたエージェ
 #: src/renderer/components/thread/ThreadAgentVisionDock.tsx
 msgid "Waiting for a preview"
 msgstr "プレビューを待機中"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.waiting"
+msgstr "応答を待機中…"
 
 #: src/renderer/components/plugins/ComputerUsePluginSettings.tsx
 msgid "Waiting for administrator approval…"

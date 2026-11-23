@@ -69,6 +69,10 @@ internal val schema_f399af5f8dcf6035: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("set-group")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_f3b3d8722ad77fc3: RemoteSchema by lazy {
+    RemoteSchema(type = "string", minLength = 1, maxLength = 1024, pattern = "^(?!\\.{1,2}(?:\\/|$))(?!.*\\/\\.{1,2}(?:\\/|$))[^/\\\\:\\p{Cc}]+(?:\\/[^/\\\\:\\p{Cc}]+)*$", unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
+}
+
 internal val schema_f3c2d2c49187a75b: RemoteSchema by lazy {
     RemoteSchema(type = "object", required = setOf("action", "objective"), properties = mapOf("action" to schema_10209383e3295873, "objective" to schema_422b1e8c8be5e2c0), additionalAllowed = true, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

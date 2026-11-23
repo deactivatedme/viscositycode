@@ -11,8 +11,8 @@
   "generatorVersion": 7,
   "inventory": {
     "blockedProcedureResults": [],
-    "jsonProcedureResults": 113,
-    "procedures": 179,
+    "jsonProcedureResults": 116,
+    "procedures": 182,
     "replayableEventTypes": 17,
     "routes": 121,
     "runtimeEventTypes": 16,
@@ -21,7 +21,7 @@
     "webSocketServerMessages": 12
   },
   "manifestFormatVersion": 1,
-  "manifestHash": "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3",
+  "manifestHash": "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c",
   "portableTransformIds": [
     "agent-settings.strip-sensitive",
     "push.routing.client-connection-id.lowercase",
@@ -814,6 +814,135 @@
         }
       },
       "scope": "projects:manage"
+    },
+    {
+      "name": "closeCodeShareWorkspace",
+      "owner": "projectLocation",
+      "request": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "grantId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "incarnation": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "projectLocation": {
+            "oneOf": [
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "windows",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "distro": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "wsl",
+                    "type": "string"
+                  },
+                  "linuxPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "uncPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "distro",
+                  "linuxPath",
+                  "uncPath"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "posix",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              }
+            ]
+          }
+        },
+        "required": [
+          "projectLocation",
+          "grantId",
+          "incarnation"
+        ],
+        "type": "object",
+        "x-poracode-unknownFields": "reject"
+      },
+      "result": {
+        "kind": "json",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": true,
+          "properties": {
+            "closed": {
+              "const": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "closed"
+          ],
+          "type": "object",
+          "x-poracode-unknownFields": "strip"
+        }
+      },
+      "scope": "session:operate"
     },
     {
       "name": "connectThreadVoice",
@@ -4754,6 +4883,267 @@
       },
       "scope": "session:operate",
       "timeout": "long"
+    },
+    {
+      "name": "executeCodeShareFileTool",
+      "owner": "projectLocation",
+      "request": {
+        "$defs": {
+          "__schema0": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "pattern": "^(?!\\.{1,2}(?:\\/|$))(?!.*\\/\\.{1,2}(?:\\/|$))[^/\\\\:\\p{Cc}]+(?:\\/[^/\\\\:\\p{Cc}]+)*$",
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "grantId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "incarnation": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "projectLocation": {
+            "oneOf": [
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "windows",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "distro": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "wsl",
+                    "type": "string"
+                  },
+                  "linuxPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "uncPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "distro",
+                  "linuxPath",
+                  "uncPath"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "posix",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              }
+            ]
+          },
+          "requestId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "tool": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "const": "find_files",
+                    "type": "string"
+                  },
+                  "query": {
+                    "maxLength": 256,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "query"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "reject"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "const": "read_file",
+                    "type": "string"
+                  },
+                  "path": {
+                    "$ref": "#/$defs/__schema0"
+                  }
+                },
+                "required": [
+                  "name",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "reject"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "content": {
+                    "maxLength": 128000,
+                    "type": "string"
+                  },
+                  "expectedModifiedAtMs": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "name": {
+                    "const": "write_file",
+                    "type": "string"
+                  },
+                  "path": {
+                    "$ref": "#/$defs/__schema0"
+                  }
+                },
+                "required": [
+                  "name",
+                  "path",
+                  "content",
+                  "expectedModifiedAtMs"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "reject"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "content": {
+                    "maxLength": 128000,
+                    "type": "string"
+                  },
+                  "name": {
+                    "const": "create_file",
+                    "type": "string"
+                  },
+                  "path": {
+                    "$ref": "#/$defs/__schema0"
+                  }
+                },
+                "required": [
+                  "name",
+                  "path",
+                  "content"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "reject"
+              }
+            ]
+          }
+        },
+        "required": [
+          "projectLocation",
+          "grantId",
+          "incarnation",
+          "requestId",
+          "tool"
+        ],
+        "type": "object",
+        "x-poracode-unknownFields": "reject"
+      },
+      "result": {
+        "kind": "json",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "oneOf": [
+            {
+              "additionalProperties": true,
+              "properties": {
+                "ok": {
+                  "const": true,
+                  "type": "boolean"
+                },
+                "value": {}
+              },
+              "required": [
+                "ok",
+                "value"
+              ],
+              "type": "object",
+              "x-poracode-unknownFields": "strip"
+            },
+            {
+              "additionalProperties": true,
+              "properties": {
+                "error": {
+                  "maxLength": 1000,
+                  "type": "string"
+                },
+                "ok": {
+                  "const": false,
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ok",
+                "error"
+              ],
+              "type": "object",
+              "x-poracode-unknownFields": "strip"
+            }
+          ]
+        }
+      },
+      "scope": "session:operate"
     },
     {
       "name": "extractContext",
@@ -29824,6 +30214,130 @@
       "scope": "session:operate"
     },
     {
+      "name": "openCodeShareWorkspace",
+      "owner": "projectLocation",
+      "request": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "projectLocation": {
+            "oneOf": [
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "windows",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "distro": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "wsl",
+                    "type": "string"
+                  },
+                  "linuxPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "uncPath": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "distro",
+                  "linuxPath",
+                  "uncPath"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              },
+              {
+                "additionalProperties": true,
+                "properties": {
+                  "kind": {
+                    "const": "posix",
+                    "type": "string"
+                  },
+                  "path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "remoteServerId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "path"
+                ],
+                "type": "object",
+                "x-poracode-unknownFields": "strip"
+              }
+            ]
+          }
+        },
+        "required": [
+          "projectLocation"
+        ],
+        "type": "object",
+        "x-poracode-unknownFields": "reject"
+      },
+      "result": {
+        "kind": "json",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": true,
+          "properties": {
+            "grantId": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            },
+            "incarnation": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "grantId",
+            "incarnation"
+          ],
+          "type": "object",
+          "x-poracode-unknownFields": "strip"
+        }
+      },
+      "scope": "session:operate"
+    },
+    {
       "name": "pauseThreadFollowUps",
       "owner": "thread",
       "request": {
@@ -40872,6 +41386,7 @@
     "cancelExtractContext",
     "clearMcpServerOauth",
     "cloneRepo",
+    "closeCodeShareWorkspace",
     "connectThreadVoice",
     "controlMcpApp",
     "createFileCheckpoint",
@@ -40884,6 +41399,7 @@
     "discoverExternalMcpServers",
     "editQueuedThreadFollowUp",
     "ensureThreadRunning",
+    "executeCodeShareFileTool",
     "extractContext",
     "finalizeFileCheckpoint",
     "forgeClosePr",
@@ -41005,6 +41521,7 @@
     "logoutAcpAgent",
     "lspStart",
     "moveProjectEntry",
+    "openCodeShareWorkspace",
     "pauseThreadFollowUps",
     "probeMcpServer",
     "queueThreadFollowUp",
@@ -88289,7 +88806,7 @@
     "void-envelope.omit-result",
     "void-result.omit-field"
   ],
-  "sourceHash": "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199",
+  "sourceHash": "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910",
   "unknownObjectFields": "ignore",
   "webSocket": {
     "clientMessages": [

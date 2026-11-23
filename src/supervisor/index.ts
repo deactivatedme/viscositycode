@@ -1,3 +1,4 @@
+import { isCodeShareRuntimeRequest, type CodeShareRuntimeRequest } from "@/shared/codeShareRuntime";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import {
   isSupervisorFlowControl,
@@ -188,9 +189,10 @@ async function shutdownSupervisor(exitCode = 0): Promise<void> {
 }
 
 async function handleRequest(
-  request: SupervisorRequest | ThreadWorkspaceRuntimeRequest,
+  request: SupervisorRequest | ThreadWorkspaceRuntimeRequest | CodeShareRuntimeRequest,
 ): Promise<unknown> {
   await runtime.whenReady();
+  if (isCodeShareRuntimeRequest(request)) return runtime.codeShareRuntime.request(request.payload);
   if (isThreadWorkspaceRuntimeRequest(request))
     return workspaceRequest(request.payload, request.type);
   const handler: (payload: never) => unknown = handlers[request.type];
@@ -249,7 +251,10 @@ process.on("message", (message: SupervisorRequest | unknown) => {
   ) {
     return;
   }
-  const request = message as SupervisorRequest | ThreadWorkspaceRuntimeRequest;
+  const request = message as
+    | SupervisorRequest
+    | ThreadWorkspaceRuntimeRequest
+    | CodeShareRuntimeRequest;
   void handleRequest(request)
     .then((data): SupervisorReply => ({
       replyTo: request.id,

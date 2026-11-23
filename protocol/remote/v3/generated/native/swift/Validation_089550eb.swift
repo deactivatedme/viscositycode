@@ -73,6 +73,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_16a1dae055c53228 = RemoteSchema(type: "object", required: Set(["grantId", "incarnation", "projectLocation", "requestId", "tool"]), properties: ["grantId": RemoteSchemas.schema_d855999aed5e6438, "incarnation": RemoteSchemas.schema_d855999aed5e6438, "projectLocation": RemoteSchemas.schema_080f9cc154af9e27, "requestId": RemoteSchemas.schema_d855999aed5e6438, "tool": RemoteSchemas.schema_3fb914ebc32f0418], additionalAllowed: false, unknownPolicy: .reject)
+}
+
+public extension RemoteSchemas {
   static let schema_1709690cf0edf961 = RemoteSchema(type: "object", required: Set(["type"]), properties: ["id": RemoteSchemas.schema_36fea325bf1aca70, "sentAt": RemoteSchemas.schema_80c415b6e27c6ebd, "type": RemoteSchemas.schema_fe79d48b8af45e7d], additionalAllowed: true, unknownPolicy: .strip)
 }
 

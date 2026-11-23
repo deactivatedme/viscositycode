@@ -3,11 +3,11 @@
   "contract": "poracode.remote",
   "protocolVersion": 14,
   "bindingFormatVersion": 2,
-  "manifestHash": "sha256:9a5ee59a9cb11ae69141aed18868b97f83741c84b24abe31cfa64338290d8f51",
-  "keyCount": 356,
+  "manifestHash": "sha256:250b531bff202d5aee6de69cb7b9c8c41d6565ca0498f897a43bfffe9d04f386",
+  "keyCount": 359,
   "counts": {
     "route": 121,
-    "procedure": 179,
+    "procedure": 182,
     "ws-client": 11,
     "ws-server": 12,
     "replay": 17,
@@ -37,6 +37,10 @@
     "procedure:cloneRepo": {
       "kind": "procedure",
       "id": "cloneRepo"
+    },
+    "procedure:closeCodeShareWorkspace": {
+      "kind": "procedure",
+      "id": "closeCodeShareWorkspace"
     },
     "procedure:connectThreadVoice": {
       "kind": "procedure",
@@ -85,6 +89,10 @@
     "procedure:ensureThreadRunning": {
       "kind": "procedure",
       "id": "ensureThreadRunning"
+    },
+    "procedure:executeCodeShareFileTool": {
+      "kind": "procedure",
+      "id": "executeCodeShareFileTool"
     },
     "procedure:extractContext": {
       "kind": "procedure",
@@ -569,6 +577,10 @@
     "procedure:moveProjectEntry": {
       "kind": "procedure",
       "id": "moveProjectEntry"
+    },
+    "procedure:openCodeShareWorkspace": {
+      "kind": "procedure",
+      "id": "openCodeShareWorkspace"
     },
     "procedure:pauseThreadFollowUps": {
       "kind": "procedure",

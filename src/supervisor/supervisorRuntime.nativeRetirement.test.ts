@@ -19,6 +19,8 @@ function runtimeFixture(disposeNativeRuntime: () => Promise<void>) {
   const disposeHexVoice = vi.fn<() => Promise<void>>(async () => {});
   const runtime = Object.assign(Object.create(SupervisorRuntime.prototype), {
     disposeNativeRuntime,
+    codeShareRuntime: { close: async () => {} },
+    codeShareFileRuntime: { close: async () => {} },
     agentRegistryService: { disposeAcpAuthentications: closeAuthentications },
     disposeWindowsPowerShellPreference: dispose,
     disposeWslCredentialProjectScope: dispose,

@@ -110,23 +110,23 @@ describe("remote v3 native binding generator", () => {
         // structural types and move only the source hash.
         // ViscosityCode: optional settings `autoArchiveDoneAfterDays` and `autoMarkDoneOnPrMerge`
         // move only the source hash; reshuffled content shards drop one Swift and two Kotlin files.
-        sourceHash: "sha256:4c4a7cd817b76d72447e9b2d6dc3e805867edffef393ec3868159dc431369199",
-        manifestHash: "sha256:c3dbd655e58ea677b33db3f8c1cd7694632810feda05ab8c91415ecbf2bb03e3",
+        sourceHash: "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910",
+        manifestHash: "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c",
         counts: {
           routes: 121,
-          procedures: 179,
+          procedures: 182,
           voidProcedureResults: 66,
-          jsonProcedureResults: 113,
+          jsonProcedureResults: 116,
           webSocketClientVariants: 11,
           // 11 shared + the desktop-internal `desktop-event` frame (V5 plan 2.5).
           webSocketServerVariants: 12,
-          schemaRoots: 579,
-          structuralTypes: 1369,
+          schemaRoots: 585,
+          structuralTypes: 1387,
           semanticValidators: 25,
           // Content-defined shards (emitterCommon.shardDeclarations) average
           // ~200 lines, so a contract change rewrites only nearby files.
-          swiftFiles: 145,
-          kotlinFiles: 127,
+          swiftFiles: 147,
+          kotlinFiles: 128,
           stateMachines: 5,
         },
       });
@@ -400,7 +400,7 @@ describe("remote v3 native binding generator", () => {
       const output = buildNativeBindingOutput(ir, manifest).files;
       for (const language of ["swift", "kotlin"] as const) {
         const adapters = rootAdapters(graph, language);
-        expect(adapters).toHaveLength(579);
+        expect(adapters).toHaveLength(585);
         expect(
           adapters
             .map((adapter) => adapter.id)

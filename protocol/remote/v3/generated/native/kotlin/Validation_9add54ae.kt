@@ -85,6 +85,10 @@ internal val schema_0288aefad61e0244: RemoteSchema by lazy {
     RemoteSchema(type = "object", required = setOf("branch", "commit", "isMain", "path"), properties = mapOf("branch" to schema_bf0b727f7b1c6d07, "commit" to schema_bf0b727f7b1c6d07, "isMain" to schema_feeb8bb50144d96d, "path" to schema_bf0b727f7b1c6d07), additionalAllowed = true, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_02b179207e61cd9b: RemoteSchema by lazy {
+    RemoteSchema(type = "object", required = setOf("content", "expectedModifiedAtMs", "name", "path"), properties = mapOf("content" to schema_ee49ed668eec9d78, "expectedModifiedAtMs" to schema_f696f11685898ba7, "name" to schema_9dd9cb57885336d0, "path" to schema_f3b3d8722ad77fc3), additionalAllowed = false, unknownPolicy = RemoteUnknownFieldPolicy.REJECT)
+}
+
 internal val schema_02f5d10d12c9f077: RemoteSchema by lazy {
     RemoteSchema(type = "object", required = setOf("projectLocation", "sourceScope"), properties = mapOf("projectLocation" to schema_080f9cc154af9e27, "sourceScope" to schema_b160fc20dd335dc3), additionalAllowed = false, unknownPolicy = RemoteUnknownFieldPolicy.REJECT)
 }

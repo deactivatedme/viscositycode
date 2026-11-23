@@ -7,7 +7,7 @@ public struct ProcedureconnectThreadVoiceRequestU2DConfigU2DPlaybookU2DOptionU2D
   public var instructions: String
   public var label: String
   public var mcpServerIds: RemoteField<[String]> = .missing
-  public var readOnly: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = .missing
+  public var readOnly: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = .missing
   public var switchPhrases: RemoteField<[String]> = .missing
   public var themeId: RemoteField<String> = .missing
   public var version: ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DVersion_7f9f5a0d72
@@ -19,7 +19,7 @@ public struct ProcedureconnectThreadVoiceRequestU2DConfigU2DPlaybookU2DOptionU2D
     .init(wireName: "instructions", typeName: "String", required: true, nullable: false, minimum: nil, maximum: nil, minLength: 1, maxLength: 6000, minItems: nil, maxItems: nil, pattern: nil, format: nil, semanticValidatorIds: []),
     .init(wireName: "label", typeName: "String", required: true, nullable: false, minimum: nil, maximum: nil, minLength: 1, maxLength: 32, minItems: nil, maxItems: nil, pattern: nil, format: nil, semanticValidatorIds: []),
     .init(wireName: "mcpServerIds", typeName: "[String]", required: false, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: nil, maxItems: 16, pattern: nil, format: nil, semanticValidatorIds: []),
-    .init(wireName: "readOnly", typeName: "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", required: false, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: nil, maxItems: nil, pattern: nil, format: nil, semanticValidatorIds: []),
+    .init(wireName: "readOnly", typeName: "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", required: false, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: nil, maxItems: nil, pattern: nil, format: nil, semanticValidatorIds: []),
     .init(wireName: "switchPhrases", typeName: "[String]", required: false, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: 1, maxItems: 10, pattern: nil, format: nil, semanticValidatorIds: []),
     .init(wireName: "themeId", typeName: "String", required: false, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: nil, maxItems: nil, pattern: "^[A-Za-z0-9][A-Za-z0-9:._-]{0,63}$", format: nil, semanticValidatorIds: []),
     .init(wireName: "version", typeName: "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DVersion_7f9f5a0d72", required: true, nullable: false, minimum: nil, maximum: nil, minLength: nil, maxLength: nil, minItems: nil, maxItems: nil, pattern: nil, format: nil, semanticValidatorIds: []),
@@ -48,7 +48,7 @@ public struct ProcedureconnectThreadVoiceRequestU2DConfigU2DPlaybookU2DOptionU2D
     self.instructions = try container.decode(String.self, forKey: .instructions)
     self.label = try container.decode(String.self, forKey: .label)
     self.mcpServerIds = try container.decode(RemoteField<[String]>.self, forKey: .mcpServerIds)
-    self.readOnly = try container.decode(RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1>.self, forKey: .readOnly)
+    self.readOnly = try container.decode(RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1>.self, forKey: .readOnly)
     self.switchPhrases = try container.decode(RemoteField<[String]>.self, forKey: .switchPhrases)
     self.themeId = try container.decode(RemoteField<String>.self, forKey: .themeId)
     self.version = try container.decode(ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DVersion_7f9f5a0d72.self, forKey: .version)

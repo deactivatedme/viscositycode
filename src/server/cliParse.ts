@@ -1,3 +1,4 @@
+// Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { parseArgs } from "node:util";
 import { parseServeCliOptions } from "./serverConfig";
 import { parseUpgradeCliOptions } from "./serverUpgrade";
@@ -11,6 +12,7 @@ export type ServerCliCommand =
   | "admin"
   | "configure"
   | "completion"
+  | "codeshare"
   | "print"
   | "tui"
   | "setup"
@@ -271,6 +273,7 @@ export function parseServerCliCommand(
       "mcp",
       "sessions",
       "configure",
+      "codeshare",
       "setup",
       "pair",
       "connect",
@@ -302,6 +305,7 @@ export function parseServerCliCommand(
   // branch, which claims every leading `--` flag.
   if (args.length === 1 && ["--version", "-v", "version"].includes(args[0]!)) return "version";
   if (args[0] === "tui") return "tui";
+  if (args[0] === "codeshare") return "codeshare";
   if (args[0] === "-p" || args[0] === "--print") return "print";
   // `serve` is the default command; its flags (and the bare `serve` keyword)
   // are validated here and re-parsed at dispatch (the established pattern).

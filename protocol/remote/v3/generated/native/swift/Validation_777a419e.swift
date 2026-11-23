@@ -85,6 +85,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_3916e737c0ba1caf = RemoteSchema(type: "string", literals: [.string("find_files")], unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_3935a65be87f52c2 = RemoteSchema(type: "object", required: Set(["type", "url"]), properties: ["type": RemoteSchemas.schema_921834989f2485e5, "url": RemoteSchemas.schema_c1504401bd291fd1], additionalAllowed: false, unknownPolicy: .reject)
 }
 

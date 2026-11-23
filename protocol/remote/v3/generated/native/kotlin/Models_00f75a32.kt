@@ -21,7 +21,7 @@ data class RouteprU2DWatchU2DReadResponseU2DWatchU2DOptionU2D1_5093c62d05(
     @SerialName("prNumber") val prNumber: Long,
     @SerialName("projectId") val projectId: String,
     @SerialName("reviewScope") val reviewScope: RemoteField<RouteprU2DWatchU2DReadResponseU2DWatchU2DOptionU2D1U2DReviewScope_464dbc5abe> = RemoteField.Missing,
-    @SerialName("reviewScopeUnsupported") val reviewScopeUnsupported: RemoteField<ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1> = RemoteField.Missing,
+    @SerialName("reviewScopeUnsupported") val reviewScopeUnsupported: RemoteField<ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1> = RemoteField.Missing,
     @SerialName("watchEnabled") val watchEnabled: Boolean,
     @SerialName("worktreePath") val worktreePath: RemoteField<String> = RemoteField.Missing,
 ) {
@@ -41,7 +41,7 @@ data class RouteprU2DWatchU2DReadResponseU2DWatchU2DOptionU2D1_5093c62d05(
             RemoteFieldDescriptor("prNumber", "Long", true, false, 1.0, 9007199254740991.0, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("projectId", "String", true, false, null, null, 1, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("reviewScope", "RouteprU2DWatchU2DReadResponseU2DWatchU2DOptionU2D1U2DReviewScope_464dbc5abe", false, false, null, null, null, null, null, null, null, null, listOf("forge.watch.scope-identity")),
-            RemoteFieldDescriptor("reviewScopeUnsupported", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("reviewScopeUnsupported", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", false, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("watchEnabled", "Boolean", true, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("worktreePath", "String", false, false, null, null, 1, null, null, null, null, null, listOf()),
         ), listOf("pr-watch.agent-required-when-enabled"))

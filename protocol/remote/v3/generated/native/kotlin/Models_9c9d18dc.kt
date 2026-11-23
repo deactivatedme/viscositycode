@@ -296,13 +296,13 @@ data class RouteprojectU2DCommandResponseU2DOptionU2D1_d760871169(
 @Serializable
 data class RouteprojectU2DCommandResponseU2DOptionU2D2_a7a81bdaab(
     @SerialName("created") val created: RemoteField<Boolean> = RemoteField.Missing,
-    @SerialName("ok") val ok: ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1,
+    @SerialName("ok") val ok: ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1,
     @SerialName("project") val project: RemoteField<RouteprojectU2DCommandResponseU2DOptionU2D1U2DProject_295340fa71> = RemoteField.Missing,
 ) {
     companion object {
         val descriptor = RemoteModelDescriptor(RemoteUnknownFieldPolicy.STRIP, listOf(
             RemoteFieldDescriptor("created", "Boolean", false, false, null, null, null, null, null, null, null, null, listOf()),
-            RemoteFieldDescriptor("ok", "ProcedureconnectThreadVoiceRequestU2DConfigU2DCrewU2DOptionU2D1U2DOptionU2D1U2DRolesU2DItemU2DNoEdits_d2dd3595e1", true, false, null, null, null, null, null, null, null, null, listOf()),
+            RemoteFieldDescriptor("ok", "ProcedurecloseCodeShareWorkspaceResultU2DClosed_d2dd3595e1", true, false, null, null, null, null, null, null, null, null, listOf()),
             RemoteFieldDescriptor("project", "RouteprojectU2DCommandResponseU2DOptionU2D1U2DProject_295340fa71", false, false, null, null, null, null, null, null, null, null, listOf()),
         ), listOf())
     }

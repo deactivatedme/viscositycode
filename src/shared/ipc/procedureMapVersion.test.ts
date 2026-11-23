@@ -149,7 +149,8 @@ import { isRemoteProcedure } from "../remote/procedures";
 // older supervisor rejects them before any effect and the renderer hides the
 // inbox; existing names and payloads are unchanged, the list cache is
 // in-memory, and none enters the remote allowlist, so hop 19 stays.
-const HOP_PIN = `${IPC_PROCEDURE_MAP_VERSION}:12dba45c0a965e364c76ac346564933aeab4eedda392833e08ec29f76afe72fd`;
+// CodeShare: three additive, project-scoped file-grant operations. Older peers reject unknown names before effects; hop 19 remains compatible.
+const HOP_PIN = `${IPC_PROCEDURE_MAP_VERSION}:3c1d6d21bbf740376ef594bc606d48435fca27f1270e50c0d8f4bfa39ec06eac`;
 
 describe("IPC procedure map versioning", () => {
   it("preserves the previous map while keeping port termination off remote transports", () => {
@@ -157,7 +158,7 @@ describe("IPC procedure map versioning", () => {
       .split("\n")
       .filter(
         (line) =>
-          !/^(listLocalPorts|closeLocalPort|isUserViewingThread|listCloudAgents|getCloudAgent|followCloudAgent):/.test(
+          !/^(openCodeShareWorkspace|executeCodeShareFileTool|closeCodeShareWorkspace|listLocalPorts|closeLocalPort|isUserViewingThread|listCloudAgents|getCloudAgent|followCloudAgent):/.test(
             line,
           ),
       ) // ViscosityCode: isUserViewingThread, cloud agents

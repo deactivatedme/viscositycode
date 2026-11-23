@@ -1,3 +1,5 @@
+import { startCodexCodeShareLogin } from "./codeShareLogin";
+import { runCodexCodeShareChat } from "./codeShareChat";
 import { createCodexProfileContext, type CodexAdapterOptions } from "./profileContext";
 import type { AgentCapability, AgentInstanceConfig, ProjectLocation } from "@/shared/contracts";
 import { codexProfileKind, parseCodexProfileInstanceConfig } from "@/shared/contracts";
@@ -154,6 +156,7 @@ export function createCodexAdapter(options: CodexAdapterOptions = {}): AgentAdap
     runtimePayloadFormatOwnerKey: PERSISTED_RUNTIME_PAYLOAD_FORMAT_OWNER_KEY,
     label,
     binary: codexDetectionSpec.binary,
+    refreshModelCatalog: true,
     supportsDeferredMcpAuthorization: true,
     sessionImport: createCodexSessionImport(nativeHomeDir),
     skillSupport: {
@@ -421,6 +424,9 @@ export function createCodexAdapter(options: CodexAdapterOptions = {}): AgentAdap
         return undefined;
       }
     },
+    startCodeShareLogin: startCodexCodeShareLogin,
+    supportsCodeShareRemoteFiles: true,
+    runCodeShareStructuredChat: runCodexCodeShareChat,
     defaultOneShotModel: "gpt-5.5",
     async buildOneShotCommand(model, effort, _prompt, location, fast, oneShotOptions) {
       const selection = resolveCheckedOneShotBuilderSelection(
