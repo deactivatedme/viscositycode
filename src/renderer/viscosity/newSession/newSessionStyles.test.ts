@@ -26,6 +26,8 @@ describe("new session stylesheet", () => {
     expect(count).toBeGreaterThan(0);
   });
 
+  // The action-row wrapper is retired; the project/device menu renders directly.
+  // Keep guarding the surviving draft layout hooks.
   it("targets hooks that the upstream markup still renders", () => {
     const hooks: Array<[string, string]> = [
       ["src/renderer/components/thread/ThreadDraftView.tsx", 'data-draft-body=""'],
@@ -38,7 +40,6 @@ describe("new session stylesheet", () => {
       ["src/renderer/components/newsLine/NewsLine.tsx", 'data-news-line=""'],
       ["src/renderer/components/newsLine/NewsLine.tsx", 'role="region"'],
       ["src/renderer/components/newsLine/NewsLine.tsx", 'data-news-controls=""'],
-      ["src/renderer/viscosity/newSession/NewSessionCenter.tsx", "vc-new-session-center"],
     ];
     for (const [path, hook] of hooks) {
       expect(read(path), `${hook} in ${path}`).toContain(hook);
@@ -57,7 +58,7 @@ describe("new session stylesheet", () => {
     }
   });
 
-  it("puts the centre first, the tip card next and the composer at the bottom", () => {
+  it("puts the centre first and the composer at the bottom", () => {
     const orders = new Map<string, string>();
     parse(css).walkDecls("order", (decl) => {
       orders.set((decl.parent as { selector: string }).selector, decl.value);
