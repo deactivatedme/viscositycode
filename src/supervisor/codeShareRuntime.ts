@@ -42,6 +42,7 @@ export class CodeShareRuntime {
           )
             return [];
           return status.capabilities.models.flatMap(({ id, label }) => {
+            if (provider.supportsOwnerModel && !provider.supportsOwnerModel(id)) return [];
             try {
               return [
                 {

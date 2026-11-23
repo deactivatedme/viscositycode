@@ -4,6 +4,11 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 const mocks = vi.hoisted(() => ({
   query: vi.fn<(input: unknown) => unknown>(),
   executable: vi.fn<() => Promise<string | undefined>>(),
+  primary: vi.fn<() => Promise<string | undefined>>(async () => "/fixture/claude"),
+}));
+vi.mock("../base", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../base")>()),
+  resolveExecutablePathAsync: mocks.primary,
 }));
 vi.mock("@anthropic-ai/claude-agent-sdk", () => ({ query: mocks.query }));
 vi.mock("./compatibleBinary", () => ({ findCompatibleClaudeOverride: mocks.executable }));
@@ -37,6 +42,7 @@ it("uses the Agent SDK with tools and API-key fallback disabled", async () => {
         settingSources: [],
         strictMcpConfig: true,
         persistSession: false,
+        pathToClaudeCodeExecutable: "/fixture/claude",
       }),
     }),
   );

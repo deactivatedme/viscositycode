@@ -187,3 +187,45 @@ it("keeps native owner-key runs behind the private bridge and joins cancellation
     await runtime.close();
   }
 });
+
+it("excludes local aliases from the owner catalog and refuses them before generation", async () => {
+  const run = vi.fn<NonNullable<AgentAdapter["runCodeShareStructuredChat"]>>(async () => "reply");
+  const runtime = new CodeShareRuntime(
+    new Map([
+      [
+        "claude",
+        {
+          kind: "claude",
+          runCodeShareStructuredChat: run,
+          async detectInstall() {
+            return {
+              installed: true,
+              authState: "authenticated",
+              providerMetadata: { authMethod: "Claude.ai", plan: "pro" },
+              capabilities: {
+                models: [
+                  { id: "sonnet55", label: "Local shorthand" },
+                  { id: "claude-sonnet-5-5", label: "Sonnet 5.5" },
+                ],
+              },
+            };
+          },
+        } as unknown as AgentAdapter,
+      ],
+    ]),
+  );
+  try {
+    expect((await runtime.catalog()).map(({ id }) => id)).toEqual(["claude:claude-sonnet-5-5"]);
+    await expect(
+      runtime.request({
+        action: "run",
+        id: crypto.randomUUID(),
+        model: "claude:sonnet55",
+        messages: [{ role: "user", content: "hello" }],
+      }),
+    ).rejects.toThrow("unavailable");
+    expect(run).not.toHaveBeenCalled();
+  } finally {
+    await runtime.close();
+  }
+});

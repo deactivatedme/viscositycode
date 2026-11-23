@@ -8,6 +8,8 @@ interface CodeShareSubscriptionProvider {
   id: string;
   ownerLabel: string;
   supportsOwnerChat?: boolean;
+  /** True only for IDs runnable in an isolated owner session without local model aliases. */
+  supportsOwnerModel?(id: string): boolean;
   acceptsAccount(metadata: AgentStatus["providerMetadata"]): boolean;
   modelLabel?(id: string): string | undefined;
 }

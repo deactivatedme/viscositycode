@@ -45,7 +45,10 @@ must still be tested with the actual account and hostname.
 Owner subscription chat runs through Claude's Agent SDK or Codex's app-server
 protocol, with no terminal/print-generation fallback. OAuth credentials stay in
 normal provider storage. Guests do not sign in to the owner's providers. Host text chat has no file tools and runs in a disposable directory. Approved participant file turns attach only a per-turn remote workspace MCP server; owner filesystem and shell tools, hooks, and plugins stay disabled.
-Codex's restricted app-server route is qualified for **0.171.0**.
+Codex's restricted app-server route is qualified for **0.171.0**. Claude uses
+its installed native executable explicitly because standalone distributions
+prune optional SDK executables. Local model aliases are excluded from owner
+sharing; choose a concrete model ID from the catalog.
 
 Advanced environment configuration remains supported. Set
 `CODESHARE_OWNER_SUBSCRIPTION_MODELS` to exact IDs from `codeshare --check-models`

@@ -1,3 +1,4 @@
+import { resolveExecutablePathAsync } from "../base";
 import {
   CODE_SHARE_WORKSPACE_MCP,
   CODE_SHARE_REMOTE_TURN_TIMEOUT_MS,
@@ -69,7 +70,10 @@ export async function runClaudeCodeShareChat(input: CodeShareStructuredChatInput
   const children: Promise<void>[] = [];
   let closing = false;
   try {
-    const path = await findCompatibleClaudeOverride(input.location, input.signal);
+    const primary = await resolveExecutablePathAsync("claude");
+    const path =
+      (await findCompatibleClaudeOverride(input.location, input.signal, primary)) ?? primary;
+    if (!path) throw new Error("Install the native Claude runtime on the owner computer.");
     input.signal?.throwIfAborted();
     assertAgentLaunchAllowed("thread-structured");
     const options = claudeCodeShareOptions(input, abort);
