@@ -19,6 +19,11 @@ import type { StructuredSessionUpdate } from "../base";
 import { ClaudeSdkSession } from "./sdkSession";
 import { msg } from "@/shared/messages";
 
+const mockCompatibleBinary = vi.hoisted(() => ({
+  find: vi.fn<() => Promise<string | undefined>>(),
+}));
+vi.mock("./compatibleBinary", () => ({ findCompatibleClaudeOverride: mockCompatibleBinary.find }));
+
 const mockSdk = vi.hoisted(() => ({
   query: vi.fn<(input: unknown) => Query>(),
 }));
@@ -352,6 +357,7 @@ describe("ClaudeSdkSession", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCompatibleBinary.find.mockResolvedValue(undefined);
     mockChildProcess.spawn.mockReturnValue(makeFakeSpawnedChild(1234));
     mockBase.getWslProjectShellEnv.mockReturnValue(undefined);
     mockBase.primeWslProjectShellEnv.mockResolvedValue(undefined);
@@ -359,6 +365,31 @@ describe("ClaudeSdkSession", () => {
       (location: ProjectLocation, binary: string) =>
         location.kind === "wsl" && binary === "claude" ? "/home/demo/.local/bin/claude" : undefined,
     );
+  });
+
+  it("uses the compatible installed executable for normal SDK chat", async () => {
+    const fake = createFakeQuery();
+    mockSdk.query.mockReturnValue(fake.runtime);
+    mockCompatibleBinary.find.mockResolvedValue("/installed/current/claude");
+    const session = await ClaudeSdkSession.create({
+      threadId: "thread-compatible-claude",
+      projectLocation,
+      config,
+      presentationMode: "gui",
+    });
+    try {
+      await session.openThread(config);
+      await session.startTurn("hello", config);
+      expect(mockSdk.query).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            pathToClaudeCodeExecutable: "/installed/current/claude",
+          }),
+        }),
+      );
+    } finally {
+      await session.dispose();
+    }
   });
 
   it("waits for SDK query creation before sending the first GUI turn", async () => {

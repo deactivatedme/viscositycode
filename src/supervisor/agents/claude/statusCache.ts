@@ -4,4 +4,5 @@
 // Includes configured profiles, whose capabilities derive from the same adapter.
 // ViscosityCode: v82 drops rows holding the stale static model list and the old
 // "Max Subscription" plan label for Ultra (Max 20x) accounts.
-export const claudeStatusCachePolicy = { kind: "claude", minimumVersion: 82 };
+// v83 refreshes executable selection after detecting shadowed 1.x installations.
+export const claudeStatusCachePolicy = { kind: "claude", minimumVersion: 83 };

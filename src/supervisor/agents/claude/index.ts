@@ -37,6 +37,7 @@ import {
   claudeExtraArgsPosition,
   rewriteClaudeLaunchArgsForConfig,
 } from "./argv";
+import { findCompatibleClaudeOverride } from "./compatibleBinary";
 import { claudeContextWindowEnv } from "./contextWindow";
 import { claudeCapabilities, claudeDetectionSpec, probeClaudeStatus } from "./detection";
 import { probeClaudeCapabilities } from "./probe";
@@ -273,8 +274,11 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
     ];
     args.push(...claudeControlArgs(effort, fast));
     const env = location ? await profileEnv(location) : undefined;
+    const executable = await findCompatibleClaudeOverride(
+      location ?? detectProbeLocation(undefined),
+    );
     return {
-      command: "claude",
+      command: executable ?? "claude",
       args,
       stdin: "",
       ...(env ? { env } : {}),
@@ -378,7 +382,11 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
                 return probeClaudeCapabilities(probeCtx, env ? { env } : undefined);
               },
             };
-      const status = await detectAgentInstall(ctx, spec);
+      const executable = await findCompatibleClaudeOverride(detectProbeLocation(ctx), ctx?.signal);
+      const status = await detectAgentInstall(
+        ctx,
+        executable ? { ...spec, binary: executable } : spec,
+      );
       return {
         ...status,
         kind,
@@ -407,7 +415,7 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
       const env = claudeContextWindowEnv(config.contextSize, await profileEnv(location));
       return {
         ...mcp,
-        binary: "claude",
+        binary: (await findCompatibleClaudeOverride(location)) ?? "claude",
         args,
         ...(env ? { env } : {}),
         sessionRef: createKnownSessionRef(assignedId),
@@ -423,7 +431,8 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
         ...mcp.args,
       );
       const env = claudeContextWindowEnv(config.contextSize, await profileEnv(location));
-      return { ...mcp, binary: "claude", args, ...(env ? { env } : {}) };
+      const binary = (await findCompatibleClaudeOverride(location)) ?? "claude";
+      return { ...mcp, binary, args, ...(env ? { env } : {}) };
     },
     extraArgsPosition: claudeExtraArgsPosition,
     rewriteLaunchArgsForConfig: rewriteClaudeLaunchArgsForConfig,
@@ -442,7 +451,7 @@ export function createClaudeAdapter(options: ClaudeAdapterOptions = {}): AgentAd
         location,
         "claude",
         ["auth", "logout"],
-        undefined,
+        await findCompatibleClaudeOverride(location, ctx?.signal),
         await profileEnv(location),
       );
     },

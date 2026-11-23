@@ -50,6 +50,7 @@ import {
 } from "../base";
 import { captureSupervisorException } from "../../diagnostics/sentry";
 import { resolveAgentBinaryPath } from "../binaryResolver";
+import { findCompatibleClaudeOverride } from "./compatibleBinary";
 import { DeferredTurnCompletion } from "./deferredTurnCompletion";
 import {
   clearBackgroundTasks,
@@ -1343,9 +1344,15 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
       let claudeExecutablePath: string | undefined;
       switch (this.input.projectLocation.kind) {
         case "posix": {
-          claudeExecutablePath =
+          const resolved =
             resolveAgentBinaryPath(this.input.projectLocation, "claude") ??
             (await resolveExecutablePathAsync("claude"));
+          claudeExecutablePath =
+            (await findCompatibleClaudeOverride(
+              this.input.projectLocation,
+              undefined,
+              resolved ?? null,
+            )) ?? resolved;
           if (!claudeExecutablePath) {
             throw new Error(
               "Claude Code CLI not found on PATH. Install Claude Code (`npm i -g @anthropic-ai/claude-code` or via Homebrew) and restart Poracode.",
@@ -1354,7 +1361,13 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
           break;
         }
         case "windows": {
-          claudeExecutablePath = resolveAgentBinaryPath(this.input.projectLocation, "claude");
+          const resolved = resolveAgentBinaryPath(this.input.projectLocation, "claude");
+          claudeExecutablePath =
+            (await findCompatibleClaudeOverride(
+              this.input.projectLocation,
+              undefined,
+              resolved ?? null,
+            )) ?? resolved;
           break;
         }
         case "wsl":
