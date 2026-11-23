@@ -402,6 +402,79 @@ describe("ClaudeSdkSession", () => {
     await session.dispose();
   });
 
+  it("fails a rejected Fable model switch before acknowledging a prompt", async () => {
+    const fake = createFakeQuery();
+    fake.setModel.mockRejectedValueOnce(new Error("model unavailable for this account"));
+    mockSdk.query.mockReturnValue(fake.runtime);
+    const older = { model: "claude-fable-5-1" };
+    const requested = { model: "claude-fable-5-2" };
+    const updates: StructuredSessionUpdate[] = [];
+    const events: RuntimeEvent[] = [];
+    const admitted = vi.fn<() => void>();
+    const session = await ClaudeSdkSession.create({
+      threadId: "thread-model-switch",
+      projectLocation,
+      config: older,
+      presentationMode: "gui",
+    });
+    session.setListener({
+      onRuntimeEvent: (event) => events.push(event),
+      onUpdate: (update) => updates.push(update),
+      onError: () => {},
+      onClose: () => {},
+    });
+    await session.openThread(older);
+    await expect(
+      session.startTurn("FABLE_52", requested, undefined, { onPromptSubmitted: admitted }),
+    ).rejects.toThrow("Claude rejected the switch to claude-fable-5-2");
+    expect(fake.setModel).toHaveBeenCalledWith("claude-fable-5-2");
+    expect(admitted).not.toHaveBeenCalled();
+    expect(events.at(-1)).toMatchObject({ type: "turn.completed", state: "failed" });
+    expect(updates.at(-1)).toMatchObject({ status: "error" });
+    await session.dispose();
+  });
+
+  it("fails a turn when Claude reports Fable 5.1 for Fable 5.2", async () => {
+    const fake = createFakeQuery();
+    mockSdk.query.mockReturnValue(fake.runtime);
+    const requested = { model: "claude-fable-5-2" };
+    const updates: StructuredSessionUpdate[] = [];
+    const events: RuntimeEvent[] = [];
+    const session = await ClaudeSdkSession.create({
+      threadId: "thread-model-fallback",
+      projectLocation,
+      config: requested,
+      presentationMode: "gui",
+    });
+    session.setListener({
+      onRuntimeEvent: (event) => events.push(event),
+      onUpdate: (update) => updates.push(update),
+      onError: () => {},
+      onClose: () => {},
+    });
+    const id = await session.openThread(requested);
+    await session.startTurn("FABLE_52", requested);
+    fake.emitMessage({
+      type: "stream_event",
+      session_id: id,
+      parent_tool_use_id: null,
+      event: { type: "message_start", message: { model: "claude-fable-5-1" } },
+    } as SDKMessage);
+    fake.emitMessage(sdkAssistantMessage(id, "unexpected-reply", "WRONG_MODEL_REPLY"));
+    fake.emitMessage(sdkSuccessResult(id));
+    await flushAsyncWork();
+    expect(fake.runtime.interrupt).toHaveBeenCalled();
+    expect(JSON.stringify(events)).not.toContain("WRONG_MODEL_REPLY");
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "error",
+        message: expect.stringContaining("claude-fable-5-1"),
+      }),
+    );
+    expect(updates.at(-1)).toMatchObject({ status: "error" });
+    await session.dispose();
+  });
+
   it("acknowledges inherited context only after the SDK consumes the prompt", async () => {
     const fake = createFakeQuery();
     mockSdk.query.mockReturnValue(fake.runtime);

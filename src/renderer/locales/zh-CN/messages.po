@@ -29299,3 +29299,169 @@ msgstr "放大"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Zoom out"
 msgstr "缩小"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.timeLeft"
+msgstr "剩余 {time}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.turnsLeft"
+msgstr "剩余 {turns} 轮"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.attachFile"
+msgstr "附加本地文本文件"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidFile"
+msgstr "请选择较小的 UTF-8 文本文件。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.requestFailed"
+msgstr "CodeShare 无法完成请求，请重试。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.connecting"
+msgstr "正在连接到 CodeShare…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteLink"
+msgstr "邀请链接"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.joinButton"
+msgstr "加入"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/codeShareCommand.ts
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.join"
+msgstr "加入 CodeShare"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.leave"
+msgstr "退出共享会话"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.message"
+msgstr "消息"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidLink"
+msgstr "请粘贴完整的 CodeShare 邀请链接。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.removeFile"
+msgstr "移除文件"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stopped"
+msgstr "已停止回复。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.send"
+msgstr "发送"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.ended"
+msgstr "共享访问已结束。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.model"
+msgstr "共享模型"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stop"
+msgstr "停止"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.offline"
+msgstr "无法连接到 CodeShare 主机，请稍后重试。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.noModels"
+msgstr "主机没有可供此邀请使用的模型。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.paused"
+msgstr "主机已暂停 CodeShare。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.messageTooLong"
+msgstr "消息和附加文件的总长度超出限制。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.providerLimited"
+msgstr "提供商已达到请求频率上限或用完额度。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidCode"
+msgstr "此邀请无效、已过期或已被使用。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.waiting"
+msgstr "正在等待回复…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelMismatch"
+msgstr "提供商报告了不同的模型。CodeShare 已停止回复。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.desktopRequired"
+msgstr "请在 ViscosityCode 桌面应用中打开此订阅邀请。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.localProjectRequired"
+msgstr "请打开本地项目以使用你的订阅。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionRequired"
+msgstr "请在此设备上登录订阅账户，然后重试。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelUnavailable"
+msgstr "所选模型不可用。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionLocal"
+msgstr "使用你自己的订阅在本地项目中开始对话。"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.openLocalChat"
+msgstr "开始本地对话"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteRateLimited"
+msgstr "邀请请求过多。请等待一分钟后重试。"

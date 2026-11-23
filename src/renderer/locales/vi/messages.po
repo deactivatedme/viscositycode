@@ -29300,3 +29300,169 @@ msgstr "Phóng to"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Zoom out"
 msgstr "Thu nhỏ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.timeLeft"
+msgstr "Còn {time}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.turnsLeft"
+msgstr "Số lượt còn lại · {turns}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.attachFile"
+msgstr "Đính kèm tệp văn bản trên thiết bị"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidFile"
+msgstr "Chọn một tệp văn bản UTF-8 có kích thước nhỏ."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.requestFailed"
+msgstr "CodeShare không thể hoàn tất yêu cầu. Hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.connecting"
+msgstr "Đang kết nối với CodeShare…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteLink"
+msgstr "Liên kết mời"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.joinButton"
+msgstr "Tham gia"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/codeShareCommand.ts
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.join"
+msgstr "Tham gia CodeShare"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.leave"
+msgstr "Rời phiên chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.message"
+msgstr "Tin nhắn"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidLink"
+msgstr "Dán toàn bộ liên kết mời CodeShare."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.removeFile"
+msgstr "Gỡ tệp"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stopped"
+msgstr "Đã dừng phản hồi."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.send"
+msgstr "Gửi"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.ended"
+msgstr "Quyền truy cập chia sẻ đã kết thúc."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.model"
+msgstr "Mô hình được chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stop"
+msgstr "Dừng"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.offline"
+msgstr "Không thể kết nối với máy chủ CodeShare. Hãy thử lại sau giây lát."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.noModels"
+msgstr "Máy chủ không có mô hình nào cho lời mời này."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.paused"
+msgstr "Chủ máy đã tạm dừng CodeShare."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.messageTooLong"
+msgstr "Tổng dung lượng tin nhắn và tệp đính kèm vượt giới hạn."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.providerLimited"
+msgstr "Nhà cung cấp đã đạt giới hạn yêu cầu hoặc hết tín dụng."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidCode"
+msgstr "Lời mời không hợp lệ, đã hết hạn hoặc đã được sử dụng."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.waiting"
+msgstr "Đang chờ phản hồi…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelMismatch"
+msgstr "Nhà cung cấp báo cáo một mô hình khác. CodeShare đã dừng phản hồi."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.desktopRequired"
+msgstr "Mở lời mời dùng gói đăng ký này trong ứng dụng ViscosityCode trên máy tính."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.localProjectRequired"
+msgstr "Mở một dự án cục bộ để dùng gói đăng ký của bạn."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionRequired"
+msgstr "Đăng nhập tài khoản có gói đăng ký trên thiết bị này rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelUnavailable"
+msgstr "Mô hình đã chọn không khả dụng."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionLocal"
+msgstr "Bắt đầu cuộc trò chuyện trong dự án cục bộ bằng gói đăng ký của bạn."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.openLocalChat"
+msgstr "Bắt đầu trò chuyện cục bộ"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteRateLimited"
+msgstr "Có quá nhiều yêu cầu lời mời. Hãy chờ một phút rồi thử lại."

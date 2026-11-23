@@ -29300,3 +29300,169 @@ msgstr "Увеличить"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Zoom out"
 msgstr "Уменьшить"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.timeLeft"
+msgstr "Осталось {time}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.turnsLeft"
+msgstr "Осталось запросов · {turns}"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.attachFile"
+msgstr "Прикрепить локальный текстовый файл"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidFile"
+msgstr "Выберите небольшой текстовый файл в кодировке UTF-8."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.requestFailed"
+msgstr "CodeShare не удалось выполнить запрос. Попробуйте ещё раз."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.connecting"
+msgstr "Подключение к CodeShare…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteLink"
+msgstr "Ссылка-приглашение"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.joinButton"
+msgstr "Присоединиться"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/codeShareCommand.ts
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.join"
+msgstr "Присоединиться к CodeShare"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.leave"
+msgstr "Выйти из общего сеанса"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.message"
+msgstr "Сообщение"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidLink"
+msgstr "Вставьте полную ссылку-приглашение CodeShare."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.removeFile"
+msgstr "Удалить файл"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stopped"
+msgstr "Ответ остановлен."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.send"
+msgstr "Отправить"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.ended"
+msgstr "Общий доступ завершён."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.model"
+msgstr "Общая модель"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.stop"
+msgstr "Остановить"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.offline"
+msgstr "Сервер CodeShare недоступен. Попробуйте чуть позже."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.noModels"
+msgstr "На сервере нет моделей, доступных по этому приглашению."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.paused"
+msgstr "Владелец приостановил CodeShare."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.messageTooLong"
+msgstr "Сообщение и прикреплённый файл вместе слишком длинные."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.providerLimited"
+msgstr "Достигнут лимит запросов к провайдеру или закончились кредиты."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.invalidCode"
+msgstr "Приглашение недействительно, просрочено или уже использовано."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.waiting"
+msgstr "Ожидание ответа…"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelMismatch"
+msgstr "Провайдер сообщил о другой модели. CodeShare остановил ответ."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.desktopRequired"
+msgstr "Откройте это приглашение в настольном приложении ViscosityCode, чтобы использовать подписку."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.localProjectRequired"
+msgstr "Откройте локальный проект, чтобы использовать свою подписку."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionRequired"
+msgstr "Войдите в аккаунт с подпиской на этом устройстве и повторите попытку."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.modelUnavailable"
+msgstr "Выбранная модель недоступна."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.subscriptionLocal"
+msgstr "Начинает чат в локальном проекте с использованием вашей подписки."
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.openLocalChat"
+msgstr "Начать локальный чат"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.inviteRateLimited"
+msgstr "Слишком много запросов на вход по приглашению. Подождите минуту и попробуйте снова."

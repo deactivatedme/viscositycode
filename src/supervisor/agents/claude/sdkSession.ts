@@ -112,6 +112,7 @@ import { claudeSdkNativeChromeArgs } from "./nativeChrome";
 import { mapClaudeElicitationRequest, normalizeClaudeElicitationResponse } from "./sdkElicitation";
 import { claudeSdkSettingsEnv } from "./sdkSettings";
 import { buildSdkUserMessage } from "./sdkPrompt";
+import { claudeModelRouteError, readClaudeReplyModel } from "./modelIdentity";
 import {
   basePermissionModeForConfig,
   buildDenyMessage,
@@ -176,6 +177,8 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
   private openedResumeSessionId: string | undefined;
   private currentConfig: ThreadConfig;
   private appliedModel: string | undefined;
+  private expectedTurnModel: string | undefined;
+  private turnModelError: string | undefined;
   private appliedContextWindow: number | undefined;
   // Launch-time size: a relaunch deferred behind background work keeps this model variant.
   private appliedContextSize: string | undefined;
@@ -427,7 +430,25 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     if (!isCurrent()) return;
     await this.mcpServers.sync(query, config, isCurrent);
     if (!isCurrent()) return;
-    await this.syncModel(query, config);
+    try {
+      await this.syncModel(query, config);
+    } catch (error) {
+      if (!isCurrent()) return;
+      // Model admission failed before the prompt was queued. Settle only
+      // this turn, leaving the existing query and its background work alive.
+      this.currentTurnInFlight = false;
+      this.stopGoalTracking();
+      const turnId = this.mapperState.currentTurnId;
+      if (turnId) {
+        delete this.mapperState.currentTurnId;
+        this.emitRuntimeEvents([
+          { type: "turn.completed", threadId: this.input.threadId, turnId, state: "failed" },
+        ]);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      this.emitUpdate({ status: "error", attention: "error", errorMessage: message });
+      throw error;
+    }
     if (!isCurrent()) return;
     const permissionMode = permissionModeForConfig(config);
     const basePermissionMode = basePermissionModeForConfig(config);
@@ -463,6 +484,7 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     this.pendingPromptAdmission = options?.onPromptSubmitted
       ? { generation, acknowledge: options.onPromptSubmitted }
       : undefined;
+    this.expectedTurnModel = this.appliedModel;
     this.promptQueue.push(message);
   }
 
@@ -473,6 +495,8 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     options?: StartTurnOptions,
   ): void {
     this.currentConfig = config;
+    this.expectedTurnModel = undefined;
+    this.turnModelError = undefined;
     const turnId = `turn-${randomUUID()}`;
     this.currentTurnAssistantUuid = undefined;
     this.turnUsageSignals = {}; // ViscosityCode: a new turn starts without usage signals.
@@ -687,10 +711,15 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     if (model === this.appliedModel) return;
     try {
       await runtime.setModel(model);
-      this.appliedModel = model;
-    } catch {
-      // Older SDK transports can reject live model updates; the launch model still applies.
+    } catch (error) {
+      throw new Error(
+        `Claude rejected the switch to ${model}: ${error instanceof Error ? error.message : String(error)}`,
+        {
+          cause: error,
+        },
+      );
     }
+    this.appliedModel = model;
   }
 
   private async syncSandbox(runtime: Query, config: ThreadConfig): Promise<void> {
@@ -849,6 +878,8 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     this.steerDelivery.reset();
     this.contextSteer?.cancel("The Claude query restarted before the context reached it.");
     this.currentTurnAssistantUuid = undefined;
+    this.expectedTurnModel = undefined;
+    this.turnModelError = undefined;
     this.currentTurnInFlight = false;
     this.openedResumeSessionId = resumeSessionId;
     this.interruptInFlight = false;
@@ -1687,6 +1718,28 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     if (consumedSteer && !this.currentTurnInFlight) this.beginTurn(...consumedSteer);
     this.beginResumedTurnIfNeeded(message);
 
+    if (
+      (message.type === "assistant" || message.type === "stream_event") &&
+      !readParentToolUseId(message)
+    ) {
+      if (this.turnModelError) return;
+      const reported = readClaudeReplyModel(message);
+      if (this.expectedTurnModel && reported) {
+        const error = claudeModelRouteError(this.expectedTurnModel, reported);
+        if (error) {
+          this.turnModelError = error;
+          this.emitRuntimeEvents([
+            { type: "error", threadId: this.input.threadId, message: error },
+          ]);
+          if (this.queryRuntime)
+            void interruptClaudeQuery(this.queryRuntime, this.steerDelivery.supported).catch(
+              () => {},
+            );
+          return;
+        }
+      }
+    }
+
     if (message.type === "system" && message.subtype === "init") {
       // Connecting before init makes the CLI wait for every MCP before replying.
       const runtime = this.queryRuntime;
@@ -1757,7 +1810,7 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     if (message.type === "result") {
       wasInterrupted =
         this.interruptInFlight || (message.subtype !== "success" && isInterruptedResult(message));
-      if (this.steerError) resultState = "failed";
+      if (this.steerError || this.turnModelError) resultState = "failed";
       else if (wasInterrupted) resultState = "interrupted";
       const remaining = nonDiagnosticErrors(message);
       // claude.exe surfaces upstream API failures (e.g. 401 auth, 429 rate
@@ -1775,6 +1828,7 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
       // `interruptInFlight` is false.
       failed =
         this.steerError !== undefined ||
+        this.turnModelError !== undefined ||
         (!wasInterrupted &&
           (apiErrored || (message.subtype !== "success" && remaining.length > 0)));
       if (!failed) this.steerDelivery.settleResult(message, wasInterrupted);
@@ -1790,7 +1844,10 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
     const backgroundTaskDetailsChanged = this.backgroundTaskControls.observe(message);
     // ViscosityCode: a turn that failed because the account ran out names it.
     const failureReason =
-      message.type === "result" && failed && this.steerError === undefined
+      message.type === "result" &&
+      failed &&
+      this.steerError === undefined &&
+      this.turnModelError === undefined
         ? readClaudeResultErrorReason(message, this.turnUsageSignals)
         : undefined;
     const events = withRuntimeErrorReason(
@@ -1814,12 +1871,17 @@ export class ClaudeSdkSession implements StructuredSessionHandle {
       void this.refreshContextUsage();
       this.interruptInFlight = false;
       const errorMessage = failed
-        ? (this.steerError ?? extractResultErrorMessage(message) ?? "Claude turn failed.")
+        ? (this.turnModelError ??
+          this.steerError ??
+          extractResultErrorMessage(message) ??
+          "Claude turn failed.")
         : undefined;
       if (this.currentTurnInFlight && !failed && !wasInterrupted) {
         this.completedTurns.push({ resumeSessionAt: this.currentTurnAssistantUuid });
       }
       this.currentTurnAssistantUuid = undefined;
+      this.expectedTurnModel = undefined;
+      this.turnModelError = undefined;
       this.turnUsageSignals = {}; // ViscosityCode: the turn's signals end with its result.
       this.currentTurnInFlight = false;
       // A later batch belongs to another turn: the caller falls back instead.
