@@ -194,14 +194,16 @@ export function CodeShareDialog() {
           <Modal.CloseTrigger />
           <Modal.Header className="pr-12">
             <Modal.Heading>{t({ id: "codeShare.join", message: "Join CodeShare" })}</Modal.Heading>
-            {snapshot ? (
-              <div className="flex flex-wrap gap-x-3 text-xs text-muted">
-                {!ended ? (
-                  <span>{t({ id: "codeShare.timeLeft", message: `${time} left` })}</span>
-                ) : null}
-                <span>{t({ id: "codeShare.turnsLeft", message: `${turns} turns left` })}</span>
-              </div>
-            ) : null}
+            <div>
+              {snapshot ? (
+                <div className="flex flex-wrap gap-x-3 text-xs text-muted">
+                  {!ended ? (
+                    <span>{t({ id: "codeShare.timeLeft", message: `${time} left` })}</span>
+                  ) : null}
+                  <span>{t({ id: "codeShare.turnsLeft", message: `${turns} turns left` })}</span>
+                </div>
+              ) : null}
+            </div>
           </Modal.Header>
           {session.connected ? (
             <>
