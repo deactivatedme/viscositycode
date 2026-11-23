@@ -4,6 +4,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectLocation } from "@/shared/contracts";
 
+const nativeHome = vi.hoisted(() => ({ path: undefined as string | undefined }));
+vi.mock("node:os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:os")>();
+  return { ...actual, homedir: () => nativeHome.path ?? actual.homedir() };
+});
+
 const buildAgentCommandMock = vi.hoisted(() =>
   vi.fn<
     (
@@ -64,6 +70,7 @@ describe("geminiDetectionSpec", () => {
   });
 
   afterEach(() => {
+    nativeHome.path = undefined;
     Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
     rmSync(rootDir, { recursive: true, force: true });
   });
@@ -356,6 +363,8 @@ describe("geminiDetectionSpec", () => {
   });
 
   it("detects interactive macOS Keychain API-key auth on host while skipping Keychain for profiles", async () => {
+    // Host-mode probing must not read the developer's real OAuth account cache.
+    nativeHome.path = rootDir;
     Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
     readMacKeychainFingerprintMock.mockImplementation(async (entry) =>
       entry.service === "gemini-cli-api-key" && entry.account === "default-api-key"
