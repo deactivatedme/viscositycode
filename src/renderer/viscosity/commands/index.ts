@@ -5,6 +5,7 @@
  * fork's built-in palette commands; it then spreads `viscosityCommands()`.
  * Features register their own commands with `registerViscosityCommands`.
  */
+import "../codeshare/codeShareCommand";
 import { registerBuiltinViscosityCommands } from "./registerBuiltinCommands";
 
 registerBuiltinViscosityCommands();
