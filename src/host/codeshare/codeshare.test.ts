@@ -218,6 +218,35 @@ describe("CodeShare private and public HTTP", () => {
     expect(((await unrelated.json()) as GuestState).turns).toEqual([]);
   });
 
+  it("preserves unlimited and legacy limited invites across a host restart", async () => {
+    const first = await createHarness(complete);
+    const owner = await first.login();
+    first.service.createInvite(invite);
+    const created = await first.owner("/api/v1/owner/invites", { ...invite, turnLimit: 0 }, owner);
+    expect(created.status).toBe(201);
+    const { code } = (await created.json()) as { code: string };
+    const claim = cookie(await first.guest("/"), "codeshare_claim");
+    const redeemed = await first.guest("/api/v1/redeem", { code }, claim);
+    const session = cookie(redeemed, "codeshare_guest");
+    expect(await redeemed.json()).toMatchObject({
+      unlimitedTurns: true,
+      turnsRemaining: Number.MAX_SAFE_INTEGER,
+    });
+    expect((await first.guest("/api/v1/turns", createTurn(), session)).status).toBe(202);
+    await first.close();
+
+    const second = await createHarness(complete, { path: first.databasePath });
+    expect((await second.guest("/api/v1/turns", createTurn(), session)).status).toBe(202);
+    expect(
+      second.service.ownerState().invites.map(({ turnLimit, turnsUsed }) => [turnLimit, turnsUsed]),
+    ).toEqual([
+      [0, 2],
+      [1, 0],
+    ]);
+    second.advance(300_001);
+    expect((await second.guest("/api/v1/turns", createTurn(), session)).status).toBe(403);
+  });
+
   it("uses an explicit bearer for app guests and preserves browser-origin protections", async () => {
     const host = await createHarness(complete);
     const { code } = host.service.createInvite(invite);

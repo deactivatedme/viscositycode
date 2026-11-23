@@ -128,7 +128,11 @@ export function guestBrowser(): void {
   function updateControls(): void {
     const active = state?.status === "active" && performance.now() < expiresAt;
     send.disabled =
-      !active || !models.value || sending || Boolean(turnId) || state?.turnsRemaining === 0;
+      !active ||
+      !models.value ||
+      sending ||
+      Boolean(turnId) ||
+      (state?.turnsRemaining === 0 && !state.unlimitedTurns);
     prompt.disabled = !active || sending;
     models.disabled = !active || sending || Boolean(turnId);
     stop.hidden = !turnId || !active;
@@ -169,12 +173,14 @@ export function guestBrowser(): void {
     if (inventory !== modelInventory) {
       modelInventory = inventory;
       models.replaceChildren(
-        ...next.models.map((model) => new Option(model.provider + " / " + model.model, model.id)),
+        ...next.models.map((model) => new Option(model.label ?? model.model, model.id)),
       );
       if (next.models.some((model) => model.id === previousModel)) models.value = previousModel;
     }
     const remaining = next.turnsRemaining;
-    byId("remaining").textContent = remaining + (remaining === 1 ? " turn left" : " turns left");
+    byId("remaining").textContent = next.unlimitedTurns
+      ? "Unlimited turns"
+      : remaining + (remaining === 1 ? " turn left" : " turns left");
     switchInvite.hidden = next.status === "active" || next.status === "paused";
     const revision = JSON.stringify(next.turns);
     if (transcript !== revision) {

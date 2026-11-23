@@ -15,12 +15,12 @@ it.each(["claude", "claude:upgrade-profile"])(
     };
     const unaffected = { ...cached, kind: "unaffected", label: "Unaffected" };
     const upgraded = decodeAgentStatusCache({
-      version: 81, // ViscosityCode: v81 rows hold the stale model list and plan label
+      version: 82, // Previous release may have cached the shadowing executable.
       windows: [cached, unaffected],
       wsl: [],
     });
     expect(upgraded.statuses).toEqual({ windows: [unaffected], wsl: [], fromCache: false });
-    const fresh = decodeAgentStatusCache({ version: 82, windows: [cached, unaffected], wsl: [] });
+    const fresh = decodeAgentStatusCache({ version: 83, windows: [cached, unaffected], wsl: [] });
     expect(fresh.statuses).toEqual({ windows: [cached, unaffected], wsl: [], fromCache: true });
   },
 );

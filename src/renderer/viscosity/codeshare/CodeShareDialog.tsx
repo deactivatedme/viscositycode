@@ -54,6 +54,7 @@ export function CodeShareDialog() {
   const tooLong = prompt.length > MAX_PROMPT_CHARS;
   const time = formatTime(session.seconds);
   const turns = snapshot?.turnsRemaining ?? 0;
+  const outOfTurns = turns === 0 && !snapshot?.unlimitedTurns;
 
   function statusMessage(code: string) {
     switch (code) {
@@ -161,7 +162,7 @@ export function CodeShareDialog() {
       session.busy ||
       session.waiting ||
       readingFile ||
-      turns === 0
+      outOfTurns
     )
       return;
     const text = prompt.trim();
@@ -200,7 +201,11 @@ export function CodeShareDialog() {
                   {!ended ? (
                     <span>{t({ id: "codeShare.timeLeft", message: `${time} left` })}</span>
                   ) : null}
-                  <span>{t({ id: "codeShare.turnsLeft", message: `${turns} turns left` })}</span>
+                  <span>
+                    {snapshot.unlimitedTurns
+                      ? t`Unlimited`
+                      : t({ id: "codeShare.turnsLeft", message: `${turns} turns left` })}
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -327,7 +332,7 @@ export function CodeShareDialog() {
                       options={
                         snapshot?.models.map((row) => ({
                           id: row.id,
-                          label: row.model,
+                          label: row.label ?? row.model,
                           detail: row.provider,
                         })) ?? []
                       }
@@ -387,7 +392,7 @@ export function CodeShareDialog() {
                         isDisabled={
                           !active ||
                           !model ||
-                          turns === 0 ||
+                          outOfTurns ||
                           !prompt.trim() ||
                           tooLong ||
                           session.busy ||

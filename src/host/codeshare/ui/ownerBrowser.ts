@@ -1,4 +1,4 @@
-import type { InviteView, OwnerState } from "@/shared/codeShare";
+import type { InviteView, OwnerState, ShareModel } from "@/shared/codeShare";
 
 // This function is sent verbatim to a standalone browser. Keep its runtime
 // dependencies inside the function and use type-only imports.
@@ -7,9 +7,21 @@ export function ownerBrowser(): void {
     return document.getElementById(id) as T;
   }
 
+  const providerLabels: Record<string, string> = {
+    codex: "OpenAI · ChatGPT subscription",
+    claude: "Anthropic · Claude subscription",
+    devin: "Devin",
+    cursor: "Cursor",
+    grok: "xAI · Grok",
+    xai: "xAI · Grok",
+    openai: "OpenAI API",
+    anthropic: "Anthropic API",
+  };
   const form = byId<HTMLFormElement>("create-invite");
   const modelList = byId("model-list");
   const pause = byId<HTMLButtonElement>("pause");
+  const filter = byId<HTMLSelectElement>("invite-filter");
+  const selectAll = byId<HTMLInputElement>("select-all-models");
   const status = byId("status");
   const invites = byId("invites");
   const link = byId<HTMLInputElement>("invite-link");
@@ -24,6 +36,7 @@ export function ownerBrowser(): void {
     // The current tab still works if browser storage is unavailable.
   }
   let current: OwnerState | undefined;
+  let serverOffset = 0;
   let inviteCode = "";
   let inventory = "";
   let roster = "";
@@ -64,52 +77,75 @@ export function ownerBrowser(): void {
   }
 
   function timeLeft(deadline: number): string {
-    const minutes = Math.max(0, Math.ceil((deadline - Date.now()) / 60_000));
-    if (minutes < 60) return minutes + "m";
-    return Math.floor(minutes / 60) + "h " + (minutes % 60) + "m";
+    const seconds = Math.max(0, Math.ceil((deadline - Date.now() - serverOffset) / 1_000));
+    if (seconds < 60) return seconds + "s";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + "m " + (seconds % 60) + "s";
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "h " + (minutes % 60) + "m";
+    return Math.floor(hours / 24) + "d " + (hours % 24) + "h";
   }
 
   function renderInvite(invite: InviteView): HTMLElement {
     const title = element("div", "", "invite-title");
-    title.append(element("strong", invite.label), element("span", invite.status, "badge"));
-    const clock = element("p", "", "meta");
+    const statusBadge = element("span", invite.status, "badge");
+    statusBadge.dataset.state = invite.status;
+    title.append(element("strong", invite.label), statusBadge);
+    const clock = element("p", "", "invite-clock");
     if (invite.status === "active" || invite.status === "pending" || invite.status === "paused") {
       clock.dataset.deadline = String(invite.expiresAt ?? invite.redeemBy);
       clock.dataset.prefix = invite.expiresAt ? "Access ends in " : "Redeem within ";
     }
-    const usage = invite.turnsUsed + " / " + invite.turnLimit + " turns";
+    const usage =
+      invite.turnLimit === 0
+        ? invite.turnsUsed + " used · Unlimited turns"
+        : invite.turnsUsed + " / " + invite.turnLimit + " turns";
     const tokens = (invite.inputTokens + invite.outputTokens).toLocaleString();
     const card = element("article", "", "invite-row");
+    const models = element("div", "", "invite-models");
+    for (const id of invite.models) {
+      const label = current?.models.find((model) => model.id === id)?.label ?? id;
+      const chip = element("span", label, "model-chip");
+      chip.title = id;
+      models.append(chip);
+    }
+    if (invite.status === "expired" || invite.status === "revoked") clock.hidden = true;
     card.append(
       title,
       clock,
       element("p", usage + " · " + tokens + " reported tokens", "meta"),
-      element("p", invite.models.join(" · "), "meta"),
+      models,
     );
     if (invite.status === "revoked" || invite.status === "expired") return card;
 
     const actions = element("form", "", "invite-actions");
-    if (invite.expiresAt) {
-      const minutes = element("input", "");
-      minutes.type = "number";
-      minutes.min = "1";
-      minutes.max = "43200";
-      minutes.value = "30";
-      minutes.required = true;
-      minutes.setAttribute("aria-label", "Minutes to add for " + invite.label);
-      const extend = element("button", "Extend", "secondary");
-      extend.type = "submit";
-      actions.append(minutes, extend);
-      actions.addEventListener("submit", (event) => {
-        event.preventDefault();
-        void mutate("/invites/" + invite.id + "/extend", { minutes: minutes.valueAsNumber });
-      });
-    }
-    const revoke = element("button", "Revoke", "secondary danger");
+    const minutes = element("input", "");
+    minutes.type = "number";
+    minutes.min = "1";
+    minutes.max = "43200";
+    minutes.value = "30";
+    minutes.required = true;
+    minutes.setAttribute("aria-label", "Minutes to add for " + invite.label);
+    const extend = element(
+      "button",
+      invite.expiresAt ? "Extend access" : "Extend redemption",
+      "secondary",
+    );
+    extend.type = "submit";
+    actions.append(minutes, element("span", "min", "meta"), extend);
+    actions.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void mutate(
+        "/invites/" + invite.id + "/extend",
+        { minutes: minutes.valueAsNumber },
+        invite.expiresAt ? "Access extended." : "Redemption window extended.",
+      );
+    });
+    const revoke = element("button", "Revoke access", "secondary danger");
     revoke.type = "button";
     revoke.addEventListener("click", () => {
       if (confirm("Revoke access for " + invite.label + "?")) {
-        void mutate("/invites/" + invite.id + "/revoke", {});
+        void mutate("/invites/" + invite.id + "/revoke", {}, "Access revoked.");
       }
     });
     actions.append(revoke);
@@ -123,36 +159,115 @@ export function ownerBrowser(): void {
     }
   }
 
+  function syncModelSelection(): void {
+    const options = modelList.querySelectorAll<HTMLInputElement>('input[name="model"]');
+    const selected = new FormData(form).getAll("model").length;
+    selectAll.disabled = options.length === 0;
+    selectAll.checked = options.length > 0 && selected === options.length;
+    selectAll.indeterminate = selected > 0 && selected < options.length;
+  }
+
+  function renderRoster(state: OwnerState): void {
+    byId("active-count").textContent = String(
+      state.invites.filter(
+        ({ status: inviteStatus, expiresAt }) =>
+          inviteStatus === "active" || (inviteStatus === "paused" && expiresAt),
+      ).length,
+    );
+    byId("pending-count").textContent = String(
+      state.invites.filter(
+        ({ status: inviteStatus, expiresAt }) =>
+          inviteStatus === "pending" || (inviteStatus === "paused" && !expiresAt),
+      ).length,
+    );
+    byId("total-count").textContent = String(state.invites.length);
+    const next = JSON.stringify([filter.value, state.invites, state.models]);
+    if (roster === next) return;
+    roster = next;
+    const visible = state.invites.filter((invite) => {
+      if (filter.value === "all") return true;
+      if (filter.value === "ended")
+        return invite.status === "expired" || invite.status === "revoked";
+      if (filter.value === "active")
+        return (
+          invite.expiresAt !== null && (invite.status === "active" || invite.status === "paused")
+        );
+      return (
+        invite.expiresAt === null && (invite.status === "pending" || invite.status === "paused")
+      );
+    });
+    invites.replaceChildren(
+      ...(visible.length
+        ? visible.map(renderInvite)
+        : [
+            element(
+              "p",
+              state.invites.length
+                ? "No shares match this filter."
+                : "No shares yet. Create an invite to get started.",
+              "empty-state meta",
+            ),
+          ]),
+    );
+    updateClocks();
+  }
+
   function render(state: OwnerState): void {
     current = state;
+    serverOffset = state.serverNow - Date.now();
     byId("guest-address").textContent = state.guestOrigin;
     byId("host-status").textContent = state.paused ? "Paused" : "Accepting guests";
     pause.textContent = state.paused ? "Resume sharing" : "Pause all shares";
     const models = JSON.stringify(state.models);
     if (models !== inventory) {
       inventory = models;
+      const previouslyShown = new Set(
+        Array.from(
+          modelList.querySelectorAll<HTMLInputElement>('input[name="model"]'),
+          (input) => input.value,
+        ),
+      );
+      const selected = new Set(new FormData(form).getAll("model"));
+      const groups = new Map<string, ShareModel[]>([
+        ["claude", []],
+        ["codex", []],
+        ["cursor", []],
+        ["devin", []],
+        ["xai", []],
+      ]);
+      for (const model of state.models) {
+        const group = groups.get(model.provider);
+        if (group) group.push(model);
+        else groups.set(model.provider, [model]);
+      }
       modelList.replaceChildren(
-        ...state.models.map((model) => {
-          const label = element("label", "");
-          const checkbox = element("input", "");
-          checkbox.type = "checkbox";
-          checkbox.value = model.id;
-          checkbox.name = "model";
-          label.append(checkbox, element("span", model.provider + " / " + model.model));
-          return label;
+        ...Array.from(groups, ([provider, entries]) => {
+          const group = element("fieldset", "", "model-provider");
+          group.append(element("legend", providerLabels[provider] ?? provider));
+          if (entries.length === 0) {
+            const usesKey = provider === "cursor" || provider === "xai";
+            group.append(
+              element("p", usesKey ? "API key needed on the host" : "No models configured", "meta"),
+            );
+          }
+          for (const model of entries) {
+            const label = element("label", "");
+            const checkbox = element("input", "");
+            checkbox.type = "checkbox";
+            checkbox.value = model.id;
+            checkbox.name = "model";
+            checkbox.checked = !previouslyShown.has(model.id) || selected.has(model.id);
+            const name = element("span", model.label ?? model.model);
+            name.title = model.model;
+            label.append(checkbox, name);
+            group.append(label);
+          }
+          return group;
         }),
       );
     }
-    const next = JSON.stringify(state.invites);
-    if (roster !== next) {
-      roster = next;
-      invites.replaceChildren(
-        ...(state.invites.length
-          ? state.invites.map(renderInvite)
-          : [element("p", "No invites yet.", "meta")]),
-      );
-    }
-    updateClocks();
+    syncModelSelection();
+    renderRoster(state);
     byId("dashboard").hidden = false;
     pause.hidden = false;
   }
@@ -171,13 +286,13 @@ export function ownerBrowser(): void {
     }
   }
 
-  async function mutate(path: string, data: object): Promise<void> {
+  async function mutate(path: string, data: object, message = ""): Promise<void> {
     if (updating) return;
     updating = true;
     pause.disabled = true;
     try {
       await request(path, data);
-      notice("");
+      notice(message);
     } catch (error) {
       notice(error instanceof Error ? error.message : "Could not reach the host.", true);
     } finally {
@@ -196,6 +311,17 @@ export function ownerBrowser(): void {
       notice("Copy the selected invite link manually.", true);
     }
   }
+
+  filter.addEventListener("change", () => {
+    if (current) renderRoster(current);
+  });
+  modelList.addEventListener("change", syncModelSelection);
+  selectAll.addEventListener("change", () => {
+    for (const checkbox of modelList.querySelectorAll<HTMLInputElement>('input[name="model"]')) {
+      checkbox.checked = selectAll.checked;
+    }
+    syncModelSelection();
+  });
 
   pause.addEventListener("click", () => {
     if (current) void mutate("/pause", { paused: !current.paused });

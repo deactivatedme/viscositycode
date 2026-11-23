@@ -33,26 +33,14 @@ import { composerDraftStorage } from "@/renderer/state/composerDraftStorage";
 
 import { liveVoice } from "@/renderer/speech/liveVoice";
 
-const { composerSpy, launchExperimentMock, newsLineMounts } = vi.hoisted(() => ({
+const { composerSpy, launchExperimentMock } = vi.hoisted(() => ({
   composerSpy: vi.fn<(props: unknown) => void>(),
   launchExperimentMock: vi.fn<(input: unknown) => Promise<string | null>>(),
-  newsLineMounts: { count: 0 },
 }));
 
-vi.mock("@/renderer/components/newsLine/NewsLine", async () => {
-  const React = await import("react");
-  return {
-    NewsLine: (props: { visitKey?: number }) => {
-      // Stable for the lifetime of one mount, so a re-render keeps the id while
-      // a key change (a new draft visit) produces a new one.
-      const [mountId] = React.useState(() => {
-        newsLineMounts.count += 1;
-        return newsLineMounts.count;
-      });
-      return <div data-testid="news-line" data-mount={mountId} data-visit={props.visitKey} />;
-    },
-  };
-});
+vi.mock("@/renderer/components/newsLine/NewsLine", () => ({
+  NewsLine: () => <div data-testid="news-line" />,
+}));
 
 vi.mock("./ThreadComposer", () => ({
   ThreadComposer: (props: {
@@ -538,7 +526,6 @@ describe("ThreadDraftView", () => {
     composerSpy.mockClear();
     launchExperimentMock.mockReset();
     launchExperimentMock.mockResolvedValue("experiment-1");
-    newsLineMounts.count = 0;
     delete (window as unknown as { poracode?: unknown }).poracode;
     useAgentStatusesStore.setState({
       agentStatuses: [],
@@ -704,7 +691,7 @@ describe("ThreadDraftView", () => {
     save.mockRestore();
   });
 
-  it("remounts the news line when a draft is opened again", async () => {
+  it("keeps the news line hidden even with an older saved preference", async () => {
     const previousProjects = useAppStore.getState().projects;
     useAppStore.setState({ projects: [project] });
     render(
@@ -714,17 +701,14 @@ describe("ThreadDraftView", () => {
         onStart={() => {}}
       />,
     );
-    await waitFor(() => expect(screen.getByTestId("news-line")).toBeInTheDocument());
-    const newsLine = () => screen.getByTestId("news-line");
-    const firstMount = newsLine().getAttribute("data-mount");
-    expect(newsLine().getAttribute("data-visit")).toBe(String(useAppStore.getState().draftVisit));
+    await waitFor(() => expect(composerSpy).toHaveBeenCalled());
+    expect(screen.queryByTestId("news-line")).not.toBeInTheDocument();
 
     act(() => {
       useAppStore.getState().openDraft(project.id);
     });
 
-    await waitFor(() => expect(newsLine().getAttribute("data-mount")).not.toBe(firstMount));
-    expect(newsLine().getAttribute("data-visit")).toBe(String(useAppStore.getState().draftVisit));
+    expect(screen.queryByTestId("news-line")).not.toBeInTheDocument();
     useAppStore.setState({ projects: previousProjects });
   });
 

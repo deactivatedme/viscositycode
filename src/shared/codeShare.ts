@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { getCodeShareSubscriptionProvider } from "./codeShareSubscriptionProviders";
+import { formatCursorBaseModelLabel } from "./modelLabels";
 
 export const MAX_PROMPT_CHARS = 16_000;
 export const MAX_REPLY_CHARS = 48_000;
@@ -14,13 +16,19 @@ export interface ShareModel {
   id: string;
   provider: string;
   model: string;
+  label?: string;
   execution?: "guest-subscription";
 }
 
 export function parseModel(id: string): ShareModel {
   modelIdSchema.parse(id);
   const delimiter = id.indexOf(":");
-  return { id, provider: id.slice(0, delimiter), model: id.slice(delimiter + 1) };
+  const model = id.slice(delimiter + 1);
+  const provider = id.slice(0, delimiter);
+  const label =
+    getCodeShareSubscriptionProvider(provider)?.modelLabel?.(model) ??
+    formatCursorBaseModelLabel(model);
+  return { id, provider, model, label };
 }
 
 export const codeSchema = z
@@ -31,7 +39,7 @@ export const createInviteSchema = z.strictObject({
   label: z.string().trim().min(1).max(80),
   durationMinutes: z.number().int().min(1).max(MAX_DURATION_MINUTES),
   redeemWithinMinutes: z.number().int().min(1).max(MAX_INVITE_MINUTES),
-  turnLimit: z.number().int().min(1).max(500),
+  turnLimit: z.number().int().min(0).max(500),
   models: z.array(modelIdSchema).min(1).max(64),
 });
 
@@ -101,6 +109,7 @@ export interface GuestState {
   expiresAt: number;
   status: InviteStatus;
   turnsRemaining: number;
+  unlimitedTurns?: true;
   models: ShareModel[];
   turns: ChatTurn[];
 }
@@ -146,12 +155,14 @@ export const guestSnapshotSchema = z.object({
   expiresAt: z.number().int(),
   status: z.enum(["pending", "active", "paused", "expired", "revoked"]),
   turnsRemaining: z.number().int().nonnegative(),
+  unlimitedTurns: z.literal(true).optional(),
   models: z
     .array(
       z.object({
         id: modelIdSchema,
         provider: z.string(),
         model: z.string(),
+        label: z.string().optional(),
         execution: z.literal("guest-subscription").optional(),
       }),
     )

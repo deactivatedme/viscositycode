@@ -35,10 +35,6 @@ describe("new session stylesheet", () => {
       ["src/renderer/components/thread/ThreadDraftView.tsx", "data-vc-session={"],
       ["src/renderer/components/thread/ThreadDraftView.tsx", 'data-vc-session-center=""'],
       ["src/renderer/components/thread/ThreadDraftComposerArea.tsx", 'data-draft-worktree-row=""'],
-      ["src/renderer/components/newsLine/NewsLine.tsx", 'data-news-line=""'],
-      ["src/renderer/components/newsLine/NewsLine.tsx", 'role="region"'],
-      ["src/renderer/components/newsLine/NewsLine.tsx", 'data-news-controls=""'],
-      ["src/renderer/viscosity/newSession/NewSessionCenter.tsx", "vc-new-session-center"],
     ];
     for (const [path, hook] of hooks) {
       expect(read(path), `${hook} in ${path}`).toContain(hook);
@@ -49,15 +45,13 @@ describe("new session stylesheet", () => {
       "data-draft-composer-block",
       "data-draft-controls",
       "data-draft-worktree-row",
-      "data-news-line",
-      "data-news-controls",
       "data-vc-session-center",
     ]) {
       expect(css).toContain(`[${attr}]`);
     }
   });
 
-  it("puts the centre first, the tip card next and the composer at the bottom", () => {
+  it("puts the project picker in the centre and keeps the composer at the bottom", () => {
     const orders = new Map<string, string>();
     parse(css).walkDecls("order", (decl) => {
       orders.set((decl.parent as { selector: string }).selector, decl.value);

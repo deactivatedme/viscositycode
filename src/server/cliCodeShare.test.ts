@@ -42,6 +42,15 @@ describe("CodeShare CLI", () => {
       );
     }
   });
+  it("configures a subset for new invites without removing the runtime catalog", () => {
+    const config = readCodeShareConfig({ ...env, CODESHARE_INVITE_MODELS: "anthropic:large" });
+    expect(config.models.map((model) => model.id)).toEqual(["openai:small", "anthropic:large"]);
+    expect(config.inviteModels).toEqual(new Set(["anthropic:large"]));
+    expect(() => readCodeShareConfig({ ...env, CODESHARE_INVITE_MODELS: "codex:missing" })).toThrow(
+      "CODESHARE_INVITE_MODELS",
+    );
+  });
+
   it("configures guest subscriptions without a host API key", () => {
     expect(
       readCodeShareConfig({

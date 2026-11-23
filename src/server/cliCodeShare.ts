@@ -58,6 +58,7 @@ export function readCodeShareConfig(env: NodeJS.ProcessEnv): {
   trustCloudflareClientIp: boolean;
   dataDir: string;
   models: ShareModel[];
+  inviteModels?: ReadonlySet<string>;
   keys: ProviderKeys;
 } {
   const guestPort = readPort(env, "CODESHARE_GUEST_PORT", 8787);
@@ -100,6 +101,12 @@ export function readCodeShareConfig(env: NodeJS.ProcessEnv): {
       return { ...model, execution: "guest-subscription" as const };
     }),
   ];
+  const requestedInviteModels = env.CODESHARE_INVITE_MODELS?.trim();
+  const inviteModels = requestedInviteModels
+    ? new Set(requestedInviteModels.split(",").map((model) => model.trim()))
+    : undefined;
+  if (inviteModels && [...inviteModels].some((model) => !configured.includes(model)))
+    throw new Error("CODESHARE_INVITE_MODELS must list models configured on this host.");
   const keys: ProviderKeys = {};
   for (const model of models) {
     if (model.execution === "guest-subscription") continue;
@@ -116,6 +123,7 @@ export function readCodeShareConfig(env: NodeJS.ProcessEnv): {
     guestOrigin,
     trustCloudflareClientIp,
     models,
+    ...(inviteModels ? { inviteModels } : {}),
     keys,
     dataDir: resolve(env.CODESHARE_DATA_DIR?.trim() || join(homedir(), ".viscositycode-codeshare")),
   };
@@ -161,6 +169,9 @@ export async function runCodeShare(args: readonly string[]): Promise<void> {
       config.guestOrigin,
       config.models,
       createProviderRunner(config.keys),
+      undefined,
+      undefined,
+      config.inviteModels,
     );
     const ownerToken = shareSecret();
     listener = await startCodeShareHttp({

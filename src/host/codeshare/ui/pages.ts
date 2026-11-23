@@ -68,10 +68,10 @@ export const ownerPage = page(
   <div id="dashboard" hidden>
     <div class="section-intro">
       <div><h1>Guest access</h1><p class="meta" id="guest-address"></p></div>
-      <span class="badge" id="host-status"></span>
+      <span class="badge host-status" id="host-status"></span>
     </div>
     <div class="owner-grid">
-      <section class="panel">
+      <section class="panel invite-form-panel">
         <h2>Create invite</h2>
         <form id="create-invite">
           <label for="label">Guest label</label>
@@ -79,9 +79,13 @@ export const ownerPage = page(
           <div class="field-row">
             <div><label for="duration">Access (min)</label><input id="duration" type="number" min="1" max="43200" value="60" required></div>
             <div><label for="redeem-within">Redeem within (min)</label><input id="redeem-within" type="number" min="1" max="10080" value="1440" required></div>
-            <div><label for="turn-limit">Turn limit</label><input id="turn-limit" type="number" min="1" max="500" value="25" required></div>
+            <div><label for="turn-limit">Turn limit</label><input id="turn-limit" type="number" min="0" max="500" value="25" aria-describedby="turn-limit-help" required><p id="turn-limit-help" class="meta turn-limit-help">0 means unlimited</p></div>
           </div>
-          <fieldset><legend>Allowed models</legend><div id="model-list" class="model-list"></div></fieldset>
+          <fieldset class="model-picker">
+            <legend>Allowed models</legend>
+            <label class="select-models"><input type="checkbox" id="select-all-models"> Select all models</label>
+            <div id="model-list" class="model-list"></div>
+          </fieldset>
           <button type="submit" id="create-button">Create invite</button>
         </form>
         <div id="created" class="created" hidden>
@@ -94,8 +98,22 @@ export const ownerPage = page(
           <p class="meta">Save the link now. It’s shown once.</p>
         </div>
       </section>
-      <section class="panel">
-        <h2>Invites</h2>
+      <section class="panel share-panel">
+        <div class="share-header">
+          <h2>Shares</h2>
+          <label class="sr-only" for="invite-filter">Filter shares</label>
+          <select id="invite-filter">
+            <option value="all">All shares</option>
+            <option value="active">Active</option>
+            <option value="pending">Awaiting redemption</option>
+            <option value="ended">Ended</option>
+          </select>
+        </div>
+        <dl class="share-stats">
+          <div><dt>In use</dt><dd id="active-count">0</dd></div>
+          <div><dt>Awaiting redemption</dt><dd id="pending-count">0</dd></div>
+          <div><dt>Total</dt><dd id="total-count">0</dd></div>
+        </dl>
         <div id="invites" class="invite-list"></div>
       </section>
     </div>
@@ -170,7 +188,10 @@ form > button { justify-self: start; margin-top: .45rem; }
 .field-row div { display: flex; flex-direction: column; gap: .3rem; }
 .field-row label { flex: 1; font-size: .82rem; }
 fieldset { border: 1px solid var(--line); border-radius: 8px; padding: .65rem .8rem; margin: .65rem 0 .2rem; min-width: 0; }
-.model-list { display: grid; gap: .25rem; max-height: 14rem; overflow: auto; }
+.model-list { display: grid; gap: .5rem; max-height: 18rem; overflow: auto; }
+.model-provider { padding: .25rem .45rem .4rem; margin: 0; }
+.model-provider legend { color: var(--muted); font-size: .85rem; }
+.turn-limit-help { margin: .25rem 0 0; }
 .model-list label { display: flex; align-items: baseline; gap: .55rem; overflow-wrap: anywhere; font-weight: 480; }
 .created { border-top: 1px solid var(--line); margin-top: 1.2rem; padding-top: 1rem; display: grid; gap: .55rem; }
 .copy-row { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -180,6 +201,44 @@ fieldset { border: 1px solid var(--line); border-radius: 8px; padding: .65rem .8
 .invite-title .badge { text-transform: capitalize; font-size: .8rem; }
 .invite-actions { display: flex; gap: .4rem; flex-wrap: wrap; padding-top: .35rem; }
 .invite-actions input { width: 5.2rem; }
+.owner { --accent: #a8ccff; --panel: #171e2a; --line: #2d3a4e; --muted: #aab9d0; }
+.owner .topbar { border-color: var(--line); margin-bottom: clamp(1.5rem, 4vw, 3rem); }
+.owner .mark { background: #233a5e; }
+.owner h1 { font-size: clamp(1.85rem, 5vw, 2.75rem); }
+.owner .host-status { border-color: #3b5974; background: #1a2c42; color: #c1dbff; }
+.owner .owner-grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1.25rem; }
+.owner .panel { border-radius: 14px; box-shadow: 0 10px 24px #080c1338; }
+.owner input, .owner select { background: #101723; }
+.owner button.secondary { background: #202c3d; }
+.owner .field-row { align-items: start; }
+.owner .field-row label { min-height: 3em; display: flex; align-items: end; }
+.owner #create-button { justify-self: stretch; color: #101a29; margin-top: .6rem; }
+.model-picker { padding: .65rem; }
+.select-models { display: flex; align-items: center; gap: .55rem; padding: .2rem .25rem .55rem; font-size: .88rem; }
+.owner .model-list { max-height: 28rem; gap: .45rem; }
+.owner .model-provider { background: #111924; padding: .25rem .55rem .4rem; }
+.owner .model-provider legend { color: #c9d8ef; }
+.owner .model-list label { align-items: center; min-height: 1.95rem; }
+.share-header { display: flex; align-items: center; justify-content: space-between; gap: .65rem; }
+.share-header h2 { margin-bottom: 0; }
+.share-header select { width: auto; max-width: 65%; }
+.share-stats { display: grid; gap: .5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 1rem 0; }
+.share-stats > div { background: #111924; border: 1px solid var(--line); border-radius: 8px; display: grid; align-content: space-between; padding: .5rem .65rem; }
+.share-stats dt { color: var(--muted); font-size: .8rem; }
+.share-stats dd { margin: 0; font-size: 1.35rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.owner .invite-row { border-radius: 10px; padding: .85rem; }
+.invite-title strong { font-size: 1.02rem; }
+.invite-title [data-state="active"] { color: #a9e2c3; border-color: #315743; background: #173124; }
+.invite-title [data-state="pending"], .invite-title [data-state="paused"] { color: #f4d399; border-color: #5a4929; background: #302715; }
+.invite-title [data-state="revoked"] { color: #ffb9c2; border-color: #674251; }
+.invite-clock { color: #c1dbff; font-variant-numeric: tabular-nums; font-weight: 560; font-size: .9rem; }
+.invite-models { display: flex; flex-wrap: wrap; gap: .35rem; padding: .25rem 0; }
+.model-chip { padding: .2rem .45rem; border-radius: .35rem; background: #223149; color: #d7e7ff; font-size: .8rem; overflow-wrap: anywhere; }
+.owner .invite-actions { align-items: center; gap: .35rem; }
+.owner .invite-actions button { margin: 0; font-size: .82rem; padding-inline: .65rem; }
+.owner .invite-actions .danger { margin-left: auto; }
+.owner .invite-actions input { width: 4.15rem; }
+.empty-state { padding: 1rem; border: 1px dashed var(--line); border-radius: 10px; }
 .chat-bar { display: flex; align-items: baseline; gap: .65rem; justify-content: space-between; margin-bottom: 1rem; }
 .messages { display: grid; gap: .65rem; min-height: 8rem; margin-bottom: 1rem; }
 .turn { display: grid; gap: .45rem; }
@@ -194,7 +253,8 @@ fieldset { border: 1px solid var(--line); border-radius: 8px; padding: .65rem .8
 .switch-invite { margin-top: .75rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 700px) {
-  .owner-grid { grid-template-columns: 1fr; }
+  .owner .owner-grid { grid-template-columns: 1fr; }
+  .owner .model-list { max-height: none; }
   .topbar { min-height: 62px; margin-bottom: 1.2rem; }
   input, select, textarea { font-size: 16px; }
 }

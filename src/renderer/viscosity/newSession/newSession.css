@@ -1,8 +1,7 @@
 /* ViscosityCode: New session layout for the shell's top-level draft (fork of
    Poracode). ThreadDraftView sets data-vc-session when AppContent passes a
-   sessionCenter. Centre fills the pane, tip card sits above the composer, and
-   the folder / Chat-Terminal / Branch rows line up under it. The composer card
-   and pickers themselves are styled by shell.css. */
+   sessionCenter. The project and device picker fills the space above the
+   composer. Chat/Terminal and Branch/Worktree line up beneath the composer. */
 
 html[data-vc-shell] [data-vc-session] [data-draft-body] {
   display: flex;
@@ -32,31 +31,10 @@ html[data-vc-shell] [data-vc-session] [data-draft-composer-block] > * {
   flex-basis: 100%;
 }
 
-/* Folder + environment + Chat/Terminal, then Branch/Worktree: one line under the composer. */
+/* Chat/Terminal, then Branch/Worktree: one line under the composer. */
 html[data-vc-shell] [data-vc-session] [data-draft-composer-block] > [data-draft-controls],
 html[data-vc-shell] [data-vc-session] [data-draft-composer-block] > [data-draft-worktree-row] {
   flex: 0 1 auto;
   order: 3;
   margin: var(--vc-space-1) 0 0;
-}
-
-/* The news line becomes a dismissible tip card above the composer. */
-html[data-vc-shell] [data-vc-session] [data-news-line] [role="region"] {
-  border: 1px solid var(--vc-border);
-  border-radius: var(--vc-radius-lg);
-  background: var(--vc-surface-raised);
-  padding: var(--vc-space-2) var(--vc-space-3);
-}
-
-html[data-vc-shell] [data-vc-session] [data-news-line] {
-  margin-bottom: var(--vc-space-2);
-}
-
-html[data-vc-shell] [data-vc-session] [data-news-controls] {
-  opacity: 1;
-}
-
-/* Centre folder picker reads a little larger than the inline one. */
-html[data-vc-shell] [data-vc-session] .vc-new-session-center {
-  font-size: var(--vc-font-size-lg);
 }

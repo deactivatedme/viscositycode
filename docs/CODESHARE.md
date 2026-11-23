@@ -36,6 +36,12 @@ The owner link changes when the service restarts. Create a test invite and open
 it with **Join CodeShare** in the desktop app. For local testing the guest site is
 `http://127.0.0.1:8787`.
 
+Set the turn limit to `0` for unlimited prompts until the access timer expires.
+Use **Shares** to extend the redemption window or active access, or revoke an invite.
+All visible models are selected initially. Set `CODESHARE_INVITE_MODELS` to a
+comma-separated subset of the configured models to narrow the picker for new invites.
+Existing invites retain their allowed models while those models are configured.
+
 ## Use a guest’s subscription or a Cursor key
 
 Add `CODESHARE_SUBSCRIPTION_MODELS` to the host environment to let guests

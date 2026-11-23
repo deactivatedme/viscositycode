@@ -124,6 +124,7 @@ const CODESHARE_HELP = `  codeshare                     Run the CodeShare guest 
     Set CODESHARE_MODELS to comma-separated openai:<id>, anthropic:<id>, xai:<id>, or cursor:<id> entries.
     Supply CODESHARE_OPENAI_API_KEY, CODESHARE_ANTHROPIC_API_KEY, CODESHARE_XAI_API_KEY, or CODESHARE_CURSOR_API_KEY as needed.
     Set CODESHARE_SUBSCRIPTION_MODELS to codex:<id>, claude:<id>, or devin:<id> for guest desktop sign-in.
+    Optionally set CODESHARE_INVITE_MODELS to a comma-separated subset for new invites.
     Pass --check-models to verify hosted catalogue access without starting the service.
     Both listeners bind 127.0.0.1. Guest port defaults to 8787 and owner port to 8788.
     See docs/CODESHARE.md for the HTTPS tunnel, environment variables, and usage limits.

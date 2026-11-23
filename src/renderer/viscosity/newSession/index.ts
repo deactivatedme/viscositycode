@@ -4,7 +4,7 @@
  * - `NewSessionLanding`: replaces HomeView in the shell; `home` redirects to a
  *   draft in the most recently used project.
  * - `NewSessionCenter`: the centre slot of the top-level draft (folder picker,
- *   device menu, Add folder and Start from scratch).
+ *   device menu).
  */
 import "./newSession.css";
 

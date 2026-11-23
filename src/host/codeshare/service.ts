@@ -41,6 +41,7 @@ export class CodeShareService {
         "CodeShare could not settle a turn in its database. Restart the service if the turn stays active.\n",
       );
     },
+    private readonly inviteModels?: ReadonlySet<string>,
   ) {
     this.models = new Map(models.map((model) => [model.id, model]));
     this.timer = setInterval(() => {
@@ -62,14 +63,18 @@ export class CodeShareService {
     return {
       paused: this.store.paused,
       guestOrigin: this.guestOrigin,
-      models: [...this.models.values()],
+      models: [...this.models.values()].filter((model) => this.canInvite(model.id)),
       invites: this.store.list(serverNow),
       serverNow,
     };
   }
 
+  private canInvite(model: string): boolean {
+    return this.models.has(model) && (this.inviteModels?.has(model) ?? true);
+  }
+
   createInvite(input: CreateInvite): { code: string; url: string } {
-    if (input.models.some((model) => !this.models.has(model)))
+    if (input.models.some((model) => !this.canInvite(model)))
       throw new ShareError(400, "unknown_model", "Select models configured on this host.");
     const { code } = this.store.create(input, this.now());
     return { code, url: `${this.guestOrigin}/#invite=${code}` };
@@ -118,7 +123,11 @@ export class CodeShareService {
       serverNow,
       expiresAt: invite.expiresAt!,
       status,
-      turnsRemaining: invite.turnLimit - invite.turnsUsed,
+      // Keep the positive numeric allowance for older app clients. New clients
+      // use the additive unlimited flag for display. The timer always applies.
+      ...(invite.turnLimit === 0
+        ? { turnsRemaining: Number.MAX_SAFE_INTEGER, unlimitedTurns: true as const }
+        : { turnsRemaining: invite.turnLimit - invite.turnsUsed }),
       models: visible ? models : [],
       turns: visible ? this.store.turns(invite.id) : [],
     };

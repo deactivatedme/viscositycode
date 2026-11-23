@@ -229,11 +229,19 @@ export class CodeShareStore {
 
   extend(id: string, minutes: number, now: number): void {
     const invite = this.findInvite(id);
-    if (inviteStatus(invite, now, false) !== "active" || invite.expiresAt === null)
-      throw new ShareError(409, "not_active", "Only an active invite can be extended.");
-    this.db
-      .prepare("UPDATE invites SET expires_at = ? WHERE id = ?")
-      .run(invite.expiresAt + minutes * MINUTE_MS, id);
+    const status = inviteStatus(invite, now, false);
+    if (status === "revoked" || status === "expired")
+      throw new ShareError(409, "not_active", "This invite has already ended.");
+    const extra = minutes * MINUTE_MS;
+    if (invite.expiresAt === null) {
+      this.db
+        .prepare("UPDATE invites SET redeem_by = ? WHERE id = ?")
+        .run(invite.redeemBy + extra, id);
+    } else {
+      this.db
+        .prepare("UPDATE invites SET expires_at = ? WHERE id = ?")
+        .run(invite.expiresAt + extra, id);
+    }
   }
 
   revoke(id: string, now: number): void {
@@ -289,7 +297,7 @@ export class CodeShareStore {
             "turn_running",
             "Wait for the current response or stop it first.",
           );
-        if (invite.turnsUsed >= invite.turnLimit)
+        if (invite.turnLimit > 0 && invite.turnsUsed >= invite.turnLimit)
           throw new ShareError(429, "turn_limit", "You've reached the turn limit for this invite.");
         checkCapacity();
         const messages: ChatMessage[] = [{ role: "user", content: input.prompt }];
