@@ -88,8 +88,6 @@ import {
   type ThreadCrewBinding,
 } from "@/shared/crew";
 import { friendlyError } from "@/shared/messages";
-import { NewsLine } from "@/renderer/components/newsLine/NewsLine";
-import { useCompactLayout } from "@/renderer/adaptiveLayout";
 import { PresentationModeTabs } from "./PresentationModeTabs";
 import { ProjectSwitchMenu } from "./ProjectSwitchMenu";
 import { NoAgentsComposerHint } from "./NoAgentsComposerHint"; // ViscosityCode: zero-agent hint
@@ -377,9 +375,6 @@ export function ThreadDraftView(props: {
   const upsertCrew = useSharedSettings((s) => s.upsertCrew);
   const helperOptions = useCrewHelperOptions();
   const sharedSettingsHydrated = useSharedSettings((s) => s.sharedSettingsHydrated);
-  const newsLineEnabled = useSharedSettings((s) => s.newsLineEnabled);
-  const draftVisit = useAppStore((s) => s.draftVisit);
-  const compactLayout = useCompactLayout();
   const isHomeScope = isHomeProject(project);
   const scopeLabel = isHomeScope ? HOME_PROJECT_NAME : undefined;
   const remoteConnection = useRemoteServersStore((state) => {
@@ -1879,11 +1874,6 @@ export function ThreadDraftView(props: {
     : props.hideHero
       ? "max-w-[920px]"
       : "max-w-[720px]";
-  // Wait for authoritative settings so an opted-out user never mounts (or fetches
-  // for) the line on defaults, and leave compact layouts to the composer alone.
-  const showNewsLine =
-    newsLineEnabled && sharedSettingsHydrated && !compactLayout && !props.chatOnly;
-
   const handlePresentationChange = (next: ThreadPresentationMode) => {
     // A deliberate switch while inside a family relation must prove an exact
     // mapping onto the target relation BEFORE the mode commits: without one,
@@ -2115,19 +2105,8 @@ export function ThreadDraftView(props: {
             onStart={smartStart.wrapStart(onStart)} // ViscosityCode: remember hand-picked providers
           />
         </div>
-        {/* Absorbs the slack below the anchored composer in the full draft view.
-            The news line lives here so it can never move the composer. */}
-        {compactComposer ? null : (
-          <div data-draft-slack="" className="flex min-h-0 w-full flex-1 flex-col items-center">
-            {showNewsLine ? (
-              <NewsLine
-                key={draftVisit}
-                visitKey={draftVisit}
-                className={`mt-3 w-full ${blockMaxWidthClass}`}
-              />
-            ) : null}
-          </div>
-        )}
+        {/* Absorbs the slack below the anchored composer in the full draft view. */}
+        {compactComposer ? null : <div data-draft-slack="" className="min-h-0 flex-1" />}
       </div>
     </div>
   );
