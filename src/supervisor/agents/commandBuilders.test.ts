@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import type { ProjectLocation, SessionRef, ThreadConfig } from "@/shared/contracts";
 
+// Argv fixtures must not depend on which Claude binaries are installed locally.
+vi.mock("./claude/compatibleBinary", () => ({
+  findCompatibleClaudeOverride: vi.fn<() => Promise<undefined>>().mockResolvedValue(undefined),
+}));
+
 vi.mock("./codex/session", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./codex/session")>();
   return {
