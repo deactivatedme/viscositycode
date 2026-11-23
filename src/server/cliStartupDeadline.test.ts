@@ -41,6 +41,7 @@ afterAll(() => rmSync(directory, { recursive: true, force: true }));
 interface FixtureMessage {
   readonly type: string;
   readonly disposeCalls?: number;
+  readonly blockedMs?: number;
 }
 
 function runFixture(profile: string, mode: string, options: { readonly deadlineMs?: number } = {}) {
@@ -219,31 +220,41 @@ describe.skipIf(process.platform === "win32")("fatal startup bounded drain", () 
     }
   });
 
-  it("cannot preempt a post-failure synchronous block; the exit follows the unblock", async () => {
-    const profile = join(directory, "wedge");
-    const fixture = runFixture(profile, "wedge", { deadlineMs: WEDGE_DEADLINE_MS });
-    try {
-      await fixture.waitFor("wedging");
-      const wedgedAt = Date.now();
-      // The deadline is shorter than the synchronous block, so the process
-      // must still be alive past the deadline while the loop cannot run the
-      // timer. An external watchdog is the only bound for this state.
-      await new Promise<void>((resolve) => setTimeout(resolve, WEDGE_DEADLINE_MS + 200));
-      expect(fixture.child.exitCode).toBeNull();
-      expect(fixture.child.signalCode).toBeNull();
-      expect(fixture.output()).not.toContain("forcing exit");
-      expectOwned(profile);
-      const exit = await withinDeadline(
-        fixture.exited,
-        `Wedged fixture did not exit after the block: ${fixture.output()}`,
-        3_000,
-      );
-      expect(exit).toEqual({ code: 1, signal: null });
-      expect(Date.now() - wedgedAt).toBeGreaterThanOrEqual(WEDGE_MS - 300);
-      expect(fixture.output()).toContain("forcing exit");
-      expectSuccessorCanEnter(profile);
-    } finally {
-      await stopOwnedChild(fixture, 5_000);
-    }
-  });
+  it.each([0, WEDGE_MS + 800])(
+    "cannot preempt a synchronous block even with a %ims late observer",
+    async (observationDelayMs) => {
+      const profile = join(directory, `wedge-${observationDelayMs}`);
+      const fixture = runFixture(profile, "wedge", { deadlineMs: WEDGE_DEADLINE_MS });
+      // Observe both messages from spawn: either can arrive before the parent
+      // resumes. A late parent must not mistake a valid exit for preemption.
+      const wedging = fixture.waitFor("wedging");
+      const stopped = fixture.waitFor("diagnostics-stopped");
+      void wedging.catch(() => undefined);
+      void stopped.catch(() => undefined);
+      try {
+        await fixture.waitFor("ready-to-fail");
+        expectOwned(profile);
+        fixture.child.send({ type: "fail-startup" });
+        if (observationDelayMs) {
+          await new Promise<void>((resolve) => setTimeout(resolve, observationDelayMs));
+        }
+        await wedging;
+        const diagnostics = await stopped;
+        // The child reaches this message only after the entire synchronous
+        // block. It cannot do so if the shorter fatal timer preempts it.
+        expect(diagnostics.blockedMs).toBeGreaterThanOrEqual(WEDGE_MS);
+        expect(diagnostics.disposeCalls).toBe(1);
+        const exit = await withinDeadline(
+          fixture.exited,
+          `Wedged fixture did not exit after the block: ${fixture.output()}`,
+          3_000,
+        );
+        expect(exit).toEqual({ code: 1, signal: null });
+        expect(fixture.output()).toContain("forcing exit");
+        expectSuccessorCanEnter(profile);
+      } finally {
+        await stopOwnedChild(fixture, 5_000);
+      }
+    },
+  );
 });

@@ -25,6 +25,7 @@ let lease;
 let retained;
 let interval;
 let disposeCalls = 0;
+let blockedMs;
 
 const retainLoopHandles = async () => {
   retained = createServer();
@@ -51,6 +52,12 @@ globalThis.__cliFixture = {
         if (mode === "healthy") {
           reply({ type: "ready" });
           return { httpBaseUrl: "http://127.0.0.1:1", wsBaseUrl: "ws://127.0.0.1:1" };
+        }
+        if (mode === "wedge") {
+          // Let the parent establish custody before the fatal deadline starts.
+          const proceed = new Promise((resolve) => process.once("message", resolve));
+          reply({ type: "ready-to-fail" });
+          await proceed;
         }
         reply({ type: "failing" });
         throw new Error(`Synthetic ${mode} listener startup failure`);
@@ -83,12 +90,14 @@ globalThis.__cliFixture = {
       // in-process timer cannot fire inside it (the documented limitation),
       // so the forced exit can only follow the block.
       reply({ type: "wedging" });
-      const until = Date.now() + 1_200;
-      while (Date.now() < until) {
+      const began = performance.now();
+      const until = began + 1_200;
+      while (performance.now() < until) {
         // deliberately block the event loop
       }
+      blockedMs = performance.now() - began;
     }
-    reply({ type: "diagnostics-stopped", disposeCalls });
+    reply({ type: "diagnostics-stopped", disposeCalls, blockedMs });
   },
 };
 
