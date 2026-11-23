@@ -534,6 +534,45 @@ mod tests {
     }
 
     #[test]
+    fn parser_retains_legacy_subsections_quoted_case_and_implicit_values() {
+        let entries = parse(
+            br#"[Remote.Origin]
+url = https://example.invalid/repo
+enabled
+[remote "MixedCase"]
+note = "quoted"
+"#,
+        )
+        .expect("valid configuration");
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].section, "remote");
+        assert_eq!(entries[0].subsection.as_deref(), Some("origin"));
+        assert_eq!(
+            entries[0].value.as_deref(),
+            Some("https://example.invalid/repo")
+        );
+        assert_eq!(entries[1].key, "enabled");
+        // Both parser versions emit empty bytes for the low-level implicit-value event.
+        assert_eq!(entries[1].value.as_deref(), Some(""));
+        assert_eq!(entries[2].subsection.as_deref(), Some("MixedCase"));
+        assert_eq!(entries[2].value.as_deref(), Some("quoted"));
+    }
+
+    #[test]
+    fn parser_rejects_malformed_implicit_values_and_unclosed_continuations() {
+        for bytes in [
+            b"[section]\nflag extra = value\n".as_slice(),
+            b"[section]\nflag#comment\n".as_slice(),
+            b"[section]\nvalue = \"unfinished\\".as_slice(),
+        ] {
+            assert!(
+                parse(bytes).is_err(),
+                "malformed configuration was accepted"
+            );
+        }
+    }
+
+    #[test]
     fn hasconfig_looks_ahead_and_preserves_order_relative_paths_and_sources() {
         let f = Fixture::new();
         let global = f.write("global", "[includeIf \"hasconfig:remote.*.url:https://example.test/**\"]\npath=nested/selected\n[core]\nsshCommand=after\n[include]\npath=nested/first\npath=nested/last\n");
