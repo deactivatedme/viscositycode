@@ -1,0 +1,529 @@
+# Windows-only fallback when hosted macOS ARM capacity is unavailable.
+# The server/archive qualification and packaging steps match the canonical workflows.
+name: ViscosityCode Windows installer fallback
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit to check out and build from; empty uses the caller's ref
+        required: false
+        type: string
+        default: ""
+      version:
+        description: Release version
+        required: true
+        type: string
+        default: 2.0.3
+      require_targets:
+        description: Comma-separated Linux glibc shapes advertised by the Linux leg
+        required: false
+        type: string
+        default: linux-x64,linux-arm64
+      artifact_name:
+        description: Base name for the uploaded artifact
+        required: false
+        type: string
+        default: viscosity-windows-fallback
+      retention_days:
+        description: Artifact retention
+        required: false
+        type: number
+        default: 7
+      tui_manifest:
+        description: Stage the tui-manifest artifact into resources/tui for the tarball
+        required: false
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: viscosity-windows-fallback-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  BUN_INSTALL_GLOBAL_STORE: "0"
+  RUST_VERSION: 1.98.1
+  TAURI_CLI: "@tauri-apps/cli@2.12.4"
+  POSTHOG_ENABLED: "0"
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="$INPUT_VERSION"
+          if [ -z "$version" ] && [ "$IS_TAG" = "true" ]; then version="$REF_NAME"; fi
+          echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+  build:
+    name: Build and qualify Windows server
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            require_targets: win32-x64
+            cross_build: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+        with:
+          registry-cache: ${{ runner.os == 'Windows' && 'none' || 'all' }}
+      - name: Install JavaScript dependencies
+        run: bun install --frozen-lockfile --ignore-scripts && node node_modules/bun/install.js
+      - name: Set the release version
+        if: ${{ inputs.version != '' }}
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/set-release-version.mjs "$RELEASE_VERSION"
+      - name: Install Linux helper build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes musl-tools
+      - name: Setup Rust for the computer-use helper
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.98.1
+      - name: Cache computer-use helper build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: native/computer-use-helper
+      - name: Cache MCP relay Rust build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: native/mcp-relay
+          prefix: mcp-relay-rust
+      - name: Cache Git helper Rust build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: native/git-helper
+          prefix: git-helper-rust
+      - name: Cache live_re Rust build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: native/live-re
+          prefix: live-re-rust
+      - name: Build native dependencies for the tarball
+        if: runner.os != 'Windows'
+        run: scripts/ci-rebuild-node-pty.sh
+      - name: Enable arm64 container emulation
+        if: matrix.cross_build
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
+        with:
+          platforms: arm64
+      - name: Cross-build the linux-arm64 node-pty binding
+        if: matrix.cross_build
+        run: >
+          mkdir -p dist/server-native-cross/linux-arm64 dist/server-native-cross/node-pty/node_modules
+
+          cp -RL node_modules/node-pty/. dist/server-native-cross/node-pty/
+
+          ADDON_API_DIR="$(node -p
+          "require('node:path').dirname(require.resolve('node-addon-api/package.json', { paths:
+          [require('node:path').dirname(require.resolve('node-pty/package.json'))] }))")"
+
+          cp -RL "$ADDON_API_DIR" dist/server-native-cross/node-pty/node_modules/node-addon-api
+
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD":/work -w /armbuild node:26.13.0-bookworm \
+            sh -c "cp -R /work/dist/server-native-cross/node-pty /armbuild/np && cd /armbuild/np && node -p 'require(\"node-addon-api\").include_dir' >/dev/null && rm -rf build && npm_config_build_from_source=true npm rebuild --offline && cp build/Release/pty.node /work/dist/server-native-cross/linux-arm64/pty.node"
+        shell: bash
+      - name: Build and assemble the server artifact
+        env:
+          REQUIRE_TARGETS: ${{ matrix.require_targets }}
+          PORACODE_NODE_PTY_CROSS_BINDINGS: ${{ github.workspace }}/dist/server-native-cross
+          TUI_MANIFEST: ${{ inputs.tui_manifest }}
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          set -euo pipefail
+
+          bun run codex-protocol:gen
+
+          # The canonical web build (plan D2) also builds the Electron bundles
+
+          # and the embedded SSH runtime through prepare:web:ssh.
+
+          bun run build:web
+
+          REQUIRE_ARGS=()
+
+          TARGET_ARGS=()
+
+          for target in $(echo "$REQUIRE_TARGETS" | tr ',' ' '); do
+            REQUIRE_ARGS+=(--require-target "$target")
+            TARGET_ARGS+=(--target "$target")
+          done
+
+          node scripts/prepare-server-native.mjs "${REQUIRE_ARGS[@]}"
+
+          bun run prepare:package-assets
+
+          bun run prepare:agent-plugins
+
+          bun run prepare:computer-use-helper
+
+          bun run prepare:mcp-relay
+
+          bun run prepare:git-helper
+
+          # ViscosityCode: stage live_re for the desktop installers; --require fails the leg without it (Linux
+          has no build and skips).
+
+          node scripts/prepare-live-re.mjs --require --host-only
+
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            bun run prepare:service-launcher
+            node --test scripts/prepare-service-launcher.test.mjs
+          fi
+
+          if [ "${TUI_MANIFEST}" = "true" ]; then
+            # The TUI binaries build alongside this job (it no longer `needs:`
+            # them); only the tarball reads their manifest.
+            node scripts/wait-for-run-artifact.mjs tui-manifest resources/tui "tui_binaries /"
+          fi
+
+          node scripts/assemble-server-tarball.mjs "${TARGET_ARGS[@]}"
+
+          ls -lh dist/poracode-server-*.tar.gz dist/server-artifact.json
+        shell: bash
+      - name: Record artifact outputs
+        id: artifact
+        run: |
+          set -euo pipefail
+          # Portable to macOS bash 3.2 (no mapfile) and macOS (no sha256sum).
+          TARBALLS=()
+          for candidate in dist/poracode-server-*.tar.gz; do
+            [ -f "$candidate" ] || continue
+            TARBALLS+=("$candidate")
+          done
+          if [ "${#TARBALLS[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one assembled tarball, found ${#TARBALLS[@]}"
+            exit 1
+          fi
+          TARBALL="${TARBALLS[0]}"
+          TARBALL_SHA=$(node -e "console.log(require('node:crypto').createHash('sha256').update(require('node:fs').readFileSync(process.argv[1])).digest('hex'))" "$TARBALL")
+          echo "tarball_name=$(basename "$TARBALL")" >> "$GITHUB_OUTPUT"
+          echo "tarball_sha256=$TARBALL_SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./dist/server-artifact.json').version")" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Verify CLI provisioning on Windows
+        if: ${{ runner.os == 'Windows' }}
+        run: node scripts/setup-bun.mjs --run run vitest run src/server/cli.test.ts
+          src/server/cliServiceInstall.test.ts src/server/cliServiceProfileAdmission.test.ts
+          src/server/cliProfileNamespace.test.ts src/server/cliUp.test.ts src/server/cliInstallCommand.test.ts
+          src/server/cliInstallMigration.windows.test.ts
+      - name: Build the standalone container
+        if: runner.os == 'Linux'
+        run: |
+          docker build -t poracode-server:qualification dist/poracode-server-stage
+          docker run --rm poracode-server:qualification node lib/server.cjs doctor --json
+      - name: Require every advertised prebuild and the web client in the tarball
+        env:
+          REQUIRE_TARGETS: ${{ matrix.require_targets }}
+        run: |
+          set -euo pipefail
+          TARBALLS=()
+          for candidate in dist/poracode-server-*.tar.gz; do
+            [ -f "$candidate" ] || continue
+            TARBALLS+=("$candidate")
+          done
+          TARBALL="${TARBALLS[0]}"
+          VERIFY_ARGS=()
+          for target in $(echo "$REQUIRE_TARGETS" | tr ',' ' '); do
+            VERIFY_ARGS+=(--target "$target")
+          done
+          node scripts/verify-server-tarball-contents.mjs \
+            --tarball "$TARBALL" \
+            --overlay-root dist/server-native \
+            "${VERIFY_ARGS[@]}"
+          test -f dist/server-artifact.json
+        shell: bash
+      - name: Upgrade a running install from the real tarball (vitest)
+        env:
+          PORACODE_REQUIRE_SERVER_IT: "1"
+        run: bun run vitest run --configLoader runner src/server/serverUpgrade.integration.test.ts
+      - name: Verify systemd unit
+        if: runner.os == 'Linux'
+        run: |
+          unit="$RUNNER_TEMP/poracode-server.service"
+          sed -e '/^User=/d' -e '/^Group=/d' -e 's|^ExecStart=.*|ExecStart=/bin/true|' \
+            packaging/systemd/poracode-server.service > "$unit"
+          systemd-analyze verify "$unit"
+      - name: Install outside the checkout without a toolchain
+        run: node scripts/ci-install-no-toolchain.mjs
+      - name: Qualify doctor, start, pair, thread turn, SIGTERM
+        run:
+          node scripts/server-install-qualification.mjs --tarball "$TARBALL" --prefix "$PREFIX" --artifact
+          dist/server-artifact.json
+        env:
+          PREFIX: ${{ env.PREFIX }}
+          TARBALL: ${{ env.TARBALL }}
+      - name: Qualify the publishable launcher against the real tarball
+        run: node scripts/poracode-cli-qualification.mjs --runtime-tarball "$TARBALL"
+        env:
+          TARBALL: ${{ env.TARBALL }}
+      - name: Upload the qualified server artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ inputs.artifact_name }}-build-${{ matrix.name }}-${{ github.run_attempt }}
+          path: |
+            dist/poracode-server-*.tar.gz
+            dist/poracode-server-*.tar.gz.sha256
+            dist/server-artifact.json
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+  standalone:
+    name: Qualify self-contained Windows archive
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: win32-x64
+            os: windows-latest
+            build_leg: windows
+            computer_use: true
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 26.13.0
+      - name: Set the release version
+        if: ${{ inputs.version != '' }}
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/set-release-version.mjs "$RELEASE_VERSION"
+      - name: Download the build leg's exact bytes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: ${{ inputs.artifact_name }}-build-${{ matrix.build_leg }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/qualified
+      - name: Build the self-contained archive from the qualified tarball
+        env:
+          TARGET: ${{ matrix.target }}
+          QUALIFIED_DIR: ${{ runner.temp }}/qualified
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          NATIVE_RESULT=$(node scripts/ci-server-artifact-meta.mjs native-target)
+          TARBALL=$(printf '%s\n' "$NATIVE_RESULT" | sed -n 1p)
+          META=$(printf '%s\n' "$NATIVE_RESULT" | sed -n 2p)
+          node scripts/build-standalone-archive.mjs \
+            --server-tarball "$TARBALL" \
+            --server-artifact "$META" \
+            --target "$TARGET" \
+            --out-dir dist/standalone
+          ls -lh dist/standalone
+        shell: bash
+      - name: Qualify the archive with its own Node and no host Node on PATH
+        env:
+          TARGET: ${{ matrix.target }}
+          STANDALONE_DIR: dist/standalone
+          RELEASE_VERSION: ${{ inputs.version }}
+          PORACODE_EXPECT_COMPUTER_USE: ${{ matrix.computer_use }}
+        run: |
+          set -euo pipefail
+          STANDALONE_RESULT=$(node scripts/ci-server-artifact-meta.mjs standalone-archive)
+          ARCHIVE=$(printf '%s\n' "$STANDALONE_RESULT" | sed -n 1p)
+          METADATA=$(printf '%s\n' "$STANDALONE_RESULT" | sed -n 2p)
+          PREFIX="$RUNNER_TEMP/poracode-standalone-prefix"
+          node scripts/install-server-prefix.mjs --tarball "$ARCHIVE" --prefix "$PREFIX"
+          node scripts/server-install-qualification.mjs --tarball "$ARCHIVE" --prefix "$PREFIX" --standalone
+          node scripts/poracode-cli-qualification.mjs --runtime-tarball "$ARCHIVE"
+          # The real one-liner (curl | sh, or irm | iex on Windows) from a local
+          # HTTP release, then up --no-service, update and uninstall.
+          node scripts/installer-qualification.mjs --archive "$ARCHIVE" --metadata "$METADATA"
+        shell: bash
+      - name: Upload the qualified self-contained archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ inputs.artifact_name }}-standalone-${{ matrix.target }}-${{ github.run_attempt }}
+          path: |
+            dist/standalone/poracode-*
+            dist/standalone/standalone-*.json
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+          compression-level: 0
+  tauri:
+    name: Package Windows installer
+    needs:
+      - version
+      - standalone
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows NSIS (x64)
+            os: windows-latest
+            platform: win
+            target: win32-x64
+            bundles: nsis
+            artifact: viscositycode-windows-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET_PLATFORM: ${{ matrix.platform }}
+      TARGET: ${{ matrix.target }}
+      BUNDLES: ${{ matrix.bundles }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 26.13.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-tauri
+          prefix: desktop-tauri-rust
+      - name: Set package version
+        if: needs.version.outputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: node scripts/set-release-version.mjs "$RELEASE_VERSION"
+      - name: Test the shell
+        working-directory: desktop-tauri
+        run: cargo test --locked
+      - name: Download the standalone archive
+        uses: actions/download-artifact@v7
+        with:
+          pattern: ${{ inputs.artifact_name }}-standalone-${{ matrix.target }}-*
+          path: ${{ runner.temp }}/standalone
+      - name: Pick the newest attempt's archive
+        env:
+          DOWNLOAD_DIR: ${{ runner.temp }}/standalone
+        run: >
+          node -e '
+            const { appendFileSync, readdirSync } = require("node:fs");
+            const { join } = require("node:path");
+            const root = process.env.DOWNLOAD_DIR;
+            const entries = readdirSync(root, { withFileTypes: true });
+            if (!entries.length) throw new Error("no standalone archive was downloaded");
+            const attempt = (name) => Number(name.split("-").pop());
+            const [newest] = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort((a, b) => attempt(b) - attempt(a));
+            const dir = newest ? join(root, newest) : root;
+            console.log(`using ${dir}`);
+            appendFileSync(process.env.GITHUB_ENV, `ARCHIVE_DIR=${dir}\n`);
+          '
+      - name: Stage the standalone archive (macOS)
+        if: matrix.platform == 'mac'
+        run: >
+          set -euo pipefail
+
+          mkdir -p desktop-tauri/resources/standalone
+
+          tar -xzpf "$ARCHIVE_DIR"/poracode-*-"$TARGET".tar.gz -C desktop-tauri/resources/standalone
+
+          node --input-type=module -e "const m = await import('./desktop-tauri/scripts/stage-standalone.mjs');
+          console.log(m.checkLayout('desktop-tauri/resources/standalone'))"
+      - name: Stage the standalone archive (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: >
+          $archive = Get-ChildItem (Join-Path $env:ARCHIVE_DIR "poracode-*-$env:TARGET.zip") | Select-Object
+          -First 1
+
+          if (-not $archive) { throw "no standalone archive for $env:TARGET" }
+
+          Expand-Archive -Path $archive.FullName -DestinationPath desktop-tauri/resources/standalone
+
+          foreach ($path in "runtime/node.exe", "lib/server.cjs", "renderer/index.html", "standalone.json") {
+            if (-not (Test-Path (Join-Path desktop-tauri/resources/standalone $path))) { throw "missing $path" }
+          }
+      - name: Package
+        working-directory: desktop-tauri
+        run: >
+          set -euo pipefail
+
+          CONFIG_ARGS=(--config tauri.bundle.conf.json)
+
+          if [ "$TARGET_PLATFORM" = "mac" ]; then
+            if [ -n "${APPLE_CERTIFICATE:-}" ]; then
+              # Tauri imports APPLE_CERTIFICATE and refuses an identity ("-")
+              # that does not match it, so drop the ad-hoc identity.
+              echo '{"bundle":{"macOS":{"signingIdentity":null}}}' > "$RUNNER_TEMP/sign.json"
+              CONFIG_ARGS+=(--config "$RUNNER_TEMP/sign.json")
+              for name in APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+                [ -n "${!name:-}" ] || unset "$name"
+              done
+            else
+              unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+              echo "::notice::No macOS certificate configured; building an ad-hoc signed DMG."
+            fi
+          fi
+
+          if [ "$TARGET_PLATFORM" = "win" ]; then
+            if [ -n "${WIN_CSC_LINK:-}" ]; then
+              THUMBPRINT=$(pwsh -NoProfile -Command '
+                $pfx = Join-Path $env:RUNNER_TEMP "signing.pfx"
+                [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WIN_CSC_LINK))
+                $password = ConvertTo-SecureString $env:WIN_CSC_KEY_PASSWORD -AsPlainText -Force
+                $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
+                Remove-Item $pfx
+                $cert.Thumbprint' | tr -d '\r')
+              printf '{"bundle":{"windows":{"certificateThumbprint":"%s","digestAlgorithm":"sha256","timestampUrl":"http://timestamp.digicert.com"}}}' "$THUMBPRINT" > "$RUNNER_TEMP/sign.json"
+              CONFIG_ARGS+=(--config "$RUNNER_TEMP/sign.json")
+            else
+              echo "::notice::No Windows certificate configured; building an unsigned installer."
+            fi
+          fi
+
+          # Its own prefix: npm exec inside the repo trips its check of the root
+
+          # package.json overrides (EOVERRIDE).
+
+          npm install --prefix ../.tauri-cli --no-save --no-package-lock --no-audit --no-fund "$TAURI_CLI"
+
+          ../.tauri-cli/node_modules/.bin/tauri build --ci --bundles "$BUNDLES" "${CONFIG_ARGS[@]}"
+        env:
+          APPLE_CERTIFICATE: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
+          WIN_CSC_LINK: ${{ matrix.platform == 'win' && secrets.WIN_CSC_LINK || '' }}
+          WIN_CSC_KEY_PASSWORD: ${{ matrix.platform == 'win' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+      - name: Smoke the bundled host (macOS)
+        if: matrix.platform == 'mac'
+        run: node desktop-tauri/scripts/smoke.mjs
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            desktop-tauri/target/release/bundle/dmg/ViscosityCode_*.dmg
+            desktop-tauri/target/release/bundle/nsis/ViscosityCode_*-setup.exe
+          if-no-files-found: error
+          retention-days: 14
