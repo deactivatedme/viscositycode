@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: ""
+      qualified_run:
+        description: "Reuse qualified standalone archives from this desktop workflow run"
+        required: false
+        type: string
+        default: ""
   push:
     tags: ["v*"]
 
@@ -45,23 +50,38 @@ jobs:
     name: Resolve version
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     outputs:
       version: ${{ steps.resolve.outputs.version }}
+      source_revision: ${{ steps.resolve.outputs.source_revision }}
     steps:
       - id: resolve
         env:
           INPUT_VERSION: ${{ inputs.version }}
           IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
           REF_NAME: ${{ github.ref_name }}
+          QUALIFIED_RUN: ${{ inputs.qualified_run }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           version="$INPUT_VERSION"
           if [ -z "$version" ] && [ "$IS_TAG" = "true" ]; then version="$REF_NAME"; fi
+          source_revision="$GITHUB_SHA"
+          if [ -n "$QUALIFIED_RUN" ]; then
+            [[ "$QUALIFIED_RUN" =~ ^[0-9]+$ && -n "$version" ]]
+            source_revision="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$QUALIFIED_RUN" --jq               'select(.path == ".github/workflows/viscosity-desktop.yml" and .status == "completed") | .head_sha')"
+            [[ "$source_revision" =~ ^[a-f0-9]{40}$ ]]
+          fi
           echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+          echo "source_revision=$source_revision" >> "$GITHUB_OUTPUT"
 
   # Builds and qualifies the standalone host archives (bundled Node + server)
   # for every target; the Tauri legs below bundle the exact qualified bytes.
   server:
     name: Standalone host archives
+    if: inputs.qualified_run == ''
     needs: version
     permissions:
       contents: read
@@ -76,6 +96,10 @@ jobs:
   tauri:
     name: build (${{ matrix.name }})
     needs: [version, server]
+    if: ${{ !cancelled() && needs.version.result == 'success' && (inputs.qualified_run != '' || needs.server.result == 'success') }}
+    permissions:
+      contents: read
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -109,6 +133,8 @@ jobs:
       BUNDLES: ${{ matrix.bundles }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.version.outputs.source_revision }}
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
@@ -144,6 +170,9 @@ jobs:
         with:
           pattern: viscosity-server-standalone-${{ matrix.target }}-*
           path: ${{ runner.temp }}/standalone
+          github-token: ${{ inputs.qualified_run != '' && github.token || '' }}
+          run-id: ${{ inputs.qualified_run || github.run_id }}
+          digest-mismatch: error
 
       - name: Pick the newest attempt's archive
         env:
@@ -180,6 +209,20 @@ jobs:
           foreach ($path in "runtime/node.exe", "lib/server.cjs", "renderer/index.html", "standalone.json") {
             if (-not (Test-Path (Join-Path desktop-tauri/resources/standalone $path))) { throw "missing $path" }
           }
+
+      - name: Verify standalone source and version
+        env:
+          SOURCE_REVISION: ${{ needs.version.outputs.source_revision }}
+        run: |
+          node --input-type=commonjs -e '
+            const assert = require("node:assert/strict");
+            const fs = require("node:fs");
+            const read = (path) => JSON.parse(fs.readFileSync(path, "utf8"));
+            const metadata = read("desktop-tauri/resources/standalone/standalone.json");
+            assert.equal(metadata.server.sourceRevision, process.env.SOURCE_REVISION);
+            assert.equal(metadata.target, process.env.TARGET);
+            assert.equal(metadata.version, read("package.json").version);
+          '
 
       - name: Package
         working-directory: desktop-tauri
