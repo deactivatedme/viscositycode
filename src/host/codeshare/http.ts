@@ -15,6 +15,9 @@ import {
   createInviteSchema,
   MAX_DURATION_MINUTES,
   modelIdSchema,
+  projectFileResultSchema,
+  projectTurnInputSchema,
+  projectTurnRefSchema,
   reserveLocalLaunchSchema,
   ShareError,
   shareSecretSchema,
@@ -22,6 +25,7 @@ import {
   submitTurnSchema,
   submitRoomTurnSchema,
 } from "@/shared/codeShare";
+import type { UsageSnapshot } from "@/shared/contracts/usage";
 import {
   roomClaimSchema,
   roomCreateSchema,
@@ -52,6 +56,7 @@ export interface CodeShareHttpOptions {
   trustCloudflareClientIp?: boolean;
   setup?: CodeShareOwnerSetup;
   healthNonce?: string;
+  subscriptionUsage?: (providers: string[]) => Promise<readonly UsageSnapshot[]>;
 }
 
 type Route = (request: IncomingMessage, response: ServerResponse, path: string) => Promise<void>;
@@ -240,8 +245,28 @@ function ownerRoutes(options: CodeShareHttpOptions): Route {
     if (staticPage(req, res, path, ownerPage, script)) return;
     if (!matchOwner(req.headers.authorization, ownerToken))
       throw new ShareError(401, "owner_login", "Open the owner link printed by CodeShare.");
-    if (req.method === "GET" && path === "/api/v1/owner")
-      return json(res, 200, service.ownerState());
+    if (req.method === "GET" && path === "/api/v1/owner") {
+      const state = service.ownerState();
+      if (options.subscriptionUsage) {
+        const providers = [
+          ...new Set(
+            state.models
+              .filter(({ execution }) => execution === "owner-subscription")
+              .map(({ provider }) => provider),
+          ),
+        ];
+        const snapshots = providers.length
+          ? await options.subscriptionUsage(providers).catch(() => [])
+          : [];
+        state.subscriptionUsage = providers.map((provider) => ({
+          provider,
+          windows: (snapshots.find(({ providerId }) => providerId === provider)?.windows ?? []).map(
+            ({ label, usedPercent, resetsAt }) => ({ label, usedPercent, resetsAt }),
+          ),
+        }));
+      }
+      return json(res, 200, state);
+    }
     if (req.method === "GET" && path === "/api/v1/owner/setup") {
       if (!options.setup)
         throw new ShareError(409, "setup_unavailable", "Owner setup is unavailable on this host.");
@@ -377,10 +402,39 @@ function appGuestRoutes(options: CodeShareHttpOptions): Route {
       const parameters = new URL(req.url ?? "/", options.guestOrigin).searchParams;
       const desktop = parameters.get("desktop") === "1";
       const token = claims.verify(claim);
-      service.redeem(code, token, "", !desktop, desktop && parameters.get("room") === "2");
+      service.redeem(
+        code,
+        token,
+        "",
+        !desktop,
+        desktop && parameters.get("room") === "2",
+        desktop && parameters.get("project") === "1",
+      );
       return json(res, 200, { token, state: service.guestState(token) });
     }
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/u.exec(req.headers.authorization ?? "")?.[1] ?? "";
+    if (req.method === "POST" && path === "/project/turns") {
+      const input = await body(req, projectTurnInputSchema);
+      return json(res, 200, service.submitProject(token, input));
+    }
+    if (req.method === "POST" && path === "/project/progress") {
+      const { threadId, id } = await body(req, projectTurnRefSchema);
+      return json(res, 200, service.projectProgress(token, threadId, id));
+    }
+    if (req.method === "POST" && path === "/project/file-result") {
+      const { threadId, id, requestId, result } = await body(
+        req,
+        projectFileResultSchema,
+        1024 * 1024,
+      );
+      service.projectFileResult(token, threadId, id, requestId, result);
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === "POST" && path === "/project/stop") {
+      const { threadId, id } = await body(req, projectTurnRefSchema);
+      service.stopProject(token, threadId, id);
+      return json(res, 200, { ok: true });
+    }
     if (path === "/room" || path.startsWith("/room/"))
       return roomRoutes(service, token, req, res, path);
     if (req.method === "POST" && path === "/local-launch") {

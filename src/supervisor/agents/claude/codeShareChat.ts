@@ -9,6 +9,7 @@ import { assertAgentLaunchAllowed } from "@/supervisor/agentLaunchGuard";
 import type { CodeShareStructuredChatInput } from "../base";
 import { findCompatibleClaudeOverride } from "./compatibleBinary";
 import { claudeModelRouteError } from "./modelIdentity";
+import { codeShareTokenUsageSchema } from "@/shared/codeShareRuntime";
 
 /** Restricted owner-funded Agent SDK session; never uses the print/terminal lane. */
 export function claudeCodeShareOptions(
@@ -104,6 +105,18 @@ export async function runClaudeCodeShareChat(input: CodeShareStructuredChatInput
       if (message.type !== "result") continue;
       if (message.subtype !== "success" || message.is_error)
         throw new Error("The owner's Claude SDK session did not complete the turn.");
+      // Each CodeShare turn is a fresh SDK session. Its result is cumulative
+      // for that session, including tool rounds and cached prompt input.
+      if (message.usage) {
+        const usage = codeShareTokenUsageSchema.safeParse({
+          inputTokens:
+            message.usage.input_tokens +
+            (message.usage.cache_creation_input_tokens ?? 0) +
+            (message.usage.cache_read_input_tokens ?? 0),
+          outputTokens: message.usage.output_tokens,
+        });
+        if (usage.success) input.onUsage?.(usage.data);
+      }
       return message.result;
     }
     throw new Error("The owner's Claude SDK session ended without a result.");

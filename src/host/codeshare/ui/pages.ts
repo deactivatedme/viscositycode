@@ -82,6 +82,11 @@ export const ownerPage = page(
         <p class="meta">Connect your owner accounts with their normal browser sign-in. Sharing runs through structured ACP/SDK sessions.</p>
         <div id="subscription-connections" class="connection-list"></div>
       </section>
+      <section class="panel setup-panel" id="subscription-usage" hidden>
+        <h2>Subscription usage</h2>
+        <p class="meta">Account-wide limits reported by each provider. Usage from your own sessions and shared sessions can count toward these limits.</p>
+        <div id="subscription-usage-windows"></div>
+      </section>
       <section class="panel setup-panel" hidden>
         <h2>API-key connections</h2>
         <form id="api-key-setup">
@@ -139,9 +144,9 @@ export const ownerPage = page(
           <input id="invite-link" readonly>
           <div class="copy-row">
             <button id="copy-link" class="secondary">Copy link</button>
-            <button id="copy-code" class="secondary">Copy code</button>
+            <button id="copy-code" class="secondary">Copy app code</button>
           </div>
-          <p class="meta">Save the link now. It’s shown once.</p>
+          <p class="meta">Paste the app code or link into Join CodeShare in ViscosityCode. Save it now. It’s shown once.</p>
         </div>
       </section>
       <section class="panel share-panel">

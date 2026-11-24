@@ -20,11 +20,14 @@ afterEach(() => vi.unstubAllGlobals());
 describe("CodeShare app transport", () => {
   it("extracts a host and code from the share URL without routing the fragment", () => {
     expect(parseShareInvite(origin + "/#invite=" + code)).toEqual(invite);
+    expect(parseShareInvite("CS1." + btoa(origin) + "." + code)).toEqual(invite);
     for (const value of [
       "http://share.example.test/#invite=" + code,
       "https://user@share.example.test/#invite=" + code,
       origin + "/api/#invite=" + code,
       origin + "?invite=" + code,
+      "CS1." + btoa("https://user@share.example.test") + "." + code,
+      "CS1." + btoa(origin + "/other") + "." + code,
     ])
       expect(() => parseShareInvite(value)).toThrow("invalid_link");
   });
@@ -39,7 +42,7 @@ describe("CodeShare app transport", () => {
     await CodeShareConnection.join(invite, {}, true);
     expect(fetcher).toHaveBeenNthCalledWith(
       2,
-      origin + "/api/v1/app/redeem?desktop=1&room=2",
+      origin + "/api/v1/app/redeem?desktop=1&room=2&project=1",
       expect.objectContaining({ body: JSON.stringify({ code, claim }) }),
     );
   });

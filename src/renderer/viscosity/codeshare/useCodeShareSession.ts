@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReserveLocalLaunch, SubmitTurn } from "@/shared/codeShare";
+import {
+  CODE_SHARE_PROJECT_PROTOCOL,
+  type ReserveLocalLaunch,
+  type SubmitTurn,
+} from "@/shared/codeShare";
+import { CODE_SHARE_PROJECT_AGENT } from "@/shared/codeShareProjectAccess";
+import { readBridge } from "@/renderer/bridge";
 import {
   CodeShareClientError,
   CodeShareConnection,
@@ -112,6 +118,17 @@ export function useCodeShareSession(open: boolean) {
         canRunCodeShareSubscription(),
       );
       if (revision !== operation.current) return false;
+      if (!state.room && state.projectProtocol === CODE_SHARE_PROJECT_PROTOCOL) {
+        if (!canRunCodeShareSubscription()) throw new CodeShareClientError("desktop_required");
+        await readBridge().configureCodeShareProjects({
+          action: "connect",
+          ...client.projectAccess(),
+        });
+        client.markProjectChats();
+        void readBridge()
+          .refreshAgentStatuses([], { agentKinds: [CODE_SHARE_PROJECT_AGENT] })
+          .catch(() => undefined);
+      }
       joining.current = null;
       setConnection(client);
       setData(received(state));
@@ -217,7 +234,23 @@ export function useCodeShareSession(open: boolean) {
     }
   }
 
-  function leave() {
+  async function leave() {
+    if (connection?.projectChats) {
+      setBusy(true);
+      try {
+        await readBridge().configureCodeShareProjects({
+          action: "disconnect",
+          ...connection.projectAccess(),
+        });
+        void readBridge()
+          .refreshAgentStatuses([], { agentKinds: [CODE_SHARE_PROJECT_AGENT] })
+          .catch(() => undefined);
+      } catch {
+        setProblem("invalid_response");
+        setBusy(false);
+        return;
+      }
+    }
     operation.current++;
     pendingLocalLaunch.current = null;
     pendingTurn.current = null;
@@ -235,6 +268,7 @@ export function useCodeShareSession(open: boolean) {
   return {
     connection,
     connected: connection !== null,
+    projectChats: connection?.projectChats ?? false,
     snapshot: data?.snapshot ?? null,
     seconds: data ? Math.max(0, Math.ceil((data.deadline - now) / 1000)) : 0,
     problem,

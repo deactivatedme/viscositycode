@@ -8,8 +8,8 @@ public enum RemoteContractMetadata {
   public static let protocolVersion = 14
   public static let bindingFormatVersion = 2
   public static let generatorVersion = 7
-  public static let sourceHash = "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910"
-  public static let manifestHash = "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c"
+  public static let sourceHash = "sha256:96d97d30cef294f0f263b5f1078da0b5a7e0921dbd5f75998d0a525385a9957a"
+  public static let manifestHash = "sha256:a2749912977d83cf3f552a4557b0d4878fa39020105a9838189039cc3149b922"
   public static let validationBoundary: RemoteValidationBoundary = .rootCodecOnly
   public static let generatedModelCodableSemantics: RemoteGeneratedSerializerSemantics = .nonValidatingRepresentationOnly
   public static let portableTransformIds = ["agent-settings.strip-sensitive", "push.routing.client-connection-id.lowercase", "string.trim"]
@@ -144,6 +144,7 @@ public enum RemoteContractMetadata {
     .init(name: "clearMcpServerOauth", scope: "session:operate", owner: "optionalProjectLocation", resultKind: "omitted", requestType: "ProcedureclearMcpServerOauthRequest_db8efd22aa", resultType: "RemoteUnit"),
     .init(name: "cloneRepo", scope: "projects:manage", owner: "parentLocation", resultKind: "json", requestType: "ProcedurecloneRepoRequest_482895ec91", resultType: "ProcedurecloneRepoResult_6a0c18e639"),
     .init(name: "closeCodeShareWorkspace", scope: "session:operate", owner: "projectLocation", resultKind: "json", requestType: "ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40", resultType: "ProcedurecloseCodeShareWorkspaceResult_493210a9cb"),
+    .init(name: "configureCodeShareProjects", scope: "projects:manage", owner: "desktop", resultKind: "json", requestType: "ProcedureconfigureCodeShareProjectsRequest_deb13fe8b7", resultType: "ProcedureconfigureCodeShareProjectsResult_53062fbb54"),
     .init(name: "connectThreadVoice", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedureconnectThreadVoiceRequest_898057a01b", resultType: "ProcedureconnectThreadVoiceResult_871fe12f7d"),
     .init(name: "controlMcpApp", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedurecontrolMcpAppRequest_339dd50c84", resultType: "ProcedurecontrolMcpAppResult_054db97313"),
     .init(name: "createFileCheckpoint", scope: "session:operate", owner: "thread", resultKind: "json", requestType: "ProcedurecreateFileCheckpointRequest_412fb1bbf4", resultType: "ProcedurecreateFileCheckpointResult_012b6b31ad"),

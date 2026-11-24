@@ -326,6 +326,7 @@ export function createSupervisorIpcHandlers(runtime: SupervisorRuntime): Supervi
     browseHostDirectory: (payload) => projectTree.browseHostDirectory(payload),
     searchProjectTree: (payload) => projectTree.searchProjectTree(payload),
     openCodeShareWorkspace: (payload) => runtime.codeShareFileRuntime.open(payload),
+    configureCodeShareProjects: (payload) => runtime.codeShareProjectConnections.configure(payload),
     executeCodeShareFileTool: (payload) => runtime.codeShareFileRuntime.execute(payload),
     closeCodeShareWorkspace: (payload) => runtime.codeShareFileRuntime.end(payload),
     readProjectFile: (payload) => projectTree.readProjectFile(payload),

@@ -24,6 +24,7 @@ import { authorizeProjectProcedurePayload } from "./projectProcedureAuthorizatio
 import { isProjectWatchProcedure, runProjectWatchProcedure } from "./projectWatchProcedure";
 import { requireCurrentRemoteProtocolVersion } from "./writerProtocolAdmission";
 import { beginHostThreadActivityTouch } from "./touchThreadActivity";
+import { isDirectLoopbackPeer, resolvedTrustedProxies } from "./security";
 import {
   applyRemoteThreadSwitch,
   isPlainThreadStartPreEffectFailure,
@@ -57,6 +58,15 @@ export async function runRemoteProcedure(
     );
   }
   ctx.security.requireBearer(req, [REMOTE_PROCEDURE_SPECS[procedure].scope]);
+  if (
+    procedure === "configureCodeShareProjects" &&
+    !isDirectLoopbackPeer(req, resolvedTrustedProxies(ctx.options))
+  )
+    throw new RemoteHttpError(
+      "codeshare_desktop_local",
+      "Join CodeShare from the desktop app on this computer.",
+      403,
+    );
   // Fence 1 (remote 13): this shared dispatch hosts both reads and writes, so
   // the actual resolved procedure scope is the writer classification — never a
   // client-supplied mutation hint. A non-`session:read` procedure requires the

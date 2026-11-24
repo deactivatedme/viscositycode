@@ -313,6 +313,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_2750481e9a5952e6 = RemoteSchema(type: "string", literals: [.string("disconnect")], unknownPolicy: .strip)
+}
+
+public extension RemoteSchemas {
   static let schema_275476f9b6055811 = RemoteSchema(type: "object", required: Set(["repos"]), properties: ["repos": RemoteSchemas.schema_75b702ed8c9f54ac], additionalAllowed: true, unknownPolicy: .strip)
 }
 

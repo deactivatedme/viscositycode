@@ -131,6 +131,16 @@ it("isolates room invites and queues several participants behind a single comput
       { status: "complete", reply: "Hosted reply" },
     ]);
     expect(service.rooms.snapshot(a.member, snapshot.revision, false).turns).toBeUndefined();
+    expect(service.ownerState().invites.find(({ id }) => id === c.member.id)).toMatchObject({
+      inputTokens: 5,
+      outputTokens: 2,
+      reportedUsageTurns: 1,
+    });
+    expect(service.ownerState().invites.find(({ id }) => id === b.member.id)).toMatchObject({
+      inputTokens: 0,
+      outputTokens: 0,
+      reportedUsageTurns: 0,
+    });
   } finally {
     await test.close();
   }
@@ -222,7 +232,16 @@ it("preserves a pre-v4 participant lease and its invites during migration", asyn
     test.service.rooms.claim(a.member, turn.id, lease, false);
     await test.service.close();
     const previous = new Database(test.file);
-    previous.exec("ALTER TABLE room_turns DROP COLUMN execution; PRAGMA user_version=3");
+    previous.exec(`
+      DROP INDEX code_share_turns_by_thread;
+        ALTER TABLE turns DROP COLUMN project_thread;
+        ALTER TABLE invites DROP COLUMN desktop_only;
+        DROP INDEX room_turns_by_author;
+      ALTER TABLE room_turns DROP COLUMN input_tokens;
+      ALTER TABLE room_turns DROP COLUMN output_tokens;
+      ALTER TABLE room_turns DROP COLUMN execution;
+      PRAGMA user_version=3;
+    `);
     previous.close();
     await test.restart();
     const member = test.service.roomMember(a.token);
@@ -233,6 +252,64 @@ it("preserves a pre-v4 participant lease and its invites during migration", asyn
     });
     test.service.rooms.finish(member, turn.id, lease, "complete", "preserved", false);
     expect(test.service.ownerState().invites).toHaveLength(1);
+  } finally {
+    await test.close();
+  }
+});
+
+it("preserves v4 room history and counts new owner subscription usage for the author", async () => {
+  const test = setup(async ({ append }) => {
+    append("Owner reply");
+    return { inputTokens: 72, outputTokens: 14 };
+  });
+  try {
+    const room = test.service.createRoom("Usage");
+    const author = test.member(room.id, "Alex", [remote.id]);
+    const other = test.member(room.id, "Bea", [remote.id]);
+    const turn = { id: randomUUID(), model: remote.id, prompt: "Old turn", runner: "host" };
+    test.service.rooms.submit(author.member, turn, false);
+    await vi.waitFor(() =>
+      expect(test.service.rooms.snapshot(author.member, undefined, false).turns?.[0]?.status).toBe(
+        "complete",
+      ),
+    );
+    await test.service.close();
+    const previous = new Database(test.file);
+    try {
+      previous.exec(`
+        DROP INDEX code_share_turns_by_thread;
+        ALTER TABLE turns DROP COLUMN project_thread;
+        ALTER TABLE invites DROP COLUMN desktop_only;
+        DROP INDEX room_turns_by_author;
+        ALTER TABLE room_turns DROP COLUMN input_tokens;
+        ALTER TABLE room_turns DROP COLUMN output_tokens;
+        PRAGMA user_version=4;
+      `);
+    } finally {
+      previous.close();
+    }
+    await test.restart();
+    const service = test.service;
+    const currentAuthor = service.roomMember(author.token);
+    expect(service.rooms.snapshot(currentAuthor, undefined, false).turns?.[0]).toMatchObject({
+      id: turn.id,
+      reply: "Owner reply",
+    });
+    const inviteUsage = (id: string) =>
+      service.ownerState().invites.find((invite) => invite.id === id);
+    expect(inviteUsage(author.member.id)).toMatchObject({ turnsUsed: 1, reportedUsageTurns: 0 });
+    service.rooms.submit(currentAuthor, { ...turn, id: randomUUID(), prompt: "New turn" }, false);
+    await vi.waitFor(() =>
+      expect(inviteUsage(author.member.id)).toMatchObject({
+        turnsUsed: 2,
+        reportedUsageTurns: 1,
+        inputTokens: 72,
+        outputTokens: 14,
+      }),
+    );
+    expect(inviteUsage(other.member.id)).toMatchObject({ reportedUsageTurns: 0, inputTokens: 0 });
+    const guest = service.rooms.snapshot(currentAuthor, undefined, false);
+    expect(guest.turns?.[1]).not.toHaveProperty("inputTokens");
   } finally {
     await test.close();
   }

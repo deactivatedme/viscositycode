@@ -5,6 +5,12 @@ import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
+val RemoteRootCodecs.procedureU2EGhMarkPrReadyU2ERequest: RemoteRootCodec<ProcedureghClosePrRequest_868bf1042a>
+    get() = RemoteRootCodec("procedure.ghMarkPrReady.request", serializer<ProcedureghClosePrRequest_868bf1042a>(), schema_868bf1042a1bbba1)
+
+val RemoteRootCodecs.procedureU2EGhMergePrU2ERequest: RemoteRootCodec<ProcedureghMergePrRequest_39d6579ca7>
+    get() = RemoteRootCodec("procedure.ghMergePr.request", serializer<ProcedureghMergePrRequest_39d6579ca7>(), schema_39d6579ca7450396)
+
 val RemoteRootCodecs.procedureU2EGhPollPullRequestsU2ERequest: RemoteRootCodec<ProcedureghPollPullRequestsRequest_559c498a02>
     get() = RemoteRootCodec("procedure.ghPollPullRequests.request", serializer<ProcedureghPollPullRequestsRequest_559c498a02>(), schema_559c498a020be6ad)
 
@@ -442,9 +448,3 @@ val RemoteRootCodecs.procedureU2EWorkflowGetRunU2ERequest: RemoteRootCodec<Proce
 
 val RemoteRootCodecs.procedureU2EWorkflowGetRunU2EResult: RemoteRootCodec<ProcedureworkflowGetRunResult_965bd4463b>
     get() = RemoteRootCodec("procedure.workflowGetRun.result", serializer<ProcedureworkflowGetRunResult_965bd4463b>(), schema_965bd4463b1b7307)
-
-val RemoteRootCodecs.procedureU2EWriteExternalFileU2ERequest: RemoteRootCodec<ProcedurewriteExternalFileRequest_551f784ecd>
-    get() = RemoteRootCodec("procedure.writeExternalFile.request", serializer<ProcedurewriteExternalFileRequest_551f784ecd>(), schema_551f784ecdbbf2f4)
-
-val RemoteRootCodecs.procedureU2EWriteExternalFileU2EResult: RemoteRootCodec<ProcedurewriteExternalFileResult_c5c2ecebba>
-    get() = RemoteRootCodec("procedure.writeExternalFile.result", serializer<ProcedurewriteExternalFileResult_c5c2ecebba>(), schema_c5c2ecebbae5cd01)

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import { ShareError, type ChatMessage } from "@/shared/codeShare";
 import type { ShareRoomRef, ShareRoomTurn } from "@/shared/codeShareRoom";
+import type { CodeShareTokenUsage } from "@/shared/codeShareRuntime";
 
 const MAX_TURNS = 40;
 const MAX_QUEUE = 12;
@@ -247,10 +248,20 @@ export class CodeShareRoomStore {
     return result.changes === 1;
   }
 
-  transition(turn: RoomTurnRow, status: ShareRoomTurn["status"], reply = turn.reply): void {
+  transition(
+    turn: RoomTurnRow,
+    status: ShareRoomTurn["status"],
+    reply = turn.reply,
+    usage?: CodeShareTokenUsage | null,
+  ): void {
     this.db
-      .prepare("UPDATE room_turns SET status=?,reply=? WHERE seq=?")
-      .run(status, reply, turn.seq);
+      .prepare(`
+        UPDATE room_turns
+        SET status=?, reply=?, input_tokens=COALESCE(?,input_tokens),
+          output_tokens=COALESCE(?,output_tokens)
+        WHERE seq=?
+      `)
+      .run(status, reply, usage?.inputTokens ?? null, usage?.outputTokens ?? null, turn.seq);
     this.changed(turn.roomId);
   }
 

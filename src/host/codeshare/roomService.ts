@@ -6,7 +6,7 @@ import {
 } from "@/shared/codeShareFileTools";
 import { ShareFileToolGateway, type ShareFileWorkspace } from "./fileToolGateway";
 import type { ShareFileResult } from "@/shared/codeShareFileTools";
-import type { RunProvider } from "./providerTransport";
+import type { RunProvider, TokenUsage } from "./providerTransport";
 import type { CodeShareRoomStore, RoomMember } from "./roomStore";
 
 const READY_TIMEOUT_MS = 12_000;
@@ -321,13 +321,14 @@ export class CodeShareRoomService {
         let reply = "";
         let nextPublish = 0;
         let status: ShareRoomTurn["status"] = "complete";
+        let usage: TokenUsage | null = null;
         const timer = setTimeout(
           () => abort.abort(),
           workspace ? CODE_SHARE_REMOTE_TURN_TIMEOUT_MS : HOST_RUN_TIMEOUT_MS,
         ).unref();
         try {
           abort.signal.throwIfAborted();
-          await this.runProvider({
+          usage = await this.runProvider({
             model,
             ...(workspace ? { remoteTools: workspace.bridge } : {}),
             messages: this.store.context(turn),
@@ -361,8 +362,8 @@ export class CodeShareRoomService {
         run.reply = status === "complete" ? reply : "";
         if (workspace) {
           const current = this.store.turn(turn.roomId, turn.id)!;
-          this.store.transition(current, current.status, run.reply);
-        } else this.store.transition(turn, status, run.reply);
+          this.store.transition(current, current.status, run.reply, usage);
+        } else this.store.transition(turn, status, run.reply, usage);
       })
       .catch(this.onFailure);
     run.complete = complete;

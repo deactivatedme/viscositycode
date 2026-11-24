@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { parseModel, type OwnerState } from "@/shared/codeShare";
+import { parseModel, type InviteView, type OwnerState } from "@/shared/codeShare";
 import { ownerBrowser } from "./ownerBrowser";
 import { ownerPage } from "./pages";
 
@@ -83,4 +83,58 @@ it("keeps a large inventory selectable while preserving the 64-model guest grant
     checkbox.checked = true;
   document.getElementById("model-list")!.dispatchEvent(new Event("change", { bubbles: true }));
   expect(document.querySelector<HTMLButtonElement>("#create-button")?.disabled).toBe(true);
+});
+
+it("shows reported usage and distinguishes it from turns without token counts", async () => {
+  vi.useFakeTimers();
+  document.documentElement.innerHTML = ownerPage;
+  location.hash = "owner=" + "A".repeat(43);
+  const model = { ...parseModel("codex:fixture"), execution: "owner-subscription" as const };
+  const now = Date.now();
+  const invite: InviteView = {
+    id: "one",
+    label: "Alex",
+    models: [model.id],
+    status: "active",
+    durationMinutes: 60,
+    redeemBy: now,
+    expiresAt: now + 60_000,
+    turnLimit: 10,
+    turnsUsed: 2,
+    inputTokens: 64,
+    outputTokens: 23,
+    reportedUsageTurns: 1,
+  };
+  const state: OwnerState = {
+    paused: false,
+    models: [model],
+    invites: [
+      invite,
+      {
+        ...invite,
+        id: "two",
+        label: "Bea",
+        inputTokens: 0,
+        outputTokens: 0,
+        reportedUsageTurns: 0,
+      },
+    ],
+    rooms: [],
+    subscriptionUsage: [{ provider: "codex", windows: [{ label: "Weekly", usedPercent: 27 }] }],
+    guestOrigin: "https://share.example.test",
+    serverNow: now,
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<typeof fetch>(async () => Response.json(state)),
+  );
+  ownerBrowser([]);
+  await vi.waitFor(() => {
+    const text = document.querySelector("#invites")?.textContent;
+    expect(text).toContain("64 input · 23 output tokens reported for 1 of 2 turns");
+    expect(text).toContain("No provider token counts reported");
+    expect(document.querySelector("#subscription-usage-windows")?.textContent).toContain(
+      "Weekly · 27% used",
+    );
+  });
 });

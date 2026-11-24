@@ -109,7 +109,17 @@ export function ownerBrowser(
       invite.turnLimit === 0
         ? invite.turnsUsed + " used · Unlimited turns"
         : invite.turnsUsed + " / " + invite.turnLimit + " turns";
-    const tokens = (invite.inputTokens + invite.outputTokens).toLocaleString();
+    const counts = invite.inputTokens + invite.outputTokens;
+    const reports = invite.reportedUsageTurns;
+    const tokens = (reports !== undefined ? reports > 0 : counts > 0)
+      ? invite.inputTokens.toLocaleString() +
+        " input · " +
+        invite.outputTokens.toLocaleString() +
+        " output tokens" +
+        (reports === undefined
+          ? " reported"
+          : " reported for " + reports + " of " + invite.turnsUsed + " turns")
+      : "No provider token counts reported";
     const room = current?.rooms.find((entry) => entry.id === invite.roomId);
     if (room) title.firstChild?.appendChild(element("small", room.label, "meta"));
     const card = element("article", "", "invite-row");
@@ -121,12 +131,7 @@ export function ownerBrowser(
       models.append(chip);
     }
     if (invite.status === "expired" || invite.status === "revoked") clock.hidden = true;
-    card.append(
-      title,
-      clock,
-      element("p", usage + " · " + tokens + " reported tokens", "meta"),
-      models,
-    );
+    card.append(title, clock, element("p", usage + " · " + tokens, "meta"), models);
     if (invite.status === "revoked" || invite.status === "expired") return card;
 
     const actions = element("form", "", "invite-actions");
@@ -236,6 +241,24 @@ export function ownerBrowser(
     byId("guest-address").textContent = state.guestOrigin;
     byId("host-status").textContent = state.paused ? "Paused" : "Accepting guests";
     pause.textContent = state.paused ? "Resume sharing" : "Pause all shares";
+    const usage = state.subscriptionUsage ?? [];
+    byId("subscription-usage").hidden = usage.length === 0;
+    byId("subscription-usage-windows").replaceChildren(
+      ...usage.map(({ provider, windows }) => {
+        const section = element("section", "");
+        section.append(element("strong", providerLabels.get(provider) ?? provider));
+        if (windows.length === 0) {
+          section.append(element("p", "Usage is unavailable for this account.", "meta"));
+        }
+        for (const { label, usedPercent, resetsAt } of windows) {
+          const used = usedPercent.toLocaleString(undefined, { maximumFractionDigits: 1 });
+          const reset =
+            resetsAt === undefined ? "" : " · Resets " + new Date(resetsAt).toLocaleString();
+          section.append(element("p", label + " · " + used + "% used" + reset, "meta"));
+        }
+        return section;
+      }),
+    );
     const rooms = JSON.stringify(state.rooms);
     if (rooms !== availableRooms) {
       availableRooms = rooms;
@@ -447,10 +470,11 @@ export function ownerBrowser(
       redeemWithinMinutes: byId<HTMLInputElement>("redeem-within").valueAsNumber,
       turnLimit: byId<HTMLInputElement>("turn-limit").valueAsNumber,
       ...(roomSelect.value ? { roomId: roomSelect.value } : {}),
+      desktopOnly: true,
       models,
     })
       .then(({ code, url }) => {
-        inviteCode = code;
+        inviteCode = "CS1." + btoa(new URL(url).origin) + "." + code;
         link.value = url;
         byId("created").hidden = false;
         byId<HTMLInputElement>("label").value = "";

@@ -60,7 +60,10 @@ export function CodeShareDialog() {
   function statusMessage(code: string) {
     switch (code) {
       case "invalid_link":
-        return t({ id: "codeShare.invalidLink", message: "Paste the full CodeShare invite link." });
+        return t({
+          id: "codeShare.invalidLink",
+          message: "Paste a CodeShare invite code or the full link.",
+        });
       case "guest_rate_limited":
         return t({
           id: "codeShare.inviteRateLimited",
@@ -154,7 +157,7 @@ export function CodeShareDialog() {
     setDraft("");
     setAttachment(null);
     setModelId("");
-    session.leave();
+    void session.leave();
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -229,8 +232,35 @@ export function CodeShareDialog() {
               models={snapshot.models}
               inactive={Boolean(ended)}
               outOfTurns={outOfTurns}
-              leave={session.leave}
+              leave={leave}
             />
+          ) : session.projectChats ? (
+            <>
+              <Modal.Body className="gap-2 p-4">
+                <p>
+                  {t({
+                    id: "codeShare.projectPicker",
+                    message:
+                      "Choose a CodeShare model in your project’s model picker to start a chat.",
+                  })}
+                </p>
+                {ended || session.problem || session.offline ? (
+                  <p role="status" className="text-sm text-warning">
+                    {statusMessage(ended ? "expired" : (session.problem ?? "offline"))}
+                  </p>
+                ) : null}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button size="sm" variant="ghost" isDisabled={session.busy} onPress={leave}>
+                  {t({ id: "codeShare.leave", message: "Leave share" })}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onPress={() => useCodeSharePanel.setState({ open: false })}
+                >{t`Close`}</Button>
+              </Modal.Footer>
+            </>
           ) : session.connected ? (
             <>
               <Modal.Body className="min-h-0 gap-3 overflow-y-auto p-4">
@@ -445,7 +475,7 @@ export function CodeShareDialog() {
             >
               <Modal.Body className="gap-2 p-4">
                 <Label htmlFor={inviteId}>
-                  {t({ id: "codeShare.inviteLink", message: "Invite link" })}
+                  {t({ id: "codeShare.inviteLink", message: "Invite code or link" })}
                 </Label>
                 <Input
                   id={inviteId}

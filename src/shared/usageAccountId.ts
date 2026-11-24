@@ -92,3 +92,17 @@ export function usageAccountIdForAgent(
   if (!instances || !instance || instance.driver !== driver || !resolve) return candidate;
   return resolve(instance, instances) ?? candidate;
 }
+
+/** A retained usage snapshot cannot override an explicit agent opt-out. */
+export function isUsageAgentEnabled(
+  usageId: string,
+  disabledAgents: readonly string[],
+  instances: AgentInstanceConfigMap | undefined,
+): boolean {
+  if (disabledAgents.includes(usageId)) return false;
+  const driver = baseAgentKind(usageId);
+  if (driver === usageId) return true;
+  const id = usageId.slice(driver.length + 1);
+  const instance = instances && Object.hasOwn(instances, id) ? instances[id] : undefined;
+  return instance?.driver !== driver || instance.enabled !== false;
+}

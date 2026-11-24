@@ -1,6 +1,14 @@
 // GENERATED FILE. Do not edit by hand.
 import Foundation
 public extension RemoteRootCodecs {
+  static let procedureU2EListSkillMarketplaceU2ERequest: RemoteRootCodec<ProcedurelistSkillMarketplaceRequest_828172bf17> = .init(id: "procedure.listSkillMarketplace.request", schema: RemoteSchemas.schema_828172bf1752b0f1)
+}
+
+public extension RemoteRootCodecs {
+  static let procedureU2EListSkillMarketplaceU2EResult: RemoteRootCodec<ProcedurelistSkillMarketplaceResult_89033d459d> = .init(id: "procedure.listSkillMarketplace.result", schema: RemoteSchemas.schema_89033d459dedce3c)
+}
+
+public extension RemoteRootCodecs {
   static let procedureU2EListThreadSessionActionsU2ERequest: RemoteRootCodec<ProcedurecancelExtractContextRequest_09b78d9c1d> = .init(id: "procedure.listThreadSessionActions.request", schema: RemoteSchemas.schema_09b78d9c1d4c3a6b)
 }
 

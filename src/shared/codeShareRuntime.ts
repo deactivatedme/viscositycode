@@ -1,10 +1,19 @@
 import { shareFileBridgeSchema } from "./codeShareFileTools";
 import { z } from "zod";
-import { MAX_PROMPT_CHARS, modelIdSchema } from "./codeShare";
+import { MAX_PROMPT_CHARS, MAX_REPLY_CHARS, modelIdSchema } from "./codeShare";
 
 // Host-only bridge, deliberately absent from the public IPC/remote procedure registry.
 // A distinct request name makes older supervisors refuse before starting a run.
 export const CODE_SHARE_RUNTIME_REQUEST = "codeshare-runtime-v1";
+export const codeShareTokenUsageSchema = z.object({
+  inputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+});
+export type CodeShareTokenUsage = z.infer<typeof codeShareTokenUsageSchema>;
+export const codeShareRuntimeReplySchema = z.object({
+  reply: z.string().max(MAX_REPLY_CHARS),
+  usage: codeShareTokenUsageSchema.optional(),
+});
 export const codeShareRuntimePayloadSchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("catalog") }),
   z.strictObject({ action: z.literal("key-import"), id: z.uuid(), provider: z.string().max(32) }),

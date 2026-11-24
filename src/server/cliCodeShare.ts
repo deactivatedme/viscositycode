@@ -296,6 +296,8 @@ export async function runCodeShare(args: readonly string[]): Promise<void> {
       service,
       setup,
       healthNonce,
+      subscriptionUsage: async (providerIds) =>
+        (await supervisor!.call("getProviderUsage", { providerIds })).snapshots,
     };
     listener = await startCodeShareHttp(httpOptions);
     installShutdown("[codeshare]", dispose);

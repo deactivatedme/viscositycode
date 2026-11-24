@@ -10163,6 +10163,31 @@
         "note": "Generated native codecs, authenticated transports, exact-host gateways, and account-scoped review UI; device verification remains open."
       },
       {
+        "id": "configureCodeShareProjects",
+        "batch": "explicitly-desktop-only",
+        "ios": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/host/remote/server/threadProcedure.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/useCodeShareSession.ts"]
+          }
+        },
+        "android": {
+          "wire": {
+            "disposition": "desktop-only",
+            "evidence": ["src/host/remote/server/threadProcedure.ts"]
+          },
+          "ui": {
+            "disposition": "desktop-only",
+            "evidence": ["src/renderer/viscosity/codeshare/useCodeShareSession.ts"]
+          }
+        },
+        "note": "CodeShare project invites are redeemed in the local desktop app and stored on the guest desktop host."
+      },
+      {
         "id": "openCodeShareWorkspace",
         "batch": "explicitly-desktop-only",
         "ios": {

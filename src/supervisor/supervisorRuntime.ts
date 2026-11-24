@@ -1,4 +1,6 @@
 import { CodeShareFileRuntime } from "./codeShareFileRuntime";
+import { CodeShareProjectConnections } from "./agents/codeshareproject/connection";
+import { createCodeShareProjectAdapter } from "./agents/codeshareproject";
 import { CodeShareRuntime } from "./codeShareRuntime";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import { joinRuntimeShutdown } from "@/shared/joinRuntimeShutdown";
@@ -194,6 +196,7 @@ export class SupervisorRuntime {
   }
   readonly projectTreeService = new ProjectTreeService();
   readonly codeShareFileRuntime = new CodeShareFileRuntime(this.projectTreeService);
+  readonly codeShareProjectConnections: CodeShareProjectConnections;
   private readonly adapters = new Map<AgentKind, AgentAdapter>();
   private availableWindowsShellsCache:
     | { shells: Awaited<ReturnType<typeof detectWindowsShells>>; ts: number }
@@ -317,8 +320,12 @@ export class SupervisorRuntime {
     // adapter build below can run before the later-created services exist; those
     // dependencies (status/usage/hook-plugin/sessions) resolve lazily at call
     // time via the getter closures.
+    this.codeShareProjectConnections = new CodeShareProjectConnections(baseDir);
     this.agentRegistryService = new AgentRegistryService({
       adapters: this.adapters,
+      extraAdapters: [
+        createCodeShareProjectAdapter(this.codeShareProjectConnections, this.codeShareFileRuntime),
+      ],
       settingsPath: this.settingsPath,
       settingsWriter: this.settingsWriter,
       baseDir,

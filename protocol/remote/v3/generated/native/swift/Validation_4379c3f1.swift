@@ -13,6 +13,10 @@ public extension RemoteSchemas {
 }
 
 public extension RemoteSchemas {
+  static let schema_f6e97e56f946e81c = RemoteSchema(type: "object", required: Set(["action", "origin", "token"]), properties: ["action": RemoteSchemas.schema_2750481e9a5952e6, "origin": RemoteSchemas.schema_3cdb2ff0de916278, "token": RemoteSchemas.schema_15b3dd60258f24cb], additionalAllowed: false, unknownPolicy: .reject)
+}
+
+public extension RemoteSchemas {
   static let schema_f7164d030c9bbeaf = RemoteSchema(type: "integer", minimum: 2.0, maximum: 6.0, unknownPolicy: .strip)
 }
 

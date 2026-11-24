@@ -43,7 +43,10 @@ describe("renderer provider manifests", () => {
   it("discovers every chat provider in canonical order", () => {
     const manifests = getProviderManifests();
 
-    expect(manifests.map((manifest) => manifest.kind)).toEqual(EXPECTED_PROVIDER_ORDER);
+    expect(manifests.map((manifest) => manifest.kind)).toEqual([
+      ...EXPECTED_PROVIDER_ORDER,
+      "codeshareproject",
+    ]);
     expect(
       manifests.every((manifest) =>
         RENDERER_PROVIDER_MODULE_PATHS.includes(`./${manifest.kind}/index.tsx`),
@@ -95,6 +98,10 @@ describe("renderer provider manifests", () => {
     expect(getConfigNormalizer("codex")).toBeDefined();
     expect(getConfigNormalizer("antigravity")).toBeDefined();
     expect(getGuiSlashCommands("codex")).toBeDefined();
+    // Invite turns are reserved for explicit project chat sends.
+    expect(getCommitGenDefaults("codeshareproject")).toBeUndefined();
+    expect(getTitleGenDefaults("codeshareproject")).toBeUndefined();
+    expect(getConflictResolverDefaults("codeshareproject")).toBeUndefined();
   });
 
   it.each(["gui", "terminal"] as const)(

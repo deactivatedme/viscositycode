@@ -13,8 +13,8 @@ object RemoteContractMetadata {
     const val protocolVersion = 14
     const val bindingFormatVersion = 2
     const val generatorVersion = 7
-    const val sourceHash = "sha256:256cdef38f5bf868449a939881754c842da7504986d8922deacb0dfe2cbb7910"
-    const val manifestHash = "sha256:5867a6a02b76a4cf5be5743524a1ac7a19f5a307fc5f40aed0e1fd7905efa61c"
+    const val sourceHash = "sha256:96d97d30cef294f0f263b5f1078da0b5a7e0921dbd5f75998d0a525385a9957a"
+    const val manifestHash = "sha256:a2749912977d83cf3f552a4557b0d4878fa39020105a9838189039cc3149b922"
     val validationBoundary = RemoteValidationBoundary.ROOT_CODEC_ONLY
     val generatedModelSerializationSemantics = RemoteGeneratedSerializerSemantics.NON_VALIDATING_REPRESENTATION_ONLY
     val portableTransformIds = listOf("agent-settings.strip-sensitive", "push.routing.client-connection-id.lowercase", "string.trim")
@@ -149,6 +149,7 @@ object RemoteContractMetadata {
         RemoteProcedureDescriptor("clearMcpServerOauth", "session:operate", "optionalProjectLocation", "omitted", "ProcedureclearMcpServerOauthRequest_db8efd22aa", "RemoteUnit"),
         RemoteProcedureDescriptor("cloneRepo", "projects:manage", "parentLocation", "json", "ProcedurecloneRepoRequest_482895ec91", "ProcedurecloneRepoResult_6a0c18e639"),
         RemoteProcedureDescriptor("closeCodeShareWorkspace", "session:operate", "projectLocation", "json", "ProcedurecloseCodeShareWorkspaceRequest_9c6e793c40", "ProcedurecloseCodeShareWorkspaceResult_493210a9cb"),
+        RemoteProcedureDescriptor("configureCodeShareProjects", "projects:manage", "desktop", "json", "ProcedureconfigureCodeShareProjectsRequest_deb13fe8b7", "ProcedureconfigureCodeShareProjectsResult_53062fbb54"),
         RemoteProcedureDescriptor("connectThreadVoice", "session:operate", "thread", "json", "ProcedureconnectThreadVoiceRequest_898057a01b", "ProcedureconnectThreadVoiceResult_871fe12f7d"),
         RemoteProcedureDescriptor("controlMcpApp", "session:operate", "thread", "json", "ProcedurecontrolMcpAppRequest_339dd50c84", "ProcedurecontrolMcpAppResult_054db97313"),
         RemoteProcedureDescriptor("createFileCheckpoint", "session:operate", "thread", "json", "ProcedurecreateFileCheckpointRequest_412fb1bbf4", "ProcedurecreateFileCheckpointResult_012b6b31ad"),

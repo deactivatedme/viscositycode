@@ -1,4 +1,6 @@
-import { ShareFileToolGateway } from "./fileToolGateway";
+import { ShareFileToolGateway, type ShareFileWorkspace } from "./fileToolGateway";
+import type { ShareFileResult } from "@/shared/codeShareFileTools";
+import { CODE_SHARE_REMOTE_TURN_TIMEOUT_MS } from "@/shared/codeShareFileTools";
 import {
   type ChatTurn,
   type CreateInvite,
@@ -9,6 +11,7 @@ import {
   type SubmitTurn,
   type TurnIssue,
   MAX_REPLY_CHARS,
+  CODE_SHARE_PROJECT_PROTOCOL,
   ShareError,
 } from "@/shared/codeShare";
 import { ProviderFailure, type RunProvider, type TokenUsage } from "./providerTransport";
@@ -23,6 +26,9 @@ const SAVE_REPLY_INTERVAL_MS = 250;
 
 interface ActiveTurn {
   id: string;
+  model: string;
+  projectThread?: string;
+  workspace?: ShareFileWorkspace;
   abort: AbortController;
   completion: Promise<void>;
 }
@@ -133,9 +139,8 @@ export class CodeShareService {
   }
 
   private enforceModelPolicy(): void {
-    for (const [inviteId, turn] of this.active) {
-      const running = this.store.turns(inviteId).find(({ id }) => id === turn.id);
-      if (running && (!this.models.has(running.model) || !this.store.modelEnabled(running.model)))
+    for (const turn of this.active.values()) {
+      if (!this.models.has(turn.model) || !this.store.modelEnabled(turn.model))
         turn.abort.abort("model_unavailable");
     }
     this.rooms.sync(this.store.paused);
@@ -192,8 +197,15 @@ export class CodeShareService {
     current: string,
     browser = false,
     supportsRooms = !browser,
+    supportsProjects = !browser,
   ): string {
-    return this.store.redeem(code, claim, current, this.now(), (models, roomId) => {
+    return this.store.redeem(code, claim, current, this.now(), (models, roomId, desktopOnly) => {
+      if (desktopOnly && (browser || (!roomId && !supportsProjects)))
+        throw new ShareError(
+          409,
+          "desktop_required",
+          "Open Join CodeShare in the current ViscosityCode desktop app to redeem this invite.",
+        );
       if (roomId && !supportsRooms)
         throw new ShareError(
           409,
@@ -243,6 +255,9 @@ export class CodeShareService {
         : [],
       turns: visible ? this.store.turns(invite.id) : [],
       ...(room ? { room: { id: room.id, label: room.label } } : {}),
+      ...(!room && models.some(({ execution }) => execution !== "guest-subscription")
+        ? { projectProtocol: CODE_SHARE_PROJECT_PROTOCOL }
+        : {}),
     };
   }
 
@@ -263,29 +278,98 @@ export class CodeShareService {
   }
 
   submit(session: string, input: SubmitTurn): ChatTurn {
+    return this.startTurn(session, input);
+  }
+
+  submitProject(session: string, input: SubmitTurn & { threadId: string }): ChatTurn {
+    return this.startTurn(session, input, input.threadId);
+  }
+
+  private startTurn(session: string, input: SubmitTurn, projectThread?: string): ChatTurn {
     this.requireDirectInvite(session);
-    if (this.models.get(input.model)?.execution === "guest-subscription")
+    const model = this.models.get(input.model);
+    if (model?.execution === "guest-subscription")
       throw new ShareError(
         409,
         "local_subscription",
         "Open this model in the ViscosityCode desktop app.",
       );
-    const { inviteId, turn, messages } = this.store.reserveTurn(session, input, this.now(), () => {
-      if (this.closed || this.active.size >= MAX_ACTIVE_TURNS)
-        throw new ShareError(503, "host_busy", "The host is busy. Try again in a moment.");
-      if (!this.models.has(input.model) || !this.store.modelEnabled(input.model))
-        throw new ShareError(
-          409,
-          "model_unavailable",
-          "This model is unavailable. Pick another model.",
+    const reservation: { workspace?: ShareFileWorkspace } = {};
+    const { inviteId, turn, messages } = (() => {
+      try {
+        return this.store.reserveTurn(
+          session,
+          input,
+          this.now(),
+          () => {
+            if (this.closed || this.active.size >= MAX_ACTIVE_TURNS)
+              throw new ShareError(503, "host_busy", "The host is busy. Try again in a moment.");
+            if (!model || !this.store.modelEnabled(input.model))
+              throw new ShareError(
+                409,
+                "model_unavailable",
+                "This model is unavailable. Pick another model.",
+              );
+            if (projectThread && model.remoteEditing)
+              reservation.workspace = this.fileTools.create();
+          },
+          false,
+          projectThread,
         );
-    });
+      } catch (error) {
+        if (reservation.workspace) this.fileTools.remove(reservation.workspace);
+        throw error;
+      }
+    })();
     if (!messages) return turn;
-    const model = this.models.get(input.model)!;
+    const { workspace } = reservation;
     const abort = new AbortController();
-    const completion = this.generate(inviteId, turn, model, messages, abort).catch(this.onFailure);
-    this.active.set(inviteId, { id: turn.id, abort, completion });
+    if (workspace) abort.signal.addEventListener("abort", () => workspace.stop(), { once: true });
+    const completion = this.generate(inviteId, turn, model!, messages, abort, workspace).catch(
+      this.onFailure,
+    );
+    this.active.set(inviteId, {
+      id: turn.id,
+      model: input.model,
+      abort,
+      completion,
+      ...(projectThread ? { projectThread } : {}),
+      ...(workspace ? { workspace } : {}),
+    });
     return turn;
+  }
+
+  projectProgress(session: string, threadId: string, id: string) {
+    const invite = this.store.findSession(session);
+    const state = inviteStatus(invite, this.now(), this.store.paused);
+    const turn = this.store.projectTurn(session, threadId, id);
+    const active = this.active.get(invite.id);
+    const matching = active?.id === id && active.projectThread === threadId;
+    if (state !== "active") {
+      if (matching) active.abort.abort(state);
+      throw new ShareError(403, "inactive", "This share is paused or has ended.");
+    }
+    return {
+      turn,
+      requests: matching ? (active.workspace?.requests() ?? []) : [],
+    };
+  }
+
+  projectFileResult(
+    session: string,
+    threadId: string,
+    id: string,
+    requestId: string,
+    result: ShareFileResult,
+  ): void {
+    const { requests } = this.projectProgress(session, threadId, id);
+    if (requests.some((request) => request.id === requestId))
+      this.active.get(this.store.findSession(session).id)?.workspace?.respond(requestId, result);
+  }
+
+  stopProject(session: string, threadId: string, id: string): void {
+    this.store.projectTurn(session, threadId, id);
+    this.stop(session, id);
   }
 
   stop(session: string, id: string): void {
@@ -311,9 +395,13 @@ export class CodeShareService {
     model: ShareModel,
     messages: Parameters<RunProvider>[0]["messages"],
     abort: AbortController,
+    workspace?: ShareFileWorkspace,
   ): Promise<void> {
     const signal = abort.signal;
-    const timeout = setTimeout(() => abort.abort("provider_unavailable"), TURN_TIMEOUT_MS).unref();
+    const timeout = setTimeout(
+      () => abort.abort("provider_unavailable"),
+      workspace ? CODE_SHARE_REMOTE_TURN_TIMEOUT_MS : TURN_TIMEOUT_MS,
+    ).unref();
     let reply = "";
     let issue: TurnIssue | null = null;
     let usage: TokenUsage | null = null;
@@ -325,6 +413,7 @@ export class CodeShareService {
       signal.throwIfAborted();
       usage = await this.runProvider({
         model,
+        ...(workspace ? { remoteTools: workspace.bridge } : {}),
         messages,
         signal,
         append: (chunk) => {
@@ -351,6 +440,7 @@ export class CodeShareService {
           : "provider_unavailable";
     } finally {
       clearTimeout(timeout);
+      if (workspace) this.fileTools.remove(workspace);
       this.active.delete(inviteId);
       this.store.settle(turn.seq, reply, issue, signal.aborted || Boolean(issue && reply), usage);
     }

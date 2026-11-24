@@ -53,6 +53,10 @@ internal val schema_15838a9e80c7867f: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("file")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_15b3dd60258f24cb: RemoteSchema by lazy {
+    RemoteSchema(type = "string", pattern = "^[A-Za-z0-9_-]{43}$", unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
+}
+
 internal val schema_15cae388d0cdd5b6: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("summary"), JsonPrimitive("full")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

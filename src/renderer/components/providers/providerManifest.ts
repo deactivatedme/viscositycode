@@ -39,6 +39,8 @@ export interface RendererProviderManifest {
   order: number;
   /** Optional override for automatic utility tasks; otherwise `order` applies. */
   utilityOrder?: number;
+  /** Reserve this account for a model the person explicitly chooses. */
+  manualSelectionOnly?: true;
   /** Validate and label an instance whose usage can be collected independently. */
   profileUsageLabel?: (instance: AgentInstanceConfig) => string | undefined;
   /** Billing collector shared by this provider's default account; otherwise its own kind. */

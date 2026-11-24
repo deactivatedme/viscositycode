@@ -8,6 +8,10 @@ import {
 } from "../../codeShareFileTools";
 import type { z } from "zod";
 import {
+  configureCodeShareProjectsSchema,
+  configureCodeShareProjectsReplySchema,
+} from "../../codeShareProjectAccess";
+import {
   browseHostDirectoryPayloadSchema,
   createProjectEntryPayloadSchema,
   deleteProjectEntryPayloadSchema,
@@ -64,6 +68,16 @@ import type {
 import { definePayloadProcedure, omittedResultSchema } from "../core";
 
 export const projectTreeProcedures = {
+  configureCodeShareProjects: definePayloadProcedure<
+    z.input<typeof configureCodeShareProjectsSchema>,
+    z.output<typeof configureCodeShareProjectsReplySchema>,
+    "supervisor"
+  >(
+    "configureCodeShareProjects",
+    "supervisor",
+    configureCodeShareProjectsSchema,
+    configureCodeShareProjectsReplySchema,
+  ),
   openCodeShareWorkspace: definePayloadProcedure<
     z.input<typeof shareFileScopeSchema>,
     z.output<typeof shareFileGrantResultSchema>,

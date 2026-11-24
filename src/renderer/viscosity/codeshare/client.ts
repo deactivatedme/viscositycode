@@ -35,6 +35,7 @@ const connectionSchema = z.strictObject({
   version: z.literal(1),
   origin: z.string(),
   token: shareSecretSchema,
+  projectChats: z.literal(true).optional(),
 });
 const okResponse = z.object({ ok: z.literal(true) });
 const errorResponse = z.object({ error: z.string() });
@@ -57,9 +58,17 @@ function allowedOrigin(url: URL): boolean {
 
 export function parseShareInvite(value: string): { origin: string; code: string } {
   try {
-    const url = new URL(value.trim());
+    const input = value.trim();
+    const portable = /^CS1\.([A-Za-z0-9+/=]{1,684})\.([A-Za-z0-9_-]{22})$/u.exec(input);
+    const url = new URL(portable ? atob(portable[1]!) + "/#invite=" + portable[2] : input);
     const code = codeSchema.safeParse(new URLSearchParams(url.hash.slice(1)).get("invite"));
-    if (allowedOrigin(url) && url.pathname === "/" && !url.search && code.success)
+    if (
+      allowedOrigin(url) &&
+      url.pathname === "/" &&
+      !url.search &&
+      code.success &&
+      (!portable || url.origin === atob(portable[1]!))
+    )
       return { origin: url.origin, code: code.data };
   } catch {
     // The UI translates one error for malformed and incomplete links.
@@ -146,7 +155,7 @@ export class CodeShareConnection {
     try {
       const { token, state } = await request(
         origin,
-        desktop ? "/redeem?desktop=1&room=2" : "/redeem",
+        desktop ? "/redeem?desktop=1&room=2&project=1" : "/redeem",
         appRedeemResponseSchema,
         {
           data: { code, claim: attempt.claim },
@@ -176,6 +185,18 @@ export class CodeShareConnection {
 
   save(): Promise<boolean> {
     return setDesktopToken(VAULT_SLOT, JSON.stringify(this.connection));
+  }
+
+  get projectChats(): boolean {
+    return this.connection.projectChats === true;
+  }
+
+  markProjectChats(): void {
+    this.connection.projectChats = true;
+  }
+
+  projectAccess(): { origin: string; token: string } {
+    return { origin: this.connection.origin, token: this.connection.token };
   }
 
   snapshot(signal?: AbortSignal): Promise<Snapshot> {

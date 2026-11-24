@@ -33,6 +33,7 @@ import {
   resolveSavedProviderDraftConfig,
 } from "@/renderer/components/thread/threadDraftViewHelpers";
 import { usagePercentLeft } from "@/renderer/viscosity/accountPools/poolModel";
+import { getProviderManifest } from "@/renderer/components/providers/providerManifest";
 import { smartStartProviderOf, type SmartStartCandidate } from "./scoring";
 
 export interface SmartStartCandidateInput {
@@ -150,6 +151,7 @@ export function buildSmartStartCandidates(input: SmartStartCandidateInput): Smar
     // First row per kind wins (native before WSL), as everywhere else.
     if (seen.has(agent.kind)) continue;
     seen.add(agent.kind);
+    if (getProviderManifest(agent.kind)?.manualSelectionOnly) continue;
     if (!isReadyForPresentation(agent, input.presentationMode, input.disabledAgents)) continue;
     // An account the owner left out of an enabled pool never takes new threads.
     const driver = baseAgentKind(agent.kind);

@@ -317,6 +317,10 @@ internal val schema_274e069cdc933ee1: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("oauth-status")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_2750481e9a5952e6: RemoteSchema by lazy {
+    RemoteSchema(type = "string", literals = listOf(JsonPrimitive("disconnect")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
+}
+
 internal val schema_275476f9b6055811: RemoteSchema by lazy {
     RemoteSchema(type = "object", required = setOf("repos"), properties = mapOf("repos" to schema_75b702ed8c9f54ac), additionalAllowed = true, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

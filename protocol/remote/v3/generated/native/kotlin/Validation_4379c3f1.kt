@@ -17,6 +17,10 @@ internal val schema_f6dd22a2a9de3244: RemoteSchema by lazy {
     RemoteSchema(type = "string", literals = listOf(JsonPrimitive("camera"), JsonPrimitive("microphone"), JsonPrimitive("photos"), JsonPrimitive("contacts"), JsonPrimitive("calendar"), JsonPrimitive("location"), JsonPrimitive("notifications"), JsonPrimitive("motion")), unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }
 
+internal val schema_f6e97e56f946e81c: RemoteSchema by lazy {
+    RemoteSchema(type = "object", required = setOf("action", "origin", "token"), properties = mapOf("action" to schema_2750481e9a5952e6, "origin" to schema_3cdb2ff0de916278, "token" to schema_15b3dd60258f24cb), additionalAllowed = false, unknownPolicy = RemoteUnknownFieldPolicy.REJECT)
+}
+
 internal val schema_f7164d030c9bbeaf: RemoteSchema by lazy {
     RemoteSchema(type = "integer", minimum = 2.0, maximum = 6.0, unknownPolicy = RemoteUnknownFieldPolicy.STRIP)
 }

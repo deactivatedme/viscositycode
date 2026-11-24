@@ -3,11 +3,11 @@
   "contract": "poracode.remote",
   "protocolVersion": 14,
   "bindingFormatVersion": 2,
-  "manifestHash": "sha256:250b531bff202d5aee6de69cb7b9c8c41d6565ca0498f897a43bfffe9d04f386",
-  "keyCount": 359,
+  "manifestHash": "sha256:c130237559ba716953328e6359e9f0c5d15d6ca8cc8eb6391f033d5b10eac177",
+  "keyCount": 360,
   "counts": {
     "route": 121,
-    "procedure": 182,
+    "procedure": 183,
     "ws-client": 11,
     "ws-server": 12,
     "replay": 17,
@@ -41,6 +41,10 @@
     "procedure:closeCodeShareWorkspace": {
       "kind": "procedure",
       "id": "closeCodeShareWorkspace"
+    },
+    "procedure:configureCodeShareProjects": {
+      "kind": "procedure",
+      "id": "configureCodeShareProjects"
     },
     "procedure:connectThreadVoice": {
       "kind": "procedure",

@@ -4,10 +4,18 @@ import { RemoteDesktopClient } from "@/shared/remote/client";
 import type { RemoteServersState } from "@/renderer/state/remoteServers/types";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { useHostUsageStore } from "@/renderer/state/hostUsageStore";
+import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
 import { renderWithI18n as render } from "@/renderer/testUtils/i18n";
 import { HostUsageStatus, useHostUsageView } from "./HostUsageView";
 import { UsageProviderCardView } from "./UsageProviderCardView";
 import { fetchHostUsage } from "./hostUsage";
+
+const bound = vi.hoisted(() => ({ current: false }));
+vi.mock("@/renderer/state/remoteServers/browserBridge", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/renderer/state/remoteServers/browserBridge")>()),
+  selectBrowserBridgeClientServer: (state: RemoteServersState) =>
+    bound.current ? state.servers[0] : undefined,
+}));
 
 // Only the connection inventory is a fixture. The lifecycle hook, fetchHostUsage,
 // scoped store, RemoteDesktopClient and response codecs all run unmocked.
@@ -120,6 +128,39 @@ function fixture(
 }
 
 describe("host usage lifecycle with the real owning-host client", () => {
+  it("hides disabled agents in the bound desktop usage view and preserves other providers", async () => {
+    const previous = useSharedSettings.getState().disabledAgents;
+    bound.current = true;
+    useSharedSettings.setState({ disabledAgents: ["gemini"] });
+    const client = new RemoteDesktopClient("https://host.test", "fixture", async (url) => {
+      if (new URL(String(url)).pathname === "/api/git/call")
+        return Response.json(
+          { error: { code: "git_procedure_not_allowed", message: "Fixture refusal" } },
+          { status: 403 },
+        );
+      return Response.json({
+        snapshots: ["gemini", "antigravity"].map((providerId) => ({
+          providerId,
+          authenticatedAs: providerId + "-fixture",
+          status: "ok",
+          windows: [],
+          fetchedAt: Date.now(),
+        })),
+        fromCache: false,
+      });
+    });
+    useRemoteServersStore.setState({ withClient: async (_id, invoke) => invoke(client) });
+    try {
+      render(<View />);
+      expect(await screen.findByText("antigravity-fixture")).toBeVisible();
+      expect(screen.queryByText("gemini-fixture")).not.toBeInTheDocument();
+    } finally {
+      cleanup();
+      bound.current = false;
+      useSharedSettings.setState({ disabledAgents: previous });
+    }
+  });
+
   it("pauses background reads while hidden and refreshes automatically on reveal", async () => {
     let account = "initial-account";
     const requests = fixture(403, "git_procedure_not_allowed", false, () => account);

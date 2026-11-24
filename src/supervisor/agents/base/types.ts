@@ -1,4 +1,5 @@
 import type { ShareFileBridge } from "@/shared/codeShareFileTools";
+import type { CodeShareTokenUsage } from "@/shared/codeShareRuntime";
 // Modified for ViscosityCode (fork of Poracode). See FORK_CHANGES.md.
 import type { NativeMcpConfigFile } from "../../mcp/nativeSetup/configFile";
 import type { SessionImportSource } from "./sessionImport";
@@ -775,6 +776,8 @@ export interface CodeShareStructuredChatInput {
   model: string;
   prompt: string;
   signal?: AbortSignal;
+  /** Absolute usage from this dedicated provider session, when reported. */
+  onUsage?: (usage: CodeShareTokenUsage) => void;
 }
 
 export interface AgentLauncher {

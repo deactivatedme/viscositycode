@@ -1,4 +1,8 @@
-import { CODE_SHARE_ROOM_PROTOCOL } from "./codeShareFileTools";
+import {
+  CODE_SHARE_ROOM_PROTOCOL,
+  shareFileRequestSchema,
+  shareFileResultSchema,
+} from "./codeShareFileTools";
 import { z } from "zod";
 import { getCodeShareSubscriptionProvider } from "./codeShareSubscriptionProviders";
 import { formatCursorBaseModelLabel } from "./modelLabels";
@@ -45,12 +49,24 @@ export const createInviteSchema = z.strictObject({
   turnLimit: z.number().int().min(0).max(500),
   models: z.array(modelIdSchema).min(1).max(64),
   roomId: roomIdSchema.optional(),
+  desktopOnly: z.boolean().optional(),
 });
 
 export const submitTurnSchema = z.strictObject({
   id: z.uuid(),
   model: modelIdSchema,
   prompt: z.string().trim().min(1).max(MAX_PROMPT_CHARS),
+});
+/** Private project chats are scoped to one persisted ViscosityCode thread. */
+export const CODE_SHARE_PROJECT_PROTOCOL = 1;
+export const projectTurnRefSchema = z.strictObject({ threadId: z.uuid(), id: z.uuid() });
+export const projectTurnInputSchema = projectTurnRefSchema.extend({
+  model: modelIdSchema,
+  prompt: submitTurnSchema.shape.prompt,
+});
+export const projectFileResultSchema = projectTurnRefSchema.extend({
+  requestId: z.uuid(),
+  result: shareFileResultSchema,
 });
 
 export const submitRoomTurnSchema = submitTurnSchema.extend({
@@ -101,6 +117,8 @@ export interface InviteView {
   turnsUsed: number;
   inputTokens: number;
   outputTokens: number;
+  /** Admitted turns for which the host received a provider usage report. */
+  reportedUsageTurns?: number;
   status: InviteStatus;
   roomId?: string | undefined;
 }
@@ -113,6 +131,10 @@ export interface OwnerState {
   inviteModels?: string[];
   invites: InviteView[];
   rooms: ShareRoomRef[];
+  subscriptionUsage?: {
+    provider: string;
+    windows: { label: string; usedPercent: number; resetsAt?: number | undefined }[];
+  }[];
   serverNow: number;
 }
 
@@ -125,6 +147,7 @@ export interface GuestState {
   models: ShareModel[];
   turns: ChatTurn[];
   room?: ShareRoomRef | undefined;
+  projectProtocol?: typeof CODE_SHARE_PROJECT_PROTOCOL | undefined;
 }
 
 export interface ChatMessage {
@@ -151,7 +174,7 @@ export const appRedeemSchema = z.strictObject({
 });
 export const stopTurnSchema = z.strictObject({ id: z.uuid() });
 
-const chatTurnSchema = z.object({
+export const chatTurnSchema = z.object({
   id: z.uuid(),
   seq: z.number().int(),
   model: modelIdSchema,
@@ -161,6 +184,11 @@ const chatTurnSchema = z.object({
   issue: z.string().nullable(),
   inputTokens: z.number().nullable(),
   outputTokens: z.number().nullable(),
+});
+
+export const projectTurnProgressSchema = z.object({
+  turn: chatTurnSchema,
+  requests: z.array(shareFileRequestSchema).max(1),
 });
 
 export const guestSnapshotSchema = z.object({
@@ -183,6 +211,7 @@ export const guestSnapshotSchema = z.object({
     .max(64),
   turns: z.array(chatTurnSchema).max(12),
   room: roomRefSchema.optional(),
+  projectProtocol: z.literal(CODE_SHARE_PROJECT_PROTOCOL).optional(),
 });
 
 export const appClaimResponseSchema = z.object({ claim: appRedeemSchema.shape.claim });

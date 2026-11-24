@@ -1620,6 +1620,11 @@
       "scope": "session:operate"
     },
     {
+      "name": "configureCodeShareProjects",
+      "owner": "desktop",
+      "scope": "projects:manage"
+    },
+    {
       "name": "executeCodeShareFileTool",
       "owner": "projectLocation",
       "scope": "session:operate"

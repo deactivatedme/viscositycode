@@ -12407,7 +12407,7 @@ msgstr "Bu sohbete başka bir model davet et…"
 #. js-lingui-explicit-id
 #: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "codeShare.inviteLink"
-msgstr "Davet bağlantısı"
+msgstr "Davet kodu veya bağlantısı"
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 msgid "Invite models into this chat"
@@ -17512,7 +17512,7 @@ msgstr "Eşleştirme URL'sini yapıştır…"
 #. js-lingui-explicit-id
 #: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "codeShare.invalidLink"
-msgstr "CodeShare davet bağlantısının tamamını yapıştırın."
+msgstr "CodeShare davet kodunu veya bağlantının tamamını yapıştırın."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Paste the pairing URL from your desktop"
@@ -29547,3 +29547,12 @@ msgstr "Yakınlaştır"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Zoom out"
 msgstr "Uzaklaştır"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.projectPicker"
+msgstr "Sohbet başlatmak için projenizin model seçicisinden bir CodeShare modeli seçin."
+
+#: src/renderer/components/providers/codeshareproject/manifest.ts
+msgid "CodeShare"
+msgstr "CodeShare"

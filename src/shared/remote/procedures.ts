@@ -123,6 +123,7 @@ export const REMOTE_PROCEDURE_SPECS = {
   browseHostDirectory: manageProjects("none"),
   searchProjectTree: read("projectLocation"),
   openCodeShareWorkspace: operate("projectLocation"),
+  configureCodeShareProjects: mutating(manageProjects("desktop")),
   executeCodeShareFileTool: operate("projectLocation"),
   closeCodeShareWorkspace: operate("projectLocation"),
   readProjectFile: read("projectLocation"),

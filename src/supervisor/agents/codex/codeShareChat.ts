@@ -20,8 +20,22 @@ import { CodexAppServerRpc } from "./appServerRpc";
 import { readCodexNativeMcpNames } from "./nativeMcp";
 import { buildCodexMcp } from "./mcpConfig";
 import { CodexStdioTransport } from "./stdioTransport";
+import { readCodexCumulativeUsage } from "./canonicalMapping/usage";
+import { codeShareTokenUsageSchema } from "@/shared/codeShareRuntime";
 
 const catalogSchema = z.object({ models: z.array(z.object({ slug: z.string() }).passthrough()) });
+
+export function readCodexCodeShareUsage(params: Record<string, unknown> | undefined) {
+  // One ephemeral thread runs one turn. The cumulative total includes tool
+  // rounds. Cached input and reasoning are already included in the counts.
+  const total = readCodexCumulativeUsage(params);
+  const usage = codeShareTokenUsageSchema.safeParse({
+    inputTokens: total?.inputTokens ?? total?.input_tokens,
+    outputTokens: total?.outputTokens ?? total?.output_tokens,
+  });
+  return usage.success ? usage.data : undefined;
+}
+
 /**
  * Codex 0.171.0: model-provided tool fields override feature flags. Neutralize
  * both, never just shell_tool. Origin: the installed `codex debug models` and
@@ -179,6 +193,10 @@ export async function runCodexCodeShareChat(input: CodeShareStructuredChatInput)
   ).unref();
   rpc.setListener({
     onNotification(method, params) {
+      if (method === "thread/tokenUsage/updated") {
+        const usage = readCodexCodeShareUsage(params);
+        if (usage) input.onUsage?.(usage);
+      }
       if (
         method === "item/agentMessage/delta" &&
         typeof params?.delta === "string" &&

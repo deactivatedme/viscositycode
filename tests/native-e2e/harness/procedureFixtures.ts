@@ -11,6 +11,11 @@ export const FIXTURE_PROJECT_LOCATION = {
 } as const;
 
 const REQUEST_OVERRIDES: Partial<Record<RemoteProcedureName, Record<string, unknown>>> = {
+  configureCodeShareProjects: {
+    action: "disconnect",
+    origin: "https://share.example.test",
+    token: "A".repeat(43),
+  },
   controlMcpApp: {
     app: {
       version: 1,

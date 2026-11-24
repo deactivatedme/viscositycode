@@ -12407,7 +12407,7 @@ msgstr "이 채팅에 다른 모델 초대…"
 #. js-lingui-explicit-id
 #: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "codeShare.inviteLink"
-msgstr "초대 링크"
+msgstr "초대 코드 또는 링크"
 
 #: src/renderer/viscosity/roundtable/chat/RoundtableInviteDialog.tsx
 msgid "Invite models into this chat"
@@ -17512,7 +17512,7 @@ msgstr "페어링 URL 붙여넣기…"
 #. js-lingui-explicit-id
 #: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
 msgid "codeShare.invalidLink"
-msgstr "CodeShare 초대 링크 전체를 붙여넣으세요."
+msgstr "CodeShare 초대 코드 또는 전체 링크를 붙여넣으세요."
 
 #: src/renderer/views/MainView/parts/BrowserConnectionPage/parts/TouchPairing.tsx
 #~ msgid "Paste the pairing URL from your desktop"
@@ -29547,3 +29547,12 @@ msgstr "확대"
 #: src/renderer/views/MainView/parts/RightPanel/parts/BrowserPanel/parts/BrowserMenu.tsx
 msgid "Zoom out"
 msgstr "축소"
+
+#. js-lingui-explicit-id
+#: src/renderer/viscosity/codeshare/CodeShareDialog.tsx
+msgid "codeShare.projectPicker"
+msgstr "프로젝트의 모델 선택기에서 CodeShare 모델을 선택해 채팅을 시작하세요."
+
+#: src/renderer/components/providers/codeshareproject/manifest.ts
+msgid "CodeShare"
+msgstr "CodeShare"

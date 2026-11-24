@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MAX_REPLY_CHARS, parseModel, type ShareModel } from "@/shared/codeShare";
-import { codeShareRuntimePayloadSchema } from "@/shared/codeShareRuntime";
+import { codeShareRuntimePayloadSchema, type CodeShareTokenUsage } from "@/shared/codeShareRuntime";
 import { listCodeShareSubscriptionProviders } from "@/shared/codeShareSubscriptionProviders";
 import type { AgentAdapter } from "./agents/base";
 
@@ -136,6 +136,7 @@ export class CodeShareRuntime {
         throw new Error("This provider cannot use remote file tools.");
       const root = await mkdtemp(join(tmpdir(), "codeshare-chat-"));
       try {
+        let usage: CodeShareTokenUsage | undefined;
         const chatInput = {
           location: {
             kind: process.platform === "win32" ? ("windows" as const) : ("posix" as const),
@@ -156,6 +157,9 @@ export class CodeShareRuntime {
             input.messages.at(-1)!.content,
           ].join("\n\n"),
           signal: abort.signal,
+          onUsage: (sample: CodeShareTokenUsage) => {
+            usage = sample;
+          },
         };
         const reply = keyBackend
           ? await keyBackend.run({ ...chatInput, key: input.key! })
@@ -163,17 +167,14 @@ export class CodeShareRuntime {
         abort.signal.throwIfAborted();
         if (!reply.trim() || reply.length > MAX_REPLY_CHARS)
           throw new Error("CodeShare reply exceeded its bounds or was empty.");
-        return reply;
+        return { reply, ...(usage ? { usage } : {}) };
       } finally {
         await rm(root, { recursive: true, force: true });
       }
     });
     this.active.set(input.id, { abort, done });
     try {
-      const result = await done;
-      return input.action === "key-catalog" || input.action === "key-import"
-        ? result
-        : { reply: result };
+      return await done;
     } finally {
       this.active.delete(input.id);
     }

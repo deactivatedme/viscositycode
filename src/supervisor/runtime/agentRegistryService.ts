@@ -102,6 +102,7 @@ function firstClassAutoInstallRetryDelayMs(failures: number): number {
 
 export interface AgentRegistryServiceDeps {
   adapters: Map<AgentKind, AgentAdapter>;
+  extraAdapters?: readonly AgentAdapter[];
   settingsPath: string;
   /** Commits registry records through the canonical settings owner. */
   settingsWriter: SupervisorSettingsWriter;
@@ -403,7 +404,10 @@ export class AgentRegistryService {
       );
     }
     const settings = readAcpRegistrySettings(this.deps.settingsPath);
-    const entries = buildAgentRegistryEntries(Object.values(settings.agentInstances));
+    const entries = [
+      ...buildAgentRegistryEntries(Object.values(settings.agentInstances)),
+      ...(this.deps.extraAdapters ?? []).map((adapter) => ({ adapter, inputKey: "" })),
+    ];
     const nextKinds = new Set(entries.map((entry) => entry.adapter.kind));
     const changedKinds: string[] = [];
     for (const kind of [...this.deps.adapters.keys()]) {

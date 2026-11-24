@@ -4,6 +4,9 @@ import { fetchHostUsage } from "./hostUsage";
 import { useHostUsage, useHostUsageStore } from "@/renderer/state/hostUsageStore";
 import { useRemoteServersStore } from "@/renderer/state/remoteServersStore";
 import { remoteConnectionKey } from "@/renderer/state/remoteServers/types";
+import { selectBrowserBridgeClientServer } from "@/renderer/state/remoteServers/browserBridge";
+import { useSharedSettings } from "@/renderer/state/sharedSettingsStore";
+import { isUsageAgentEnabled } from "@/shared/usageAccountId";
 
 function subscribeUsageClock(onChange: () => void) {
   const timer = setInterval(onChange, 30_000);
@@ -29,6 +32,12 @@ export function useHostUsageView(
   );
   const status = useRemoteServersStore((state) => state.runtime[connectionId]?.status);
   const agents = useRemoteServersStore((state) => state.runtime[connectionId]?.agentStatuses);
+  const mirrorsSettings = useRemoteServersStore((state) => {
+    const owner = selectBrowserBridgeClientServer(state);
+    return owner !== undefined && remoteConnectionKey(owner) === connectionId;
+  });
+  const disabledAgents = useSharedSettings((state) => state.disabledAgents);
+  const instances = useSharedSettings((state) => state.agentInstances);
   const usage = useHostUsage(connectionId);
   const initialReadAfter = useRef(0);
   const canRead = server?.scopes.includes("session:read") === true;
@@ -86,7 +95,36 @@ export function useHostUsageView(
     return () => clearTimeout(timer);
   }, [connectionId, server, canRead, online, visible, usage.pending, usage.lastRequestedAt]);
 
-  return { server, status, agents, usage, canRead, canRefresh, online };
+  const displayedUsage = mirrorsSettings
+    ? {
+        ...usage,
+        snapshots: usage.snapshots.filter((snap) =>
+          isUsageAgentEnabled(snap.providerId, disabledAgents, instances),
+        ),
+      }
+    : usage;
+  const displayedAgents =
+    mirrorsSettings && agents
+      ? {
+          ...agents,
+          windows: agents.windows.filter(({ kind }) =>
+            isUsageAgentEnabled(kind, disabledAgents, instances),
+          ),
+          wsl: agents.wsl.filter(({ kind }) =>
+            isUsageAgentEnabled(kind, disabledAgents, instances),
+          ),
+        }
+      : agents;
+  return {
+    server,
+    status,
+    agents: displayedAgents,
+    usage: displayedUsage,
+    canRead,
+    canRefresh,
+    online,
+    mirrorsSettings,
+  };
 }
 
 export function HostUsageStatus(props: {

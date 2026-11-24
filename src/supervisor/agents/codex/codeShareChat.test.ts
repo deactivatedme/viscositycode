@@ -1,5 +1,24 @@
 import { expect, it } from "vitest";
-import { textOnlyCodexCatalog } from "./codeShareChat";
+import { readCodexCodeShareUsage, textOnlyCodexCatalog } from "./codeShareChat";
+
+it("uses the ephemeral thread's cumulative usage without counting cached or reasoning tokens twice", () => {
+  const last = { totalTokens: 44, inputTokens: 38, outputTokens: 6 };
+  expect(
+    readCodexCodeShareUsage({
+      tokenUsage: {
+        total: {
+          totalTokens: 110,
+          inputTokens: 90,
+          cachedInputTokens: 31,
+          outputTokens: 20,
+          reasoningOutputTokens: 11,
+        },
+        last,
+      },
+    }),
+  ).toEqual({ inputTokens: 90, outputTokens: 20 });
+  expect(readCodexCodeShareUsage({ tokenUsage: { last } })).toBeUndefined();
+});
 
 it("removes tool entry points from the provider catalog without changing the requested model", () => {
   const native = {

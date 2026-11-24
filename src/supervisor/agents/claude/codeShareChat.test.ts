@@ -23,6 +23,12 @@ it("uses the Agent SDK with tools and API-key fallback disabled", async () => {
         subtype: "success",
         is_error: false,
         result: "SDK reply",
+        usage: {
+          input_tokens: 5,
+          output_tokens: 3,
+          cache_creation_input_tokens: 8,
+          cache_read_input_tokens: 13,
+        },
       } as SDKMessage;
     },
     close,
@@ -31,8 +37,10 @@ it("uses the Agent SDK with tools and API-key fallback disabled", async () => {
     model: "claude-test-1",
     prompt: "hello",
     location: { kind: "posix" as const, path: "/fixture" },
+    onUsage: vi.fn<(usage: { inputTokens: number; outputTokens: number }) => void>(),
   };
   await expect(runClaudeCodeShareChat(input)).resolves.toBe("SDK reply");
+  expect(input.onUsage).toHaveBeenCalledWith({ inputTokens: 26, outputTokens: 3 });
   expect(mocks.query).toHaveBeenCalledWith(
     expect.objectContaining({
       prompt: "hello",

@@ -31,6 +31,11 @@ function adapter() {
 describe("owner subscription runtime", () => {
   it("uses the native owner's account and an isolated directory with no client-supplied config", async () => {
     const test = adapter();
+    test.runCodeShareStructuredChat.mockImplementationOnce(async ({ onUsage }) => {
+      onUsage?.({ inputTokens: 100, outputTokens: 15 });
+      onUsage?.({ inputTokens: 140, outputTokens: 25 });
+      return "owner reply";
+    });
     const runtime = new CodeShareRuntime(new Map([["codex", test.value]]));
     const input = {
       action: "run",
@@ -38,7 +43,10 @@ describe("owner subscription runtime", () => {
       model: "codex:test-model",
       messages: [{ role: "user", content: "question" }],
     };
-    expect(await runtime.request(input)).toEqual({ reply: "owner reply" });
+    expect(await runtime.request(input)).toEqual({
+      reply: "owner reply",
+      usage: { inputTokens: 140, outputTokens: 25 },
+    });
     const call = test.runCodeShareStructuredChat.mock.calls[0] as unknown as [
       Parameters<NonNullable<AgentAdapter["runCodeShareStructuredChat"]>>[0],
     ];

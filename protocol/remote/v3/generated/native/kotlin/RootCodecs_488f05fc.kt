@@ -38,6 +38,12 @@ val RemoteRootCodecs.procedureU2ECloseCodeShareWorkspaceU2ERequest: RemoteRootCo
 val RemoteRootCodecs.procedureU2ECloseCodeShareWorkspaceU2EResult: RemoteRootCodec<ProcedurecloseCodeShareWorkspaceResult_493210a9cb>
     get() = RemoteRootCodec("procedure.closeCodeShareWorkspace.result", serializer<ProcedurecloseCodeShareWorkspaceResult_493210a9cb>(), schema_493210a9cb3a35fd)
 
+val RemoteRootCodecs.procedureU2EConfigureCodeShareProjectsU2ERequest: RemoteRootCodec<ProcedureconfigureCodeShareProjectsRequest_deb13fe8b7>
+    get() = RemoteRootCodec("procedure.configureCodeShareProjects.request", serializer<ProcedureconfigureCodeShareProjectsRequest_deb13fe8b7>(), schema_deb13fe8b7352f0b)
+
+val RemoteRootCodecs.procedureU2EConfigureCodeShareProjectsU2EResult: RemoteRootCodec<ProcedureconfigureCodeShareProjectsResult_53062fbb54>
+    get() = RemoteRootCodec("procedure.configureCodeShareProjects.result", serializer<ProcedureconfigureCodeShareProjectsResult_53062fbb54>(), schema_53062fbb54e9cb4f)
+
 val RemoteRootCodecs.procedureU2EConnectThreadVoiceU2ERequest: RemoteRootCodec<ProcedureconnectThreadVoiceRequest_898057a01b>
     get() = RemoteRootCodec("procedure.connectThreadVoice.request", serializer<ProcedureconnectThreadVoiceRequest_898057a01b>(), schema_898057a01bbe54a3)
 
@@ -442,9 +448,3 @@ val RemoteRootCodecs.procedureU2EGhListWorkflowsU2ERequest: RemoteRootCodec<Proc
 
 val RemoteRootCodecs.procedureU2EGhListWorkflowsU2EResult: RemoteRootCodec<ProcedureghListWorkflowsResult_3994629a32>
     get() = RemoteRootCodec("procedure.ghListWorkflows.result", serializer<ProcedureghListWorkflowsResult_3994629a32>(), schema_3994629a32a97c9b)
-
-val RemoteRootCodecs.procedureU2EGhMarkPrReadyU2ERequest: RemoteRootCodec<ProcedureghClosePrRequest_868bf1042a>
-    get() = RemoteRootCodec("procedure.ghMarkPrReady.request", serializer<ProcedureghClosePrRequest_868bf1042a>(), schema_868bf1042a1bbba1)
-
-val RemoteRootCodecs.procedureU2EGhMergePrU2ERequest: RemoteRootCodec<ProcedureghMergePrRequest_39d6579ca7>
-    get() = RemoteRootCodec("procedure.ghMergePr.request", serializer<ProcedureghMergePrRequest_39d6579ca7>(), schema_39d6579ca7450396)

@@ -22,7 +22,7 @@ const HISTORY_TURNS = 12;
 // migrates the app database. Refuse unfamiliar schema versions before writing.
 // v3 adds owner model policy. Existing grants remain valid, except a legacy
 // guest-funded grant must never silently become an owner-funded grant.
-export const CODESHARE_DATABASE_VERSION = 4;
+export const CODESHARE_DATABASE_VERSION = 6;
 
 interface InviteRow {
   id: string;
@@ -35,12 +35,13 @@ interface InviteRow {
   turnLimit: number;
   turnsUsed: number;
   roomId: string | null;
+  desktopOnly: 0 | 1;
 }
 
 const inviteColumns = `
   id, label, models, duration_minutes AS durationMinutes, redeem_by AS redeemBy,
   expires_at AS expiresAt, revoked_at AS revokedAt, turn_limit AS turnLimit,
-  turns_used AS turnsUsed, room_id AS roomId
+  turns_used AS turnsUsed, room_id AS roomId, desktop_only AS desktopOnly
 `;
 const turnColumns = `
   seq, request_id AS id, model, prompt, reply, status, issue,
@@ -75,6 +76,8 @@ export class CodeShareStore {
         version !== 1 &&
         version !== 2 &&
         version !== 3 &&
+        version !== 4 &&
+        version !== 5 &&
         version !== CODESHARE_DATABASE_VERSION
       )
         throw new Error("This CodeShare database format is unsupported.");
@@ -91,6 +94,24 @@ export class CodeShareStore {
           this.db.exec(
             "ALTER TABLE room_turns ADD COLUMN execution TEXT NOT NULL DEFAULT 'participant'; PRAGMA user_version = 4;",
           );
+        })();
+      if (Number(version) < 5)
+        this.db.transaction(() => {
+          this.db.exec(`
+            ALTER TABLE room_turns ADD COLUMN input_tokens INTEGER;
+            ALTER TABLE room_turns ADD COLUMN output_tokens INTEGER;
+            CREATE INDEX room_turns_by_author ON room_turns (author_id);
+            PRAGMA user_version = 5;
+          `);
+        })();
+      if (Number(version) < 6)
+        this.db.transaction(() => {
+          this.db.exec(`
+            ALTER TABLE turns ADD COLUMN project_thread TEXT;
+            ALTER TABLE invites ADD COLUMN desktop_only INTEGER NOT NULL DEFAULT 0;
+            CREATE INDEX code_share_turns_by_thread ON turns (invite_id, project_thread, seq);
+            PRAGMA user_version = 6;
+          `);
         })();
       this.rooms = new CodeShareRoomStore(this.db);
       this.rooms.recoverHostRuns();
@@ -199,18 +220,25 @@ export class CodeShareStore {
   list(now: number): InviteView[] {
     const paused = this.paused;
     return this.db
-      .prepare<[], InviteRow & { inputTokens: number; outputTokens: number }>(`
+      .prepare<
+        [],
+        InviteRow & { inputTokens: number; outputTokens: number; reportedUsageTurns: number }
+      >(`
       SELECT ${inviteColumns},
-        COALESCE((SELECT SUM(input_tokens) FROM turns WHERE invite_id = invites.id), 0) AS inputTokens,
-        COALESCE((SELECT SUM(output_tokens) FROM turns WHERE invite_id = invites.id), 0) AS outputTokens
+        COALESCE((SELECT SUM(input_tokens) FROM turns WHERE invite_id = invites.id), 0)
+          + COALESCE((SELECT SUM(input_tokens) FROM room_turns WHERE author_id = invites.id), 0) AS inputTokens,
+        COALESCE((SELECT SUM(output_tokens) FROM turns WHERE invite_id = invites.id), 0)
+          + COALESCE((SELECT SUM(output_tokens) FROM room_turns WHERE author_id = invites.id), 0) AS outputTokens,
+        (SELECT COUNT(input_tokens) FROM turns WHERE invite_id = invites.id)
+          + (SELECT COUNT(input_tokens) FROM room_turns WHERE author_id = invites.id) AS reportedUsageTurns
       FROM invites ORDER BY rowid DESC
     `)
       .all()
-      .map(({ models, revokedAt, roomId, ...invite }) => ({
+      .map(({ models, revokedAt, roomId, desktopOnly, ...invite }) => ({
         ...invite,
         ...(roomId ? { roomId } : {}),
         models: JSON.parse(models) as string[],
-        status: inviteStatus({ ...invite, models, revokedAt, roomId }, now, paused),
+        status: inviteStatus({ ...invite, models, revokedAt, roomId, desktopOnly }, now, paused),
       }));
   }
 
@@ -219,8 +247,8 @@ export class CodeShareStore {
     const code = shareSecret(16);
     this.db
       .prepare(`
-      INSERT INTO invites (id, label, code_hash, duration_minutes, redeem_by, turn_limit, models, room_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO invites (id, label, code_hash, duration_minutes, redeem_by, turn_limit, models, room_id, desktop_only)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
       .run(
         id,
@@ -231,6 +259,7 @@ export class CodeShareStore {
         input.turnLimit,
         JSON.stringify([...new Set(input.models)]),
         input.roomId ?? null,
+        input.desktopOnly ? 1 : 0,
       );
     return { id, code };
   }
@@ -240,7 +269,7 @@ export class CodeShareStore {
     claim: string,
     current: string,
     now: number,
-    checkBrowser?: (models: string[], roomId: string | null) => void,
+    checkClient?: (models: string[], roomId: string | null, desktopOnly: boolean) => void,
   ): string {
     return this.db
       .transaction(() => {
@@ -253,7 +282,7 @@ export class CodeShareStore {
         const invalid = () =>
           new ShareError(404, "invalid_code", "This code is invalid, expired, or already used.");
         if (!invite || (status !== "pending" && status !== "active")) throw invalid();
-        checkBrowser?.(this.modelIds(invite), invite.roomId);
+        checkClient?.(this.modelIds(invite), invite.roomId, invite.desktopOnly === 1);
         if (status === "active") {
           // If the browser lost its redemption response, the original claim
           // cookie can recover the same session without starting a new timer.
@@ -323,13 +352,25 @@ export class CodeShareStore {
     return JSON.parse(invite.models) as string[];
   }
 
-  turns(id: string): ChatTurn[] {
+  turns(id: string, projectThread: string | null = null): ChatTurn[] {
     return this.db
-      .prepare<[string, number], ChatTurn>(
-        `SELECT ${turnColumns} FROM turns WHERE invite_id = ? AND prompt <> '' ORDER BY seq DESC LIMIT ?`,
+      .prepare<[string, string | null, number], ChatTurn>(
+        `SELECT ${turnColumns} FROM turns
+         WHERE invite_id = ? AND project_thread IS ? AND prompt <> '' ORDER BY seq DESC LIMIT ?`,
       )
-      .all(id, HISTORY_TURNS)
+      .all(id, projectThread, HISTORY_TURNS)
       .reverse();
+  }
+
+  projectTurn(session: string, threadId: string, id: string): ChatTurn {
+    const invite = this.findSession(session);
+    const turn = this.db
+      .prepare<[string, string, string], ChatTurn>(
+        `SELECT ${turnColumns} FROM turns WHERE invite_id = ? AND project_thread = ? AND request_id = ?`,
+      )
+      .get(invite.id, threadId, id);
+    if (!turn) throw new ShareError(404, "turn_missing", "This shared project turn was not found.");
+    return turn;
   }
 
   reserveTurn(
@@ -338,6 +379,7 @@ export class CodeShareStore {
     now: number,
     checkCapacity: () => void,
     localAdmission = false,
+    projectThread: string | null = null,
   ): { inviteId: string; turn: ChatTurn; messages: ChatMessage[] | null } {
     return this.db
       .transaction(() => {
@@ -345,19 +387,28 @@ export class CodeShareStore {
         if (inviteStatus(invite, now, this.paused) !== "active")
           throw new ShareError(403, "inactive", "This share is paused or has ended.");
         const existing = this.db
-          .prepare<[string, string], ChatTurn>(
-            `SELECT ${turnColumns} FROM turns WHERE invite_id = ? AND request_id = ?`,
+          .prepare<[string, string], ChatTurn & { projectThread: string | null }>(
+            `SELECT ${turnColumns}, project_thread AS projectThread FROM turns WHERE invite_id = ? AND request_id = ?`,
           )
           .get(invite.id, input.id);
         if (existing) {
-          if (existing.prompt !== input.prompt || existing.model !== input.model)
+          if (
+            existing.prompt !== input.prompt ||
+            existing.model !== input.model ||
+            existing.projectThread !== projectThread
+          )
             throw new ShareError(409, "request_conflict", "This request ID was already used.");
-          return { inviteId: invite.id, turn: existing, messages: null };
+          const { projectThread: _projectThread, ...turn } = existing;
+          return { inviteId: invite.id, turn, messages: null };
         }
         if (!this.modelIds(invite).includes(input.model))
           throw new ShareError(403, "model_denied", "This model is outside your invite.");
-        const history = localAdmission ? [] : this.turns(invite.id);
-        if (history.some((turn) => turn.status === "running"))
+        const history = localAdmission ? [] : this.turns(invite.id, projectThread);
+        if (
+          this.db
+            .prepare("SELECT 1 FROM turns WHERE invite_id=? AND status='running'")
+            .get(invite.id)
+        )
           throw new ShareError(
             409,
             "turn_running",
@@ -378,8 +429,8 @@ export class CodeShareStore {
           );
         }
         const turn = this.db
-          .prepare<[string, string, string, string, string], ChatTurn>(`
-        INSERT INTO turns (invite_id, request_id, model, prompt, status) VALUES (?, ?, ?, ?, ?)
+          .prepare<[string, string, string, string, string, string | null], ChatTurn>(`
+        INSERT INTO turns (invite_id, request_id, model, prompt, status, project_thread) VALUES (?, ?, ?, ?, ?, ?)
         RETURNING ${turnColumns}
       `)
           .get(
@@ -388,6 +439,7 @@ export class CodeShareStore {
             input.model,
             input.prompt,
             localAdmission ? "complete" : "running",
+            projectThread,
           )!;
         this.db
           .prepare("UPDATE invites SET turns_used = turns_used + 1 WHERE id = ?")

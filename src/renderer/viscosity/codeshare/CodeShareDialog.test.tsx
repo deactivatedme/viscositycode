@@ -6,6 +6,8 @@ import { CodeShareDialog } from "./CodeShareDialog";
 import { JOIN_CODE_SHARE_COMMAND, useCodeSharePanel } from "./codeShareCommand";
 
 const local = vi.hoisted(() => ({
+  configure: vi.fn<(input: unknown) => Promise<{ connected: boolean }>>(),
+  refresh: vi.fn<() => Promise<void>>(),
   signIn: vi.fn<(provider: string) => void>(),
   prepare:
     vi.fn<
@@ -16,6 +18,13 @@ const local = vi.hoisted(() => ({
         threadId: string,
       ) => Promise<() => Promise<boolean>>
     >(),
+}));
+vi.mock("@/renderer/bridge", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/renderer/bridge")>()),
+  readBridge: () => ({
+    configureCodeShareProjects: local.configure,
+    refreshAgentStatuses: local.refresh,
+  }),
 }));
 vi.mock("./subscription", () => ({
   canRunCodeShareSubscription: () => true,
@@ -32,6 +41,48 @@ vi.mock("@/renderer/state/remoteServers/tokenVault", () => ({
 afterEach(() => {
   useCodeSharePanel.setState({ open: false });
   vi.unstubAllGlobals();
+  local.configure.mockReset();
+  local.refresh.mockReset();
+});
+
+it("installs a redeemed app code into the guest model catalog instead of opening guest chat", async () => {
+  local.configure.mockResolvedValue({ connected: true });
+  local.refresh.mockResolvedValue();
+  const token = "A".repeat(43);
+  const origin = "https://share.example.test";
+  const state = {
+    serverNow: Date.now(),
+    expiresAt: Date.now() + 60_000,
+    status: "active",
+    turnsRemaining: 4,
+    projectProtocol: 1,
+    models: [{ id: "demo:one", provider: "demo", model: "one", remoteEditing: true }],
+    turns: [],
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<typeof fetch>(async (url) => {
+      const path = new URL(String(url)).pathname;
+      if (path.endsWith("/claim")) return Response.json({ claim: token + "." + "B".repeat(43) });
+      if (path.endsWith("/redeem")) return Response.json({ token, state });
+      return Response.json(state);
+    }),
+  );
+  useCodeSharePanel.setState({ open: true });
+  render(<CodeShareDialog />);
+  fireEvent.change(await screen.findByLabelText("Invite code or link"), {
+    target: { value: "CS1." + btoa(origin) + "." + "A".repeat(22) },
+  });
+  const join = screen.getByRole("button", { name: "Join" });
+  await waitFor(() => expect(join).toBeEnabled());
+  fireEvent.click(join);
+  expect(await screen.findByText(/project’s model picker/)).toBeInTheDocument();
+  expect(local.configure).toHaveBeenCalledWith({ action: "connect", origin, token });
+  expect(screen.queryByRole("button", { name: "Send" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Leave share" }));
+  await waitFor(() =>
+    expect(local.configure).toHaveBeenLastCalledWith({ action: "disconnect", origin, token }),
+  );
 });
 
 it("opens from the registered command, joins, submits to the approved model, and displays its answer", async () => {
@@ -78,7 +129,7 @@ it("opens from the registered command, joins, submits to the approved model, and
       .find((command) => command.id === JOIN_CODE_SHARE_COMMAND)
       ?.run();
   });
-  fireEvent.change(await screen.findByLabelText("Invite link"), {
+  fireEvent.change(await screen.findByLabelText("Invite code or link"), {
     target: { value: "https://share.example.test/#invite=" + "A".repeat(22) },
   });
   const join = screen.getByRole("button", { name: "Join" });
@@ -133,7 +184,7 @@ it("opens the guest's official sign-in and reserves a launch without sending the
   vi.stubGlobal("fetch", fetcher);
   const { unmount } = render(<CodeShareDialog />);
   act(() => useCodeSharePanel.setState({ open: true }));
-  fireEvent.change(await screen.findByLabelText("Invite link"), {
+  fireEvent.change(await screen.findByLabelText("Invite code or link"), {
     target: { value: "https://share.example.test/#invite=" + "A".repeat(22) },
   });
   const join = screen.getByRole("button", { name: "Join" });

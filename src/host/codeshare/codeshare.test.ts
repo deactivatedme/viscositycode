@@ -89,6 +89,7 @@ async function createHarness(
     guestOrigin?: string;
     models?: ReturnType<typeof parseModel>[];
     setup?: import("./setupService").CodeShareOwnerSetup;
+    subscriptionUsage?: NonNullable<import("./http").CodeShareHttpOptions["subscriptionUsage"]>;
   } = {},
 ) {
   const guestPort = await freePort();
@@ -112,6 +113,7 @@ async function createHarness(
     ownerToken,
     service,
     ...(options.setup ? { setup: options.setup } : {}),
+    ...(options.subscriptionUsage ? { subscriptionUsage: options.subscriptionUsage } : {}),
     healthNonce: "fixture-public-health",
   };
   const http = await startCodeShareHttp(httpOptions);
@@ -500,6 +502,36 @@ it("shares owner subscriptions through browser chat and persists model policy ac
   expect((await restarted.guest("/api/v1/turns", createTurn(model.id), session)).status).toBe(409);
 });
 
+it("shows only owner subscription quota windows after authenticating the private dashboard", async () => {
+  const model = { ...parseModel("codex:owner-model"), execution: "owner-subscription" as const };
+  const subscriptionUsage = vi.fn<
+    NonNullable<import("./http").CodeShareHttpOptions["subscriptionUsage"]>
+  >(async () => [
+    {
+      providerId: "codex",
+      status: "ok",
+      authenticatedAs: "private-account@example.test",
+      fetchedAt: 123,
+      windows: [{ id: "session-5h", label: "5 hour", usedPercent: 30, resetsAt: 456 }],
+    },
+    {
+      providerId: "openai",
+      status: "ok",
+      fetchedAt: 123,
+      windows: [{ id: "session-5h", label: "API quota", usedPercent: 75 }],
+    },
+  ]);
+  const host = await createHarness(complete, { models: [model, openai], subscriptionUsage });
+  expect((await host.owner("/api/v1/owner")).status).toBe(401);
+  expect((await host.guest("/api/v1/owner")).status).toBe(404);
+  expect(subscriptionUsage).not.toHaveBeenCalled();
+  const response = await host.owner("/api/v1/owner", undefined, await host.login());
+  expect(subscriptionUsage).toHaveBeenCalledWith(["codex"]);
+  expect((await response.json()).subscriptionUsage).toEqual([
+    { provider: "codex", windows: [{ label: "5 hour", usedPercent: 30, resetsAt: 456 }] },
+  ]);
+});
+
 it("revokes a v2 guest-funded grant before first enabling owner billing under its model ID", async () => {
   const path = join(scratch(), "v2.sqlite");
   const prior = new CodeShareStore(path);
@@ -508,7 +540,15 @@ it("revokes a v2 guest-funded grant before first enabling owner billing under it
   prior.close();
   const v2 = new Database(path);
   v2.exec(
-    "DROP TABLE model_policy; ALTER TABLE room_turns DROP COLUMN execution; PRAGMA user_version=2",
+    `DROP TABLE model_policy;
+    DROP INDEX code_share_turns_by_thread;
+        ALTER TABLE turns DROP COLUMN project_thread;
+        ALTER TABLE invites DROP COLUMN desktop_only;
+        DROP INDEX room_turns_by_author;
+    ALTER TABLE room_turns DROP COLUMN input_tokens;
+    ALTER TABLE room_turns DROP COLUMN output_tokens;
+    ALTER TABLE room_turns DROP COLUMN execution;
+    PRAGMA user_version=2;`,
   );
   v2.close();
   const model = { ...parseModel("codex:owner-model"), execution: "owner-subscription" as const };

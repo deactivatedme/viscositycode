@@ -74,7 +74,7 @@ export function readCodexCumulativeTotalTokens(
   return readTotalTokens(readCodexCumulativeUsage(params));
 }
 
-function readCodexCumulativeUsage(
+export function readCodexCumulativeUsage(
   params: Record<string, unknown> | undefined,
 ): Record<string, unknown> | undefined {
   const currentTokenUsage = readRecord(params?.tokenUsage);

@@ -45,6 +45,14 @@ public extension RemoteRootCodecs {
 }
 
 public extension RemoteRootCodecs {
+  static let procedureU2EConfigureCodeShareProjectsU2ERequest: RemoteRootCodec<ProcedureconfigureCodeShareProjectsRequest_deb13fe8b7> = .init(id: "procedure.configureCodeShareProjects.request", schema: RemoteSchemas.schema_deb13fe8b7352f0b)
+}
+
+public extension RemoteRootCodecs {
+  static let procedureU2EConfigureCodeShareProjectsU2EResult: RemoteRootCodec<ProcedureconfigureCodeShareProjectsResult_53062fbb54> = .init(id: "procedure.configureCodeShareProjects.result", schema: RemoteSchemas.schema_53062fbb54e9cb4f)
+}
+
+public extension RemoteRootCodecs {
   static let procedureU2EConnectThreadVoiceU2ERequest: RemoteRootCodec<ProcedureconnectThreadVoiceRequest_898057a01b> = .init(id: "procedure.connectThreadVoice.request", schema: RemoteSchemas.schema_898057a01bbe54a3)
 }
 
@@ -438,12 +446,4 @@ public extension RemoteRootCodecs {
 
 public extension RemoteRootCodecs {
   static let procedureU2EGetThreadFollowUpQueueU2EResult: RemoteRootCodec<ProceduregetThreadFollowUpQueueResult_91dcfb42aa> = .init(id: "procedure.getThreadFollowUpQueue.result", schema: RemoteSchemas.schema_91dcfb42aac98166)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhCancelWorkflowRunU2ERequest: RemoteRootCodec<ProcedureghCancelWorkflowRunRequest_eb12aad287> = .init(id: "procedure.ghCancelWorkflowRun.request", schema: RemoteSchemas.schema_eb12aad2875e1908)
-}
-
-public extension RemoteRootCodecs {
-  static let procedureU2EGhCheckAvailableU2ERequest: RemoteRootCodec<ProceduregetGitStatusRequest_c4d99dd3e3> = .init(id: "procedure.ghCheckAvailable.request", schema: RemoteSchemas.schema_c4d99dd3e3a1ba03)
 }

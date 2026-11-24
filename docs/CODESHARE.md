@@ -176,25 +176,26 @@ when the request used the undated ID.
 
 ## Join in ViscosityCode
 
-1. In the private owner dashboard, create an invite and send **Copy link** to the
-   guest. Use a public HTTPS hostname for guests on other computers.
-2. In a ViscosityCode build that includes CodeShare, the guest opens the Command
-   Palette and runs **Join CodeShare**. They paste the full invite link and
-   select **Join**.
-3. They choose an approved model and send messages from the CodeShare dialog.
-   **Attach a local text file** adds only the file the guest selected to their next
-   message. **Send** sends hosted-model context to the Mac. **Start local chat**
-   starts a guest subscription chat on their own device.
-4. Reopen **Join CodeShare** to return to the same share. **Leave share** removes
-   the saved guest credential. The owner can extend, pause, or revoke access
-   from the private dashboard.
+1. In the private owner dashboard, create an individual invite, then send
+   **Copy app code** or **Copy link** to the recipient. Use a public HTTPS
+   hostname for guests on other computers.
+2. In ViscosityCode, press **Cmd+K** on Mac or **Ctrl+K** on Windows, select
+   **Join CodeShare**, paste the invite code or link, and click **Join**.
+3. Open a local project in Chat mode. Pick an invited model under **CodeShare**
+   in the normal model picker and send a prompt. The owner host runs the
+   corresponding structured session. Approve file access in the chat when a
+   coding model requests it. Text-only models have no file access.
+4. **Join CodeShare** shows the remaining invite allowance. **Leave share**
+   removes the saved guest credential. The owner can extend, pause, or revoke
+   access from the private dashboard. An existing thread remains bound to the
+   invite under which it was started.
 
-An invite containing only owner subscription or hosted API models also works in the guest browser site.
-Redeeming it grants one session. Individual invites with **participant** subscription models require the desktop
-app. Current browsers can also join rooms that include participant models, but
-cannot advertise a local execution computer. The app-to-host connection uses the same guest port as the browser site. The host serves the
-app its approved model list, time, turn allowance, and responses. Shared turns
-use the provider configuration on the CodeShare host.
+For a shared room, create the room first and choose it on a separate invite
+for each participant. Recipients redeem their invites the same way in the
+desktop app. They see a shared conversation in the room panel and can approve
+file work on an explicitly selected computer. New dashboard invites require
+the desktop app. Previously issued browser-capable invites retain their old
+redemption behavior until they expire or are revoked.
 
 ## Share over the internet
 
@@ -236,14 +237,18 @@ that tunnel.
   keep running. Use **Extend** to add time to an active invite and **Revoke**
   to end access immediately.
 - Each accepted turn uses one turn from the invite allowance, including work
-  stopped after admission. The dashboard shows the provider's reported token
-  counts when available. Set spending limits in your provider project for billing
-  control.
+  stopped after admission. In **Shares**, the dashboard shows reported input
+  and output tokens per invite, including shared-room turns attributed to the
+  person who sent the prompt. It also shows how many turns provided a report.
 - Owner subscription models consume the owner's Claude or Codex/ChatGPT usage
   allowance through Claude’s Agent SDK or Codex’s app-server protocol. API models consume the
   configured key's billing/plan allowance. CodeShare never substitutes an API key
-  for a missing subscription. Token totals are unavailable for the current
-  structured subscription chat route; turn limits and access expiry still apply.
+  for a missing subscription. New Claude SDK and Codex app-server turns contribute
+  reported tokens when the runtime returns a count. Older turns and turns without
+  a provider report still count against the invite's turn limit. Token counts
+  measure only CodeShare traffic and do not predict remaining account quota.
+  The private dashboard also shows provider-reported, account-wide usage
+  windows and reset times for connected subscriptions when available.
 - Chats and grants remain in the host's CodeShare database. Provider requests
   send chat context to the selected provider. Guests get text chat and can copy
   replies. The guest listener has no routes for host files, tools, or projects.

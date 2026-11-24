@@ -5,6 +5,12 @@ import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
+val RemoteRootCodecs.procedureU2EWriteExternalFileU2ERequest: RemoteRootCodec<ProcedurewriteExternalFileRequest_551f784ecd>
+    get() = RemoteRootCodec("procedure.writeExternalFile.request", serializer<ProcedurewriteExternalFileRequest_551f784ecd>(), schema_551f784ecdbbf2f4)
+
+val RemoteRootCodecs.procedureU2EWriteExternalFileU2EResult: RemoteRootCodec<ProcedurewriteExternalFileResult_c5c2ecebba>
+    get() = RemoteRootCodec("procedure.writeExternalFile.result", serializer<ProcedurewriteExternalFileResult_c5c2ecebba>(), schema_c5c2ecebbae5cd01)
+
 val RemoteRootCodecs.procedureU2EWriteProjectFileU2ERequest: RemoteRootCodec<ProcedurewriteProjectFileRequest_aba5d69bfd>
     get() = RemoteRootCodec("procedure.writeProjectFile.request", serializer<ProcedurewriteProjectFileRequest_aba5d69bfd>(), schema_aba5d69bfdbd30c9)
 
@@ -442,9 +448,3 @@ val RemoteRootCodecs.routeU2EProfileU2DCoreU2DStatsU2ERequest: RemoteRootCodec<R
 
 val RemoteRootCodecs.routeU2EProfileU2DCoreU2DStatsU2EResponse: RemoteRootCodec<RouteprofileU2DCoreU2DStatsResponse_42cbe66f12>
     get() = RemoteRootCodec("route.profile-core-stats.response", serializer<RouteprofileU2DCoreU2DStatsResponse_42cbe66f12>(), schema_42cbe66f126154fe)
-
-val RemoteRootCodecs.routeU2EProfileU2DDevicesU2EResponse: RemoteRootCodec<RouteprofileU2DDevicesResponse_0943be33f9>
-    get() = RemoteRootCodec("route.profile-devices.response", serializer<RouteprofileU2DDevicesResponse_0943be33f9>(), schema_0943be33f9e190f8)
-
-val RemoteRootCodecs.routeU2EProfileU2DIdentityU2ERequest: RemoteRootCodec<RouteprofileU2DCoreU2DStatsResponseU2DIdentity_da76232259>
-    get() = RemoteRootCodec("route.profile-identity.request", serializer<RouteprofileU2DCoreU2DStatsResponseU2DIdentity_da76232259>(), schema_da76232259cbe6bb)
