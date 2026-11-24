@@ -191,8 +191,13 @@ describe("native ACP registry aliases", () => {
   });
 
   it("keeps native agents in parity with renderer provider manifests", () => {
+    // CodeShare is registered by invite redemption, so it has no installer.
+    const shareProvider = "codeshareproject";
+    expect(getProviderManifests().some((manifest) => manifest.kind === shareProvider)).toBe(true);
+    expect(NATIVE_AGENT_REGISTRY_ENTRIES.some((entry) => entry.id === shareProvider)).toBe(false);
     expect(NATIVE_AGENT_REGISTRY_ENTRIES.map((entry) => entry.id).toSorted()).toEqual(
       getProviderManifests()
+        .filter(({ kind }) => kind !== shareProvider)
         .map((manifest) => manifest.kind)
         .toSorted(),
     );
